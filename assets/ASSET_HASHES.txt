@@ -1,0 +1,4 @@
+# StereoFine 1.0 original application assets
+44c2c2cfcf8d8d12edd17b86f6b7c7fbaf0f57eb5587f26f86b3784a0f164f10  stereofine.jpg
+03778a4a0962e925eea95fab6f972fafa488ecc2c06c7964ddd12bdfe124695a  stereofine.ico
+5eec8bd4c6cf509b57d2a0e39a87018f9523372112b5e66ded2f621f475c1119  ready.wav
