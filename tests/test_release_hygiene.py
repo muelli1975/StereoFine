@@ -74,9 +74,9 @@ class ReleaseHygieneTests(unittest.TestCase):
 
     def test_ci_prepares_platform_exiftool_packages(self):
         workflow = (ROOT / ".github" / "workflows" / "build-release.yml").read_text(encoding="utf-8")
-        self.assertIn("ExifTool 13.53", workflow)
-        self.assertIn("exiftool-13.53_64.zip", workflow)
-        self.assertIn("Image-ExifTool-13.53.tar.gz", workflow)
+        self.assertIn("EXIFTOOL_VERSION:", workflow)
+        self.assertIn("sourceforge.net/projects/exiftool/files/exiftool-${version}_64.zip/download", workflow)
+        self.assertIn("Image-ExifTool-${VERSION}.tar.gz", workflow)
         self.assertIn("portable-tools/exiftool", workflow)
         self.assertIn("portable-tools/lib", workflow)
 
