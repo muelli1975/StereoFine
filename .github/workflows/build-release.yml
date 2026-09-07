@@ -1,10 +1,14 @@
 name: Build StereoFine 1.0
 
+env:
+  EXIFTOOL_VERSION: '13.59'
+
 on:
   workflow_dispatch:
   push:
     branches: [main]
     paths:
+      - '.github/workflows/build-release.yml'
       - 'assets/stereofine.jpg'
       - 'assets/stereofine.ico'
       - 'assets/ready.wav'
@@ -45,10 +49,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12.10'
-      - name: Install ExifTool 13.53 portable
+      - name: Install portable ExifTool
         shell: pwsh
         run: |
-          Invoke-WebRequest 'https://exiftool.org/exiftool-13.53_64.zip' -OutFile exiftool.zip
+          $version = '${{ env.EXIFTOOL_VERSION }}'
+          $url = "https://sourceforge.net/projects/exiftool/files/exiftool-${version}_64.zip/download"
+          curl.exe -fL $url -o exiftool.zip
           Expand-Archive exiftool.zip -DestinationPath exiftool-download
           $pkg = Get-ChildItem exiftool-download -Directory | Select-Object -First 1
           New-Item -ItemType Directory -Force tools | Out-Null
@@ -79,13 +85,15 @@ jobs:
           python-version: '3.12.10'
       - name: Install dependencies
         run: python -m pip install -r requirements-build.txt
-      - name: Prepare portable ExifTool 13.53
+      - name: Prepare portable ExifTool
         run: |
-          curl -fsSLO https://exiftool.org/Image-ExifTool-13.53.tar.gz
-          tar -xzf Image-ExifTool-13.53.tar.gz
+          VERSION='${{ env.EXIFTOOL_VERSION }}'
+          ARCHIVE="Image-ExifTool-${VERSION}.tar.gz"
+          curl -fL "https://sourceforge.net/projects/exiftool/files/${ARCHIVE}/download" -o "$ARCHIVE"
+          tar -xzf "$ARCHIVE"
           mkdir -p portable-tools/lib
-          cp Image-ExifTool-13.53/exiftool portable-tools/exiftool
-          cp -R Image-ExifTool-13.53/lib/. portable-tools/lib/
+          cp "Image-ExifTool-${VERSION}/exiftool" portable-tools/exiftool
+          cp -R "Image-ExifTool-${VERSION}/lib/." portable-tools/lib/
           chmod +x portable-tools/exiftool
           perl portable-tools/exiftool -ver
       - name: Build Linux x64
@@ -117,13 +125,15 @@ jobs:
           python-version: '3.12.10'
       - name: Install dependencies
         run: python -m pip install -r requirements-build.txt
-      - name: Prepare portable ExifTool 13.53
+      - name: Prepare portable ExifTool
         run: |
-          curl -fsSLO https://exiftool.org/Image-ExifTool-13.53.tar.gz
-          tar -xzf Image-ExifTool-13.53.tar.gz
+          VERSION='${{ env.EXIFTOOL_VERSION }}'
+          ARCHIVE="Image-ExifTool-${VERSION}.tar.gz"
+          curl -fL "https://sourceforge.net/projects/exiftool/files/${ARCHIVE}/download" -o "$ARCHIVE"
+          tar -xzf "$ARCHIVE"
           mkdir -p portable-tools/lib
-          cp Image-ExifTool-13.53/exiftool portable-tools/exiftool
-          cp -R Image-ExifTool-13.53/lib/. portable-tools/lib/
+          cp "Image-ExifTool-${VERSION}/exiftool" portable-tools/exiftool
+          cp -R "Image-ExifTool-${VERSION}/lib/." portable-tools/lib/
           chmod +x portable-tools/exiftool
           perl portable-tools/exiftool -ver
       - name: Build macOS Apple Silicon
@@ -159,13 +169,15 @@ jobs:
           python-version: '3.12.10'
       - name: Install dependencies
         run: python -m pip install -r requirements-build.txt
-      - name: Prepare portable ExifTool 13.53
+      - name: Prepare portable ExifTool
         run: |
-          curl -fsSLO https://exiftool.org/Image-ExifTool-13.53.tar.gz
-          tar -xzf Image-ExifTool-13.53.tar.gz
+          VERSION='${{ env.EXIFTOOL_VERSION }}'
+          ARCHIVE="Image-ExifTool-${VERSION}.tar.gz"
+          curl -fL "https://sourceforge.net/projects/exiftool/files/${ARCHIVE}/download" -o "$ARCHIVE"
+          tar -xzf "$ARCHIVE"
           mkdir -p portable-tools/lib
-          cp Image-ExifTool-13.53/exiftool portable-tools/exiftool
-          cp -R Image-ExifTool-13.53/lib/. portable-tools/lib/
+          cp "Image-ExifTool-${VERSION}/exiftool" portable-tools/exiftool
+          cp -R "Image-ExifTool-${VERSION}/lib/." portable-tools/lib/
           chmod +x portable-tools/exiftool
           perl portable-tools/exiftool -ver
       - name: Build macOS Intel
