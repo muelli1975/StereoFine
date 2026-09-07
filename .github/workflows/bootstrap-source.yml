@@ -1,0 +1,32 @@
+name: Bootstrap StereoFine source
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'bootstrap/stereofine_source_text.tar.gz.b64'
+
+permissions:
+  contents: write
+
+jobs:
+  unpack:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decode and verify source snapshot
+        run: |
+          base64 -d bootstrap/stereofine_source_text.tar.gz.b64 > /tmp/stereofine_source_text.tar.gz
+          echo '4c947e0ef369d5766fa5ed1fe1268a599a8c514f4215e0f9101020d334c11c4a  /tmp/stereofine_source_text.tar.gz' | sha256sum -c -
+      - name: Expand normal repository files
+        run: |
+          tar -xzf /tmp/stereofine_source_text.tar.gz -C .
+          rm -rf bootstrap
+          rm -f .github/workflows/bootstrap-source.yml
+      - name: Commit StereoFine 1.0 source
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Publish StereoFine 1.0 source' || exit 0
+          git push
