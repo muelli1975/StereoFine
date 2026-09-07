@@ -18,7 +18,7 @@ jobs:
         run: |
           cat bootstrap/source.part-* > /tmp/stereofine_source_text.tar.gz.b64
           base64 -d /tmp/stereofine_source_text.tar.gz.b64 > /tmp/stereofine_source_text.tar.gz
-          echo '7c7e009714ee719bd4db85e01a76be2ad8bd30cd5f3d7a40a6054695b12df0ef  /tmp/stereofine_source_text.tar.gz' | sha256sum -c -
+          echo '2a7f93baab738dacdd5500d596b2d6b11c940ecedcb42bc10fd3625906cd7dcf  /tmp/stereofine_source_text.tar.gz' | sha256sum -c -
       - name: Expand normal repository files
         run: |
           tar -xzf /tmp/stereofine_source_text.tar.gz -C .
