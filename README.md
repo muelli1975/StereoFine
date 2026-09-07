@@ -193,6 +193,6 @@ Build instructions are in [BUILD_WINDOWS.md](BUILD_WINDOWS.md). Historical valid
 
 ## License
 
-StereoFine source code and original documentation created by Christoph are released under the **MIT License**. Third-party components remain explicitly under their respective licenses.
+StereoFine source code and original documentation created by Christoph Müller are released under the **MIT License**. Third-party components remain explicitly under their respective licenses.
 
 See `LICENSE.txt`, `THIRD_PARTY_NOTICES.md` and `licenses/`.
