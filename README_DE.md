@@ -193,6 +193,6 @@ Build-Hinweise stehen in [BUILD_WINDOWS.md](BUILD_WINDOWS.md). Die dokumentierte
 
 ## Lizenz
 
-Der von Christoph erstellte StereoFine-Sourcecode und die eigene Dokumentation stehen unter der **MIT-Lizenz**. Drittkomponenten bleiben ausdrücklich unter ihren jeweiligen eigenen Lizenzen.
+Der von Christoph Müller erstellte StereoFine-Sourcecode und die eigene Dokumentation stehen unter der **MIT-Lizenz**. Drittkomponenten bleiben ausdrücklich unter ihren jeweiligen eigenen Lizenzen.
 
 Siehe `LICENSE.txt`, `THIRD_PARTY_NOTICES.md` und `licenses/`.
