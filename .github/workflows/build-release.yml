@@ -9,6 +9,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/build-release.yml'
+      - 'tests/test_release_hygiene.py'
       - 'assets/stereofine.jpg'
       - 'assets/stereofine.ico'
       - 'assets/ready.wav'
