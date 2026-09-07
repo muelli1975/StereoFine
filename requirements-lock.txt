@@ -1,0 +1,7 @@
+# StereoFine 1.0 runtime dependencies.
+# Pinned for the reproducible Windows x64 release build.
+customtkinter==5.2.2
+darkdetect==0.8.0
+numpy==2.4.6
+opencv-python==4.13.0.92
+Pillow==12.2.0

@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Third-party portable tools are supplied/downloaded per platform build
+/tools/
+
+# Local build environments and output
+.venv-build/
+build/
+dist/
+release/
+
+# Runtime/user data
+settings.json
+_stereofine/
+output/
+*.sfin
+
+# Release archives generated locally
+StereoFine_1.0.zip
+
+# Editors/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

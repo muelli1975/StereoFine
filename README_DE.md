@@ -1,6 +1,6 @@
 # StereoFine 1.0
 
-**[English](README_EN.md)**
+[English](README_EN.md)
 
 StereoFine ist ein lokales Desktop-Werkzeug zum automatischen Ausrichten, Prüfen, Rahmen und Ausgeben stereoskopischer Bildpaare. Es soll möglichst viel zuverlässig automatisch erledigen, ohne die manuelle Kontrolle aus der Hand zu nehmen. Die Oberfläche bleibt deshalb bewusst schlank und tastaturfreundlich.
 
@@ -26,8 +26,6 @@ Derselbe Quellcode kann zusätzlich für macOS (Apple Silicon und Intel) sowie L
 2. **Justage starten**. StereoFine analysiert die Geometrie, bestimmt Nahpunkt, Fernpunkt und Gesamtdeviation und rahmt den erkannten Nahpunkt standardmäßig knapp hinter das Scheinfenster.
 3. Ergebnis in der Anaglyphenvorschau prüfen und bei Bedarf per Tastatur feinjustieren.
 4. **Speichern**. StereoFine schreibt immer ein SBS-JPEG und eine Anaglyphe. Über die Vorschauwahl bestimmst du nur, ob die Anaglyphe farbig oder in Graustufen erzeugt wird.
-
-Während einer laufenden Verarbeitung wird derselbe primäre Button zu **Abbrechen**; nach Abschluss, Abbruch oder Fehler kehrt er automatisch zur passenden Startaktion zurück.
 
 Für ganze Ordner steht derselbe Rechenkern als Stapelverarbeitung zur Verfügung.
 
