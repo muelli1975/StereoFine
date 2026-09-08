@@ -2156,6 +2156,10 @@ class StereoFineApp(ctk.CTk):
         self.bind_all("<A>", self._on_a)
         self.bind_all("<KeyRelease-a>", lambda e: self._release_shortcut_key("a"))
         self.bind_all("<KeyRelease-A>", lambda e: self._release_shortcut_key("a"))
+        self.bind_all("<f>", self._on_f)
+        self.bind_all("<F>", self._on_f)
+        self.bind_all("<KeyRelease-f>", lambda e: self._release_shortcut_key("f"))
+        self.bind_all("<KeyRelease-F>", lambda e: self._release_shortcut_key("f"))
         self.bind_all("<g>", self._on_g)
         self.bind_all("<G>", self._on_g)
         self.bind_all("<KeyRelease-g>", self._on_g_release)
@@ -2272,6 +2276,11 @@ class StereoFineApp(ctk.CTk):
         self.preview_mode.set("Graustufen" if self.preview_mode.get() == "Farbig" else "Farbig")
         self._on_preview_mode_changed()
         return "break"
+
+    def _on_f(self, event=None):
+        if self.busy_state != "idle" or not self._claim_shortcut_key("f", event):
+            return "break"
+        return self._on_favorite_clicked(event)
 
     def _on_g(self, event=None):
         if self._g_key_down:

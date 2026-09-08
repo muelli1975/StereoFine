@@ -148,6 +148,7 @@ Soweit möglich kopiert StereoFine Metadaten mit dem gebündelten ExifTool. Prev
 - `Page Up` / `Page Down` – vorheriges / nächstes Bild
 - `Leertaste` – Justage beziehungsweise Stapel starten
 - `Enter` – aktuelles Bild speichern
+- `F` – Favorit setzen/entfernen
 
 ### Manuelle Justage
 

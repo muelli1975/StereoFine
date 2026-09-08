@@ -148,6 +148,7 @@ Where possible, StereoFine copies metadata using the bundled ExifTool. Preview, 
 - `Page Up` / `Page Down` – previous / next image
 - `Space` – start alignment or batch
 - `Enter` – save current image
+- `F` – toggle favorite
 
 ### Manual alignment
 
