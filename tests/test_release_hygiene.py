@@ -123,11 +123,13 @@ class ReleaseHygieneTests(unittest.TestCase):
         self.assertIn('self.bind_all("<f>", self._on_f)', gui_source)
         self.assertIn('self.bind_all("<F>", self._on_f)', gui_source)
         self.assertIn('self.bind_all("<KeyRelease-f>", lambda e: self._release_shortcut_key("f"))', gui_source)
+        self.assertIn('self.bind_all("<KeyRelease-F>", lambda e: self._release_shortcut_key("f"))', gui_source)
         self.assertIn('def _on_f(self, event=None):', gui_source)
         self.assertIn('_claim_shortcut_key("f", event)', gui_source)
         self.assertIn('return self._on_favorite_clicked(event)', gui_source)
         self.assertIn('F                       Favorit setzen/entfernen', i18n_source)
         self.assertIn('F                       Toggle favorite', i18n_source)
+        self.assertIn('`F` – toggle favorite', (ROOT / "README.md").read_text(encoding="utf-8"))
         self.assertIn('`F` – toggle favorite', (ROOT / "README_EN.md").read_text(encoding="utf-8"))
         self.assertIn('`F` – Favorit setzen/entfernen', (ROOT / "README_DE.md").read_text(encoding="utf-8"))
 
