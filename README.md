@@ -6,6 +6,10 @@ StereoFine is a local desktop tool for automatically aligning, checking, framing
 
 StereoFine works completely locally: no account, no cloud, no tracking and no automatic downloads during use.
 
+<p align="center">
+  <a href="docs/screenshots/StereoFine01.png"><img src="docs/screenshots/StereoFine01.png" alt="StereoFine 1.0 main view" width="900"></a>
+</p>
+
 ## Portable Windows release
 
 The published Windows version is portable:
@@ -28,6 +32,14 @@ The same source can also be packaged for macOS (Apple Silicon and Intel) and Lin
 4. Choose **Save**. StereoFine always writes an SBS JPEG and one anaglyph. The preview choice only determines whether the anaglyph is color or grayscale.
 
 The same processing core is available for complete folders through batch processing.
+
+## Screenshots
+
+<p align="center">
+  <a href="docs/screenshots/StereoFine02.png"><img src="docs/screenshots/StereoFine02.png" alt="StereoFine 1.0 example 2" width="32%"></a>
+  <a href="docs/screenshots/StereoFine03.png"><img src="docs/screenshots/StereoFine03.png" alt="StereoFine 1.0 example 3" width="32%"></a>
+  <a href="docs/screenshots/StereoFine04.png"><img src="docs/screenshots/StereoFine04.png" alt="StereoFine 1.0 example 4" width="32%"></a>
+</p>
 
 ## Supported input
 
