@@ -6,6 +6,10 @@ StereoFine ist ein lokales Desktop-Werkzeug zum automatischen Ausrichten, Prüfe
 
 StereoFine arbeitet vollständig lokal: kein Konto, keine Cloud, kein Tracking und kein automatischer Download während der Nutzung.
 
+<p align="center">
+  <a href="docs/screenshots/StereoFine01.png"><img src="docs/screenshots/StereoFine01.png" alt="StereoFine 1.0 – Hauptansicht" width="900"></a>
+</p>
+
 ## Portable Windows-Version
 
 Die veröffentlichte Windows-Version ist portabel:
@@ -28,6 +32,14 @@ Derselbe Quellcode kann zusätzlich für macOS (Apple Silicon und Intel) sowie L
 4. **Speichern**. StereoFine schreibt immer ein SBS-JPEG und eine Anaglyphe. Über die Vorschauwahl bestimmst du nur, ob die Anaglyphe farbig oder in Graustufen erzeugt wird.
 
 Für ganze Ordner steht derselbe Rechenkern als Stapelverarbeitung zur Verfügung.
+
+## Screenshots
+
+<p align="center">
+  <a href="docs/screenshots/StereoFine02.png"><img src="docs/screenshots/StereoFine02.png" alt="StereoFine 1.0 – Beispiel 2" width="32%"></a>
+  <a href="docs/screenshots/StereoFine03.png"><img src="docs/screenshots/StereoFine03.png" alt="StereoFine 1.0 – Beispiel 3" width="32%"></a>
+  <a href="docs/screenshots/StereoFine04.png"><img src="docs/screenshots/StereoFine04.png" alt="StereoFine 1.0 – Beispiel 4" width="32%"></a>
+</p>
 
 ## Unterstützte Eingaben
 
