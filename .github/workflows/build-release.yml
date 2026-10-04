@@ -12,6 +12,7 @@ on:
       - 'tests/test_release_hygiene.py'
       - 'assets/stereofine.jpg'
       - 'assets/stereofine.ico'
+      - 'assets/stereofine.icns'
       - 'assets/ready.wav'
 
 permissions:
@@ -143,7 +144,7 @@ jobs:
             --name StereoFine \
             --collect-data customtkinter \
             --add-data 'assets:assets' \
-            --icon assets/stereofine.ico \
+            --icon assets/stereofine.icns \
             StereoFine.py
           APP='dist/StereoFine.app'
           test -d "$APP"
@@ -187,7 +188,7 @@ jobs:
             --name StereoFine \
             --collect-data customtkinter \
             --add-data 'assets:assets' \
-            --icon assets/stereofine.ico \
+            --icon assets/stereofine.icns \
             StereoFine.py
           APP='dist/StereoFine.app'
           test -d "$APP"
