@@ -143,7 +143,7 @@ Every image export produces both:
 - an SBS JPEG, quality 95
 - one color or grayscale anaglyph JPEG, quality 90
 
-Anaglyphs are reduced to a maximum height of 2160 px when needed. Color anaglyph output uses the shared StereoFine/SplatTricia reference pipeline with proper sRGB linearization.
+Anaglyphs are reduced to a maximum height of 2160 px when needed. Color anaglyph output uses proper sRGB linearization.
 
 By default StereoFine creates an `output` folder inside the input folder. Alternatively, a persistent custom output folder can be selected. Finished JPEGs and analysis reports are first written completely to temporary files and only then atomically replaced at their final paths.
 

@@ -143,7 +143,7 @@ Jeder Bildexport erzeugt immer beides:
 - ein SBS-JPEG, Qualität 95
 - eine Farb- oder Grauanaglyphe als JPEG, Qualität 90
 
-Anaglyphen werden bei Bedarf auf maximal 2160 px Höhe verkleinert. Die Farbanaglyphe verwendet die gemeinsame StereoFine/SplatTricia-Referenzpipeline mit korrekter sRGB-Linearisation.
+Anaglyphen werden bei Bedarf auf maximal 2160 px Höhe verkleinert. Die Farbanaglyphe verwendet eine korrekte sRGB-Linearisation.
 
 Standardmäßig legt StereoFine den Ordner `output` im Eingabeordner an. Alternativ kann ein eigener persistenter Ausgabeordner gewählt werden. Fertige JPEGs und Analyseberichte werden vollständig temporär geschrieben und erst danach atomar an ihren endgültigen Namen gesetzt.
 
