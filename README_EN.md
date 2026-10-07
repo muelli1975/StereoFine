@@ -53,7 +53,7 @@ Officially supported:
 - separate Left/Right pairs using `*_l` / `*_r`
 - separate pairs in `l` and `r` subfolders
 
-HEIC/HEIF and RAW are deliberately outside the scope of StereoFine 1.0 and should be converted first.
+Convert HEIC/HEIF and RAW images to JPEG, PNG or TIFF before opening them in StereoFine.
 
 16-bit PNG and 16-bit TIFF are not reduced to 8 bit immediately when loaded. StereoFine creates separate 8-bit proxies for feature/disparity analysis and preview. Final JPEG output is deliberately 8 bit.
 

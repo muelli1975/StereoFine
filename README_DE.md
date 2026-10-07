@@ -53,7 +53,7 @@ Offiziell unterstützt werden:
 - getrennte Links/Rechts-Paare als `*_l` / `*_r`
 - getrennte Paare in den Unterordnern `l` und `r`
 
-HEIC/HEIF und RAW gehören bewusst nicht zum Funktionsumfang von StereoFine 1.0 und sollten vorher konvertiert werden.
+HEIC/HEIF- und RAW-Bilder vor dem Öffnen in StereoFine in JPEG, PNG oder TIFF konvertieren.
 
 16-Bit-PNG und 16-Bit-TIFF werden nicht bereits beim Laden auf 8 Bit reduziert. Für Feature-/Disparitätsanalyse und Vorschau erzeugt StereoFine getrennte 8-Bit-Proxys. Die fertigen JPEG-Ausgaben sind bewusst 8 Bit.
 
