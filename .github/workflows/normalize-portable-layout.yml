@@ -1,0 +1,32 @@
+name: Normalize portable archive folders
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/normalize-portable-layout.yml', 'scripts/normalize-release-layout.py', 'scripts/release-layout-plan.json']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: normalize-portable-layout
+  cancel-in-progress: false
+jobs:
+  normalize:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preserve original packages and verify renamed archive members
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/normalize-release-layout.py
+      - name: Retain original archives for recovery
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-portable-packages
+          path: layout-backup/*
+          retention-days: 14
+      - name: Publish verified layout and refresh checksums
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf layout-backup layout-ready
+          python scripts/normalize-release-layout.py --publish

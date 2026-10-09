@@ -1,0 +1,32 @@
+{
+  "repo": "muelli1975/StereoFine",
+  "app": "StereoFine",
+  "tag": "v1.0",
+  "release_id": 384265475,
+  "assets": [
+    {
+      "name": "StereoFine_1.0_Linux_x64.tar.gz",
+      "id": 610392595,
+      "digest": "sha256:22052d37732d50e5a7623799b39417723113284126756d03b62fa3c450548948",
+      "root": "StereoFine_1.0_Linux_x64"
+    },
+    {
+      "name": "StereoFine_1.0_macOS_AppleSilicon.zip",
+      "id": 610392592,
+      "digest": "sha256:9990cd87dd510e60c62edf225afe7037d368d73ed5256f293c528317f02243f5",
+      "root": "package"
+    },
+    {
+      "name": "StereoFine_1.0_macOS_Intel.zip",
+      "id": 610392594,
+      "digest": "sha256:e50675a8aa82bf03a4755e25ef0910af9477cc6a458181023846c60972e1643d",
+      "root": "package"
+    },
+    {
+      "name": "StereoFine_1.0_Windows_x64.zip",
+      "id": 610392599,
+      "digest": "sha256:bc65cdfb98bf1156fd318c2cfedfcc478f56331516c367b73c115202347e0fff",
+      "root": "StereoFine_1.0"
+    }
+  ]
+}
