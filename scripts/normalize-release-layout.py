@@ -66,6 +66,7 @@ def repack(source, destination, old, app):
                 member.filename = rename(original.filename, old, app)
                 with incoming.open(original) as reader, outgoing.open(member, "w") as writer:
                     shutil.copyfileobj(reader, writer, 1024 * 1024)
+                member.external_attr = original.external_attr
     else:
         with tarfile.open(source, "r:gz") as incoming, tarfile.open(destination, "w:gz") as outgoing:
             for original in incoming:
