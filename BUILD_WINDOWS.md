@@ -29,11 +29,11 @@ Expected final artifacts:
 
 ```text
 release/
-    StereoFine_1.0.zip
+    StereoFine_1.0_Windows_x64.zip
     SHA256SUMS.txt
 
 dist/
-    StereoFine_1.0/
+    StereoFine/
         StereoFine.exe
         _internal/
         tools/
@@ -54,7 +54,7 @@ StereoFine stores `settings.json` beside `StereoFine.exe` at runtime. This is de
 
 ## Required manual Windows smoke check
 
-After the script finishes, extract `release/StereoFine_1.0.zip` into a fresh folder and check at least:
+After the script finishes, extract `release/StereoFine_1.0_Windows_x64.zip` into a fresh folder and check at least:
 
 1. `StereoFine.exe` starts without an external Python installation being used.
 2. The application icon is correct in Explorer, the title bar and taskbar.
@@ -80,7 +80,7 @@ A genuine camera MPO and additional real camera color-mismatch material are usef
 The public release archive is simply:
 
 ```text
-StereoFine_1.0.zip
+StereoFine_1.0_Windows_x64.zip
 ```
 
 Upload it manually to the GitHub release for version `1.0`. The SHA-256 produced in `release/SHA256SUMS.txt` can be copied into the release notes.

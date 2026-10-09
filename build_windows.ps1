@@ -7,9 +7,9 @@ Set-Location $Root
 $Venv = Join-Path $Root ".venv-build"
 $BuildDir = Join-Path $Root "build"
 $DistRoot = Join-Path $Root "dist"
-$Dist = Join-Path $DistRoot "StereoFine_1.0"
+$Dist = Join-Path $DistRoot "StereoFine"
 $ReleaseDir = Join-Path $Root "release"
-$ZipPath = Join-Path $ReleaseDir "StereoFine_1.0.zip"
+$ZipPath = Join-Path $ReleaseDir "StereoFine_1.0_Windows_x64.zip"
 $SourceOut = Join-Path $Dist "Source"
 
 Write-Host "StereoFine 1.0 - clean Windows release build"
@@ -194,7 +194,7 @@ if (Test-Path $ZipPath) {
 Compress-Archive -Path $Dist -DestinationPath $ZipPath -CompressionLevel Optimal
 
 $Hash = (Get-FileHash -Algorithm SHA256 $ZipPath).Hash.ToLowerInvariant()
-"$Hash  StereoFine_1.0.zip" | Set-Content -Encoding ASCII (Join-Path $ReleaseDir "SHA256SUMS.txt")
+"$Hash  StereoFine_1.0_Windows_x64.zip" | Set-Content -Encoding ASCII (Join-Path $ReleaseDir "SHA256SUMS.txt")
 
 Write-Host ""
 Write-Host "Release build created successfully."

@@ -45,6 +45,6 @@
 
 - [ ] repository contains the exact 1.0 source.
 - [ ] tag/release is named `1.0` (or `v1.0` if that is the repository convention).
-- [ ] upload `StereoFine_1.0.zip` from `release/`.
+- [ ] upload `StereoFine_1.0_Windows_x64.zip` from `release/`.
 - [ ] copy SHA-256 from `release/SHA256SUMS.txt` into the release notes.
 - [ ] use `RELEASE_NOTES_1.0.md` as the starting release text.

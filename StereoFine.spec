@@ -45,5 +45,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name="StereoFine_1.0",
+    name="StereoFine",
 )

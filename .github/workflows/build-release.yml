@@ -68,9 +68,6 @@ jobs:
       - name: Build portable Windows release
         shell: pwsh
         run: .\build_windows.ps1
-      - name: Rename artifact
-        shell: pwsh
-        run: Move-Item release\StereoFine_1.0.zip release\StereoFine_1.0_Windows_x64.zip
       - uses: actions/upload-artifact@v4
         with:
           name: StereoFine_1.0_Windows_x64
@@ -105,12 +102,11 @@ jobs:
             --collect-data customtkinter \
             --add-data 'assets:assets' \
             StereoFine.py
-          mv dist/StereoFine dist/StereoFine_1.0_Linux_x64
-          mkdir -p dist/StereoFine_1.0_Linux_x64/tools
-          cp -R portable-tools/* dist/StereoFine_1.0_Linux_x64/tools/
-          cp README_DE.md README_EN.md LICENSE.txt THIRD_PARTY_NOTICES.md dist/StereoFine_1.0_Linux_x64/
-          cp -R licenses dist/StereoFine_1.0_Linux_x64/licenses
-          tar -C dist -czf StereoFine_1.0_Linux_x64.tar.gz StereoFine_1.0_Linux_x64
+          mkdir -p dist/StereoFine/tools
+          cp -R portable-tools/* dist/StereoFine/tools/
+          cp README_DE.md README_EN.md LICENSE.txt THIRD_PARTY_NOTICES.md dist/StereoFine/
+          cp -R licenses dist/StereoFine/licenses
+          tar -C dist -czf StereoFine_1.0_Linux_x64.tar.gz StereoFine
       - uses: actions/upload-artifact@v4
         with:
           name: StereoFine_1.0_Linux_x64
@@ -150,11 +146,11 @@ jobs:
           test -d "$APP"
           mkdir -p "$APP/Contents/MacOS/tools"
           cp -R portable-tools/* "$APP/Contents/MacOS/tools/"
-          mkdir -p package
-          cp -R "$APP" package/
-          cp README_DE.md README_EN.md LICENSE.txt THIRD_PARTY_NOTICES.md package/
-          cp -R licenses package/licenses
-          ditto -c -k --sequesterRsrc --keepParent package StereoFine_1.0_macOS_AppleSilicon.zip
+          mkdir -p package/StereoFine
+          cp -R "$APP" package/StereoFine/
+          cp README_DE.md README_EN.md LICENSE.txt THIRD_PARTY_NOTICES.md package/StereoFine/
+          cp -R licenses package/StereoFine/licenses
+          ditto -c -k --sequesterRsrc --keepParent package/StereoFine StereoFine_1.0_macOS_AppleSilicon.zip
       - uses: actions/upload-artifact@v4
         with:
           name: StereoFine_1.0_macOS_AppleSilicon
@@ -194,11 +190,11 @@ jobs:
           test -d "$APP"
           mkdir -p "$APP/Contents/MacOS/tools"
           cp -R portable-tools/* "$APP/Contents/MacOS/tools/"
-          mkdir -p package
-          cp -R "$APP" package/
-          cp README_DE.md README_EN.md LICENSE.txt THIRD_PARTY_NOTICES.md package/
-          cp -R licenses package/licenses
-          ditto -c -k --sequesterRsrc --keepParent package StereoFine_1.0_macOS_Intel.zip
+          mkdir -p package/StereoFine
+          cp -R "$APP" package/StereoFine/
+          cp README_DE.md README_EN.md LICENSE.txt THIRD_PARTY_NOTICES.md package/StereoFine/
+          cp -R licenses package/StereoFine/licenses
+          ditto -c -k --sequesterRsrc --keepParent package/StereoFine StereoFine_1.0_macOS_Intel.zip
       - uses: actions/upload-artifact@v4
         with:
           name: StereoFine_1.0_macOS_Intel
