@@ -47,7 +47,8 @@ def verify_archive(path: Path, platform: str, expected: dict[str, bytes]) -> dic
             body = read()
             exif_version = b"$VERSION = '13.59'" in body or b'$VERSION = "13.59"' in body
         if name == 'StereoFine/RELEASE_NOTES_1.0_MAINTENANCE.md':
-            notes = read() == expected['RELEASE_NOTES_1.0_MAINTENANCE.md']
+            # Windows checkout text uses CRLF; canonical Source stays byte-exact.
+            notes = read().replace(b'\r\n', b'\n') == expected['RELEASE_NOTES_1.0_MAINTENANCE.md'].replace(b'\r\n', b'\n')
 
     if path.name.endswith('.tar.gz'):
         with tarfile.open(path, 'r|gz') as archive:
@@ -63,7 +64,8 @@ def verify_archive(path: Path, platform: str, expected: dict[str, bytes]) -> dic
         changed = sorted(k for k in sources.keys() | expected.keys() if sources.get(k) != expected.get(k))
         raise RuntimeError(f'{path.name}: source mismatch: {changed}')
     if not binary or assets != ASSETS or not all([tool, exif_version, notes]):
-        raise RuntimeError(f'{path.name}: missing binary, original assets, tool, or notes')
+        raise RuntimeError(f'{path.name}: binary={bool(binary)}, assets={sorted(assets)}, '
+                           f'tool={tool}, exif_version={exif_version}, notes={notes}')
     if platform == 'windows':
         valid = binary[:2] == b'MZ'
     elif platform == 'linux':
