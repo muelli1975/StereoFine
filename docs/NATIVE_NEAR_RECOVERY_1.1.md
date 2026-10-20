@@ -134,9 +134,19 @@ overestimated P99, missing texture/confidence/native resolution, full-range
 16-bit proxies, the near-percentile reserve boundary, final framing and sidecar/cache integration. All application
 modules import, sources compile and original asset hashes are preserved.
 
-The existing cross-platform development workflow checks Windows, Linux and
-macOS, plus German/English GUI smoke on Linux. Remote results will be recorded
-after the code commit is checked. It publishes no application packages.
+Remote validation completed successfully in
+[GitHub Actions run 39483335706](https://github.com/muelli1975/StereoFine/actions/runs/39483335706)
+for code commit `9677d6afcc0f56468048a821400ce89d6d0527d5`:
+
+| Runner | Application tests | Research tests | Additional checks |
+| --- | ---: | ---: | --- |
+| Windows 2022 | 166 passed | 42 passed | Compilation and original asset hashes passed |
+| Ubuntu 22.04 | 166 passed | 42 passed | Compilation, original asset hashes and German/English GUI smoke passed |
+| macOS 14 | 166 passed | 42 passed | Compilation and original asset hashes passed |
+
+CI uses Python 3.12.10 and the pinned runtime dependencies. Original-image
+comparisons ran locally; the platform jobs use public fixtures. No private
+originals were uploaded to GitHub Actions. The workflow publishes no packages.
 
 The S110 lower-right vertical alignment issue is separate and remains open.
 The alternative quadratic coefficient fit remains experimental. Published RC3
