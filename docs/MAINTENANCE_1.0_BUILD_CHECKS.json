@@ -1,0 +1,56 @@
+{
+  "build_commit": "ee9c9007978b53f43881a21fcde229fcf3896056",
+  "workflow_run": 39429618817,
+  "tests": 101,
+  "gui_languages": [
+    "de",
+    "en"
+  ],
+  "fit_warp_ast_unchanged": true,
+  "archives": [
+    {
+      "archive": "StereoFine_1.0_Windows_x64.zip",
+      "platform": "windows",
+      "commit": "ee9c9007978b53f43881a21fcde229fcf3896056",
+      "source_files": 84,
+      "sha256": "48df21cdf3008a09b6baef780e0204a858aecf0f1ac55de15d76a8f0591ad323",
+      "bytes": 112535072,
+      "exiftool": "13.59",
+      "artifact_sha256": "a2b595e361fdb1e7e40ce20d1a0f494ae275ece2322f1fae93bc561c292af6bb",
+      "passed": true
+    },
+    {
+      "archive": "StereoFine_1.0_Linux_x64.tar.gz",
+      "platform": "linux",
+      "commit": "ee9c9007978b53f43881a21fcde229fcf3896056",
+      "source_files": 84,
+      "sha256": "7c736e0597215d78f354f55139a66728671aa7a5d6a7e6068483f4792116ca1b",
+      "bytes": 157617246,
+      "exiftool": "13.59",
+      "artifact_sha256": "7c2fcf1fd2828a445f85b5ae249055125851d7e5954d8d2a8b956a8f9aeefb7d",
+      "passed": true
+    },
+    {
+      "archive": "StereoFine_1.0_macOS_AppleSilicon.zip",
+      "platform": "arm64",
+      "commit": "ee9c9007978b53f43881a21fcde229fcf3896056",
+      "source_files": 84,
+      "sha256": "9c0711f1c2bd967a8ff79c9bcce880b795c3dca5e89a579568128e2c550969e0",
+      "bytes": 100561870,
+      "exiftool": "13.59",
+      "artifact_sha256": "05b412c8f28a40decdd5ec20543ca0dfb91572d7ea806ce1b8eebba18aa8f618",
+      "passed": true
+    },
+    {
+      "archive": "StereoFine_1.0_macOS_Intel.zip",
+      "platform": "intel",
+      "commit": "ee9c9007978b53f43881a21fcde229fcf3896056",
+      "source_files": 84,
+      "sha256": "c6e150d2155c03fb48ba1edfdb08e9ac01f05449905266488015838ad19fb5c9",
+      "bytes": 91207229,
+      "exiftool": "13.59",
+      "artifact_sha256": "30e82bdaa1a7385aa0e37316ab93812ae7961b1a97d8d86df39a429c172697a0",
+      "passed": true
+    }
+  ]
+}

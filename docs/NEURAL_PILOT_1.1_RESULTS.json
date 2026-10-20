@@ -1,0 +1,3378 @@
+{
+  "processing_basis": "081275da0aa394d181f3debf9a8c2e361bdb37e5",
+  "purpose": "Offline research only; no runtime integration",
+  "device": "cpu",
+  "torch": "2.9.1+cpu",
+  "torchvision": "0.24.1+cpu",
+  "opencv": "4.13.0",
+  "numpy": "2.4.6",
+  "threads": 4,
+  "cpu_quota_cores": 8,
+  "memory_limit_gib": 8,
+  "timings_contended": true,
+  "lightglue_commit": "eb42fee2d71449efb0aa5c10549752b5d75384d8",
+  "aliked_commit": "683d7c65197395c0b3f01ebe76e1084a27e73a65",
+  "roma_commit": "95c9968145c8906b7b59383258e9f73b02853d89",
+  "dinov3_commit": "adc254450203739c8149213a7a69d8d905b4fcfa",
+  "weights": [
+    {
+      "file": "aliked-n16.pth",
+      "bytes": 2738091,
+      "sha256": "5be8704840ed662d9d8c561bf7279c222092674e7eb05fd0feab94899e9d82f2"
+    },
+    {
+      "file": "aliked_lightglue_v0-1_arxiv.pth",
+      "bytes": 47632827,
+      "sha256": "d975e965b105311a6143194852297dff4f02aea5cc2e10cecfed966ca0e22503"
+    },
+    {
+      "file": "romav2.0.1.pt",
+      "bytes": 1095883548,
+      "sha256": "1557dec0d21b62366465f7ff4d5fdf228cc695d0582e196ad2b80e05230828b7"
+    },
+    {
+      "file": "sift_lightglue_v0-1_arxiv.pth",
+      "bytes": 47632573,
+      "sha256": "5b52b8d9982d43532dc042606b346bb9594c9f5a4bd6f64362c63866287b4ac0"
+    }
+  ],
+  "failed_attempts": [
+    {
+      "kind": "roma_precise",
+      "case": "s110_bild090",
+      "setting": "precise: 800x800 low-resolution; 1280x1280 high-resolution; bidirectional",
+      "exit_code": 137,
+      "reason": "Exceeded the 8 GiB memory limit; no output matches or quality score"
+    }
+  ],
+  "case_results": [
+    {
+      "name": "ixus_bild008_lightglue_aliked",
+      "kind": "lightglue_aliked",
+      "points": 3158,
+      "matcher_seconds_contended": 82.84366228900035,
+      "source_baseline": {
+        "count": 1031,
+        "mean": 0.23917818667825488,
+        "p95": 0.6822271570770606
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1087,
+          "mean_px": 0.31761494278907776,
+          "p95_px": 1.125664234161377
+        },
+        {
+          "region": "TL20",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        },
+        {
+          "region": "TR20",
+          "count": 55,
+          "mean_px": 0.1774679571390152,
+          "p95_px": 0.37304937839508057
+        },
+        {
+          "region": "BL20",
+          "count": 49,
+          "mean_px": 0.29769662022590637,
+          "p95_px": 0.8091261386871338
+        },
+        {
+          "region": "BR20",
+          "count": 37,
+          "mean_px": 0.9781639575958252,
+          "p95_px": 1.5220831632614136
+        },
+        {
+          "region": "BR10",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 3158,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 1031,
+            "mean": 0.2593413817933221,
+            "p95": 0.6857210242217964
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1092,
+              "mean_px": 0.330680787563324,
+              "p95_px": 1.0780712366104126
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 61,
+              "mean_px": 0.12214244902133942,
+              "p95_px": 0.2581234574317932
+            },
+            {
+              "region": "BL20",
+              "count": 51,
+              "mean_px": 0.385709285736084,
+              "p95_px": 1.048805594444275
+            },
+            {
+              "region": "BR20",
+              "count": 39,
+              "mean_px": 0.9559969902038574,
+              "p95_px": 1.4329193830490112
+            },
+            {
+              "region": "BR10",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            }
+          ],
+          "near": 12.166666984558105,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 1325,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 1031,
+            "mean": 0.2276609758597784,
+            "p95": 0.6699242474323153
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1093,
+              "mean_px": 0.3014037013053894,
+              "p95_px": 1.105248212814331
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 61,
+              "mean_px": 0.1442645788192749,
+              "p95_px": 0.2880953550338745
+            },
+            {
+              "region": "BL20",
+              "count": 54,
+              "mean_px": 0.3569251298904419,
+              "p95_px": 0.936087965965271
+            },
+            {
+              "region": "BR20",
+              "count": 41,
+              "mean_px": 0.9552761912345886,
+              "p95_px": 1.3902753591537476
+            },
+            {
+              "region": "BR10",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            }
+          ],
+          "near": 12.166666984558105,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "ixus_bild008_lightglue_sift",
+      "kind": "lightglue_sift",
+      "points": 2111,
+      "matcher_seconds_contended": 19.933527364999463,
+      "source_baseline": {
+        "count": 1031,
+        "mean": 0.23917818667825488,
+        "p95": 0.6822271570770606
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1087,
+          "mean_px": 0.31761494278907776,
+          "p95_px": 1.125664234161377
+        },
+        {
+          "region": "TL20",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        },
+        {
+          "region": "TR20",
+          "count": 55,
+          "mean_px": 0.1774679571390152,
+          "p95_px": 0.37304937839508057
+        },
+        {
+          "region": "BL20",
+          "count": 49,
+          "mean_px": 0.29769662022590637,
+          "p95_px": 0.8091261386871338
+        },
+        {
+          "region": "BR20",
+          "count": 37,
+          "mean_px": 0.9781639575958252,
+          "p95_px": 1.5220831632614136
+        },
+        {
+          "region": "BR10",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 2111,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 1031,
+            "mean": 0.25220282887767803,
+            "p95": 0.686166962612712
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1096,
+              "mean_px": 0.3537198305130005,
+              "p95_px": 1.284580111503601
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 58,
+              "mean_px": 0.18532195687294006,
+              "p95_px": 0.4135378897190094
+            },
+            {
+              "region": "BL20",
+              "count": 55,
+              "mean_px": 0.49922800064086914,
+              "p95_px": 1.1619799137115479
+            },
+            {
+              "region": "BR20",
+              "count": 39,
+              "mean_px": 1.1493386030197144,
+              "p95_px": 1.6083992719650269
+            },
+            {
+              "region": "BR10",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            }
+          ],
+          "near": 12.458333969116211,
+          "uncertain": [
+            "near_edge_unconfirmed"
+          ]
+        },
+        {
+          "variant": "lk",
+          "points": 970,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 1031,
+            "mean": 0.23585662172788485,
+            "p95": 0.6711628789055339
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1093,
+              "mean_px": 0.32343947887420654,
+              "p95_px": 1.1337095499038696
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 56,
+              "mean_px": 0.133720263838768,
+              "p95_px": 0.24594256281852722
+            },
+            {
+              "region": "BL20",
+              "count": 50,
+              "mean_px": 0.4114731252193451,
+              "p95_px": 1.0114516019821167
+            },
+            {
+              "region": "BR20",
+              "count": 39,
+              "mean_px": 0.9358009696006775,
+              "p95_px": 1.4869929552078247
+            },
+            {
+              "region": "BR10",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            }
+          ],
+          "near": 12.5,
+          "uncertain": [
+            "near_edge_unconfirmed"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ixus_bild008_roma_fast",
+      "kind": "roma_fast",
+      "points": 5000,
+      "matcher_seconds_contended": 112.04477928599954,
+      "source_baseline": {
+        "count": 1031,
+        "mean": 0.23917818667825488,
+        "p95": 0.6822271570770606
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1087,
+          "mean_px": 0.31761494278907776,
+          "p95_px": 1.125664234161377
+        },
+        {
+          "region": "TL20",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        },
+        {
+          "region": "TR20",
+          "count": 55,
+          "mean_px": 0.1774679571390152,
+          "p95_px": 0.37304937839508057
+        },
+        {
+          "region": "BL20",
+          "count": 49,
+          "mean_px": 0.29769662022590637,
+          "p95_px": 0.8091261386871338
+        },
+        {
+          "region": "BR20",
+          "count": 37,
+          "mean_px": 0.9781639575958252,
+          "p95_px": 1.5220831632614136
+        },
+        {
+          "region": "BR10",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 5000,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 1031,
+            "mean": 0.3805211082135064,
+            "p95": 0.9056724655959746
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1114,
+              "mean_px": 0.375837504863739,
+              "p95_px": 0.9457257986068726
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 54,
+              "mean_px": 0.5119819045066833,
+              "p95_px": 0.7854737639427185
+            },
+            {
+              "region": "BL20",
+              "count": 60,
+              "mean_px": 0.30056846141815186,
+              "p95_px": 0.8093878030776978
+            },
+            {
+              "region": "BR20",
+              "count": 38,
+              "mean_px": 0.5061970949172974,
+              "p95_px": 0.9507415294647217
+            },
+            {
+              "region": "BR10",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            }
+          ],
+          "near": 12.734797526594345,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 772,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 1031,
+            "mean": 0.26115694136130274,
+            "p95": 0.7043647374437114
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1086,
+              "mean_px": 0.2842816114425659,
+              "p95_px": 0.8501453399658203
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 54,
+              "mean_px": 0.21317720413208008,
+              "p95_px": 0.4353489875793457
+            },
+            {
+              "region": "BL20",
+              "count": 52,
+              "mean_px": 0.33593517541885376,
+              "p95_px": 0.854735791683197
+            },
+            {
+              "region": "BR20",
+              "count": 40,
+              "mean_px": 0.33977198600769043,
+              "p95_px": 0.8399112224578857
+            },
+            {
+              "region": "BR10",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            }
+          ],
+          "near": 12.722146900532115,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "nx1000_bild033_lightglue_aliked",
+      "kind": "lightglue_aliked",
+      "points": 2565,
+      "matcher_seconds_contended": 50.87468702800106,
+      "source_baseline": {
+        "count": 967,
+        "mean": 0.6813336378882974,
+        "p95": 2.2814509247056907
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1803,
+          "mean_px": 1.731907844543457,
+          "p95_px": 6.241450309753418
+        },
+        {
+          "region": "TL20",
+          "count": 18,
+          "mean_px": 7.014723777770996,
+          "p95_px": 14.381217002868652
+        },
+        {
+          "region": "TR20",
+          "count": 118,
+          "mean_px": 7.120908260345459,
+          "p95_px": 17.298351287841797
+        },
+        {
+          "region": "BL20",
+          "count": 61,
+          "mean_px": 0.5898940563201904,
+          "p95_px": 1.252868413925171
+        },
+        {
+          "region": "BR20",
+          "count": 49,
+          "mean_px": 0.3402042090892792,
+          "p95_px": 0.898105800151825
+        },
+        {
+          "region": "BR10",
+          "count": 7,
+          "mean_px": 0.7631660103797913,
+          "p95_px": 1.2402801513671875
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 2565,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 967,
+            "mean": 0.5986378491335225,
+            "p95": 1.6819096911756526
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1813,
+              "mean_px": 1.2221215963363647,
+              "p95_px": 4.7792229652404785
+            },
+            {
+              "region": "TL20",
+              "count": 25,
+              "mean_px": 4.826516151428223,
+              "p95_px": 10.717924118041992
+            },
+            {
+              "region": "TR20",
+              "count": 118,
+              "mean_px": 4.999110698699951,
+              "p95_px": 15.443284034729004
+            },
+            {
+              "region": "BL20",
+              "count": 60,
+              "mean_px": 0.6224879622459412,
+              "p95_px": 1.0788711309432983
+            },
+            {
+              "region": "BR20",
+              "count": 43,
+              "mean_px": 0.3784101605415344,
+              "p95_px": 1.15053129196167
+            },
+            {
+              "region": "BR10",
+              "count": 5,
+              "mean_px": 0.8708570599555969,
+              "p95_px": 1.497710108757019
+            }
+          ],
+          "near": -4.618765735711807,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 1286,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 967,
+            "mean": 0.5860630141675485,
+            "p95": 1.704314452933872
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1814,
+              "mean_px": 1.027490258216858,
+              "p95_px": 3.217270612716675
+            },
+            {
+              "region": "TL20",
+              "count": 18,
+              "mean_px": 4.727691173553467,
+              "p95_px": 8.81485366821289
+            },
+            {
+              "region": "TR20",
+              "count": 119,
+              "mean_px": 1.4062987565994263,
+              "p95_px": 2.080035448074341
+            },
+            {
+              "region": "BL20",
+              "count": 55,
+              "mean_px": 0.7781555652618408,
+              "p95_px": 1.577541708946228
+            },
+            {
+              "region": "BR20",
+              "count": 37,
+              "mean_px": 0.4162275493144989,
+              "p95_px": 1.3861397504806519
+            },
+            {
+              "region": "BR10",
+              "count": 3,
+              "mean_px": 1.4413729906082153,
+              "p95_px": 1.924708604812622
+            }
+          ],
+          "near": -3.4446323906413387,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "nx1000_bild033_lightglue_sift",
+      "kind": "lightglue_sift",
+      "points": 2079,
+      "matcher_seconds_contended": 31.32152117499936,
+      "source_baseline": {
+        "count": 967,
+        "mean": 0.6813336378882974,
+        "p95": 2.2814509247056907
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1803,
+          "mean_px": 1.731907844543457,
+          "p95_px": 6.241450309753418
+        },
+        {
+          "region": "TL20",
+          "count": 18,
+          "mean_px": 7.014723777770996,
+          "p95_px": 14.381217002868652
+        },
+        {
+          "region": "TR20",
+          "count": 118,
+          "mean_px": 7.120908260345459,
+          "p95_px": 17.298351287841797
+        },
+        {
+          "region": "BL20",
+          "count": 61,
+          "mean_px": 0.5898940563201904,
+          "p95_px": 1.252868413925171
+        },
+        {
+          "region": "BR20",
+          "count": 49,
+          "mean_px": 0.3402042090892792,
+          "p95_px": 0.898105800151825
+        },
+        {
+          "region": "BR10",
+          "count": 7,
+          "mean_px": 0.7631660103797913,
+          "p95_px": 1.2402801513671875
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 2079,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 967,
+            "mean": 0.6024970685268323,
+            "p95": 1.6171121349540178
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1797,
+              "mean_px": 1.0355514287948608,
+              "p95_px": 3.178037405014038
+            },
+            {
+              "region": "TL20",
+              "count": 19,
+              "mean_px": 4.70844841003418,
+              "p95_px": 9.246465682983398
+            },
+            {
+              "region": "TR20",
+              "count": 121,
+              "mean_px": 1.2419548034667969,
+              "p95_px": 2.024644613265991
+            },
+            {
+              "region": "BL20",
+              "count": 58,
+              "mean_px": 0.8051495552062988,
+              "p95_px": 1.5544540882110596
+            },
+            {
+              "region": "BR20",
+              "count": 42,
+              "mean_px": 0.44797465205192566,
+              "p95_px": 1.5676637887954712
+            },
+            {
+              "region": "BR10",
+              "count": 4,
+              "mean_px": 1.3457366228103638,
+              "p95_px": 1.8745450973510742
+            }
+          ],
+          "near": -3.2391897372966194,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 1071,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 967,
+            "mean": 0.6685670758021599,
+            "p95": 2.5401430534604232
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1829,
+              "mean_px": 1.7875930070877075,
+              "p95_px": 5.9648237228393555
+            },
+            {
+              "region": "TL20",
+              "count": 19,
+              "mean_px": 5.591022491455078,
+              "p95_px": 12.42476749420166
+            },
+            {
+              "region": "TR20",
+              "count": 119,
+              "mean_px": 4.0849809646606445,
+              "p95_px": 10.441954612731934
+            },
+            {
+              "region": "BL20",
+              "count": 63,
+              "mean_px": 0.5438286662101746,
+              "p95_px": 1.0551553964614868
+            },
+            {
+              "region": "BR20",
+              "count": 38,
+              "mean_px": 0.5140426158905029,
+              "p95_px": 1.9354376792907715
+            },
+            {
+              "region": "BR10",
+              "count": 5,
+              "mean_px": 1.717342734336853,
+              "p95_px": 2.3261542320251465
+            }
+          ],
+          "near": -4.312189315822373,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "nx1000_bild033_roma_fast",
+      "kind": "roma_fast",
+      "points": 5000,
+      "matcher_seconds_contended": 163.8041888919979,
+      "source_baseline": {
+        "count": 967,
+        "mean": 0.6813336378882974,
+        "p95": 2.2814509247056907
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1803,
+          "mean_px": 1.731907844543457,
+          "p95_px": 6.241450309753418
+        },
+        {
+          "region": "TL20",
+          "count": 18,
+          "mean_px": 7.014723777770996,
+          "p95_px": 14.381217002868652
+        },
+        {
+          "region": "TR20",
+          "count": 118,
+          "mean_px": 7.120908260345459,
+          "p95_px": 17.298351287841797
+        },
+        {
+          "region": "BL20",
+          "count": 61,
+          "mean_px": 0.5898940563201904,
+          "p95_px": 1.252868413925171
+        },
+        {
+          "region": "BR20",
+          "count": 49,
+          "mean_px": 0.3402042090892792,
+          "p95_px": 0.898105800151825
+        },
+        {
+          "region": "BR10",
+          "count": 7,
+          "mean_px": 0.7631660103797913,
+          "p95_px": 1.2402801513671875
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 5000,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 967,
+            "mean": 1.5458231787101981,
+            "p95": 5.276726420258918
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1691,
+              "mean_px": 1.540071964263916,
+              "p95_px": 4.814674377441406
+            },
+            {
+              "region": "TL20",
+              "count": 20,
+              "mean_px": 4.72878360748291,
+              "p95_px": 7.308994770050049
+            },
+            {
+              "region": "TR20",
+              "count": 118,
+              "mean_px": 0.5511011481285095,
+              "p95_px": 1.1108744144439697
+            },
+            {
+              "region": "BL20",
+              "count": 56,
+              "mean_px": 4.916337013244629,
+              "p95_px": 6.961352348327637
+            },
+            {
+              "region": "BR20",
+              "count": 41,
+              "mean_px": 0.5820499658584595,
+              "p95_px": 1.301969051361084
+            },
+            {
+              "region": "BR10",
+              "count": 9,
+              "mean_px": 0.5785053372383118,
+              "p95_px": 1.407781720161438
+            }
+          ],
+          "near": -5.691857002989417,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 1004,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 967,
+            "mean": 0.6870674352906115,
+            "p95": 1.935273449914256
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1755,
+              "mean_px": 1.2113548517227173,
+              "p95_px": 3.9440462589263916
+            },
+            {
+              "region": "TL20",
+              "count": 18,
+              "mean_px": 5.171187400817871,
+              "p95_px": 12.028888702392578
+            },
+            {
+              "region": "TR20",
+              "count": 121,
+              "mean_px": 1.9079387187957764,
+              "p95_px": 7.123187065124512
+            },
+            {
+              "region": "BL20",
+              "count": 59,
+              "mean_px": 0.7058119177818298,
+              "p95_px": 1.718519926071167
+            },
+            {
+              "region": "BR20",
+              "count": 47,
+              "mean_px": 0.4967830777168274,
+              "p95_px": 1.0396966934204102
+            },
+            {
+              "region": "BR10",
+              "count": 9,
+              "mean_px": 0.732857346534729,
+              "p95_px": 1.121322512626648
+            }
+          ],
+          "near": -3.4597150456231422,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "nx1000_bild045_lightglue_aliked",
+      "kind": "lightglue_aliked",
+      "points": 3267,
+      "matcher_seconds_contended": 45.48103822300254,
+      "source_baseline": {
+        "count": 1236,
+        "mean": 0.32986516552608147,
+        "p95": 0.9186152288971343
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1992,
+          "mean_px": 0.7647880911827087,
+          "p95_px": 3.5121374130249023
+        },
+        {
+          "region": "TL20",
+          "count": 74,
+          "mean_px": 3.8588178157806396,
+          "p95_px": 8.838186264038086
+        },
+        {
+          "region": "TR20",
+          "count": 38,
+          "mean_px": 2.541259527206421,
+          "p95_px": 5.3740434646606445
+        },
+        {
+          "region": "BL20",
+          "count": 15,
+          "mean_px": 0.25573715567588806,
+          "p95_px": 0.6443386077880859
+        },
+        {
+          "region": "BR20",
+          "count": 22,
+          "mean_px": 0.39265966415405273,
+          "p95_px": 1.0128586292266846
+        },
+        {
+          "region": "BR10",
+          "count": 4,
+          "mean_px": 1.2186640501022339,
+          "p95_px": 2.080272674560547
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 3267,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 1236,
+            "mean": 0.3226745810881485,
+            "p95": 0.8902361047403519
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1989,
+              "mean_px": 0.864504337310791,
+              "p95_px": 4.737179279327393
+            },
+            {
+              "region": "TL20",
+              "count": 70,
+              "mean_px": 4.930727005004883,
+              "p95_px": 8.298309326171875
+            },
+            {
+              "region": "TR20",
+              "count": 38,
+              "mean_px": 2.5679211616516113,
+              "p95_px": 5.492980480194092
+            },
+            {
+              "region": "BL20",
+              "count": 16,
+              "mean_px": 0.2693176567554474,
+              "p95_px": 0.6836115121841431
+            },
+            {
+              "region": "BR20",
+              "count": 19,
+              "mean_px": 0.3601294457912445,
+              "p95_px": 1.0093251466751099
+            },
+            {
+              "region": "BR10",
+              "count": 4,
+              "mean_px": 1.0860769748687744,
+              "p95_px": 1.9023191928863525
+            }
+          ],
+          "near": 12.788999899814113,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 1598,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 1236,
+            "mean": 0.32520013496597616,
+            "p95": 0.9601270558664146
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1993,
+              "mean_px": 0.791848361492157,
+              "p95_px": 4.366178035736084
+            },
+            {
+              "region": "TL20",
+              "count": 69,
+              "mean_px": 4.642236709594727,
+              "p95_px": 9.143719673156738
+            },
+            {
+              "region": "TR20",
+              "count": 33,
+              "mean_px": 2.627042531967163,
+              "p95_px": 5.2404398918151855
+            },
+            {
+              "region": "BL20",
+              "count": 13,
+              "mean_px": 0.19539853930473328,
+              "p95_px": 0.4488857686519623
+            },
+            {
+              "region": "BR20",
+              "count": 20,
+              "mean_px": 0.4093974232673645,
+              "p95_px": 1.138732671737671
+            },
+            {
+              "region": "BR10",
+              "count": 4,
+              "mean_px": 1.2747457027435303,
+              "p95_px": 2.119840383529663
+            }
+          ],
+          "near": 11.63899796906764,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "nx1000_bild045_lightglue_sift",
+      "kind": "lightglue_sift",
+      "points": 2002,
+      "matcher_seconds_contended": 26.548515147002036,
+      "source_baseline": {
+        "count": 1236,
+        "mean": 0.32986516552608147,
+        "p95": 0.9186152288971343
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1992,
+          "mean_px": 0.7647880911827087,
+          "p95_px": 3.5121374130249023
+        },
+        {
+          "region": "TL20",
+          "count": 74,
+          "mean_px": 3.8588178157806396,
+          "p95_px": 8.838186264038086
+        },
+        {
+          "region": "TR20",
+          "count": 38,
+          "mean_px": 2.541259527206421,
+          "p95_px": 5.3740434646606445
+        },
+        {
+          "region": "BL20",
+          "count": 15,
+          "mean_px": 0.25573715567588806,
+          "p95_px": 0.6443386077880859
+        },
+        {
+          "region": "BR20",
+          "count": 22,
+          "mean_px": 0.39265966415405273,
+          "p95_px": 1.0128586292266846
+        },
+        {
+          "region": "BR10",
+          "count": 4,
+          "mean_px": 1.2186640501022339,
+          "p95_px": 2.080272674560547
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 2002,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 1236,
+            "mean": 0.3276488022278155,
+            "p95": 0.9171030975286139
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1995,
+              "mean_px": 0.8248803019523621,
+              "p95_px": 4.286207675933838
+            },
+            {
+              "region": "TL20",
+              "count": 73,
+              "mean_px": 4.62723970413208,
+              "p95_px": 8.100051879882812
+            },
+            {
+              "region": "TR20",
+              "count": 32,
+              "mean_px": 2.7259745597839355,
+              "p95_px": 5.610726833343506
+            },
+            {
+              "region": "BL20",
+              "count": 14,
+              "mean_px": 0.23276202380657196,
+              "p95_px": 0.5773229598999023
+            },
+            {
+              "region": "BR20",
+              "count": 22,
+              "mean_px": 0.46273231506347656,
+              "p95_px": 0.7976342439651489
+            },
+            {
+              "region": "BR10",
+              "count": 6,
+              "mean_px": 0.8670310378074646,
+              "p95_px": 1.6552062034606934
+            }
+          ],
+          "near": 12.495755997900241,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 1484,
+          "model": "Affine + yCubic",
+          "source_quality": {
+            "count": 1236,
+            "mean": 0.1947691665646884,
+            "p95": 0.5036391896929108
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 2042,
+              "mean_px": 0.5548399686813354,
+              "p95_px": 3.1875555515289307
+            },
+            {
+              "region": "TL20",
+              "count": 64,
+              "mean_px": 3.083355188369751,
+              "p95_px": 8.746068954467773
+            },
+            {
+              "region": "TR20",
+              "count": 31,
+              "mean_px": 2.2763330936431885,
+              "p95_px": 7.231145858764648
+            },
+            {
+              "region": "BL20",
+              "count": 16,
+              "mean_px": 0.2529245615005493,
+              "p95_px": 0.5616652369499207
+            },
+            {
+              "region": "BR20",
+              "count": 21,
+              "mean_px": 0.25014346837997437,
+              "p95_px": 0.46120166778564453
+            },
+            {
+              "region": "BR10",
+              "count": 4,
+              "mean_px": 0.32416608929634094,
+              "p95_px": 0.4230857491493225
+            }
+          ],
+          "near": 11.556018952803475,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "s110_bild005_lightglue_aliked",
+      "kind": "lightglue_aliked",
+      "points": 2390,
+      "matcher_seconds_contended": 33.62321091299964,
+      "source_baseline": {
+        "count": 1515,
+        "mean": 0.37477559000256666,
+        "p95": 1.0550777514397869
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1508,
+          "mean_px": 0.3724666237831116,
+          "p95_px": 0.9204028248786926
+        },
+        {
+          "region": "TL20",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        },
+        {
+          "region": "TR20",
+          "count": 6,
+          "mean_px": 2.9592206478118896,
+          "p95_px": 3.476945400238037
+        },
+        {
+          "region": "BL20",
+          "count": 150,
+          "mean_px": 0.3883523941040039,
+          "p95_px": 1.0376877784729004
+        },
+        {
+          "region": "BR20",
+          "count": 128,
+          "mean_px": 0.44590190052986145,
+          "p95_px": 1.0162559747695923
+        },
+        {
+          "region": "BR10",
+          "count": 18,
+          "mean_px": 0.7069435715675354,
+          "p95_px": 1.2463899850845337
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 2390,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 1515,
+            "mean": 0.37806612931018185,
+            "p95": 1.1013822704904241
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1522,
+              "mean_px": 0.36792582273483276,
+              "p95_px": 0.9243775010108948
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 4,
+              "mean_px": 2.106109857559204,
+              "p95_px": 2.2959444522857666
+            },
+            {
+              "region": "BL20",
+              "count": 149,
+              "mean_px": 0.4620645046234131,
+              "p95_px": 1.1719110012054443
+            },
+            {
+              "region": "BR20",
+              "count": 127,
+              "mean_px": 0.4022933840751648,
+              "p95_px": 0.9415811896324158
+            },
+            {
+              "region": "BR10",
+              "count": 17,
+              "mean_px": 0.6220113635063171,
+              "p95_px": 1.1840449571609497
+            }
+          ],
+          "near": 38.28842855930791,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 1618,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 1515,
+            "mean": 0.36718833328648814,
+            "p95": 1.1529797063850324
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1529,
+              "mean_px": 0.3486209213733673,
+              "p95_px": 0.9431896805763245
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 4,
+              "mean_px": 3.3479504585266113,
+              "p95_px": 3.5926740169525146
+            },
+            {
+              "region": "BL20",
+              "count": 148,
+              "mean_px": 0.48369166254997253,
+              "p95_px": 1.2477357387542725
+            },
+            {
+              "region": "BR20",
+              "count": 130,
+              "mean_px": 0.3881145715713501,
+              "p95_px": 0.9481703639030457
+            },
+            {
+              "region": "BR10",
+              "count": 17,
+              "mean_px": 0.5038806200027466,
+              "p95_px": 1.1599124670028687
+            }
+          ],
+          "near": 37.634805371900185,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "s110_bild005_lightglue_sift",
+      "kind": "lightglue_sift",
+      "points": 2171,
+      "matcher_seconds_contended": 28.19681548099834,
+      "source_baseline": {
+        "count": 1515,
+        "mean": 0.37477559000256666,
+        "p95": 1.0550777514397869
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1508,
+          "mean_px": 0.3724666237831116,
+          "p95_px": 0.9204028248786926
+        },
+        {
+          "region": "TL20",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        },
+        {
+          "region": "TR20",
+          "count": 6,
+          "mean_px": 2.9592206478118896,
+          "p95_px": 3.476945400238037
+        },
+        {
+          "region": "BL20",
+          "count": 150,
+          "mean_px": 0.3883523941040039,
+          "p95_px": 1.0376877784729004
+        },
+        {
+          "region": "BR20",
+          "count": 128,
+          "mean_px": 0.44590190052986145,
+          "p95_px": 1.0162559747695923
+        },
+        {
+          "region": "BR10",
+          "count": 18,
+          "mean_px": 0.7069435715675354,
+          "p95_px": 1.2463899850845337
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 2171,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 1515,
+            "mean": 0.3970944142109795,
+            "p95": 1.0722218762492919
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1517,
+              "mean_px": 0.41937050223350525,
+              "p95_px": 0.9895021319389343
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 4,
+              "mean_px": 4.054965972900391,
+              "p95_px": 4.361205101013184
+            },
+            {
+              "region": "BL20",
+              "count": 149,
+              "mean_px": 0.4530920386314392,
+              "p95_px": 1.1003702878952026
+            },
+            {
+              "region": "BR20",
+              "count": 131,
+              "mean_px": 0.33919093012809753,
+              "p95_px": 0.8621783256530762
+            },
+            {
+              "region": "BR10",
+              "count": 17,
+              "mean_px": 0.5891488790512085,
+              "p95_px": 1.1233750581741333
+            }
+          ],
+          "near": 38.21564376370762,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 1587,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 1515,
+            "mean": 0.3537314146880576,
+            "p95": 1.0640994745133205
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1508,
+              "mean_px": 0.3549928665161133,
+              "p95_px": 0.9980840086936951
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 4,
+              "mean_px": 4.136959075927734,
+              "p95_px": 4.45942497253418
+            },
+            {
+              "region": "BL20",
+              "count": 149,
+              "mean_px": 0.40219736099243164,
+              "p95_px": 1.1249943971633911
+            },
+            {
+              "region": "BR20",
+              "count": 129,
+              "mean_px": 0.3588680326938629,
+              "p95_px": 0.8889878988265991
+            },
+            {
+              "region": "BR10",
+              "count": 17,
+              "mean_px": 0.5185351967811584,
+              "p95_px": 1.0990374088287354
+            }
+          ],
+          "near": 38.424413960911465,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "s110_bild026_lightglue_aliked",
+      "kind": "lightglue_aliked",
+      "points": 3106,
+      "matcher_seconds_contended": 51.44693810300305,
+      "source_baseline": {
+        "count": 1339,
+        "mean": 0.3819617089435775,
+        "p95": 0.988807909543929
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1177,
+          "mean_px": 0.42248091101646423,
+          "p95_px": 1.099645733833313
+        },
+        {
+          "region": "TL20",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        },
+        {
+          "region": "TR20",
+          "count": 25,
+          "mean_px": 0.3781367540359497,
+          "p95_px": 0.8025976419448853
+        },
+        {
+          "region": "BL20",
+          "count": 52,
+          "mean_px": 0.41689586639404297,
+          "p95_px": 0.7828183174133301
+        },
+        {
+          "region": "BR20",
+          "count": 16,
+          "mean_px": 0.4516999125480652,
+          "p95_px": 0.8481835126876831
+        },
+        {
+          "region": "BR10",
+          "count": 6,
+          "mean_px": 0.6316651701927185,
+          "p95_px": 0.9056987762451172
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 3106,
+          "model": "Affine + yCubic",
+          "source_quality": {
+            "count": 1339,
+            "mean": 0.44168292199168097,
+            "p95": 1.1430202357173151
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1155,
+              "mean_px": 0.4836568534374237,
+              "p95_px": 1.2145700454711914
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 18,
+              "mean_px": 0.4379798173904419,
+              "p95_px": 0.8885747790336609
+            },
+            {
+              "region": "BL20",
+              "count": 65,
+              "mean_px": 0.34508270025253296,
+              "p95_px": 0.5727004408836365
+            },
+            {
+              "region": "BR20",
+              "count": 26,
+              "mean_px": 0.28352442383766174,
+              "p95_px": 0.6207740902900696
+            },
+            {
+              "region": "BR10",
+              "count": 9,
+              "mean_px": 0.382637083530426,
+              "p95_px": 0.6185900568962097
+            }
+          ],
+          "near": 33.7842954369228,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 1501,
+          "model": "Affine + yCubic",
+          "source_quality": {
+            "count": 1339,
+            "mean": 0.3790786457318382,
+            "p95": 1.0026174334139062
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1176,
+              "mean_px": 0.43077710270881653,
+              "p95_px": 1.1188327074050903
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 22,
+              "mean_px": 0.4064503610134125,
+              "p95_px": 0.8920767307281494
+            },
+            {
+              "region": "BL20",
+              "count": 57,
+              "mean_px": 0.41785869002342224,
+              "p95_px": 0.7217163443565369
+            },
+            {
+              "region": "BR20",
+              "count": 18,
+              "mean_px": 0.4229053556919098,
+              "p95_px": 0.8550423979759216
+            },
+            {
+              "region": "BR10",
+              "count": 7,
+              "mean_px": 0.6100930571556091,
+              "p95_px": 0.9072331190109253
+            }
+          ],
+          "near": 33.78029115824772,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "s110_bild026_lightglue_sift",
+      "kind": "lightglue_sift",
+      "points": 2031,
+      "matcher_seconds_contended": 25.202218448997883,
+      "source_baseline": {
+        "count": 1339,
+        "mean": 0.3819617089435775,
+        "p95": 0.988807909543929
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1177,
+          "mean_px": 0.42248091101646423,
+          "p95_px": 1.099645733833313
+        },
+        {
+          "region": "TL20",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        },
+        {
+          "region": "TR20",
+          "count": 25,
+          "mean_px": 0.3781367540359497,
+          "p95_px": 0.8025976419448853
+        },
+        {
+          "region": "BL20",
+          "count": 52,
+          "mean_px": 0.41689586639404297,
+          "p95_px": 0.7828183174133301
+        },
+        {
+          "region": "BR20",
+          "count": 16,
+          "mean_px": 0.4516999125480652,
+          "p95_px": 0.8481835126876831
+        },
+        {
+          "region": "BR10",
+          "count": 6,
+          "mean_px": 0.6316651701927185,
+          "p95_px": 0.9056987762451172
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 2031,
+          "model": "Affine + yCubic",
+          "source_quality": {
+            "count": 1339,
+            "mean": 0.5447244476948038,
+            "p95": 1.8806841514009953
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1088,
+              "mean_px": 0.7108107209205627,
+              "p95_px": 1.9154936075210571
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 18,
+              "mean_px": 0.2077339142560959,
+              "p95_px": 0.6489218473434448
+            },
+            {
+              "region": "BL20",
+              "count": 26,
+              "mean_px": 1.6905449628829956,
+              "p95_px": 3.2002172470092773
+            },
+            {
+              "region": "BR20",
+              "count": 11,
+              "mean_px": 4.016833305358887,
+              "p95_px": 6.807315349578857
+            },
+            {
+              "region": "BR10",
+              "count": 4,
+              "mean_px": 6.546457767486572,
+              "p95_px": 6.808366298675537
+            }
+          ],
+          "near": 34.54368291534722,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 923,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 1339,
+            "mean": 0.44400641836708926,
+            "p95": 1.3290171491596219
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1157,
+              "mean_px": 0.6793530583381653,
+              "p95_px": 2.11568021774292
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 23,
+              "mean_px": 0.23358817398548126,
+              "p95_px": 0.5996046662330627
+            },
+            {
+              "region": "BL20",
+              "count": 57,
+              "mean_px": 2.0842552185058594,
+              "p95_px": 2.559041976928711
+            },
+            {
+              "region": "BR20",
+              "count": 10,
+              "mean_px": 2.1855342388153076,
+              "p95_px": 3.2230067253112793
+            },
+            {
+              "region": "BR10",
+              "count": 7,
+              "mean_px": 2.7259631156921387,
+              "p95_px": 3.228046417236328
+            }
+          ],
+          "near": 33.73754316842217,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "s110_bild026_roma_fast",
+      "kind": "roma_fast",
+      "points": 5000,
+      "matcher_seconds_contended": 85.41947747000086,
+      "source_baseline": {
+        "count": 1339,
+        "mean": 0.3819617089435775,
+        "p95": 0.988807909543929
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1177,
+          "mean_px": 0.42248091101646423,
+          "p95_px": 1.099645733833313
+        },
+        {
+          "region": "TL20",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        },
+        {
+          "region": "TR20",
+          "count": 25,
+          "mean_px": 0.3781367540359497,
+          "p95_px": 0.8025976419448853
+        },
+        {
+          "region": "BL20",
+          "count": 52,
+          "mean_px": 0.41689586639404297,
+          "p95_px": 0.7828183174133301
+        },
+        {
+          "region": "BR20",
+          "count": 16,
+          "mean_px": 0.4516999125480652,
+          "p95_px": 0.8481835126876831
+        },
+        {
+          "region": "BR10",
+          "count": 6,
+          "mean_px": 0.6316651701927185,
+          "p95_px": 0.9056987762451172
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 5000,
+          "model": "Affine + yCubic",
+          "source_quality": {
+            "count": 1339,
+            "mean": 0.40787003843394937,
+            "p95": 1.0240895274402384
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1175,
+              "mean_px": 0.4609745740890503,
+              "p95_px": 1.2199543714523315
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 21,
+              "mean_px": 0.3155589699745178,
+              "p95_px": 0.6365768909454346
+            },
+            {
+              "region": "BL20",
+              "count": 55,
+              "mean_px": 0.36806491017341614,
+              "p95_px": 0.7365057468414307
+            },
+            {
+              "region": "BR20",
+              "count": 21,
+              "mean_px": 0.4498731195926666,
+              "p95_px": 0.7581505179405212
+            },
+            {
+              "region": "BR10",
+              "count": 8,
+              "mean_px": 0.5901445746421814,
+              "p95_px": 0.8491151928901672
+            }
+          ],
+          "near": 33.81658754159183,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 2049,
+          "model": "Affine + yCubic",
+          "source_quality": {
+            "count": 1339,
+            "mean": 0.3737088199810071,
+            "p95": 0.9811409129098306
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1189,
+              "mean_px": 0.4214445650577545,
+              "p95_px": 1.0814902782440186
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 22,
+              "mean_px": 0.32235291600227356,
+              "p95_px": 0.779901921749115
+            },
+            {
+              "region": "BL20",
+              "count": 50,
+              "mean_px": 0.45775505900382996,
+              "p95_px": 0.8871639370918274
+            },
+            {
+              "region": "BR20",
+              "count": 21,
+              "mean_px": 0.40465858578681946,
+              "p95_px": 0.8357779383659363
+            },
+            {
+              "region": "BR10",
+              "count": 7,
+              "mean_px": 0.6131772994995117,
+              "p95_px": 0.9257034063339233
+            }
+          ],
+          "near": 32.457690853042635,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "s110_bild090_lightglue_aliked",
+      "kind": "lightglue_aliked",
+      "points": 3353,
+      "matcher_seconds_contended": 53.37744180499794,
+      "source_baseline": {
+        "count": 2162,
+        "mean": 0.25136224701746984,
+        "p95": 0.7681986849518256
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1674,
+          "mean_px": 0.2743893563747406,
+          "p95_px": 0.7581914663314819
+        },
+        {
+          "region": "TL20",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        },
+        {
+          "region": "TR20",
+          "count": 31,
+          "mean_px": 0.6534106731414795,
+          "p95_px": 1.5232772827148438
+        },
+        {
+          "region": "BL20",
+          "count": 14,
+          "mean_px": 0.2143389880657196,
+          "p95_px": 0.610914409160614
+        },
+        {
+          "region": "BR20",
+          "count": 87,
+          "mean_px": 0.6808817386627197,
+          "p95_px": 1.9516791105270386
+        },
+        {
+          "region": "BR10",
+          "count": 6,
+          "mean_px": 1.8571271896362305,
+          "p95_px": 2.873633623123169
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 3353,
+          "model": "Affine + yCubic",
+          "source_quality": {
+            "count": 2162,
+            "mean": 0.2600070898234693,
+            "p95": 0.721715065323503
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1644,
+              "mean_px": 0.26917764544487,
+              "p95_px": 0.7409629225730896
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 27,
+              "mean_px": 0.6607306599617004,
+              "p95_px": 1.5455641746520996
+            },
+            {
+              "region": "BL20",
+              "count": 12,
+              "mean_px": 0.20286905765533447,
+              "p95_px": 0.5163241028785706
+            },
+            {
+              "region": "BR20",
+              "count": 90,
+              "mean_px": 0.617730438709259,
+              "p95_px": 1.6578960418701172
+            },
+            {
+              "region": "BR10",
+              "count": 5,
+              "mean_px": 1.9098514318466187,
+              "p95_px": 3.0127041339874268
+            }
+          ],
+          "near": 34.54624320275597,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 2346,
+          "model": "Affine + yCubic",
+          "source_quality": {
+            "count": 2162,
+            "mean": 0.2800391400743328,
+            "p95": 0.7905305878048298
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1664,
+              "mean_px": 0.2915743291378021,
+              "p95_px": 0.7664440274238586
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 27,
+              "mean_px": 0.7145123481750488,
+              "p95_px": 1.6790437698364258
+            },
+            {
+              "region": "BL20",
+              "count": 8,
+              "mean_px": 0.1789112538099289,
+              "p95_px": 0.35404011607170105
+            },
+            {
+              "region": "BR20",
+              "count": 85,
+              "mean_px": 0.6277432441711426,
+              "p95_px": 1.7373533248901367
+            },
+            {
+              "region": "BR10",
+              "count": 5,
+              "mean_px": 2.07257342338562,
+              "p95_px": 3.103750228881836
+            }
+          ],
+          "near": 35.24607593862973,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "s110_bild090_lightglue_sift",
+      "kind": "lightglue_sift",
+      "points": 2298,
+      "matcher_seconds_contended": 45.04515955899842,
+      "source_baseline": {
+        "count": 2162,
+        "mean": 0.25136224701746984,
+        "p95": 0.7681986849518256
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1674,
+          "mean_px": 0.2743893563747406,
+          "p95_px": 0.7581914663314819
+        },
+        {
+          "region": "TL20",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        },
+        {
+          "region": "TR20",
+          "count": 31,
+          "mean_px": 0.6534106731414795,
+          "p95_px": 1.5232772827148438
+        },
+        {
+          "region": "BL20",
+          "count": 14,
+          "mean_px": 0.2143389880657196,
+          "p95_px": 0.610914409160614
+        },
+        {
+          "region": "BR20",
+          "count": 87,
+          "mean_px": 0.6808817386627197,
+          "p95_px": 1.9516791105270386
+        },
+        {
+          "region": "BR10",
+          "count": 6,
+          "mean_px": 1.8571271896362305,
+          "p95_px": 2.873633623123169
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 2298,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 2162,
+            "mean": 0.4068917773726138,
+            "p95": 1.0566612309464758
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1593,
+              "mean_px": 0.4896261394023895,
+              "p95_px": 1.0976063013076782
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 27,
+              "mean_px": 0.6446722745895386,
+              "p95_px": 1.5711877346038818
+            },
+            {
+              "region": "BL20",
+              "count": 14,
+              "mean_px": 0.19223186373710632,
+              "p95_px": 0.5812914371490479
+            },
+            {
+              "region": "BR20",
+              "count": 87,
+              "mean_px": 0.7868672609329224,
+              "p95_px": 2.0045406818389893
+            },
+            {
+              "region": "BR10",
+              "count": 5,
+              "mean_px": 1.5317190885543823,
+              "p95_px": 2.613227367401123
+            }
+          ],
+          "near": 34.34737221236873,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 1893,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 2162,
+            "mean": 0.35578857055325513,
+            "p95": 0.9176154520054793
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1636,
+              "mean_px": 0.4039768576622009,
+              "p95_px": 0.9149424433708191
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 26,
+              "mean_px": 0.8505300283432007,
+              "p95_px": 1.7739489078521729
+            },
+            {
+              "region": "BL20",
+              "count": 11,
+              "mean_px": 0.16926273703575134,
+              "p95_px": 0.39457714557647705
+            },
+            {
+              "region": "BR20",
+              "count": 88,
+              "mean_px": 0.5995170474052429,
+              "p95_px": 2.0988616943359375
+            },
+            {
+              "region": "BR10",
+              "count": 5,
+              "mean_px": 1.999825119972229,
+              "p95_px": 3.049560785293579
+            }
+          ],
+          "near": 34.30710999762424,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "s110_bild090_roma_fast",
+      "kind": "roma_fast",
+      "points": 5000,
+      "matcher_seconds_contended": 81.41840214400145,
+      "source_baseline": {
+        "count": 2162,
+        "mean": 0.25136224701746984,
+        "p95": 0.7681986849518256
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1674,
+          "mean_px": 0.2743893563747406,
+          "p95_px": 0.7581914663314819
+        },
+        {
+          "region": "TL20",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        },
+        {
+          "region": "TR20",
+          "count": 31,
+          "mean_px": 0.6534106731414795,
+          "p95_px": 1.5232772827148438
+        },
+        {
+          "region": "BL20",
+          "count": 14,
+          "mean_px": 0.2143389880657196,
+          "p95_px": 0.610914409160614
+        },
+        {
+          "region": "BR20",
+          "count": 87,
+          "mean_px": 0.6808817386627197,
+          "p95_px": 1.9516791105270386
+        },
+        {
+          "region": "BR10",
+          "count": 6,
+          "mean_px": 1.8571271896362305,
+          "p95_px": 2.873633623123169
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 5000,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 2162,
+            "mean": 0.3794151237628132,
+            "p95": 0.9961348061353124
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1624,
+              "mean_px": 0.44985759258270264,
+              "p95_px": 1.0028403997421265
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 28,
+              "mean_px": 0.7291275858879089,
+              "p95_px": 1.576694369316101
+            },
+            {
+              "region": "BL20",
+              "count": 15,
+              "mean_px": 0.176286518573761,
+              "p95_px": 0.45037075877189636
+            },
+            {
+              "region": "BR20",
+              "count": 91,
+              "mean_px": 0.7487386465072632,
+              "p95_px": 2.3493175506591797
+            },
+            {
+              "region": "BR10",
+              "count": 5,
+              "mean_px": 1.8343217372894287,
+              "p95_px": 2.8964502811431885
+            }
+          ],
+          "near": 34.39202068257294,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 3153,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 2162,
+            "mean": 0.37813620318210794,
+            "p95": 0.9872751963354698
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1628,
+              "mean_px": 0.42300310730934143,
+              "p95_px": 0.9663822650909424
+            },
+            {
+              "region": "TL20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "TR20",
+              "count": 22,
+              "mean_px": 0.7028534412384033,
+              "p95_px": 1.6724615097045898
+            },
+            {
+              "region": "BL20",
+              "count": 12,
+              "mean_px": 0.18578875064849854,
+              "p95_px": 0.5876049995422363
+            },
+            {
+              "region": "BR20",
+              "count": 86,
+              "mean_px": 0.6030091643333435,
+              "p95_px": 1.7551178932189941
+            },
+            {
+              "region": "BR10",
+              "count": 5,
+              "mean_px": 2.244142532348633,
+              "p95_px": 3.397786855697632
+            }
+          ],
+          "near": 35.59191703908327,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "s95_bild038_lightglue_aliked",
+      "kind": "lightglue_aliked",
+      "points": 2933,
+      "matcher_seconds_contended": 34.011007257999154,
+      "source_baseline": {
+        "count": 1039,
+        "mean": 0.3988328343106329,
+        "p95": 1.3537703413397821
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1319,
+          "mean_px": 0.4302162230014801,
+          "p95_px": 1.3032833337783813
+        },
+        {
+          "region": "TL20",
+          "count": 22,
+          "mean_px": 1.3190234899520874,
+          "p95_px": 1.6017615795135498
+        },
+        {
+          "region": "TR20",
+          "count": 86,
+          "mean_px": 0.34903982281684875,
+          "p95_px": 0.6106647253036499
+        },
+        {
+          "region": "BL20",
+          "count": 1,
+          "mean_px": 0.19969847798347473,
+          "p95_px": 0.19969847798347473
+        },
+        {
+          "region": "BR20",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        },
+        {
+          "region": "BR10",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 2933,
+          "model": "Affine + yCubic",
+          "source_quality": {
+            "count": 1039,
+            "mean": 0.3015569442270901,
+            "p95": 0.9037114652929253
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1315,
+              "mean_px": 0.2976658046245575,
+              "p95_px": 0.905707597732544
+            },
+            {
+              "region": "TL20",
+              "count": 24,
+              "mean_px": 0.41578570008277893,
+              "p95_px": 0.5632039904594421
+            },
+            {
+              "region": "TR20",
+              "count": 80,
+              "mean_px": 0.1624741107225418,
+              "p95_px": 0.4010096788406372
+            },
+            {
+              "region": "BL20",
+              "count": 1,
+              "mean_px": 0.2687600255012512,
+              "p95_px": 0.2687600255012512
+            },
+            {
+              "region": "BR20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "BR10",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            }
+          ],
+          "near": 24.54166603088379,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 835,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 1039,
+            "mean": 0.32123508068987155,
+            "p95": 0.9870090950996214
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1331,
+              "mean_px": 0.3447108268737793,
+              "p95_px": 0.9694772958755493
+            },
+            {
+              "region": "TL20",
+              "count": 24,
+              "mean_px": 0.7739275097846985,
+              "p95_px": 1.032187581062317
+            },
+            {
+              "region": "TR20",
+              "count": 88,
+              "mean_px": 0.15425001084804535,
+              "p95_px": 0.34989187121391296
+            },
+            {
+              "region": "BL20",
+              "count": 2,
+              "mean_px": 0.3801201581954956,
+              "p95_px": 0.44197985529899597
+            },
+            {
+              "region": "BR20",
+              "count": 1,
+              "mean_px": 0.5911798477172852,
+              "p95_px": 0.5911798477172852
+            },
+            {
+              "region": "BR10",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            }
+          ],
+          "near": 24.666667938232422,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "s95_bild038_lightglue_sift",
+      "kind": "lightglue_sift",
+      "points": 1948,
+      "matcher_seconds_contended": 71.48402870199789,
+      "source_baseline": {
+        "count": 1039,
+        "mean": 0.3988328343106329,
+        "p95": 1.3537703413397821
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1319,
+          "mean_px": 0.4302162230014801,
+          "p95_px": 1.3032833337783813
+        },
+        {
+          "region": "TL20",
+          "count": 22,
+          "mean_px": 1.3190234899520874,
+          "p95_px": 1.6017615795135498
+        },
+        {
+          "region": "TR20",
+          "count": 86,
+          "mean_px": 0.34903982281684875,
+          "p95_px": 0.6106647253036499
+        },
+        {
+          "region": "BL20",
+          "count": 1,
+          "mean_px": 0.19969847798347473,
+          "p95_px": 0.19969847798347473
+        },
+        {
+          "region": "BR20",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        },
+        {
+          "region": "BR10",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 1948,
+          "model": "Affine + Vergence + yCubic",
+          "source_quality": {
+            "count": 1039,
+            "mean": 0.42264928703718074,
+            "p95": 1.53861939164815
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1293,
+              "mean_px": 0.4599108099937439,
+              "p95_px": 1.8219963312149048
+            },
+            {
+              "region": "TL20",
+              "count": 19,
+              "mean_px": 0.5123050808906555,
+              "p95_px": 0.8883063793182373
+            },
+            {
+              "region": "TR20",
+              "count": 85,
+              "mean_px": 0.1688208281993866,
+              "p95_px": 0.4133822023868561
+            },
+            {
+              "region": "BL20",
+              "count": 1,
+              "mean_px": 2.3276724815368652,
+              "p95_px": 2.3276724815368652
+            },
+            {
+              "region": "BR20",
+              "count": 1,
+              "mean_px": 1.7971091270446777,
+              "p95_px": 1.7971091270446777
+            },
+            {
+              "region": "BR10",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            }
+          ],
+          "near": 24.0,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 918,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 1039,
+            "mean": 0.3099643686648214,
+            "p95": 0.9511532348332505
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1329,
+              "mean_px": 0.3134858012199402,
+              "p95_px": 0.9313969016075134
+            },
+            {
+              "region": "TL20",
+              "count": 24,
+              "mean_px": 0.877133846282959,
+              "p95_px": 1.1216771602630615
+            },
+            {
+              "region": "TR20",
+              "count": 90,
+              "mean_px": 0.1863182932138443,
+              "p95_px": 0.42512649297714233
+            },
+            {
+              "region": "BL20",
+              "count": 1,
+              "mean_px": 0.49518150091171265,
+              "p95_px": 0.49518150091171265
+            },
+            {
+              "region": "BR20",
+              "count": 1,
+              "mean_px": 0.43290406465530396,
+              "p95_px": 0.43290406465530396
+            },
+            {
+              "region": "BR10",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            }
+          ],
+          "near": 24.666667938232422,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "s95_bild038_roma_fast",
+      "kind": "roma_fast",
+      "points": 5000,
+      "matcher_seconds_contended": 113.23605968800257,
+      "source_baseline": {
+        "count": 1039,
+        "mean": 0.3988328343106329,
+        "p95": 1.3537703413397821
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 1319,
+          "mean_px": 0.4302162230014801,
+          "p95_px": 1.3032833337783813
+        },
+        {
+          "region": "TL20",
+          "count": 22,
+          "mean_px": 1.3190234899520874,
+          "p95_px": 1.6017615795135498
+        },
+        {
+          "region": "TR20",
+          "count": 86,
+          "mean_px": 0.34903982281684875,
+          "p95_px": 0.6106647253036499
+        },
+        {
+          "region": "BL20",
+          "count": 1,
+          "mean_px": 0.19969847798347473,
+          "p95_px": 0.19969847798347473
+        },
+        {
+          "region": "BR20",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        },
+        {
+          "region": "BR10",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 5000,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 1039,
+            "mean": 0.3274559210954749,
+            "p95": 0.9693866559732196
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1300,
+              "mean_px": 0.3379041850566864,
+              "p95_px": 0.9610477685928345
+            },
+            {
+              "region": "TL20",
+              "count": 22,
+              "mean_px": 1.0970689058303833,
+              "p95_px": 1.3226135969161987
+            },
+            {
+              "region": "TR20",
+              "count": 83,
+              "mean_px": 0.3085353672504425,
+              "p95_px": 0.5401824712753296
+            },
+            {
+              "region": "BL20",
+              "count": 1,
+              "mean_px": 0.3613473176956177,
+              "p95_px": 0.3613473176956177
+            },
+            {
+              "region": "BR20",
+              "count": 1,
+              "mean_px": 0.0863463506102562,
+              "p95_px": 0.0863463506102562
+            },
+            {
+              "region": "BR10",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            }
+          ],
+          "near": 25.04166603088379,
+          "uncertain": [
+            "near_edge_unconfirmed"
+          ]
+        },
+        {
+          "variant": "lk",
+          "points": 410,
+          "model": "Affine + yQuad",
+          "source_quality": {
+            "count": 1039,
+            "mean": 0.31613499987418714,
+            "p95": 0.9893154707553942
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 1312,
+              "mean_px": 0.32329410314559937,
+              "p95_px": 0.9944441318511963
+            },
+            {
+              "region": "TL20",
+              "count": 22,
+              "mean_px": 1.1752554178237915,
+              "p95_px": 1.4133834838867188
+            },
+            {
+              "region": "TR20",
+              "count": 89,
+              "mean_px": 0.25457653403282166,
+              "p95_px": 0.5384511351585388
+            },
+            {
+              "region": "BL20",
+              "count": 2,
+              "mean_px": 0.4794701635837555,
+              "p95_px": 0.5892165899276733
+            },
+            {
+              "region": "BR20",
+              "count": 1,
+              "mean_px": 0.05051058158278465,
+              "p95_px": 0.05051058158278465
+            },
+            {
+              "region": "BR10",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            }
+          ],
+          "near": 24.666667938232422,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "s95_bild067_lightglue_aliked",
+      "kind": "lightglue_aliked",
+      "points": 2849,
+      "matcher_seconds_contended": 36.348745431998395,
+      "source_baseline": {
+        "count": 1123,
+        "mean": 0.11526669730276015,
+        "p95": 0.27813702823747993
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 920,
+          "mean_px": 0.1437465399503708,
+          "p95_px": 0.35415396094322205
+        },
+        {
+          "region": "TL20",
+          "count": 10,
+          "mean_px": 0.10166327655315399,
+          "p95_px": 0.17445996403694153
+        },
+        {
+          "region": "TR20",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        },
+        {
+          "region": "BL20",
+          "count": 4,
+          "mean_px": 0.09591338783502579,
+          "p95_px": 0.2849285304546356
+        },
+        {
+          "region": "BR20",
+          "count": 88,
+          "mean_px": 0.3109146058559418,
+          "p95_px": 0.5317033529281616
+        },
+        {
+          "region": "BR10",
+          "count": 12,
+          "mean_px": 0.42383792996406555,
+          "p95_px": 0.563175618648529
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 2849,
+          "model": "Affine + yCubic",
+          "source_quality": {
+            "count": 1123,
+            "mean": 0.1229097235752863,
+            "p95": 0.3165178766129907
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 920,
+              "mean_px": 0.14997360110282898,
+              "p95_px": 0.45562744140625
+            },
+            {
+              "region": "TL20",
+              "count": 9,
+              "mean_px": 0.1384265124797821,
+              "p95_px": 0.23732204735279083
+            },
+            {
+              "region": "TR20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "BL20",
+              "count": 4,
+              "mean_px": 0.14939475059509277,
+              "p95_px": 0.2913840413093567
+            },
+            {
+              "region": "BR20",
+              "count": 79,
+              "mean_px": 0.4772454798221588,
+              "p95_px": 0.7494093775749207
+            },
+            {
+              "region": "BR10",
+              "count": 7,
+              "mean_px": 0.7012096643447876,
+              "p95_px": 0.8060810565948486
+            }
+          ],
+          "near": 29.013795648927125,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 1178,
+          "model": "Affine + yCubic",
+          "source_quality": {
+            "count": 1123,
+            "mean": 0.11999978447534701,
+            "p95": 0.28245621048541414
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 912,
+              "mean_px": 0.1526721715927124,
+              "p95_px": 0.3921376168727875
+            },
+            {
+              "region": "TL20",
+              "count": 7,
+              "mean_px": 0.16326762735843658,
+              "p95_px": 0.26087838411331177
+            },
+            {
+              "region": "TR20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "BL20",
+              "count": 5,
+              "mean_px": 0.13991716504096985,
+              "p95_px": 0.19781287014484406
+            },
+            {
+              "region": "BR20",
+              "count": 82,
+              "mean_px": 0.37524738907814026,
+              "p95_px": 0.6112456917762756
+            },
+            {
+              "region": "BR10",
+              "count": 10,
+              "mean_px": 0.5515360236167908,
+              "p95_px": 0.6644326448440552
+            }
+          ],
+          "near": 29.07426906547418,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "s95_bild067_lightglue_sift",
+      "kind": "lightglue_sift",
+      "points": 1960,
+      "matcher_seconds_contended": 16.591153011999268,
+      "source_baseline": {
+        "count": 1123,
+        "mean": 0.11526669730276015,
+        "p95": 0.27813702823747993
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 920,
+          "mean_px": 0.1437465399503708,
+          "p95_px": 0.35415396094322205
+        },
+        {
+          "region": "TL20",
+          "count": 10,
+          "mean_px": 0.10166327655315399,
+          "p95_px": 0.17445996403694153
+        },
+        {
+          "region": "TR20",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        },
+        {
+          "region": "BL20",
+          "count": 4,
+          "mean_px": 0.09591338783502579,
+          "p95_px": 0.2849285304546356
+        },
+        {
+          "region": "BR20",
+          "count": 88,
+          "mean_px": 0.3109146058559418,
+          "p95_px": 0.5317033529281616
+        },
+        {
+          "region": "BR10",
+          "count": 12,
+          "mean_px": 0.42383792996406555,
+          "p95_px": 0.563175618648529
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 1960,
+          "model": "Affine + yCubic",
+          "source_quality": {
+            "count": 1123,
+            "mean": 0.11283090315356352,
+            "p95": 0.2840252409381857
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 915,
+              "mean_px": 0.15016795694828033,
+              "p95_px": 0.4118858575820923
+            },
+            {
+              "region": "TL20",
+              "count": 12,
+              "mean_px": 0.060274478048086166,
+              "p95_px": 0.16001851856708527
+            },
+            {
+              "region": "TR20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "BL20",
+              "count": 4,
+              "mean_px": 0.13317717611789703,
+              "p95_px": 0.3187713921070099
+            },
+            {
+              "region": "BR20",
+              "count": 84,
+              "mean_px": 0.3996826708316803,
+              "p95_px": 0.6501237750053406
+            },
+            {
+              "region": "BR10",
+              "count": 12,
+              "mean_px": 0.5576440691947937,
+              "p95_px": 0.6802728176116943
+            }
+          ],
+          "near": 28.04166603088379,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 1168,
+          "model": "Affine + yCubic",
+          "source_quality": {
+            "count": 1123,
+            "mean": 0.11024134273275095,
+            "p95": 0.2749646127251646
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 898,
+              "mean_px": 0.1482393741607666,
+              "p95_px": 0.43487316370010376
+            },
+            {
+              "region": "TL20",
+              "count": 12,
+              "mean_px": 0.07055576890707016,
+              "p95_px": 0.13919661939144135
+            },
+            {
+              "region": "TR20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "BL20",
+              "count": 7,
+              "mean_px": 0.07320321351289749,
+              "p95_px": 0.26489484310150146
+            },
+            {
+              "region": "BR20",
+              "count": 75,
+              "mean_px": 0.45475703477859497,
+              "p95_px": 0.6990293264389038
+            },
+            {
+              "region": "BR10",
+              "count": 10,
+              "mean_px": 0.64104825258255,
+              "p95_px": 0.7440905570983887
+            }
+          ],
+          "near": 30.369817384238107,
+          "uncertain": []
+        }
+      ]
+    },
+    {
+      "name": "s95_bild067_roma_fast",
+      "kind": "roma_fast",
+      "points": 5000,
+      "matcher_seconds_contended": 31.06369970399828,
+      "source_baseline": {
+        "count": 1123,
+        "mean": 0.11526669730276015,
+        "p95": 0.27813702823747993
+      },
+      "baseline_rendered": [
+        {
+          "region": "all",
+          "count": 920,
+          "mean_px": 0.1437465399503708,
+          "p95_px": 0.35415396094322205
+        },
+        {
+          "region": "TL20",
+          "count": 10,
+          "mean_px": 0.10166327655315399,
+          "p95_px": 0.17445996403694153
+        },
+        {
+          "region": "TR20",
+          "count": 0,
+          "mean_px": null,
+          "p95_px": null
+        },
+        {
+          "region": "BL20",
+          "count": 4,
+          "mean_px": 0.09591338783502579,
+          "p95_px": 0.2849285304546356
+        },
+        {
+          "region": "BR20",
+          "count": 88,
+          "mean_px": 0.3109146058559418,
+          "p95_px": 0.5317033529281616
+        },
+        {
+          "region": "BR10",
+          "count": 12,
+          "mean_px": 0.42383792996406555,
+          "p95_px": 0.563175618648529
+        }
+      ],
+      "variants": [
+        {
+          "variant": "raw",
+          "points": 5000,
+          "model": "Affine + yCubic",
+          "source_quality": {
+            "count": 1123,
+            "mean": 0.13137120052578016,
+            "p95": 0.37051618066381686
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 937,
+              "mean_px": 0.19142068922519684,
+              "p95_px": 0.4571743309497833
+            },
+            {
+              "region": "TL20",
+              "count": 8,
+              "mean_px": 0.19533462822437286,
+              "p95_px": 0.28673484921455383
+            },
+            {
+              "region": "TR20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "BL20",
+              "count": 5,
+              "mean_px": 0.11183007806539536,
+              "p95_px": 0.21672753989696503
+            },
+            {
+              "region": "BR20",
+              "count": 87,
+              "mean_px": 0.33754363656044006,
+              "p95_px": 0.5266821384429932
+            },
+            {
+              "region": "BR10",
+              "count": 13,
+              "mean_px": 0.40055254101753235,
+              "p95_px": 0.5539736151695251
+            }
+          ],
+          "near": 29.003145003566022,
+          "uncertain": []
+        },
+        {
+          "variant": "lk",
+          "points": 1456,
+          "model": "Affine + yCubic",
+          "source_quality": {
+            "count": 1123,
+            "mean": 0.12184155803538052,
+            "p95": 0.31020722516358373
+          },
+          "rendered": [
+            {
+              "region": "all",
+              "count": 911,
+              "mean_px": 0.1389264464378357,
+              "p95_px": 0.3427448868751526
+            },
+            {
+              "region": "TL20",
+              "count": 8,
+              "mean_px": 0.22238311171531677,
+              "p95_px": 0.32203638553619385
+            },
+            {
+              "region": "TR20",
+              "count": 0,
+              "mean_px": null,
+              "p95_px": null
+            },
+            {
+              "region": "BL20",
+              "count": 4,
+              "mean_px": 0.08782612532377243,
+              "p95_px": 0.279690682888031
+            },
+            {
+              "region": "BR20",
+              "count": 81,
+              "mean_px": 0.30747637152671814,
+              "p95_px": 0.536328911781311
+            },
+            {
+              "region": "BR10",
+              "count": 12,
+              "mean_px": 0.41374778747558594,
+              "p95_px": 0.5498203039169312
+            }
+          ],
+          "near": 29.053422243720416,
+          "uncertain": []
+        }
+      ]
+    }
+  ]
+}
