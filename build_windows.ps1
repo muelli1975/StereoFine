@@ -11,6 +11,7 @@ $Dist = Join-Path $DistRoot "StereoFine"
 $ReleaseDir = Join-Path $Root "release"
 $ZipPath = Join-Path $ReleaseDir "StereoFine_1.0_Windows_x64.zip"
 $SourceOut = Join-Path $Dist "Source"
+$SourceSnapshot = Join-Path $Venv "StereoFine-Source"
 
 Write-Host "StereoFine 1.0 - clean Windows release build"
 Write-Host "Source:" $Root
@@ -52,8 +53,15 @@ $Python = Join-Path $Venv "Scripts\python.exe"
 # Fast reproducible pre-build checks. GUI smoke is deliberately manual on the
 # target Windows desktop because display scaling and dialogs are part of it.
 & $Python -m unittest discover -s tests -p "test_*.py"
+if ($LASTEXITCODE -ne 0) { throw "Unit tests failed; release build stopped." }
 & $Python -m compileall -q StereoFine.py stereofine tests
+if ($LASTEXITCODE -ne 0) { throw "Compilation checks failed; release build stopped." }
 & $Python -c "import importlib, pkgutil, stereofine; mods=[m.name for m in pkgutil.iter_modules(stereofine.__path__, stereofine.__name__+'.')]; [importlib.import_module(n) for n in sorted(mods)]; print(f'Imported {len(mods)} StereoFine modules')"
+if ($LASTEXITCODE -ne 0) { throw "Module import checks failed; release build stopped." }
+
+# Snapshot the checked inputs before build tools can generate/replace files.
+& $Python (Join-Path $Root "scripts/package_source.py") $SourceSnapshot
+if ($LASTEXITCODE -ne 0) { throw "Source snapshot packaging failed." }
 
 & $Python -m PyInstaller --noconfirm --clean StereoFine.spec
 
@@ -133,31 +141,9 @@ foreach ($Item in $TclTkLicenseCandidates) {
 }
 
 # The portable release contains the exact source snapshot used for the EXE.
-New-Item -ItemType Directory -Force $SourceOut | Out-Null
-$SourceFiles = @(
-    ".gitignore",
-    "StereoFine.py",
-    "StereoFine.spec",
-    "version_info.txt",
-    "build_windows.ps1",
-    "requirements-lock.txt",
-    "requirements-build.txt",
-    "README.md",
-    "README_DE.md",
-    "README_EN.md",
-    "LICENSE.txt",
-    "THIRD_PARTY_NOTICES.md",
-    "BUILD_WINDOWS.md",
-    "RELEASE_CHECKLIST.md",
-    "CHANGELOG.md",
-    "RELEASE_NOTES_1.0.md"
-)
-foreach ($File in $SourceFiles) {
-    Copy-Item -Force (Join-Path $Root $File) (Join-Path $SourceOut $File)
-}
-foreach ($Directory in @("stereofine", "assets", "tests", "docs", "licenses")) {
-    Copy-Item -Recurse -Force (Join-Path $Root $Directory) (Join-Path $SourceOut $Directory)
-}
+Copy-Item -Recurse -Force $SourceSnapshot $SourceOut
+& $Python (Join-Path $Root "scripts/package_source.py") --verify $SourceOut
+if ($LASTEXITCODE -ne 0) { throw "Source snapshot verification failed." }
 
 # No generated caches or local state belong in the release source snapshot.
 Get-ChildItem -Path $Dist -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -Force
@@ -183,7 +169,7 @@ $BuildLines = @(
     "NumPy: $NumPyVersion",
     "OpenCV-Python: $OpenCVVersion",
     "Pillow: $PillowVersion",
-    "ExifTool package: 13.53"
+    "ExifTool package: 13.59"
 )
 $BuildLines | Set-Content -Encoding UTF8 $BuildInfoPath
 

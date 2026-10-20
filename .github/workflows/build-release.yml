@@ -1,4 +1,4 @@
-name: Build StereoFine 1.0
+name: Build StereoFine 1.0 maintenance
 
 env:
   EXIFTOOL_VERSION: '13.59'
@@ -6,17 +6,23 @@ env:
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [maintenance/1.0-20261020]
     paths:
       - '.github/workflows/build-release.yml'
-      - 'tests/test_release_hygiene.py'
+      - 'stereofine/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'requirements*.txt'
+      - 'build_windows.ps1'
+      - 'version_info.txt'
+      - 'RELEASE_NOTES_1.0.md'
       - 'assets/stereofine.jpg'
       - 'assets/stereofine.ico'
       - 'assets/stereofine.icns'
       - 'assets/ready.wav'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   test:
@@ -42,6 +48,13 @@ jobs:
               importlib.import_module(name)
           print(f'Imported {len(mods)} StereoFine modules')
           PY
+
+      - name: GUI smoke DE and EN
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb
+          PYTHONPATH=. STEREOFINE_TEST_LANGUAGE=de xvfb-run -a -s '-screen 0 1920x1080x24' python tests/gui_smoke_xvfb.py
+          PYTHONPATH=. STEREOFINE_TEST_LANGUAGE=en xvfb-run -a -s '-screen 0 1920x1080x24' python tests/gui_smoke_xvfb.py
 
   windows:
     needs: test
@@ -97,6 +110,7 @@ jobs:
           perl portable-tools/exiftool -ver
       - name: Build Linux x64
         run: |
+          python scripts/package_source.py "$RUNNER_TEMP/StereoFine-Source"
           python -m PyInstaller --noconfirm --clean --onedir --windowed \
             --name StereoFine \
             --collect-data customtkinter \
@@ -106,6 +120,8 @@ jobs:
           cp -R portable-tools/* dist/StereoFine/tools/
           cp README_DE.md README_EN.md LICENSE.txt THIRD_PARTY_NOTICES.md dist/StereoFine/
           cp -R licenses dist/StereoFine/licenses
+          cp -R "$RUNNER_TEMP/StereoFine-Source" dist/StereoFine/Source
+          python scripts/package_source.py --verify dist/StereoFine/Source
           tar -C dist -czf StereoFine_1.0_Linux_x64.tar.gz StereoFine
       - uses: actions/upload-artifact@v4
         with:
@@ -136,6 +152,7 @@ jobs:
           perl portable-tools/exiftool -ver
       - name: Build macOS Apple Silicon
         run: |
+          python scripts/package_source.py "$RUNNER_TEMP/StereoFine-Source"
           python -m PyInstaller --noconfirm --clean --onedir --windowed \
             --name StereoFine \
             --collect-data customtkinter \
@@ -150,6 +167,8 @@ jobs:
           cp -R "$APP" package/StereoFine/
           cp README_DE.md README_EN.md LICENSE.txt THIRD_PARTY_NOTICES.md package/StereoFine/
           cp -R licenses package/StereoFine/licenses
+          cp -R "$RUNNER_TEMP/StereoFine-Source" package/StereoFine/Source
+          python scripts/package_source.py --verify package/StereoFine/Source
           ditto -c -k --sequesterRsrc --keepParent package/StereoFine StereoFine_1.0_macOS_AppleSilicon.zip
       - uses: actions/upload-artifact@v4
         with:
@@ -180,6 +199,7 @@ jobs:
           perl portable-tools/exiftool -ver
       - name: Build macOS Intel
         run: |
+          python scripts/package_source.py "$RUNNER_TEMP/StereoFine-Source"
           python -m PyInstaller --noconfirm --clean --onedir --windowed \
             --name StereoFine \
             --collect-data customtkinter \
@@ -194,37 +214,11 @@ jobs:
           cp -R "$APP" package/StereoFine/
           cp README_DE.md README_EN.md LICENSE.txt THIRD_PARTY_NOTICES.md package/StereoFine/
           cp -R licenses package/StereoFine/licenses
+          cp -R "$RUNNER_TEMP/StereoFine-Source" package/StereoFine/Source
+          python scripts/package_source.py --verify package/StereoFine/Source
           ditto -c -k --sequesterRsrc --keepParent package/StereoFine StereoFine_1.0_macOS_Intel.zip
       - uses: actions/upload-artifact@v4
         with:
           name: StereoFine_1.0_macOS_Intel
           path: StereoFine_1.0_macOS_Intel.zip
           if-no-files-found: error
-
-  release:
-    needs: [windows, linux, mac-arm64, mac-intel]
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: StereoFine_1.0_*
-          path: artifacts
-          merge-multiple: true
-      - name: Create checksums
-        run: |
-          cd artifacts
-          sha256sum * > SHA256SUMS.txt
-          cat SHA256SUMS.txt
-      - name: Publish GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if gh release view v1.0 >/dev/null 2>&1; then
-            gh release upload v1.0 artifacts/* --clobber
-          else
-            gh release create v1.0 artifacts/* \
-              --target "$GITHUB_SHA" \
-              --title 'StereoFine 1.0' \
-              --notes-file RELEASE_NOTES_1.0.md
-          fi

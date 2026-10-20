@@ -172,7 +172,7 @@ def fit_symmetric_color_transfer(
     )
 
 
-def _apply_curve(image: np.ndarray, source_curves, target_curves, strength: float) -> np.ndarray:
+def _apply_curve_direct(image: np.ndarray, source_curves, target_curves, strength: float) -> np.ndarray:
     src = _normalized_float(image)
     out = np.empty_like(src, dtype=np.float32)
     for channel in range(3):
@@ -191,6 +191,24 @@ def _apply_curve(image: np.ndarray, source_curves, target_curves, strength: floa
     if image.dtype == np.uint16:
         return np.rint(out * np.float32(65535.0)).astype(np.uint16)
     return out.astype(image.dtype, copy=False)
+
+
+def _apply_curve(image: np.ndarray, source_curves, target_curves, strength: float) -> np.ndarray:
+    if image.dtype not in (np.uint8, np.uint16):
+        return _apply_curve_direct(image, source_curves, target_curves, strength)
+
+    # Each channel is pointwise. Evaluate the existing curve on every possible
+    # integer input once, retaining its exact float32 arithmetic and rounding.
+    # The small table is transient: no new sidecar/cache format is required.
+    levels = np.iinfo(image.dtype).max + 1
+    if image.shape[0] * image.shape[1] < levels:
+        return _apply_curve_direct(image, source_curves, target_curves, strength)
+    ramp = np.broadcast_to(np.arange(levels, dtype=image.dtype)[:, None, None], (levels, 1, 3))
+    table = _apply_curve_direct(ramp, source_curves, target_curves, strength)[:, 0, :]
+    out = np.empty_like(image)
+    for channel in range(3):
+        out[..., channel] = table[image[..., channel], channel]
+    return out
 
 
 def apply_symmetric_color_transfer(

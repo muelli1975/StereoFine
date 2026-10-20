@@ -84,3 +84,9 @@ StereoFine_1.0_Windows_x64.zip
 ```
 
 Upload it manually to the GitHub release for version `1.0`. The SHA-256 produced in `release/SHA256SUMS.txt` can be copied into the release notes.
+
+
+Wartungsbuild vom 20.10.2026: `scripts/package_source.py` sichert vor PyInstaller
+den sauberen Git-Quellstand. Die Kopie unter `Source/` wird anschließend
+bytegenau geprüft, einschließlich unveränderter Git-Zeilenenden. Der separate
+Wartungszweig erzeugt Actions-Artefakte, ohne vorhandene Releases zu ersetzen.

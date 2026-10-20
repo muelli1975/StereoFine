@@ -2,13 +2,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Iterable, Literal
 
 from .inputs import (
     LoadedStereoPair,
+    InputError,
     build_lr_dir_pair_sequence,
     build_suffix_pair_sequence,
+    is_image_file,
+    is_stereo_single_file,
     list_stereo_single_files,
+    validate_unique_image_stems,
     load_mpo,
     load_full_sbs,
     load_pair,
@@ -60,14 +64,34 @@ def source_from_stereo_file(path: Path, input_root: Path) -> StereoSource:
 def discover_pair_sources(folder: Path) -> list[StereoSource]:
     """Discover the established pair layouts without guessing between them per file."""
     lr_pairs = build_lr_dir_pair_sequence(folder)
-    if lr_pairs:
-        return [source_from_pair(left, right, folder) for left, right in lr_pairs]
-    suffix_pairs = build_suffix_pair_sequence(folder)
-    return [source_from_pair(left, right, folder) for left, right in suffix_pairs]
+    pairs = lr_pairs or build_suffix_pair_sequence(folder)
+    sources = [source_from_pair(left, right, folder) for left, right in pairs]
+    validate_source_names(sources)
+    return sources
 
 
 def discover_stereo_file_sources(folder: Path) -> list[StereoSource]:
-    return [source_from_stereo_file(path, folder) for path in list_stereo_single_files(folder)]
+    paths = list_stereo_single_files(folder)
+    validate_unique_image_stems(paths)
+    return [source_from_stereo_file(path, folder) for path in paths]
+
+
+def validate_source_names(sources: Iterable[StereoSource], *, check_outputs: bool = True) -> None:
+    """Keep existing filenames, but reject collisions across a complete job."""
+    sidecars: dict[str, StereoSource] = {}
+    outputs: dict[str, StereoSource] = {}
+    for source in sources:
+        keys = [(sidecars, str(source.sidecar_path.resolve()).casefold())]
+        if check_outputs:
+            keys.append((outputs, source.base_name.casefold()))
+        for seen, key in keys:
+            previous = seen.get(key)
+            if previous is not None and previous != source:
+                raise InputError(
+                    "Mehrere Quellen verwenden denselben Ergebnisnamen. Bitte Quelldateien eindeutig umbenennen: "
+                    + f"{previous.left_path}, {source.left_path}"
+                )
+            seen[key] = source
 
 
 def build_source_stamp(source: StereoSource, loaded: LoadedStereoPair) -> SourceStamp:
@@ -98,6 +122,14 @@ def build_source_stamp(source: StereoSource, loaded: LoadedStereoPair) -> Source
 
 def load_source(source: StereoSource) -> LoadedStereoPair:
     """Load a discovered StereoSource transactionally into master arrays."""
+    # Also cover single-file/API entry points and files added after discovery.
+    for path in dict.fromkeys((source.left_path, source.right_path)):
+        is_supported = is_image_file if source.kind == "pair" else is_stereo_single_file
+        if path.parent.is_dir():
+            validate_unique_image_stems([
+                item for item in path.parent.iterdir()
+                if item.stem.casefold() == path.stem.casefold() and is_supported(item)
+            ])
     if source.kind == "pair":
         return load_pair(source.left_path, source.right_path)
     if source.kind == "mpo":
