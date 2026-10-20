@@ -236,6 +236,9 @@ jobs:
         with:
           path: release-assets
           merge-multiple: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
       - name: Verify all native packages
         run: python scripts/verify_release_packages.py release-assets
       - name: Update existing 1.0 downloads
