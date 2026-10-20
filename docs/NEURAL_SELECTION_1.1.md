@@ -214,3 +214,45 @@ nutzbare Fläche gemeinsam zu betrachten. Nahpunkt und Fenster werden erst
 danach separat geprüft. Horizontale Szenentiefe darf nicht als Fehler auf null
 optimiert werden. Freie lokale Bildverformung oder immer höhere Polynome sind
 kein abgesicherter Ersatz für fehlende Geometrieinformation.
+
+## Verbindliche Anforderung an die .sfin-Speicherung
+
+Die weitere Entwicklung soll etablierte Implementierungen wie OpenCV nutzen.
+Eine neue produktive Geometrie und die zugehörige Speicherung sind als eine
+zusammenhängende Änderung zu behandeln. Die folgenden Punkte sind Anforderungen,
+noch keine implementierte Formatänderung:
+
+- Die vorhandene Trennung zwischen Schema- und Pipelineversion weiterverwenden.
+  Ein neuer Transformationsvertrag benötigt eine passende Formatversion und
+  eine Aktualisierung der betroffenen Berechnungsversionen.
+- Den angewendeten Modelltyp und alle zur Wiedergabe benötigten Transformationen
+  beider Augen speichern. Bei projektiver Rektifizierung gehören die tatsächlich
+  angewendeten Matrizen, ihre Koordinatenbasis, Bildabmessungen, Normalisierung
+  und die Reihenfolge relativ zu Orientierung, Restkorrektur und Beschnitt dazu.
+  Eine Fundamentalmatrix oder der Name des Matchers allein reproduziert den
+  gewählten Bildausschnitt und die konkrete Rektifizierung nicht.
+- `reproducible_alignment_correction()` ist derzeit eine ausdrückliche Positivliste
+  der bestehenden Korrekturtypen. Neue Matrizen würden ohne Erweiterung beim
+  Speichern entfallen. Zustand, Serializer, Lader, Renderer und Cachebasis
+  müssen daher gemeinsam angepasst und getestet werden.
+- Bestehende .sfin-Dateien weiterhin lesen. Favoriten und unabhängig gültige
+  Nutzereinstellungen erhalten. Koordinatenabhängige manuelle Korrekturen und
+  Ausschnitte benötigen eine geprüfte Übernahme; dieselben Zahlen auf einer
+  neuen geometrischen Basis bedeuten nicht automatisch dieselbe Bearbeitung.
+  Ein reiner Ladevorgang darf keine neue automatische Justage erzwingen.
+- Alte Analysen nicht als Ergebnisse einer neuen Geometrie wiederverwenden.
+  Abhängige Nahpunkt-/Fenster- und Farbparameter gezielt invalidieren. Unbekannte
+  Transformationsmodelle eindeutig ablehnen, nicht als alte Geometrie ausgeben.
+- Vor einer Migration Sicherung und Koexistenz mit älteren Programmversionen
+  klären. Ein neuer Leser kann alte Dateien unterstützen; bereits veröffentlichte
+  alte Programme können dadurch keine neuen Formate verstehen. Ein Schemawechsel
+  allein schützt insbesondere nicht vor dem späteren Überschreiben durch ein
+  altes Programm.
+- Freigabetest: analysieren, rendern, speichern, Programmzustand neu laden und
+  ohne erneute Merkmalsanalyse wieder rendern. Geometrie, Nahpunkt und Beschnitt
+  müssen unter derselben unterstützten Umgebung identisch reproduziert werden.
+  Zusätzlich Migration, beschädigte/neuere Formate und Vorschau/Export prüfen.
+
+Das öffentliche Format wird erst mit einer tatsächlich geprüften und integrierten
+Geometrie erweitert. Forschungsversuche ändern weder bestehende .sfin-Dateien
+noch die veröffentlichte Version 1.0.
