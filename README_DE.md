@@ -14,7 +14,7 @@ StereoFine arbeitet vollständig lokal: kein Konto, keine Cloud, kein Tracking u
 
 Die veröffentlichte Windows-Version ist portabel:
 
-1. `StereoFine_1.0.zip` vollständig in einen normalen beschreibbaren Ordner entpacken.
+1. [StereoFine_1.0_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.0/StereoFine_1.0_Windows_x64.zip) herunterladen und das Archiv vollständig in einen normalen beschreibbaren Ordner entpacken.
 2. `StereoFine.exe` starten.
 3. Den Programmordner zusammenlassen; `tools`, `_internal` und die übrigen mitgelieferten Dateien gehören zur Anwendung.
 
