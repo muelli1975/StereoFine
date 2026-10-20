@@ -76,8 +76,17 @@ def validate_unique_image_stems(paths: list[Path]) -> None:
 
 
 def _read_exif_orientation(path: Path) -> int:
+    """Return only the orientation still unapplied by our OpenCV decoder.
+
+    OpenCV's TIFF decoder handles tag 274 internally, also for IMREAD_UNCHANGED
+    and 16-bit samples. Applying it again here would mirror/rotate TIFF twice.
+    Inspect the actual format rather than relying on a filename extension.
+    JPEG and PNG still need the explicit array transform below.
+    """
     try:
         with Image.open(path) as image:
+            if image.format == "TIFF":
+                return 1
             return int(image.getexif().get(274, 1) or 1)
     except Exception:
         return 1
@@ -111,8 +120,6 @@ def _decode_cv_image(path: Path) -> np.ndarray:
     except OSError as exc:
         raise InputError(f"Bild konnte nicht gelesen werden: {path}") from exc
     flags = cv2.IMREAD_UNCHANGED
-    if hasattr(cv2, "IMREAD_IGNORE_ORIENTATION"):
-        flags |= cv2.IMREAD_IGNORE_ORIENTATION
     decoded = cv2.imdecode(encoded, flags)
     if decoded is None:
         raise InputError(f"Nicht unterstützte oder beschädigte Bilddatei: {path}")

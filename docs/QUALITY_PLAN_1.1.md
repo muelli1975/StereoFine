@@ -80,9 +80,18 @@ wäre zusätzliche Absicherung, ersetzt aber nicht die schwierigen Rohpaare.
 ## Stand der Vorbereitung
 
 - Entwicklungszweig angelegt; veröffentlichter Programmcode unverändert.
-- Regressionstest `tests/test_input_orientation.py` ergänzt. Auf dem bisherigen
-  Loader sind Fehler für Orientation 2 bis 8 zu erwarten; vor Freigabe müssen
-  diese Tests ohne erwartete-Fehler-Markierung bestehen.
-- Reale Messbefunde und Abnahmeschritte hier festgehalten. Neue Höhen- und
-  Nahpunktalgorithmen sowie die vier früheren Änderungen sind noch nicht
-  übernommen. Ein 1.1-Build ist noch nicht freigegeben.
+- Die vier früheren Laufzeitkorrekturen und ihre 15 Regressionstests sind wieder
+  enthalten. Historische Release-Workflows und Freigabeaussagen wurden nicht
+  übernommen.
+- TIFF-Orientation wird nach dem OpenCV-Decoder nicht erneut angewendet. Der
+  Test `tests/test_input_orientation.py` prüft alle acht Ausrichtungen in 8/16
+  Bit, auch mit mehreren Kompressionen sowie Grau/RGB/RGBA und abweichender
+  Dateiendung. Die Eingabepipeline ist jetzt explizit versioniert. Alte Analysen
+  werden verworfen, Einstellungen unveränderter Quellen bleiben erhalten, auch
+  wenn die korrigierte TIFF-Ausrichtung Breite und Höhe vertauscht.
+- Fünf weitere Originalpaare in beiden Verfahren vermessen; siehe
+  [REAL_IMAGE_BASELINE_1.1.md](REAL_IMAGE_BASELINE_1.1.md). Es gibt darunter einen
+  bereits guten SIFT-Fall. Das erzwungene yQuad ist ein Diagnoseexperiment;
+  die automatische Modellwahl wurde bislang nicht verändert.
+- Neue Höhen- und Nahpunktalgorithmen sind noch nicht freigegeben. Ein
+  1.1-Build ist noch nicht freigegeben.

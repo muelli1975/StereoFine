@@ -15,6 +15,7 @@ from .config import (
     APP_VERSION,
     COLOR_PIPELINE_VERSION,
     DISPARITY_PIPELINE_VERSION,
+    INPUT_PIPELINE_VERSION,
     SIDECAR_SCHEMA_VERSION,
     normalize_aspect_code,
     normalize_orientation_code,
@@ -37,6 +38,7 @@ class SidecarDocument:
     source: dict[str, Any] = field(default_factory=dict)
     pipeline: dict[str, str] = field(
         default_factory=lambda: {
+            "input": INPUT_PIPELINE_VERSION,
             "alignment": ALIGNMENT_PIPELINE_VERSION,
             "disparity": DISPARITY_PIPELINE_VERSION,
             "color": COLOR_PIPELINE_VERSION,
@@ -87,11 +89,11 @@ class SidecarLoadResult:
 
     @property
     def alignment_cache_valid(self) -> bool:
-        return self.status == SidecarStatus.VALID and "alignment" not in self.pipeline_mismatches
+        return self.status == SidecarStatus.VALID and not {"input", "alignment"}.intersection(self.pipeline_mismatches)
 
     @property
     def disparity_cache_valid(self) -> bool:
-        return self.status == SidecarStatus.VALID and "disparity" not in self.pipeline_mismatches
+        return self.status == SidecarStatus.VALID and not {"input", "disparity"}.intersection(self.pipeline_mismatches)
 
     @property
     def color_cache_valid(self) -> bool:
@@ -100,6 +102,7 @@ class SidecarLoadResult:
         # even when the color algorithm itself is unchanged.
         return (
             self.status == SidecarStatus.VALID
+            and "input" not in self.pipeline_mismatches
             and "alignment" not in self.pipeline_mismatches
             and "color" not in self.pipeline_mismatches
         )
@@ -117,30 +120,34 @@ def source_stamp_to_dict(stamp: SourceStamp) -> dict[str, Any]:
     }
 
 
-def _file_stamp_matches(saved: dict[str, Any], expected: FileStamp) -> bool:
+def _file_stamp_matches(saved: dict[str, Any], expected: FileStamp, *, allow_transposed_dimensions: bool = False) -> bool:
     try:
+        saved_dimensions = (int(saved.get("width", -1)), int(saved.get("height", -1)))
+        dimensions_match = saved_dimensions == (expected.width, expected.height)
+        if allow_transposed_dimensions:
+            dimensions_match |= saved_dimensions == (expected.height, expected.width)
         return (
             str(saved.get("path", "")) == expected.path
             and int(saved.get("size_bytes", -1)) == expected.size_bytes
             and int(saved.get("mtime_ns", -1)) == expected.mtime_ns
-            and int(saved.get("width", -1)) == expected.width
-            and int(saved.get("height", -1)) == expected.height
+            and dimensions_match
             and saved.get("frame") == expected.frame
         )
     except (TypeError, ValueError):
         return False
 
 
-def source_matches(saved: dict[str, Any], expected: SourceStamp) -> bool:
+def source_matches(saved: dict[str, Any], expected: SourceStamp, *, allow_transposed_dimensions: bool = False) -> bool:
     if not saved or saved.get("kind") != expected.kind:
         return False
-    return _file_stamp_matches(dict(saved.get("left") or {}), expected.left) and _file_stamp_matches(
-        dict(saved.get("right") or {}), expected.right
+    return _file_stamp_matches(dict(saved.get("left") or {}), expected.left, allow_transposed_dimensions=allow_transposed_dimensions) and _file_stamp_matches(
+        dict(saved.get("right") or {}), expected.right, allow_transposed_dimensions=allow_transposed_dimensions
     )
 
 
 def pipeline_mismatches(saved: dict[str, Any]) -> tuple[str, ...]:
     expected = {
+        "input": INPUT_PIPELINE_VERSION,
         "alignment": ALIGNMENT_PIPELINE_VERSION,
         "disparity": DISPARITY_PIPELINE_VERSION,
         "color": COLOR_PIPELINE_VERSION,
@@ -203,7 +210,14 @@ def load_sidecar(path: Path, expected_source: SourceStamp | None = None) -> Side
             doc = SidecarDocument.from_dict(raw)
         except Exception as exc:
             return SidecarLoadResult(SidecarStatus.INVALID, message=str(exc))
-        if expected_source is not None and not source_matches(doc.source, expected_source):
+        # The former TIFF double transform left orientations 5..8 with the
+        # stored (unrotated) dimensions. Keep user edits for those unchanged
+        # files, but never reuse their calculated data. Path, byte size, mtime,
+        # frame and exact/transposed dimensions still have to match per eye.
+        legacy_input = "input" not in doc.pipeline
+        if expected_source is not None and not source_matches(
+            doc.source, expected_source, allow_transposed_dimensions=legacy_input
+        ):
             return SidecarLoadResult(SidecarStatus.STALE, doc, "Quelldatei stimmt nicht mit Sidecar überein.")
         mismatches = pipeline_mismatches(doc.pipeline)
         message = ""

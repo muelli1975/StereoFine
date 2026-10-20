@@ -78,6 +78,12 @@ def browse_source(source: StereoSource, defaults: ProcessingDefaults = Processin
             state.disparity.stale = True
         if not sidecar.color_cache_valid:
             state.color.valid = False
+        if "input" in sidecar.pipeline_mismatches:
+            # Old geometry and automatic shifts refer to different decoded
+            # pixels. Keep explicit user edits, but do not preview or re-save
+            # those calculations as if they belonged to the corrected input.
+            state.alignment.correction = None
+            state.framing.clear_auto_near(status="stale")
     else:
         state = PairState()
         _apply_defaults(state, defaults)
