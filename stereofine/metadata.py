@@ -5,6 +5,7 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+from .config import SUPPORTED_HEIF_EXTENSIONS
 from .resources import tool_path
 
 
@@ -41,6 +42,11 @@ def copy_metadata_without_preview_or_orientation(src_path: Path | None, dst_path
         return MetadataCopyResult(True, False, "ExifTool nicht gefunden.")
 
     try:
+        # New container readers normalize ICC-tagged pixels to sRGB. Copying
+        # their original profile/AdobeRGB EXIF back onto those pixels is wrong.
+        normalized_sdr = src_path.suffix.lower() in SUPPORTED_HEIF_EXTENSIONS | {'.webp', '.bmp'}
+        color_arguments = (["--ICC_Profile", "-ICC_Profile=", "-EXIF:ColorSpace#=1",
+                            "-InteropIndex#=R98"] if normalized_sdr else [])
         completed = subprocess.run(
             [
                 str(exiftool_path),
@@ -50,6 +56,7 @@ def copy_metadata_without_preview_or_orientation(src_path: Path | None, dst_path
                 "--Preview:all",
                 "--Orientation",
                 "--MPF:all",
+                *color_arguments,
                 str(dst_path),
             ],
             stdout=subprocess.PIPE,

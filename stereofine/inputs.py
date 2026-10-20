@@ -14,6 +14,7 @@ except Exception:  # pragma: no cover - defensive for unusual Pillow builds
 
 from .config import (
     SUPPORTED_IMAGE_EXTENSIONS,
+    SUPPORTED_HEIF_EXTENSIONS,
     SUPPORTED_MPO_EXTENSIONS,
     SUPPORTED_STEREO_SINGLE_EXTENSIONS,
 )
@@ -36,6 +37,8 @@ class LoadedStereoPair:
     left_source_height: int
     right_source_width: int
     right_source_height: int
+    left_entity: int | None = None
+    right_entity: int | None = None
 
 
 def is_image_file(path: Path) -> bool:
@@ -144,10 +147,28 @@ def _to_rgb_keep_depth(decoded: np.ndarray) -> np.ndarray:
 
 
 def load_master_image(path: Path) -> np.ndarray:
-    """Load JPEG/PNG/TIFF, including JPS/PNS aliases, retaining uint8/uint16."""
+    """Keep existing master depths; new Pillow/HEIF imports normalize to SDR sRGB."""
     suffix = path.suffix.lower()
     if suffix not in SUPPORTED_IMAGE_EXTENSIONS:
         raise InputError(f"Nicht unterstütztes Bildformat: {suffix or path.name}")
+    if suffix in SUPPORTED_HEIF_EXTENSIONS:
+        from .heif import decode_heif
+        images, report = decode_heif(path)
+        if report['stereo']:
+            raise InputError('Stereo-HEIF über Full-SBS/MPO/HEIF öffnen; es ist kein einzelnes Halbbild.')
+        return images[0]
+    if suffix in {'.webp', '.bmp'}:
+        from PIL import ImageOps
+        from .image_color import sdr_rgb
+        try:
+            with Image.open(path) as image:
+                if getattr(image, 'n_frames', 1) != 1:
+                    raise InputError('Animierte Bilder werden nicht als Stereofoto unterstützt.')
+                return sdr_rgb(ImageOps.exif_transpose(image))
+        except InputError:
+            raise
+        except Exception as exc:
+            raise InputError(f'Bild konnte nicht gelesen werden: {path}: {exc}') from exc
     decoded = _decode_cv_image(path)
     rgb = _to_rgb_keep_depth(decoded)
     orientation = _read_exif_orientation(path)
@@ -253,7 +274,29 @@ def load_mpo(path: Path) -> LoadedStereoPair:
 def load_stereo_single_file(path: Path) -> LoadedStereoPair:
     if is_mpo_file(path):
         return load_mpo(path)
+    if path.suffix.lower() in SUPPORTED_HEIF_EXTENSIONS:
+        return load_heif_stereo(path)
     return load_full_sbs(path)
+
+
+def load_heif_stereo(path: Path) -> LoadedStereoPair:
+    from .heif import decode_heif
+    images, report = decode_heif(path)
+    if not report['stereo']:
+        # This entry point deliberately means Full-SBS for an untagged still.
+        image = images[0]
+        h, w = image.shape[:2]
+        if w < 2:
+            raise InputError('Full-SBS-Datei ist zu schmal.')
+        half = w // 2
+        left, right = image[:, :half].copy(), image[:, w-half:].copy()
+        entities = (None, None)
+    else:
+        left, right = images
+        entities = report['entities']
+    h, w = left.shape[:2]
+    return LoadedStereoPair(left, right, path, path, 'heif', w, h, w, h,
+                            right.shape[1], right.shape[0], *entities)
 
 
 def detect_underscore_side(path: Path) -> tuple[str, str] | None:

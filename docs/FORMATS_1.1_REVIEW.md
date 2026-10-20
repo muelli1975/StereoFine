@@ -1,3 +1,5 @@
+> Historical review. The implemented scope and current checks are documented in [IMAGE_FORMATS_1.1.md](IMAGE_FORMATS_1.1.md).
+
 # Bildformate für StereoFine 1.1 im Vergleich zu TransCora
 
 Stand: 20. Oktober 2026. Dies ist eine geprüfte Empfehlung, keine bereits

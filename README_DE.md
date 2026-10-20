@@ -4,7 +4,9 @@ Vorabversion zum Prüfen der überarbeiteten Justage. [RC3-Pakete](https://githu
 
 [English](README_EN.md)
 
-Dieser Entwicklungszweig ergänzt nach RC3 JPS/PNS-Eingaben und die unten dokumentierten Messkorrekturen. Die verlinkten RC3-Pakete enthalten diese Ergänzungen noch nicht. Die [Justageprüfung](docs/APPLIED_MODEL_SCORING_1.1.md) dokumentiert eine korrigierte quadratische Modellbewertung. Die [Nahpunktbestätigung in Originalauflösung](docs/NATIVE_NEAR_RECOVERY_1.1.md) ergänzt abgesicherte Messungen für bislang unsichere Fälle. Subpixel-Nachmessung der Justage und die alternative Koeffizientenschätzung bleiben experimentell.
+Dieser Entwicklungszweig ergänzt nach RC3 JPS/PNS, statisches WebP/BMP und SDR-HEIC/HEIF sowie die unten dokumentierten Messkorrekturen. Die verlinkten RC3-Pakete enthalten diese Ergänzungen noch nicht. Die [Justageprüfung](docs/APPLIED_MODEL_SCORING_1.1.md) dokumentiert eine korrigierte quadratische Modellbewertung. Die [Nahpunktbestätigung in Originalauflösung](docs/NATIVE_NEAR_RECOVERY_1.1.md) ergänzt abgesicherte Messungen für bislang unsichere Fälle. Subpixel-Nachmessung der Justage und die alternative Koeffizientenschätzung bleiben experimentell.
+
+Aktuelle Entwicklungspakete werden separat in der [Entwicklungsprüfung](https://github.com/muelli1975/StereoFine/actions/workflows/validate-development.yml) gebaut und geprüft. Sie kennzeichnen sich als **1.1-dev** und enthalten die Änderungen nach RC3; die folgenden RC3-Downloads bleiben die ältere Vorabversion. [Formatumfang und Prüfungen](docs/IMAGE_FORMATS_1.1.md).
 
 StereoFine ist ein lokales Desktop-Werkzeug zum automatischen Ausrichten, Prüfen, Rahmen und Ausgeben stereoskopischer Bildpaare. Es soll möglichst viel zuverlässig automatisch erledigen, ohne die manuelle Kontrolle aus der Hand zu nehmen. Die Oberfläche bleibt deshalb bewusst schlank und tastaturfreundlich.
 
@@ -56,14 +58,16 @@ Offiziell unterstützt werden:
 - JPEG/JPG, einschließlich JPS
 - PNG, einschließlich PNS
 - TIFF/TIF
+- statisches WebP und BMP
+- SDR-HEIC/HEIF, einschließlich gekennzeichneter Stereopaare und Spatial Photos
 - MPO
-- Full-SBS in JPEG/JPS, PNG/PNS oder TIFF
+- Full-SBS in den unterstützten Standbild-Containern
 - getrennte Links/Rechts-Paare als `*_l` / `*_r`
 - getrennte Paare in den Unterordnern `l` und `r`
 
 JPS/PNS verwenden die vorhandenen JPEG-/PNG-Ladewege. Gepackte Bilder über **Full-SBS/MPO** öffnen und die Augenzuordnung prüfen; nötigenfalls **L/R tauschen** verwenden. Die Dateiendung wählt weder automatisch ein Layout noch die Augenreihenfolge. Andere Packungen wie Over/Under werden dadurch nicht zusätzlich unterstützt.
 
-HEIC/HEIF- und RAW-Bilder vor dem Öffnen in StereoFine in JPEG, PNG oder TIFF konvertieren.
+Gekennzeichnetes Stereo-HEIF über **Full-SBS/MPO** öffnen; die Stereo-Gruppe im Container bestimmt die Augen. Bei unmarkierten Dateien wird ausschließlich das Hauptbild verwendet: über diesen Eingang als Full-SBS oder als einzelnes Auge eines getrennten Links/Rechts-Paars. HDR, mehrdeutige Stereo-Gruppen, unterschiedliche HEIF-Augengrößen und nicht unterstützte SDR-Farbbeschreibungen werden abgewiesen. HEIF mit ICC-Profil wird nach sRGB konvertiert; sRGB beziehungsweise nicht näher bezeichnetes SDR wird ohne Zusatzkonverter angenommen. Die neuen HEIF-/WebP-/BMP-Ladewege verwenden 8-Bit-RGB und verwerfen Alpha wie der bisherige PNG-Ladeweg; animiertes WebP wird abgewiesen. RAW vorher in JPEG, PNG oder TIFF konvertieren.
 
 16-Bit-PNG und 16-Bit-TIFF werden nicht bereits beim Laden auf 8 Bit reduziert. Für Feature-/Disparitätsanalyse und Vorschau erzeugt StereoFine getrennte 8-Bit-Proxys. Die fertigen JPEG-Ausgaben sind bewusst 8 Bit.
 

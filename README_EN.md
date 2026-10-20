@@ -4,7 +4,9 @@ Prerelease for checking the revised alignment. [RC3 packages](https://github.com
 
 [Deutsch](README_DE.md)
 
-This development branch adds JPS/PNS input and the measurement fixes documented below after RC3. The linked RC3 packages do not include these additions. The [alignment review](docs/APPLIED_MODEL_SCORING_1.1.md) documents a corrected quadratic model score. The [native near-point recovery](docs/NATIVE_NEAR_RECOVERY_1.1.md) adds corroborated measurements for previously unconfirmed cases. Native subpixel alignment measurement and the alternative coefficient fit remain experimental.
+This development branch adds JPS/PNS, static WebP/BMP and SDR HEIC/HEIF input, together with the measurement fixes documented below after RC3. The linked RC3 packages do not include these additions. The [alignment review](docs/APPLIED_MODEL_SCORING_1.1.md) documents a corrected quadratic model score. The [native near-point recovery](docs/NATIVE_NEAR_RECOVERY_1.1.md) adds corroborated measurements for previously unconfirmed cases. Native subpixel alignment measurement and the alternative coefficient fit remain experimental.
+
+Current development packages are built and checked separately in [development validation](https://github.com/muelli1975/StereoFine/actions/workflows/validate-development.yml). They identify themselves as **1.1-dev** and include changes after RC3; the RC3 downloads below remain the older prerelease. See the [input-format scope and checks](docs/IMAGE_FORMATS_1.1.md).
 
 StereoFine is a local desktop tool for automatically aligning, checking, framing and exporting stereoscopic image pairs. It is designed to do as much reliable work automatically as possible without taking manual control away from the user. The interface therefore stays deliberately compact and keyboard-friendly.
 
@@ -56,14 +58,16 @@ Officially supported:
 - JPEG/JPG, including JPS
 - PNG, including PNS
 - TIFF/TIF
+- static WebP and BMP
+- SDR HEIC/HEIF, including tagged stereo and Spatial Photos
 - MPO
-- Full-SBS in JPEG/JPS, PNG/PNS or TIFF
+- Full-SBS in the supported still-image containers
 - separate Left/Right pairs using `*_l` / `*_r`
 - separate pairs in `l` and `r` subfolders
 
 JPS/PNS use the existing JPEG/PNG readers. Open packed images through **Full-SBS/MPO** and verify the eye assignment; use **Swap L/R** when required. The extension does not automatically choose a layout or eye order. Other arrangements such as Over/Under are not added by this extension.
 
-Convert HEIC/HEIF and RAW images to JPEG, PNG or TIFF before opening them in StereoFine.
+Open tagged stereo HEIF through **Full-SBS/MPO**; the container’s stereo group determines the eyes. Untagged files use only the primary image, interpreted as Full-SBS through that entry point, or as one eye in a separate Left/Right pair. HDR, ambiguous stereo groups, unequal HEIF eye sizes and unsupported SDR colour descriptions are rejected. HEIF with an ICC profile is converted to sRGB; sRGB/unspecified SDR is accepted without an additional converter. The new HEIF/WebP/BMP paths use 8-bit RGB and discard alpha like the existing PNG path; animated WebP is rejected. Convert RAW to JPEG, PNG or TIFF first.
 
 16-bit PNG and 16-bit TIFF are not reduced to 8 bit immediately when loaded. StereoFine creates separate 8-bit proxies for feature/disparity analysis and preview. Final JPEG output is deliberately 8 bit.
 

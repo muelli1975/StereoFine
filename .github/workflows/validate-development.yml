@@ -10,6 +10,11 @@ on:
       - 'tests/**'
       - 'experiments/**'
       - 'requirements-lock.txt'
+      - 'requirements-heif.txt'
+      - 'requirements-build.txt'
+      - 'native/**'
+      - 'scripts/**'
+      - 'StereoFine.py'
 
 permissions:
   contents: read
@@ -28,14 +33,14 @@ jobs:
         with:
           python-version: '3.12.10'
       - name: Install pinned runtime dependencies
-        run: python -m pip install -r requirements-lock.txt
+        run: python -m pip install -r requirements-lock.txt -r requirements-heif.txt
       - name: Application regression tests
         run: python -m unittest discover -s tests -p 'test_*.py'
       - name: Research safety and synthetic geometry tests
         run: python -m unittest discover -s experiments/tests -p 'test_*.py'
       - name: Compile and verify original assets
         run: |
-          python -m compileall -q StereoFine.py stereofine tests experiments scripts
+          python -m compileall -q StereoFine.py stereofine tests experiments scripts native
           python -c "import hashlib,pathlib; p=pathlib.Path('assets'); rows=[s.split() for s in (p/'ASSET_HASHES.txt').read_text().splitlines() if s.strip() and not s.startswith('#')]; assert all(hashlib.sha256((p/name).read_bytes()).hexdigest()==digest for digest,name in rows); print('Original assets verified')"
       - name: Linux GUI smoke in German and English
         if: runner.os == 'Linux'
@@ -44,3 +49,59 @@ jobs:
           sudo apt-get install -y xvfb
           PYTHONPATH=. STEREOFINE_TEST_LANGUAGE=de xvfb-run -a -s '-screen 0 1920x1080x24' python tests/gui_smoke_xvfb.py
           PYTHONPATH=. STEREOFINE_TEST_LANGUAGE=en xvfb-run -a -s '-screen 0 1920x1080x24' python tests/gui_smoke_xvfb.py
+
+  packages:
+    name: Development package (${{ matrix.os }})
+    needs: validate
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-2022, macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - name: Install pinned build dependencies
+        run: python -m pip install -r requirements-build.txt
+      - name: Prepare official ExifTool for Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          curl.exe -fL 'https://sourceforge.net/projects/exiftool/files/exiftool-13.59_64.zip/download' -o exiftool.zip
+          Expand-Archive exiftool.zip -DestinationPath exiftool-download
+          $pkg = Get-ChildItem exiftool-download -Directory | Select-Object -First 1
+          New-Item -ItemType Directory -Force tools | Out-Null
+          Copy-Item -Recurse -Force (Join-Path $pkg.FullName '*') tools
+          $exe = Get-ChildItem tools -File | Where-Object { $_.Name -like 'exiftool*.exe' } | Select-Object -First 1
+          if (-not $exe) { throw 'ExifTool executable not found' }
+          Rename-Item -Force $exe.FullName 'exiftool.exe'
+          & .\tools\exiftool.exe -ver
+      - name: Prepare official ExifTool for Unix
+        if: runner.os != 'Windows'
+        run: |
+          curl -fL 'https://sourceforge.net/projects/exiftool/files/Image-ExifTool-13.59.tar.gz/download' -o exiftool.tar.gz
+          tar -xzf exiftool.tar.gz
+          mkdir -p tools/lib
+          cp Image-ExifTool-13.59/exiftool tools/exiftool
+          cp -R Image-ExifTool-13.59/lib/. tools/lib/
+          cp Image-ExifTool-13.59/README tools/EXIFTOOL_README
+          chmod +x tools/exiftool
+          perl tools/exiftool -ver
+      - name: Build both executables and test actual packaged imports
+        run: python scripts/build_development.py
+      - name: Confirm no HEIF codec is linked into the main application
+        shell: bash
+        run: |
+          python -c "from pathlib import Path; p=Path('dist'); files=[str(x) for x in p.rglob('*') if x.is_file() and ('pillow_heif' in x.name or '_pillow_heif' in x.name)]; assert not files, files; print('Main application has no HEIF codec')"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StereoFine-1.1-development-${{ matrix.os }}
+          path: |
+            release/StereoFine_1.1-dev_*.zip
+            release/StereoFine_1.1-dev_*.zip.sha256
+            build/development-input-check.json
+          if-no-files-found: error
+          retention-days: 30

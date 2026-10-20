@@ -1,0 +1,2 @@
+# Separate reader only. The main application must not import this codec.
+pillow-heif==1.8.1

@@ -1,21 +1,24 @@
-# Building StereoFine 1.1-rc3 on Windows
+# Building StereoFine 1.1 development on Windows
 
 StereoFine is published as a **portable Windows x64 onedir application**. The public executable must be built on Windows; PyInstaller is not used to cross-compile it from Linux.
+
+The read-only development workflow builds commit-labelled artifacts with `scripts/build_development.py` and checks the actual frozen application and separate HEIF reader. It never publishes a release or changes existing RC3/1.0 files. The PowerShell route below is an alternative clean Windows build.
 
 ## Required build environment
 
 - Windows x64
 - Python **3.12.10**, 64 bit, installed with the standard Python installer
 - Internet access for the one-time installation of the pinned Python build dependencies
-- the complete StereoFine 1.1-rc3 source directory, including `assets/` and `tools/`
+- the complete committed StereoFine development source directory, including `assets/`, `native/heif/` and the official ExifTool tree under `tools/`
 
 Runtime dependencies are pinned in `requirements-lock.txt`. The build tool is pinned in `requirements-build.txt`:
 
 - PyInstaller 6.22.2
+- pillow-heif 1.8.1, used only by the separate reader; its pinned native sources are downloaded at build time and retained in the package
 
 ## Build
 
-Open PowerShell in the exact StereoFine 1.1-rc3 source directory and run:
+Open PowerShell in the exact StereoFine 1.1-dev source directory and run:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
@@ -29,7 +32,7 @@ Expected final artifacts:
 
 ```text
 release/
-    StereoFine_1.1-rc3_Windows_x64.zip
+    StereoFine_1.1-dev_Windows_x64.zip
     SHA256SUMS.txt
 
 dist/
@@ -39,6 +42,11 @@ dist/
         tools/
             exiftool.exe
             exiftool_files/
+            heif/
+                StereoFine-HEIF.exe
+                _internal/
+                source/
+                licenses/
         licenses/
         Source/
         README_DE.md
@@ -54,7 +62,7 @@ StereoFine stores `settings.json` beside `StereoFine.exe` at runtime. This is de
 
 ## Required manual Windows smoke check
 
-After the script finishes, extract `release/StereoFine_1.1-rc3_Windows_x64.zip` into a fresh folder and check at least:
+After the script finishes, extract `release/StereoFine_1.1-dev_Windows_x64.zip` into a fresh folder and check at least:
 
 1. `StereoFine.exe` starts without an external Python installation being used.
 2. The application icon is correct in Explorer, the title bar and taskbar.
@@ -75,12 +83,12 @@ After the script finishes, extract `release/StereoFine_1.1-rc3_Windows_x64.zip` 
 
 A genuine camera MPO and additional real camera color-mismatch material are useful extra checks when available, and actual Windows camera validation remains required for this release candidate.
 
-## Releasing
+## Development artifacts
 
-The public release archive is simply:
+The alternative PowerShell build produces:
 
 ```text
-StereoFine_1.1-rc3_Windows_x64.zip
+StereoFine_1.1-dev_Windows_x64.zip
 ```
 
-Upload it manually to the GitHub release for version `1.1-rc3`. The SHA-256 produced in `release/SHA256SUMS.txt` can be copied into the release notes.
+Do not upload development artifacts over RC3 or stable 1.0. The development workflow uses commit/platform-specific archive names and attaches checksums plus an input-check report to the Actions run. A stable 1.1 release requires separate validation and an explicit release step.

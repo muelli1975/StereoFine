@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
-InputKind = Literal["pair", "full_sbs", "mpo"]
+InputKind = Literal["pair", "full_sbs", "mpo", "heif"]
 OutputMode = Literal["both", "sbs", "anaglyph"]
 
 
@@ -16,6 +16,7 @@ class FileStamp:
     width: int
     height: int
     frame: int | None = None
+    entity: int | None = None
 
     @classmethod
     def from_path(
@@ -26,6 +27,7 @@ class FileStamp:
         width: int,
         height: int,
         frame: int | None = None,
+        entity: int | None = None,
     ) -> "FileStamp":
         stat = path.stat()
         try:
@@ -39,6 +41,7 @@ class FileStamp:
             width=int(width),
             height=int(height),
             frame=frame,
+            entity=entity,
         )
 
 

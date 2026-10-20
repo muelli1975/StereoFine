@@ -82,6 +82,18 @@ def main() -> None:
         )
         mpo_source = source_from_stereo_file(mpo_path, mpo_root)
 
+        # New containers use the same real asynchronous GUI worker/preview.
+        extra_root = root/'additional_formats'
+        extra_root.mkdir()
+        extra_sources = []
+        for extension in ('webp', 'bmp'):
+            path = extra_root/f'sample_{extension}.{extension}'
+            small.save(path, **({'lossless': True} if extension == 'webp' else {}))
+            extra_sources.append((source_from_stereo_file(path, extra_root), 'full_sbs'))
+        heif_path = extra_root/'tagged.heic'
+        heif_path.write_bytes((Path(__file__).parent/'fixtures/heif/entity_groups.heic').read_bytes())
+        extra_sources.append((source_from_stereo_file(heif_path, extra_root), 'heif'))
+
         app = gui.StereoFineApp()
         try:
             app.withdraw()
@@ -89,7 +101,7 @@ def main() -> None:
             # Mandatory single-input loading smoke: Full-SBS, MPO and L/R pair
             # all travel through the real asynchronous GUI load worker.
             for format_source, expected_kind in (
-                (sources[0], "full_sbs"), (mpo_source, "mpo"), (pair_source, "pair")
+                (sources[0], "full_sbs"), (mpo_source, "mpo"), (pair_source, "pair"), *extra_sources
             ):
                 app._set_source_collection([format_source], 0, batch=False)
                 pump(app, lambda: app.busy_state == "idle" and app.current is not None)

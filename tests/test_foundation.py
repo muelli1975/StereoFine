@@ -751,12 +751,12 @@ class InputFormatTests(unittest.TestCase):
             self.assertTrue(np.all(loaded.left[..., 2] == 0))
             self.assertTrue(np.all(loaded.right[..., 2] == 0))
 
-    def test_heic_is_deliberately_not_an_official_input_format(self):
+    def test_damaged_heic_does_not_become_a_valid_image(self):
         from stereofine.inputs import InputError, load_master_image
         with tempfile.TemporaryDirectory() as td:
             path = Path(td) / "phone.heic"
             path.write_bytes(b"not relevant")
-            with self.assertRaisesRegex(InputError, "Nicht unterstütztes Bildformat"):
+            with self.assertRaises(InputError):
                 load_master_image(path)
 
 

@@ -132,6 +132,7 @@ def _file_stamp_matches(saved: dict[str, Any], expected: FileStamp, *, allow_tra
             and int(saved.get("mtime_ns", -1)) == expected.mtime_ns
             and dimensions_match
             and saved.get("frame") == expected.frame
+            and saved.get("entity") == expected.entity
         )
     except (TypeError, ValueError):
         return False

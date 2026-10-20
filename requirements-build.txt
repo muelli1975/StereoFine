@@ -1,2 +1,4 @@
 -r requirements-lock.txt
 pyinstaller==6.22.2
+# Loaded only in the separate HEIF reader process, never in the GUI process.
+-r requirements-heif.txt

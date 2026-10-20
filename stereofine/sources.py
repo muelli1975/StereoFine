@@ -16,10 +16,12 @@ from .inputs import (
     load_mpo,
     load_full_sbs,
     load_pair,
+    load_heif_stereo,
 )
+from .config import SUPPORTED_HEIF_EXTENSIONS
 from .models import FileStamp, SourceStamp
 
-SourceMode = Literal["pair", "full_sbs", "mpo"]
+SourceMode = Literal["pair", "full_sbs", "mpo", "heif"]
 
 
 @dataclass(frozen=True)
@@ -57,7 +59,8 @@ def source_from_pair(left: Path, right: Path, input_root: Path) -> StereoSource:
 
 
 def source_from_stereo_file(path: Path, input_root: Path) -> StereoSource:
-    kind: SourceMode = "mpo" if path.suffix.lower() == ".mpo" else "full_sbs"
+    kind: SourceMode = ("mpo" if path.suffix.lower() == ".mpo" else
+                        "heif" if path.suffix.lower() in SUPPORTED_HEIF_EXTENSIONS else "full_sbs")
     return StereoSource(kind, path, path, input_root, path.stem)
 
 
@@ -95,7 +98,7 @@ def validate_source_names(sources: Iterable[StereoSource], *, check_outputs: boo
 
 
 def build_source_stamp(source: StereoSource, loaded: LoadedStereoPair) -> SourceStamp:
-    if source.kind == "pair":
+    if source.kind in {"pair", "heif"}:
         left_frame = None
         right_frame = None
     else:
@@ -109,6 +112,7 @@ def build_source_stamp(source: StereoSource, loaded: LoadedStereoPair) -> Source
             width=loaded.left_source_width,
             height=loaded.left_source_height,
             frame=left_frame,
+            entity=loaded.left_entity,
         ),
         right=FileStamp.from_path(
             source.right_path,
@@ -116,6 +120,7 @@ def build_source_stamp(source: StereoSource, loaded: LoadedStereoPair) -> Source
             width=loaded.right_source_width,
             height=loaded.right_source_height,
             frame=right_frame,
+            entity=loaded.right_entity,
         ),
     )
 
@@ -136,4 +141,6 @@ def load_source(source: StereoSource) -> LoadedStereoPair:
         return load_mpo(source.left_path)
     if source.kind == "full_sbs":
         return load_full_sbs(source.left_path)
+    if source.kind == "heif":
+        return load_heif_stereo(source.left_path)
     raise ValueError(f"Unbekannte Stereoquelle: {source.kind}")

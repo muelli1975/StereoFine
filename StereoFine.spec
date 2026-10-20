@@ -1,4 +1,4 @@
-# PyInstaller onedir specification for StereoFine 1.1-rc3.
+# PyInstaller onedir specification for StereoFine 1.1 development.
 # Build from a clean Windows x64 Python 3.12.10 environment.
 
 from PyInstaller.utils.hooks import collect_data_files
@@ -17,7 +17,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=["pillow_heif"],
     noarchive=False,
 )
 

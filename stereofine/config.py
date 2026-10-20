@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 APP_NAME = "StereoFine"
-APP_VERSION = "1.1-rc3"
+APP_VERSION = "1.1-dev"
 SIDECAR_SCHEMA_VERSION = 3
 
 # Pipeline versions are intentionally separate from the app version so a later
@@ -27,7 +27,8 @@ SBS_JPEG_QUALITY = 95
 ANAGLYPH_JPEG_QUALITY = 90
 ANAGLYPH_TARGET_HEIGHT = 2160
 
-SUPPORTED_IMAGE_EXTENSIONS = frozenset({".jpg", ".jpeg", ".jps", ".png", ".pns", ".tif", ".tiff"})
+SUPPORTED_HEIF_EXTENSIONS = frozenset({".heic", ".heif"})
+SUPPORTED_IMAGE_EXTENSIONS = frozenset({".jpg", ".jpeg", ".jps", ".png", ".pns", ".tif", ".tiff", ".webp", ".bmp"}) | SUPPORTED_HEIF_EXTENSIONS
 SUPPORTED_MPO_EXTENSIONS = frozenset({".mpo"})
 SUPPORTED_STEREO_SINGLE_EXTENSIONS = SUPPORTED_IMAGE_EXTENSIONS | SUPPORTED_MPO_EXTENSIONS
 

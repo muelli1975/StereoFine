@@ -13,8 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ReleaseHygieneTests(unittest.TestCase):
-    def test_public_version_matches_release_candidate(self):
-        self.assertEqual(APP_VERSION, "1.1-rc3")
+    def test_public_version_identifies_unreleased_development(self):
+        self.assertEqual(APP_VERSION, "1.1-dev")
 
     def test_release_files_exist(self):
         required = [

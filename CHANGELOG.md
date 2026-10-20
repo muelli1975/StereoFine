@@ -2,6 +2,11 @@
 
 ## 1.1 – Unreleased
 
+- Add isolated SDR HEIC/HEIF import using TransCora’s reader, tagged stereo entity IDs, sRGB ICC normalization and explicit rejection of unsupported containers/colour descriptions.
+- Add static WebP/BMP to packed and paired inputs; retain EXIF orientation, explicit alpha handling and duplicate-name protection.
+- Keep HEIF entity IDs in source fingerprints and reproducible sessions; prevent original non-sRGB metadata from being reapplied to normalized exports.
+- Build separately labelled 1.1-dev artifacts, including the replaceable HEIF reader and corresponding sources; validate actual frozen imports and session/render round trips without changing releases.
+
 - Recover missed near-point evidence only after same-location native patch confirmation, independent spatial support and a veto for unresolved nearer surfaces.
 - Preserve existing confirmed results and uncertainty guards; retain the conservative measurement reserve and advance disparity calculation to sf-disparity-3.
 
