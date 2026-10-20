@@ -55,33 +55,37 @@ def _largest_all_valid_rectangle(valid: np.ndarray) -> tuple[int, int, int, int]
         return None
 
     h, w = valid.shape
-    heights = [0] * w
+    heights = np.zeros(w, dtype=np.int64)
     best_area = 0
     best_rect = None
 
     for y in range(h):
-        row = valid[y]
-        for x in range(w):
-            heights[x] = heights[x] + 1 if row[x] else 0
+        heights += 1
+        heights[~valid[y].astype(bool)] = 0
 
-        stack = []
-        for x in range(w + 1):
-            current_height = heights[x] if x < w else 0
+        # Equal-height runs have only one potentially maximal rectangle. Warp
+        # masks usually have very few runs per row, so keep the exact monotone
+        # stack algorithm while doing the per-pixel work in NumPy. Processing
+        # run starts left-to-right also preserves the old first-maximum rule.
+        run_starts = np.flatnonzero(heights[1:] != heights[:-1]) + 1
+        stack: list[tuple[int, int]] = []
+        for x in [0, *run_starts.tolist(), w]:
+            current_height = int(heights[x]) if x < w else 0
+            start = x
 
-            while stack and heights[stack[-1]] > current_height:
-                height = heights[stack.pop()]
-                x0 = stack[-1] + 1 if stack else 0
-                x1 = x
-                width = x1 - x0
-                area = height * width
+            while stack and stack[-1][0] > current_height:
+                height, x0 = stack.pop()
+                area = height * (x - x0)
 
                 if area > best_area:
                     best_area = area
                     y1 = y + 1
                     y0 = y1 - height
-                    best_rect = (x0, y0, x1, y1)
+                    best_rect = (x0, y0, x, y1)
+                start = x0
 
-            stack.append(x)
+            if current_height and (not stack or stack[-1][0] < current_height):
+                stack.append((current_height, start))
 
     if best_rect is None:
         return None

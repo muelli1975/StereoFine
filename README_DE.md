@@ -149,6 +149,8 @@ Standardmäßig legt StereoFine den Ordner `output` im Eingabeordner an. Alterna
 
 Vorhandene Bildausgaben gleichen Namens werden bewusst ersetzt.
 
+Quelldateien mit demselben Stammnamen, etwa `Motiv.jpg` und `Motiv.png`, bitte vor der Verarbeitung eindeutig umbenennen. StereoFine meldet solche Kollisionen und schützt bestehende Einstellungen anderer Quellen.
+
 ## Metadaten
 
 Soweit möglich kopiert StereoFine Metadaten mit dem gebündelten ExifTool. Preview-, Orientation- und MPF/MPO-Containerdaten werden nicht in normale SBS-/Anaglyph-JPEGs übernommen. Scheitert nur die Metadatenkopie, bleibt ein erfolgreich geschriebenes Bild gültig und StereoFine zeigt einen Hinweis.

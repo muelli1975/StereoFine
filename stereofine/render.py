@@ -77,6 +77,9 @@ def render_final_pair(
     """
 
     left, right = _oriented_pair(loaded, state)
+    # "Original" refers to the oriented source, as it does in preview and
+    # disparity analysis, before alignment/overlap remove any border pixels.
+    input_aspect = left.shape[1] / max(1, left.shape[0])
     left, right = warp_pair_symmetric(left, right, state.alignment.correction)
 
     left, right, _changed = crop_shifted_pair_to_overlap(
@@ -88,7 +91,6 @@ def render_final_pair(
 
     zoom_index = max(0, min(len(CROP_ZOOM_LEVELS) - 1, int(state.framing.crop_zoom_index)))
     state.framing.crop_zoom_index = zoom_index
-    input_aspect = left.shape[1] / max(1, left.shape[0])
     left, right, _changed = crop_pair_to_aspect_and_framing(
         left,
         right,
