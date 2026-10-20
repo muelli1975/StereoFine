@@ -5,6 +5,11 @@ Keine Änderung an der Anwendung, veröffentlichten Paketen oder `.sfin`-Dateien
 
 ## Ergebnis und Entscheidung
 
+**Nachfolgende Prüfung:** Der [zweistufige Selektor mit RC3-Referenzveto](SUBPIXEL_SELECTION_1.1.md)
+lässt keinen der 29 Kandidaten als belegte Verbesserung des tatsächlichen
+RC3-Stands zu. Die folgenden Gewinne beziehen sich auf neu angepasste
+Vergleichsgeometrien mit reduziertem Trainingssatz.
+
 Die klassische Nachmessung ist der sinnvollere nächste Untersuchungsschritt
 als eine Wiederaufnahme der verworfenen Vollrektifizierung: Bei 22 von 29 Paaren
 sinkt der globale P95-Fehler auf extern zurückgehaltenen Quellpunkten, bei sieben

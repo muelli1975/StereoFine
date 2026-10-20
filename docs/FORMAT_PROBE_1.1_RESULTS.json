@@ -1,0 +1,76 @@
+{
+  "scope": "Linux local pinned decoder feasibility only; no input registration or platform build test",
+  "opencv": "4.13.0",
+  "pillow": "12.2.0",
+  "checks": [
+    {
+      "extension": ".jps",
+      "encoded_format": "JPEG",
+      "production_registered": false,
+      "decoder_passed": true,
+      "dtype": "uint8",
+      "shape": [
+        48,
+        96,
+        3
+      ],
+      "pixels_equal_pillow": true,
+      "lossless_pixels_equal_source": false
+    },
+    {
+      "extension": ".pns",
+      "encoded_format": "PNG",
+      "production_registered": false,
+      "decoder_passed": true,
+      "dtype": "uint8",
+      "shape": [
+        48,
+        96,
+        3
+      ],
+      "pixels_equal_pillow": true,
+      "lossless_pixels_equal_source": true
+    },
+    {
+      "extension": ".bmp",
+      "encoded_format": "BMP",
+      "production_registered": false,
+      "decoder_passed": true,
+      "dtype": "uint8",
+      "shape": [
+        48,
+        96,
+        3
+      ],
+      "pixels_equal_pillow": true,
+      "lossless_pixels_equal_source": true
+    },
+    {
+      "extension": ".webp",
+      "encoded_format": "WEBP",
+      "production_registered": false,
+      "decoder_passed": true,
+      "dtype": "uint8",
+      "shape": [
+        48,
+        96,
+        3
+      ],
+      "pixels_equal_pillow": true,
+      "lossless_pixels_equal_source": true
+    },
+    {
+      "extension": ".pns",
+      "encoded_format": "PNG16",
+      "decoder_passed": true,
+      "dtype": "uint16",
+      "lossless_pixels_equal_source": true
+    },
+    {
+      "extension": ".webp",
+      "case": "animation",
+      "detected_frames": 2,
+      "scope": "must reject animation or require explicit frame selection; not a stereo pair"
+    }
+  ]
+}

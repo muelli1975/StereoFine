@@ -272,3 +272,7 @@ und Y-Polish; die Messpräzision wird zunächst innerhalb dieser Pipeline geprü
 
 Der [Subpixel-Pilot](SUBPIXEL_PILOT_1.1.md) prüft anschließend ausschließlich
 präzisere Korrespondenzmessungen innerhalb der bestehenden Geometrie.
+
+Die [anschließende Subpixel-Auswahl mit tatsächlichem RC3-Referenzveto](SUBPIXEL_SELECTION_1.1.md)
+zeigt bislang keinen belastbaren produktiven Zusatzgewinn (0/29).
+[Geprüfte Formatergänzungen für 1.1](FORMATS_1.1_REVIEW.md) sind getrennt dokumentiert.
