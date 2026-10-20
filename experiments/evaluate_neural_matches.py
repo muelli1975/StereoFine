@@ -44,6 +44,8 @@ for f in sorted(root.glob('*_lightglue_*.json')) + sorted(root.glob('*_roma_*.js
         del baseline_left, baseline_right
     a = apply_orientation(loaded.left, t['left_orientation'], t['left_mirror'])
     b = apply_orientation(loaded.right, t['right_orientation'], t['right_mirror'])
+    if t['swap_eyes']:
+        a, b = b, a
     ga, gb, scale = resize_pair_for_analysis(a, b, 3000)
     z = np.load(f.with_name(f.stem + '_points.npz'))
     p, q = (z['left'].astype(float), z['right'].astype(float))

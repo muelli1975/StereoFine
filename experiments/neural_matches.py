@@ -59,6 +59,8 @@ for case in cases:
         raise ValueError('This pilot only supports the supplied 8-bit RGB inputs')
     a = apply_orientation(loaded.left, t['left_orientation'], t['left_mirror'])
     b = apply_orientation(loaded.right, t['right_orientation'], t['right_mirror'])
+    if t['swap_eyes']:
+        a, b = b, a
     a = np.ascontiguousarray(a)
     b = np.ascontiguousarray(b)
     ga, gb, scale = resize_pair_for_analysis(a, b, 3000)

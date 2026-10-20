@@ -34,7 +34,7 @@ from stereofine.state import (PairState, AlignmentState, FramingState,
     InputTransformState, reproducible_alignment_correction)
 
 
-def rendered_checks(left, right):
+def rendered_checks(left, right, *, include_grid=False):
     h, w = left.shape[:2]
     scale = min(1., 1500/w)
     size = (round(w*scale), round(h*scale))
@@ -63,8 +63,11 @@ def rendered_checks(left, right):
     good &= patch_correlations(a,b,p,q)>=.90
     p,q = p[good],q[good]
     rows = []
-    for label,x0,y0,fraction in [("all",0,0,1), ("TL20",0,0,.2), ("TR20",.8,0,.2),
-                                 ("BL20",0,.8,.2),("BR20",.8,.8,.2),("BR10",.9,.9,.1)]:
+    regions = [("all",0,0,1), ("TL20",0,0,.2), ("TR20",.8,0,.2),
+               ("BL20",0,.8,.2),("BR20",.8,.8,.2),("BR10",.9,.9,.1)]
+    if include_grid:
+        regions += [(f"grid5_{iy}_{ix}", ix/5, iy/5, .2) for iy in range(5) for ix in range(5)]
+    for label,x0,y0,fraction in regions:
         selected = (p[:,0]>=x0*size[0]) & (p[:,0]<(x0+fraction)*size[0]) & (p[:,1]>=y0*size[1]) & (p[:,1]<(y0+fraction)*size[1])
         dy = np.abs(q[selected,1]-p[selected,1])/scale
         rows.append(dict(region=label,count=int(selected.sum()),mean_px=float(dy.mean()) if len(dy) else None,

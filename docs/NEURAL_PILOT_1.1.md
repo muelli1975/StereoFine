@@ -4,6 +4,11 @@
 keine Änderung der veröffentlichten RC3-/1.0-Pakete. Basis der Auswertung ist
 RC3 `081275da0aa394d181f3debf9a8c2e361bdb37e5`.
 
+Fortsetzung: [Räumliche Auswahlprüfung auf dem erweiterten Bestand](NEURAL_SELECTION_1.1.md).
+Sie zeigt insbesondere, dass der globale Gewinn beim S95-Beispiel mit lokalen
+Verschlechterungen einhergeht. Der erste Pilot allein rechtfertigt deshalb
+keinen automatischen Austausch der bisherigen Justage.
+
 ## Tatsächlich ausgeführt
 
 - SIFT + LightGlue und ALIKED + LightGlue: je acht Originalpaare, vier Gespanne.
