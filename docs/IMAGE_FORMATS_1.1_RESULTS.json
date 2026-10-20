@@ -1,0 +1,268 @@
+{
+  "code_commit": "e00b168fc54d65750bcf7a7210326cc181cdbefb",
+  "code_tree": "b96272f81be47f90d7ef59efaad4125403a0764f",
+  "application_tests_per_platform": 178,
+  "research_tests_per_platform": 42,
+  "source_test_platforms": [
+    "windows-2022",
+    "ubuntu-22.04",
+    "macos-14"
+  ],
+  "workflow_run": 39489282334,
+  "workflow_url": "https://github.com/muelli1975/StereoFine/actions/runs/39489282334",
+  "packaged_public_input_checks": {
+    "ok": true,
+    "codec_isolated": true,
+    "checks": [
+      {
+        "source": "stereo_pair.heic",
+        "entities": [
+          1,
+          2
+        ],
+        "eye_order": true,
+        "session_render_identical": true,
+        "metadata_success": true
+      },
+      {
+        "source": "entity_groups.heic",
+        "entities": [
+          2,
+          1
+        ],
+        "eye_order": true,
+        "session_render_identical": true,
+        "metadata_success": true
+      },
+      {
+        "source": "pattern_webp.webp",
+        "native_pixels_identical": true,
+        "rgb_sha256": "2019fa3ca9b461ae6d002d37ff227ae9f1af9ffd0235c3471b48a3563ffaea5c"
+      },
+      {
+        "source": "pattern_bmp.bmp",
+        "native_pixels_identical": true,
+        "rgb_sha256": "2019fa3ca9b461ae6d002d37ff227ae9f1af9ffd0235c3471b48a3563ffaea5c"
+      },
+      {
+        "source": "spatial_photo.heic",
+        "entity_order": [
+          26,
+          52
+        ],
+        "native_shape": [
+          2560,
+          2560,
+          3
+        ],
+        "pixel_sha256": [
+          "0edc5fae2721322ed6eedadb0a92f4cf2ddf7a85bf1756fb11f7555b61692451",
+          "a1450d58448758b03c128be413fe4d838540adf3eb0285a4802f744713911b5a"
+        ]
+      },
+      {
+        "source": "arrow.heic",
+        "oriented_shape": [
+          4032,
+          3024,
+          3
+        ],
+        "pixel_sha256": "cdb91bfabe81c965abd49b4aa21fb157dea79579af2d12b7fb845cf1907ed624"
+      }
+    ]
+  },
+  "fresh_local_zip_check": {
+    "ok": true,
+    "codec_isolated": true,
+    "checks": [
+      {
+        "source": "stereo_pair.heic",
+        "entities": [
+          1,
+          2
+        ],
+        "eye_order": true,
+        "session_render_identical": true,
+        "metadata_success": true
+      },
+      {
+        "source": "entity_groups.heic",
+        "entities": [
+          2,
+          1
+        ],
+        "eye_order": true,
+        "session_render_identical": true,
+        "metadata_success": true
+      },
+      {
+        "source": "pattern_webp.webp",
+        "native_pixels_identical": true,
+        "rgb_sha256": "2019fa3ca9b461ae6d002d37ff227ae9f1af9ffd0235c3471b48a3563ffaea5c"
+      },
+      {
+        "source": "pattern_bmp.bmp",
+        "native_pixels_identical": true,
+        "rgb_sha256": "2019fa3ca9b461ae6d002d37ff227ae9f1af9ffd0235c3471b48a3563ffaea5c"
+      },
+      {
+        "source": "spatial_photo.heic",
+        "entity_order": [
+          26,
+          52
+        ],
+        "native_shape": [
+          2560,
+          2560,
+          3
+        ],
+        "pixel_sha256": [
+          "0edc5fae2721322ed6eedadb0a92f4cf2ddf7a85bf1756fb11f7555b61692451",
+          "a1450d58448758b03c128be413fe4d838540adf3eb0285a4802f744713911b5a"
+        ]
+      },
+      {
+        "source": "arrow.heic",
+        "oriented_shape": [
+          4032,
+          3024,
+          3
+        ],
+        "pixel_sha256": "cdb91bfabe81c965abd49b4aa21fb157dea79579af2d12b7fb845cf1907ed624"
+      }
+    ]
+  },
+  "near_controls": [
+    {
+      "name": "s110_bild090_SIFT",
+      "unchanged_since_pre_format_validation": true,
+      "uncertain_reasons": []
+    },
+    {
+      "name": "ixus_bild008_AKAZE",
+      "unchanged_since_pre_format_validation": true,
+      "uncertain_reasons": []
+    },
+    {
+      "name": "ixus_bild008_SIFT",
+      "unchanged_since_pre_format_validation": true,
+      "uncertain_reasons": []
+    },
+    {
+      "name": "s95_bild012_AKAZE",
+      "unchanged_since_pre_format_validation": true,
+      "uncertain_reasons": [
+        "near_edge_unconfirmed"
+      ]
+    },
+    {
+      "name": "s95_bild012_SIFT",
+      "unchanged_since_pre_format_validation": true,
+      "uncertain_reasons": [
+        "near_edge_unconfirmed"
+      ]
+    },
+    {
+      "name": "s95_bild054_AKAZE",
+      "unchanged_since_pre_format_validation": true,
+      "uncertain_reasons": []
+    },
+    {
+      "name": "nx1000_bild004_SIFT",
+      "unchanged_since_pre_format_validation": true,
+      "uncertain_reasons": [
+        "near_edge_unconfirmed"
+      ]
+    },
+    {
+      "name": "nx1000_bild008_AKAZE",
+      "unchanged_since_pre_format_validation": true,
+      "uncertain_reasons": []
+    },
+    {
+      "name": "nx1000_bild008_SIFT",
+      "unchanged_since_pre_format_validation": true,
+      "uncertain_reasons": []
+    }
+  ],
+  "limits": [
+    "No new stereo alignment coefficients or uncertainty thresholds were changed by format integration.",
+    "Public HEIF probes validate import and source identity, not stereo alignment ground truth.",
+    "S110 bild090 extreme lower-right residual remains unresolved.",
+    "Three method/image near-point cases retain uncertainty.",
+    "Actual Windows desktop operation with private original images is still pending."
+  ],
+  "workflow_conclusion": "success",
+  "jobs": [
+    {
+      "name": "Tests (windows-2022)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T20:07:26Z",
+      "completed_at": "2026-10-20T20:08:25Z"
+    },
+    {
+      "name": "Tests (macos-14)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T20:07:27Z",
+      "completed_at": "2026-10-20T20:08:07Z"
+    },
+    {
+      "name": "Tests (ubuntu-22.04)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T20:07:26Z",
+      "completed_at": "2026-10-20T20:08:28Z"
+    },
+    {
+      "name": "Development package (macos-15-intel)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T20:08:33Z",
+      "completed_at": "2026-10-20T20:14:08Z"
+    },
+    {
+      "name": "Development package (windows-2022)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T20:08:30Z",
+      "completed_at": "2026-10-20T20:10:51Z"
+    },
+    {
+      "name": "Development package (ubuntu-22.04)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T20:08:30Z",
+      "completed_at": "2026-10-20T20:10:09Z"
+    },
+    {
+      "name": "Development package (macos-15)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T20:08:33Z",
+      "completed_at": "2026-10-20T20:10:46Z"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 12296120238,
+      "name": "StereoFine-1.1-development-macos-15-intel",
+      "bytes": 254226249,
+      "expired": false
+    },
+    {
+      "id": 12295036797,
+      "name": "StereoFine-1.1-development-ubuntu-22.04",
+      "bytes": 304339770,
+      "expired": false
+    },
+    {
+      "id": 12294418882,
+      "name": "StereoFine-1.1-development-macos-15",
+      "bytes": 350758556,
+      "expired": false
+    },
+    {
+      "id": 12294114989,
+      "name": "StereoFine-1.1-development-windows-2022",
+      "bytes": 166149027,
+      "expired": false
+    }
+  ],
+  "local_python": "3.12.14",
+  "ci_python": "3.12.10"
+}

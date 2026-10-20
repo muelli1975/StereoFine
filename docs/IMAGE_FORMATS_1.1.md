@@ -86,7 +86,7 @@ native libraries, sources and notices. The workflow has only `contents: read`
 and no release/tag publication step. Builds identify as `1.1-dev`, with commit
 and platform in the artifact name; published RC3 and stable 1.0 are untouched.
 
-The first integration revision passed the three source-test jobs and the Windows/Linux/macOS ARM package checks in run [39488644855](https://github.com/muelli1975/StereoFine/actions/runs/39488644855); the Intel job was still running at this checkpoint. Final cross-platform checks for the added BMP-profile guard and larger public fixtures are pending. Automated
+Final code commit `e00b168fc54d65750bcf7a7210326cc181cdbefb` passed all seven jobs in [run 39489282334](https://github.com/muelli1975/StereoFine/actions/runs/39489282334): 178 application and 42 research tests on each of Windows, Linux and macOS, DE/EN GUI smoke, and actual frozen packages on Windows, Linux, macOS ARM and macOS Intel. The package checks include all four checksum-pinned public HEIF fixtures. A locally built Linux ZIP was additionally extracted into a fresh temporary directory and its frozen application/reader passed all six input/session/export checks. [Structured evidence](IMAGE_FORMATS_1.1_RESULTS.json). Automated
 package checks do not replace desktop operation with the user's original images.
 
 Reproduction:
