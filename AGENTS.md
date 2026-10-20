@@ -10,3 +10,10 @@ working workflows; documentation changes do not authorize unrelated runtime chan
 Keep user-supplied assets byte-for-byte unless the user explicitly requests conversion.
 When revising the shared standard, synchronize the identical version in all five
 repositories: StereoFine, SplatTricia, AnaChroma, Freeda, and AnaglyphBatch.
+
+Public repository text uses English: the default README, changelog, release
+titles and release notes. Keep localized documentation explicitly separate
+(e.g. README_DE.md); README.md and README_EN.md must agree. Do not copy German
+internal investigation or maintenance notes into a public release. Before
+publishing, check language, version labels, download filenames and links against
+the existing repository convention.

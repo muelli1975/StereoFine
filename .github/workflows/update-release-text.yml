@@ -1,0 +1,55 @@
+name: Update English release text
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update-release-text.yml'
+      - 'RELEASE_NOTES_1.0_MAINTENANCE.md'
+      - 'docs/releases/1.1-rc*.md'
+
+permissions:
+  contents: write
+
+jobs:
+  release-text:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update release titles and notes only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          repo = 'muelli1975/StereoFine'
+          entries = [('v1.0', 'StereoFine 1.0', 'RELEASE_NOTES_1.0_MAINTENANCE.md')]
+          for rc in (1, 2, 3):
+              title = f'StereoFine 1.1 RC{rc}'
+              title += ' - superseded by RC3' if rc < 3 else ' - Release candidate'
+              entries.append((f'v1.1-rc{rc}', title, f'docs/releases/1.1-rc{rc}.md'))
+
+          def get(path):
+              return json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/{path}'], text=True))
+
+          def snapshot(tag):
+              release = get(f'releases/tags/{tag}')
+              ref = get(f'git/ref/tags/{tag}')
+              assets = sorted((a['id'], a['name'], a['size'], a.get('digest')) for a in release['assets'])
+              return (ref['object']['sha'], assets, release['draft'], release['prerelease'])
+
+          for tag, title, filename in entries:
+              before = snapshot(tag)
+              subprocess.run(['gh', 'release', 'edit', tag, '--title', title,
+                              '--notes-file', filename], check=True)
+              after = snapshot(tag)
+              assert before == after, f'{tag}: release assets, source tag or release status changed'
+              published = get(f'releases/tags/{tag}')
+              assert published['name'] == title
+              assert published['body'].rstrip() == Path(filename).read_text().rstrip()
+              print(f'{tag}: English text verified; package hashes, tag and release status unchanged')
+          PY
