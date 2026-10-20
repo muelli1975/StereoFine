@@ -159,11 +159,15 @@ def load_master_image(path: Path) -> np.ndarray:
         return images[0]
     if suffix in {'.webp', '.bmp'}:
         from PIL import ImageOps
-        from .image_color import sdr_rgb
+        from .image_color import bmp_profile, sdr_rgb
         try:
             with Image.open(path) as image:
                 if getattr(image, 'n_frames', 1) != 1:
                     raise InputError('Animierte Bilder werden nicht als Stereofoto unterstützt.')
+                if image.format == 'BMP':
+                    profile = bmp_profile(path)
+                    if profile:
+                        image.info['icc_profile'] = profile
                 return sdr_rgb(ImageOps.exif_transpose(image))
         except InputError:
             raise

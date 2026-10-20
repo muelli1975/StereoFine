@@ -90,8 +90,10 @@ jobs:
           cp Image-ExifTool-13.59/README tools/EXIFTOOL_README
           chmod +x tools/exiftool
           perl tools/exiftool -ver
+      - name: Prepare checksum-pinned stereo, Spatial Photo and orientation fixtures
+        run: python scripts/prepare_heif_fixtures.py build/heif-fixtures
       - name: Build both executables and test actual packaged imports
-        run: python scripts/build_development.py
+        run: python scripts/build_development.py --fixtures build/heif-fixtures
       - name: Confirm no HEIF codec is linked into the main application
         shell: bash
         run: |

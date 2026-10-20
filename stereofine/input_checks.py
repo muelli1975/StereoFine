@@ -10,6 +10,7 @@ import numpy as np
 from PIL import Image
 
 from .export import save_pair_outputs
+from .inputs import load_master_image
 from .render import render_final_pair
 from .session import browse_source, save_browsed_state
 from .sources import load_source, source_from_stereo_file
@@ -63,6 +64,20 @@ def check_inputs(destination: Path, fixtures: Path) -> None:
             assert np.array_equal(loaded.right, rgb[:, 48:])
             checks.append({'source': path.name, 'native_pixels_identical': True,
                            'rgb_sha256': hashlib.sha256(rgb.tobytes()).hexdigest()})
+        if (fixtures/'spatial_photo.heic').is_file():
+            path = fixtures/'spatial_photo.heic'
+            loaded = load_source(source_from_stereo_file(path, fixtures))
+            assert loaded.left.shape == loaded.right.shape == (2560, 2560, 3)
+            assert (loaded.left_entity, loaded.right_entity) == (26, 52)
+            hashes = [hashlib.sha256(x.tobytes()).hexdigest() for x in (loaded.left, loaded.right)]
+            assert hashes[0] != hashes[1]
+            checks.append({'source': path.name, 'entity_order': [26, 52],
+                           'native_shape': [2560, 2560, 3], 'pixel_sha256': hashes})
+        if (fixtures/'arrow.heic').is_file():
+            image = load_master_image(fixtures/'arrow.heic')
+            assert image.shape == (4032, 3024, 3)
+            checks.append({'source': 'arrow.heic', 'oriented_shape': list(image.shape),
+                           'pixel_sha256': hashlib.sha256(image.tobytes()).hexdigest()})
     import sys
     assert 'pillow_heif' not in sys.modules
     destination.write_text(json.dumps({'ok': True, 'codec_isolated': True, 'checks': checks}, indent=2)+'\n', 'utf-8')

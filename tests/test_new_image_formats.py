@@ -77,6 +77,34 @@ class NewImageFormatTests(unittest.TestCase):
             with self.assertRaises(InputError):
                 load_master_image(path)
 
+    def test_bmp_v5_embedded_profile_is_used_and_unsupported_colour_is_rejected(self):
+        import struct
+        buffer = io.BytesIO()
+        pixels = self.pattern()
+        Image.fromarray(pixels).save(buffer, format='BMP')
+        basic = buffer.getvalue()
+        raster = basic[54:]
+        def bitmap(profile, color_space=0x4D424544):
+            dib = bytearray(basic[14:54]+bytes(84))
+            struct.pack_into('<I', dib, 0, 124)
+            struct.pack_into('<I', dib, 56, color_space)
+            struct.pack_into('<II', dib, 112, 124+len(raster), len(profile))
+            header = bytearray(basic[:14])
+            struct.pack_into('<I', header, 2, 14+len(dib)+len(raster)+len(profile))
+            struct.pack_into('<I', header, 10, 14+len(dib))
+            return bytes(header+dib)+raster+profile
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td)/'profile.bmp'
+            srgb = ImageCms.ImageCmsProfile(ImageCms.createProfile('sRGB')).tobytes()
+            path.write_bytes(bitmap(srgb))
+            np.testing.assert_array_equal(load_master_image(path), pixels)
+            # A malformed profile must fail, rather than being silently ignored
+            # by Pillow's otherwise successful BMP pixel decoder.
+            for profile, color_space in [(b'not ICC', 0x4D424544), (srgb, 0x4C494E4B), (srgb, 0)]:
+                path.write_bytes(bitmap(profile, color_space))
+                with self.assertRaises(InputError):
+                    load_master_image(path)
+
     def test_new_extensions_reject_duplicate_stems(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

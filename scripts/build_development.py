@@ -20,6 +20,7 @@ def run(*arguments):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--skip-helper-build', action='store_true')
+    parser.add_argument('--fixtures', type=Path, default=ROOT/'tests/fixtures/heif')
     args = parser.parse_args()
     if not args.skip_helper_build:
         run(sys.executable, 'scripts/prepare_heif.py')
@@ -57,7 +58,7 @@ def main():
     run(sys.executable, 'scripts/package_source.py', '--verify', package/'Source')
     executable = executable_root/('StereoFine.exe' if sys.platform == 'win32' else 'StereoFine')
     report = ROOT/'build/development-input-check.json'
-    run(executable, '--check-inputs', report, ROOT/'tests/fixtures/heif')
+    run(executable, '--check-inputs', report, args.fixtures.resolve())
     checked = json.loads(report.read_text('utf-8'))
     if not checked['ok']: raise RuntimeError('Packaged inputs failed')
     if not all(row.get('metadata_success', True) for row in checked['checks']):
