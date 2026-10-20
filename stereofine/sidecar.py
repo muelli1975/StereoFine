@@ -93,7 +93,7 @@ class SidecarLoadResult:
 
     @property
     def disparity_cache_valid(self) -> bool:
-        return self.status == SidecarStatus.VALID and not {"input", "disparity"}.intersection(self.pipeline_mismatches)
+        return self.status == SidecarStatus.VALID and not {"input", "alignment", "disparity"}.intersection(self.pipeline_mismatches)
 
     @property
     def color_cache_valid(self) -> bool:

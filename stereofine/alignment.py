@@ -26,8 +26,16 @@ Y_RESIDUAL_MAX_CORRECTION_FRACTION = 0.018
 Y_RESIDUAL_MAX_CORRECTION_ANALYSIS_PX = 24.0
 Y_RESIDUAL_APPLY_MODEL_NAME = "y_quad"
 
+# Express the precision floor in analysis pixels, independent of source size.
+# Model complexity must buy a measurable improvement on held-out points.
+MODEL_SELECTION_MIN_GAIN_PX = 0.05
+MODEL_SELECTION_MIN_GAIN_FRACTION = 0.05
+MODEL_SELECTION_REGION_TOLERANCE_PX = 0.10
+MODEL_SELECTION_MIN_HOLDOUT_POINTS = 24
+MODEL_SELECTION_MIN_ZONE_POINTS = 6
+MODEL_SELECTION_MIN_ZONES = 3
+
 TRAPEZ_MIN_TOTAL_INLIERS = 40
-TRAPEZ_HOLDOUT_STRIDE = 5
 TRAPEZ_MIN_TRAIN_POINTS = 24
 TRAPEZ_MAX_DESIGN_CONDITION = 1.0e6
 TRAPEZ_ZONE_SOFT_CAP_PER_ZONE = 80
@@ -378,6 +386,8 @@ def _fit_y_residual_candidate(
     affine_vertical_signed_analysis: np.ndarray,
     image_shape: tuple[int, int],
     analysis_scale: float,
+    *,
+    holdout_mask: np.ndarray | None = None,
 ) -> dict:
     left_pts = np.asarray(left_points_after_affine, dtype=np.float64).reshape(-1, 2)
     right_pts = np.asarray(right_points_after_affine, dtype=np.float64).reshape(-1, 2)
@@ -416,7 +426,12 @@ def _fit_y_residual_candidate(
             "analysis_height": int(h_norm),
         }
     param_count = matrix.shape[1]
-    eval_mask = _holdout_mask_for_residual_basis(left_pts, Y_RESIDUAL_HOLDOUT_STRIDE)
+    eval_mask = (
+        _holdout_mask_for_residual_basis(left_pts, Y_RESIDUAL_HOLDOUT_STRIDE)
+        if holdout_mask is None else np.asarray(holdout_mask, dtype=bool).copy()
+    )
+    if eval_mask.shape != (n,):
+        raise ValueError("Holdout-Maske stimmt nicht mit den Korrespondenzen überein.")
     train_mask = ~eval_mask
     if int(np.sum(train_mask)) < max(param_count + 4, param_count * Y_RESIDUAL_MIN_TRAIN_POINTS_PER_PARAMETER):
         train_mask[:] = True
@@ -434,11 +449,13 @@ def _fit_y_residual_candidate(
         float(Y_RESIDUAL_MAX_CORRECTION_FRACTION) * float(max(1, min(image_shape[:2]))),
     )
 
+    weights = _zone_capped_weights(left_pts, image_shape, ZONE_DIAGNOSTICS_GRID, Y_RESIDUAL_ZONE_SOFT_CAP_PER_ZONE)
+    design_quality = _pipeline_design_quality(matrix[train_mask], weights[train_mask])
+    ready = ready and bool(design_quality["supported"])
     if not ready:
         beta = np.zeros((param_count,), dtype=np.float64)
         model = np.zeros((n,), dtype=np.float64)
     else:
-        weights = _zone_capped_weights(left_pts, image_shape, ZONE_DIAGNOSTICS_GRID, Y_RESIDUAL_ZONE_SOFT_CAP_PER_ZONE)
         beta = _weighted_lstsq(matrix[train_mask], residual[train_mask], weights[train_mask])
         model = matrix @ beta
         model = np.clip(model, -max_abs_model, max_abs_model)
@@ -477,6 +494,8 @@ def _fit_y_residual_candidate(
         "name": name,
         "terms": labels,
         "ready": bool(ready),
+        "design_quality": design_quality,
+        "analysis_scale": float(analysis_scale),
         "support": support,
         "train_points": int(np.sum(train_mask)),
         "eval_points": int(len(eval_indices)),
@@ -489,6 +508,7 @@ def _fit_y_residual_candidate(
         "vertical": local_summary(corrected),
         "vertical_holdout": local_summary(corrected[eval_indices]),
         "baseline_holdout": local_summary(residual[eval_indices]),
+        "baseline_zone3x3_holdout": _vertical_residual_zone_stats(left_pts[eval_indices], residual[eval_indices], image_shape, analysis_scale, ZONE_DIAGNOSTICS_GRID),
         "zone3x3": _vertical_residual_zone_stats(left_pts, corrected, image_shape, analysis_scale, ZONE_DIAGNOSTICS_GRID),
         "zone3x3_holdout": _vertical_residual_zone_stats(left_pts[eval_indices], corrected[eval_indices], image_shape, analysis_scale, ZONE_DIAGNOSTICS_GRID),
         "vs_affine": None,  # filled by the caller because it needs affine zone stats
@@ -1071,24 +1091,6 @@ def _pipeline_vertical_residual_signed(left_points: np.ndarray, right_points: np
         return np.zeros((0,), dtype=np.float64)
     return right_pts[:n, 1] - left_pts[:n, 1]
 
-def _pipeline_holdout_mask(points: np.ndarray, stride: int = TRAPEZ_HOLDOUT_STRIDE) -> tuple[np.ndarray, np.ndarray]:
-    pts = np.asarray(points, dtype=np.float64).reshape(-1, 2)
-    n = len(pts)
-    if n == 0:
-        return np.zeros((0,), dtype=np.int64), np.zeros((0,), dtype=np.int64)
-    stride = max(3, int(stride))
-    order = np.lexsort((pts[:, 0], pts[:, 1]))
-    holdout_mask = np.zeros((n,), dtype=bool)
-    holdout_mask[order[::stride]] = True
-    if int(np.sum(holdout_mask)) >= n - 4:
-        holdout_mask[:] = False
-        holdout_mask[::stride] = True
-    train_mask = ~holdout_mask
-    if int(np.sum(train_mask)) < 8:
-        train_mask[:] = True
-        holdout_mask[:] = False
-    return np.where(train_mask)[0], np.where(holdout_mask)[0]
-
 def _pipeline_design_quality(features: np.ndarray, weights: np.ndarray | None = None) -> dict:
     """Numerical support check for the 2-parameter trapez fit.
 
@@ -1362,13 +1364,15 @@ def _pipeline_vertical_summary_from_candidate(candidate: dict | None, fallback_s
     vertical = candidate.get("vertical") or {}
     return vertical or fallback_summary
 
-def _holdout_summary_is_better(baseline: dict | None, corrected: dict | None) -> bool:
-    """Threshold-free Pareto gate for adding geometric complexity.
+def _holdout_summary_is_better(
+    baseline: dict | None, corrected: dict | None, *, precision_px: float = MODEL_SELECTION_MIN_GAIN_PX,
+) -> bool:
+    """Require useful robust improvement; keep the maximum diagnostic only.
 
-    The candidate must strictly improve holdout mean absolute vertical error and
-    may not worsen median, p90, p95 or maximum error.  This rejects tiny fits
-    that merely trade one part of the image against another, without inventing a
-    new pixel threshold.
+    A single correspondence's maximum is sensitive to mismatch/localization
+    noise and must not veto a widespread improvement. Median/P90/P95 remain
+    protected within a small analysis-resolution precision floor. Regional
+    protection is supplied by _assess_spatial_holdout below.
     """
     if not baseline or not corrected:
         return False
@@ -1378,12 +1382,67 @@ def _holdout_summary_is_better(baseline: dict | None, corrected: dict | None) ->
         cand = {key: float(corrected[key]) for key in metrics}
     except (KeyError, TypeError, ValueError):
         return False
-    if not np.isfinite(list(base.values()) + list(cand.values())).all():
+    if not np.isfinite(list(base.values()) + list(cand.values()) + [precision_px]).all():
         return False
+    if precision_px <= 0 or min(*base.values(), *cand.values()) < 0:
+        return False
+    gain = max(float(precision_px), MODEL_SELECTION_MIN_GAIN_FRACTION * base["mean_abs"])
     return bool(
-        cand["mean_abs"] < base["mean_abs"]
-        and all(cand[key] <= base[key] for key in ("median_abs", "p90_abs", "p95_abs", "max_abs"))
+        base["mean_abs"] - cand["mean_abs"] >= gain
+        and all(cand[key] <= base[key] + precision_px for key in ("median_abs", "p90_abs", "p95_abs"))
     )
+
+
+def _assess_spatial_holdout(
+    baseline: dict | None, corrected: dict | None,
+    baseline_zones: dict | None, corrected_zones: dict | None,
+    analysis_scale: float,
+) -> dict:
+    """Compare the same held-out identities globally and per supported zone."""
+    if not np.isfinite(analysis_scale) or analysis_scale <= 0:
+        return {"accepted": False, "reason": "invalid_analysis_scale"}
+    precision = MODEL_SELECTION_MIN_GAIN_PX / analysis_scale
+    region_floor = MODEL_SELECTION_REGION_TOLERANCE_PX / analysis_scale
+    result = {"accepted": False, "reason": "robust_holdout_not_better", "precision_fullres_px": precision, "regions": []}
+    if not _holdout_summary_is_better(baseline, corrected, precision_px=precision):
+        return result
+    before = {row["label"]: row for row in (baseline_zones or {}).get("zones", [])}
+    after = {row["label"]: row for row in (corrected_zones or {}).get("zones", [])}
+    if before.keys() != after.keys():
+        result["reason"] = "different_holdout_regions"
+        return result
+    total = 0
+    for label, base in before.items():
+        cand = after[label]
+        count = int(base.get("count", 0))
+        if count != int(cand.get("count", 0)) or count < 0:
+            result["reason"] = "different_holdout_points"
+            return result
+        total += count
+        if count < MODEL_SELECTION_MIN_ZONE_POINTS:
+            continue
+        checks = {}
+        for key in ("mean_abs", "p90_abs"):
+            try:
+                base_value, cand_value = float(base[key]), float(cand[key])
+            except (KeyError, TypeError, ValueError):
+                result["reason"] = "invalid_holdout_region"
+                return result
+            if not np.isfinite([base_value, cand_value]).all() or min(base_value, cand_value) < 0:
+                result["reason"] = "invalid_holdout_region"
+                return result
+            allowance = max(region_floor, 0.10 * base_value)
+            checks[key] = cand_value <= base_value + allowance
+        result["regions"].append({"label": label, "count": count, "checks": checks})
+        if not all(checks.values()):
+            result["reason"] = "regional_regression"
+            return result
+    result["holdout_points"] = total
+    if total < MODEL_SELECTION_MIN_HOLDOUT_POINTS or len(result["regions"]) < MODEL_SELECTION_MIN_ZONES:
+        result["reason"] = "insufficient_spatial_holdout"
+        return result
+    result.update(accepted=True, reason="robust_and_spatial_holdout_improved")
+    return result
 
 
 def _holdout_model_is_better(candidate: dict | None) -> bool:
@@ -1392,10 +1451,47 @@ def _holdout_model_is_better(candidate: dict | None) -> bool:
         return False
     if candidate.get("eval_mode") != "spatial_holdout":
         return False
-    return _holdout_summary_is_better(
+    decision = _assess_spatial_holdout(
         candidate.get("baseline_holdout") or {},
         candidate.get("vertical_holdout") or {},
+        candidate.get("baseline_zone3x3_holdout"),
+        candidate.get("zone3x3_holdout"),
+        float(candidate.get("analysis_scale", 1.0)),
     )
+    candidate["selection_validation"] = decision
+    return bool(decision["accepted"])
+
+
+def _candidate_vertical_residuals(candidate: dict, left: np.ndarray, right: np.ndarray, image_shape: tuple[int, int]) -> np.ndarray:
+    matrix, labels = _y_residual_design_matrix(left, right, image_shape, candidate["terms"])
+    coefficients = {row["term"]: row["coefficient_analysis_px"] for row in candidate["coefficients"]}
+    model = matrix @ np.array([coefficients[label] for label in labels], dtype=np.float64)
+    limit = candidate["max_abs_model_analysis_px"]
+    return right[:, 1] - left[:, 1] - np.clip(model, -limit, limit)
+
+
+def _select_validated_pipeline(candidates: list[dict], analysis_scale: float) -> tuple[dict, list[dict]]:
+    """Compare complete chains on identical holdout points, simplest first."""
+    baseline = selected = candidates[0]
+    audit = [{"model": selected["label"], "accepted": True, "reason": "affine_baseline"}]
+    for candidate in candidates[1:]:
+        baseline_decision = _assess_spatial_holdout(
+            baseline["holdout"], candidate["holdout"], baseline["zones"], candidate["zones"], analysis_scale,
+        )
+        # Do not let the small allowed regional variation accumulate across
+        # several successive comparisons beyond the original baseline guard.
+        decision = baseline_decision
+        compared_with = baseline["label"]
+        if baseline_decision["accepted"] and selected is not baseline:
+            decision = _assess_spatial_holdout(
+                selected["holdout"], candidate["holdout"], selected["zones"], candidate["zones"], analysis_scale,
+            )
+            compared_with = selected["label"]
+        audit.append({"model": candidate["label"], "compared_with": compared_with,
+                      "holdout_metrics": candidate["holdout"], **decision})
+        if decision["accepted"]:
+            selected = candidate
+    return selected, audit
 
 
 def analyze_pair_features(
@@ -1610,6 +1706,7 @@ def analyze_pair_features(
         ZONE_DIAGNOSTICS_GRID,
     )
 
+    shared_holdout = _holdout_mask_for_residual_basis(left_mid, Y_RESIDUAL_HOLDOUT_STRIDE)
     y_residual_candidates = {}
     for y_model_name, y_model_terms in Y_RESIDUAL_MODEL_SPECS.items():
         candidate = _fit_y_residual_candidate(
@@ -1620,6 +1717,7 @@ def analyze_pair_features(
             affine_vertical_signed,
             left_gray.shape,
             analysis_scale,
+            holdout_mask=shared_holdout,
         )
         candidate["vs_affine"] = _zone_improvement_stats(affine_zone3x3, candidate["zone3x3"])
         base_holdout = candidate.get("baseline_holdout") or {}
@@ -1680,7 +1778,6 @@ def analyze_pair_features(
     y_residual_apply_candidate = y_residual_candidates.get(Y_RESIDUAL_APPLY_MODEL_NAME) or {}
     y_residual_apply_ready = _holdout_model_is_better(y_residual_apply_candidate)
     y_residual_apply_candidate["auto_enable_holdout_gate"] = bool(y_residual_apply_ready)
-    y_residual_apply_summary = y_residual_apply_candidate.get("vertical") if y_residual_apply_ready else residual_summary(affine_vertical_signed)
     y_residual_apply_coefficients = []
     for row in y_residual_apply_candidate.get("coefficients", []) or []:
         y_residual_apply_coefficients.append({
@@ -1705,7 +1802,7 @@ def analyze_pair_features(
     # 2-Parameter-Schätzung und harte Plausibilitäts-Notbremsen.  3x3 bleibt
     # Audit-/Gewichtungslogik, aber kein Mesh und kein Blocker.
     y_residual_apply_payload_affine = dict(y_residual_apply_payload)
-    train_idx, holdout_idx = _pipeline_holdout_mask(left_mid, TRAPEZ_HOLDOUT_STRIDE)
+    train_idx, holdout_idx = np.where(~shared_holdout)[0], np.where(shared_holdout)[0]
     trapez_zone_counts = _grid_zone_counts(left_mid, left_gray.shape, ZONE_DIAGNOSTICS_GRID)
     trapez_support = {
         "rule": "no_quadrant_gate_total_points_train_points_design_stability",
@@ -1730,8 +1827,8 @@ def analyze_pair_features(
         "ok" if trapez_supported else "insufficient_total_or_training_points"
     )
 
-    affine_summary = residual_summary(affine_vertical_signed)
     trapez_summary = None
+    trapez_plausible = False
     y_after_trapez_candidate = {}
     y_after_trapez_ready = False
     y_after_trapez_payload = {
@@ -1761,8 +1858,15 @@ def analyze_pair_features(
             trapez_summary = residual_summary(trapez_vertical_signed)
             affine_holdout_summary = residual_summary(affine_vertical_signed[holdout_idx]) if len(holdout_idx) else None
             trapez_holdout_summary = residual_summary(trapez_vertical_signed[holdout_idx]) if len(holdout_idx) else None
-            trapez_holdout_better = _holdout_summary_is_better(affine_holdout_summary, trapez_holdout_summary)
-            trapez_ready = bool(trapez_plaus.get("plausible", False)) and bool(trapez_holdout_better)
+            trapez_validation = _assess_spatial_holdout(
+                affine_holdout_summary, trapez_holdout_summary,
+                _vertical_residual_zone_stats(left_mid[holdout_idx], affine_vertical_signed[holdout_idx], left_gray.shape, analysis_scale),
+                _vertical_residual_zone_stats(left_mid[holdout_idx], trapez_vertical_signed[holdout_idx], left_gray.shape, analysis_scale),
+                analysis_scale,
+            )
+            trapez_holdout_better = bool(trapez_validation["accepted"])
+            trapez_plausible = bool(trapez_plaus.get("plausible", False))
+            trapez_ready = trapez_plausible and trapez_holdout_better
             trapez_payload = {
                 "enabled": bool(trapez_ready),
                 "params": trapez_params,
@@ -1779,13 +1883,16 @@ def analyze_pair_features(
                     "affine_holdout": affine_holdout_summary,
                     "trapez_holdout": trapez_holdout_summary,
                     "holdout_better": bool(trapez_holdout_better),
+                    "selection_validation": trapez_validation,
                 },
                 "max_relative_y_correction_px_fullres": (
                     float(trapez_plaus.get("max_relative_y_correction_px_analysis", 0.0) or 0.0)
                     / max(1e-12, float(analysis_scale))
                 ),
             }
-            if trapez_ready:
+            # A complete Trapez+yQuad chain may be useful even when Trapez
+            # alone is not. Judge the whole result on the common holdout.
+            if trapez_plausible:
                 y_after_trapez_candidate = _fit_y_residual_candidate(
                     Y_RESIDUAL_APPLY_MODEL_NAME,
                     Y_RESIDUAL_MODEL_SPECS[Y_RESIDUAL_APPLY_MODEL_NAME],
@@ -1794,6 +1901,7 @@ def analyze_pair_features(
                     trapez_vertical_signed,
                     left_gray.shape,
                     analysis_scale,
+                    holdout_mask=shared_holdout,
                 )
                 y_after_trapez_ready = _holdout_model_is_better(y_after_trapez_candidate)
                 y_after_trapez_candidate["auto_enable_holdout_gate"] = bool(y_after_trapez_ready)
@@ -1803,6 +1911,7 @@ def analyze_pair_features(
                     source="pipeline_basis_v1_after_trapez",
                 )
         except Exception as exc:
+            trapez_plausible = False
             trapez_payload = {
                 "enabled": False,
                 "params": {},
@@ -1812,42 +1921,41 @@ def analyze_pair_features(
                 "reason": f"fit_failed: {exc}",
             }
 
-    # Default-Pipeline für Speichern/Status: Trapez, wenn es trägt; danach y_quad
-    # nur als Restpolitur nach Trapez. Ohne Trapez wird y_quad direkt nach Affine
-    # als Fallback genommen.
-    pipeline_trapez_enabled = bool(trapez_payload.get("enabled", False))
+    # Compare complete chains, simpler first. No greedy preference for a
+    # Trapez stage may hide a better direct Affine+yQuad alternative.
+    disabled_y = {"enabled": False, "model_name": Y_RESIDUAL_APPLY_MODEL_NAME,
+                  "terms": [], "coefficients": [], "normalization": {},
+                  "max_abs_correction_px": 0.0, "source": "pipeline_selection_disabled"}
+
+    def complete_candidate(label: str, residuals: np.ndarray, use_trapez: bool, y_payload: dict) -> dict:
+        return {
+            "label": label, "summary": residual_summary(residuals),
+            "holdout": residual_summary(residuals[holdout_idx]),
+            "zones": _vertical_residual_zone_stats(left_mid[holdout_idx], residuals[holdout_idx], left_gray.shape, analysis_scale),
+            "trapez_enabled": use_trapez, "y_payload": y_payload,
+        }
+
+    complete_candidates = [complete_candidate("Affine", affine_vertical_signed, False, disabled_y)]
+    if trapez_plausible:
+        complete_candidates.append(complete_candidate("Affine + Vergence", trapez_vertical_signed, True, disabled_y))
+    if y_residual_apply_candidate.get("ready"):
+        direct_y = _candidate_vertical_residuals(y_residual_apply_candidate, left_mid, right_mid, left_gray.shape)
+        complete_candidates.append(complete_candidate(
+            "Affine + yQuad", direct_y, False, {**y_residual_apply_payload_affine, "enabled": True},
+        ))
+    if trapez_plausible and y_after_trapez_candidate.get("ready"):
+        chain_y = _candidate_vertical_residuals(y_after_trapez_candidate, left_trap, right_trap, left_gray.shape)
+        complete_candidates.append(complete_candidate(
+            "Affine + Vergence + yQuad", chain_y, True, {**y_after_trapez_payload, "enabled": True},
+        ))
+    selected_pipeline, selection_audit = _select_validated_pipeline(complete_candidates, analysis_scale)
+    pipeline_trapez_enabled = selected_pipeline["trapez_enabled"]
+    pipeline_y_payload = selected_pipeline["y_payload"]
+    pipeline_summary = selected_pipeline["summary"]
+    pipeline_model_label = selected_pipeline["label"]
+    trapez_payload["enabled"] = pipeline_trapez_enabled
     if pipeline_trapez_enabled:
-        pipeline_y_payload = y_after_trapez_payload if y_after_trapez_ready else {
-            "enabled": False,
-            "model_name": Y_RESIDUAL_APPLY_MODEL_NAME,
-            "terms": [],
-            "coefficients": [],
-            "normalization": {},
-            "max_abs_correction_px": 0.0,
-            "source": "pipeline_basis_v1_after_trapez_disabled",
-        }
-        if y_after_trapez_ready:
-            pipeline_summary = y_after_trapez_candidate.get("vertical") or trapez_summary or affine_summary
-            pipeline_model_label = "Affine + Vergence + yQuad"
-        else:
-            pipeline_summary = trapez_summary or affine_summary
-            pipeline_model_label = "Affine + Vergence"
-    elif y_residual_apply_ready:
-        pipeline_y_payload = y_residual_apply_payload_affine
-        pipeline_summary = y_residual_apply_summary or affine_summary
-        pipeline_model_label = "Affine + yQuad"
-    else:
-        pipeline_y_payload = {
-            "enabled": False,
-            "model_name": Y_RESIDUAL_APPLY_MODEL_NAME,
-            "terms": [],
-            "coefficients": [],
-            "normalization": {},
-            "max_abs_correction_px": 0.0,
-            "source": "pipeline_basis_v1_disabled",
-        }
-        pipeline_summary = affine_summary
-        pipeline_model_label = "Affine"
+        trapez_payload["reason"] = "selected_complete_chain"
 
     pipeline_basis = {
         "basis": ZONE_PROBE_ID,
@@ -1864,7 +1972,8 @@ def analyze_pair_features(
         "y_quad_after_affine_payload": y_residual_apply_payload_affine,
         "y_quad_after_trapez_payload": y_after_trapez_payload,
         "pipeline_model_label": pipeline_model_label,
-        "note": "Affine-LMS -> Trapez/Vergence ohne Quadranten-Gate -> y_quad neu auf Rest; ohne Trapez y_quad nach Affine als Fallback.",
+        "selection_audit": selection_audit,
+        "note": "Complete chains compared on shared holdout identities; robust global improvement plus regional protection, simpler models preferred within precision floor.",
     }
 
     vergence_model_basis = {
@@ -1896,8 +2005,8 @@ def analyze_pair_features(
             "note": "Horizontal disparity is used here only as diagnostic/explanatory information, not as an x-error target.",
         },
         "model_policy": {
-            "output_applies_candidate": bool(y_residual_apply_ready),
-            "applied_candidate": Y_RESIDUAL_APPLY_MODEL_NAME if y_residual_apply_ready else None,
+            "output_applies_candidate": bool(pipeline_y_payload.get("enabled")),
+            "applied_candidate": Y_RESIDUAL_APPLY_MODEL_NAME if pipeline_y_payload.get("enabled") else None,
             "visible_model_status": pipeline_model_label,
             "note": "This Basis applies y_quad when ready and saves an Affine comparison output; y_quad_disp_diag remains diagnostic only.",
         },

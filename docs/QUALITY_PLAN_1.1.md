@@ -91,7 +91,17 @@ wäre zusätzliche Absicherung, ersetzt aber nicht die schwierigen Rohpaare.
   wenn die korrigierte TIFF-Ausrichtung Breite und Höhe vertauscht.
 - Fünf weitere Originalpaare in beiden Verfahren vermessen; siehe
   [REAL_IMAGE_BASELINE_1.1.md](REAL_IMAGE_BASELINE_1.1.md). Es gibt darunter einen
-  bereits guten SIFT-Fall. Das erzwungene yQuad ist ein Diagnoseexperiment;
-  die automatische Modellwahl wurde bislang nicht verändert.
-- Neue Höhen- und Nahpunktalgorithmen sind noch nicht freigegeben. Ein
-  1.1-Build ist noch nicht freigegeben.
+  bereits guten SIFT-Fall. Ein siebtes Paar bild092 ergänzt den Vergleich.
+- Die automatische Modellwahl wurde jetzt überarbeitet: robuste globale und
+  regionale Holdout-Prüfung sowie Vergleich vollständiger Korrekturketten;
+  siehe [MODEL_SELECTION_1.1.md](MODEL_SELECTION_1.1.md). 14 reale Läufe mit
+  unabhängigen Render-Kontrollen sind dokumentiert. Die zuvor guten SIFT-Fälle
+  bild089 und bild092 sind in den Vollauflösungsrendern pixelidentisch erhalten.
+  Die Alignments-Pipeline ist auf sf-align-3 angehoben; abhängige alte Caches
+  werden verworfen, manuelle Einstellungen bleiben erhalten.
+- 109 automatische Tests bestehen; Kompilierung und Original-Asset-Hashes
+  geprüft. Das ist getrennt von der realen Bildqualitätsprüfung zu bewerten.
+- Eine erneute Inlier-Auswahl verbessert den Campingplatz in separaten
+  Experimenten weiter. Sie ist noch nicht in die Produktivlogik integriert.
+  Nahpunktalgorithmus und Laufzeitoptimierung stehen ebenfalls noch aus.
+  Ein 1.1-Build ist noch nicht freigegeben.

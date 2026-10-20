@@ -687,6 +687,7 @@ class SourceAndSidecarValidityTests(unittest.TestCase):
         )
         self.assertFalse(result.alignment_cache_valid)
         self.assertFalse(result.color_cache_valid)
+        self.assertFalse(result.disparity_cache_valid)
         self.assertTrue(result.anaglyph_cache_valid)
 
     def test_discover_suffix_pair_source_and_sidecar_location(self):
@@ -808,10 +809,14 @@ class AlignmentModelSelectionTests(unittest.TestCase):
         matrix = cv2.getPerspectiveTransform(src, dst)
         right = cv2.warpPerspective(base, matrix, (w, h), borderMode=cv2.BORDER_REFLECT)
         result = analyze_pair_features(base, right, "AKAZE", 3000)
-        self.assertTrue(result["correction"]["trapez_apply"]["enabled"])
-        self.assertIn("Vergence", result["model"])
+        # Trapez must qualify, but complete-chain comparison may find that
+        # direct yQuad corrects this fixture even better.
+        self.assertNotEqual(result["model"], "Affine")
+        self.assertLess(result["residual_vertical_p95"], 0.6)
         metrics = result["correction"]["trapez_apply"]["metrics"]
         self.assertTrue(metrics["holdout_better"])
+        audit = result["correction"]["pipeline_basis"]["selection_audit"]
+        self.assertTrue(next(row for row in audit if row["model"] == "Affine + Vergence")["accepted"])
 
 
 class AutoFramingStateTests(unittest.TestCase):
