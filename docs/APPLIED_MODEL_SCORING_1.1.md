@@ -3,6 +3,8 @@
 Status: 20 October 2026, following the
 [native subpixel investigation](NATIVE_SUBPIXEL_1.1.md).
 
+The subsequent [native near recovery review](NATIVE_NEAR_RECOVERY_1.1.md) addresses a separate near-point measurement gap. The alternative quadratic fit discussed below remains experimental.
+
 ## Integrated correctness fix
 
 Quadratic complete-chain scoring now predicts the same symmetric destination

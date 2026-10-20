@@ -35,7 +35,7 @@ jobs:
         run: python -m unittest discover -s experiments/tests -p 'test_*.py'
       - name: Compile and verify original assets
         run: |
-          python -m compileall -q StereoFine.py stereofine tests experiments
+          python -m compileall -q StereoFine.py stereofine tests experiments scripts
           python -c "import hashlib,pathlib; p=pathlib.Path('assets'); rows=[s.split() for s in (p/'ASSET_HASHES.txt').read_text().splitlines() if s.strip() and not s.startswith('#')]; assert all(hashlib.sha256((p/name).read_bytes()).hexdigest()==digest for digest,name in rows); print('Original assets verified')"
       - name: Linux GUI smoke in German and English
         if: runner.os == 'Linux'

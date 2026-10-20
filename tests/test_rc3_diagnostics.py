@@ -6,7 +6,7 @@ from unittest.mock import patch
 import cv2
 import numpy as np
 
-from scripts.diagnose_rc3 import stratified_tail_probe
+from stereofine.near_point_recovery import stratified_tail_probe
 from stereofine.near_point import confirm_near_edge
 
 
@@ -49,7 +49,7 @@ class RC3DiagnosticTests(unittest.TestCase):
     def test_already_confirmed_result_is_returned_without_new_probes(self):
         left, right, disparity, confidence = self.scene()
         baseline = {"confirmed": True}
-        with patch("scripts.diagnose_rc3.verify_patch") as verifier:
+        with patch("stereofine.near_point_recovery.verify_patch") as verifier:
             self.assertIs(stratified_tail_probe(left, right, disparity, confidence, baseline), baseline)
         verifier.assert_not_called()
 

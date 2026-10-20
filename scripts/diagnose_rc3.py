@@ -8,13 +8,13 @@ This script does not write inputs, sidecars, exports, or application settings.
 from __future__ import annotations
 
 import argparse
-from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path
 import platform
 import subprocess
 import sys
+from unittest.mock import patch
 
 import cv2
 import numpy as np
@@ -26,88 +26,11 @@ if str(ROOT) not in sys.path:
 from stereofine.disparity import (analyze_horizontal_disparity,
     render_pair_for_disparity_analysis_from_arrays, _rgb_to_luma_uint8)
 from stereofine.geometry import apply_orientation
-from stereofine.near_point import supported_near_edge, verify_patch
+from stereofine.inputs import master_to_uint8
+from stereofine.near_point_recovery import stratified_tail_probe, native_patch_checks
 from stereofine.sources import load_source, source_from_pair
 
 
-def stratified_tail_probe(left, right, disparity, confidence, baseline):
-    """Counterfactual seed selection with the UNCHANGED RC3 patch verifier.
-
-    Only runs for an unconfirmed near edge. At most 128 additional probes;
-    one representative near each 16-pixel cell center in the confident P98
-    tail. Spatial subsampling limits cost without privileging one component's
-    largest disparity. No NCC, contrast, uniqueness or reciprocal gate changes.
-    This is a research candidate, not a production fallback.
-    """
-    if baseline["confirmed"] or not np.any(confidence):
-        return baseline
-    threshold = float(np.percentile(disparity[confidence], 98))
-    ys, xs = np.where(confidence & (disparity >= threshold))
-    cells = np.column_stack((ys // 16, xs // 16))
-    distance = (ys % 16 - 7.5) ** 2 + (xs % 16 - 7.5) ** 2
-    order = np.argsort(distance, kind="stable")
-    _, unique = np.unique(cells[order], axis=0, return_index=True)
-    selected = order[unique]
-    selected = selected[np.linspace(0, len(selected)-1, min(128, len(selected)), dtype=int)]
-    points = deepcopy(baseline["verified_points"])
-    attempted = []
-    for index in selected:
-        x, y = int(xs[index]), int(ys[index])
-        if any((x-p["x"])**2 + (y-p["y"])**2 < 64 for p in points):
-            continue
-        attempted.append((x, y))
-        point = verify_patch(left, right, x, y)
-        if point is not None:
-            points.append(point)
-    width = left.shape[1]
-    result = supported_near_edge(points, baseline["baseline_percentile_permille"]*width/1000, width)
-    result.update(probed_points=baseline["probed_points"]+len(attempted),
-                  additional_probes=len(attempted),
-                  baseline_percentile_permille=baseline["baseline_percentile_permille"],
-                  diagnostic_only=True, selection="16px_cells_at_most_128")
-    return result
-
-
-def native_patch_checks(left, right, analysis_shape, points):
-    """Separate 41x41 native-pixel NCC, global strip search and reciprocal check.
-
-    Uses neither the SGBM disparity nor the analysis-scale NCC match as a
-    horizontal search restriction. Reports rejected/missing evidence honestly.
-    """
-    a, b = _rgb_to_luma_uint8(left), _rgb_to_luma_uint8(right)
-    h, w = a.shape
-    ah, aw = analysis_shape
-    radius, vertical = 20, 6
-    checked = []
-    for point in sorted(points, key=lambda p: p["disparity_px"], reverse=True)[:24]:
-        x = round((point["x"]+.5)*w/aw-.5)
-        y = round((point["y"]+.5)*h/ah-.5)
-        if not (radius <= x < w-radius and radius+vertical <= y < h-radius-vertical):
-            continue
-        template = a[y-radius:y+radius+1, x-radius:x+radius+1]
-        if float(template.std()) < 6:
-            continue
-        scores = cv2.matchTemplate(b[y-radius-vertical:y+radius+vertical+1], template, cv2.TM_CCOEFF_NORMED)
-        _, peak, _, position = cv2.minMaxLoc(scores)
-        px, py = position
-        other = scores.copy()
-        other[max(0, py-2):py+3, max(0, px-4):px+5] = -1
-        uniqueness = peak-float(other.max())
-        if peak < .85 or uniqueness < .05:
-            continue
-        rx, ry = px+radius, y-vertical+py
-        if not radius+vertical <= ry < h-radius-vertical:
-            continue
-        template = b[ry-radius:ry+radius+1, rx-radius:rx+radius+1]
-        if float(template.std()) < 6:
-            continue
-        back = cv2.matchTemplate(a[ry-radius-vertical:ry+radius+vertical+1], template, cv2.TM_CCOEFF_NORMED)
-        _, reverse_peak, _, reverse_position = cv2.minMaxLoc(back)
-        if reverse_peak < .85 or np.hypot(reverse_position[0]+radius-x, ry-vertical+reverse_position[1]-y) > 1:
-            continue
-        checked.append(dict(x=x, y=y, disparity_permille=1000*(x-rx)/w,
-                            vertical_px=y-ry, correlation=float(peak), uniqueness=uniqueness))
-    return checked
 
 
 def audit_case(case):
@@ -115,12 +38,14 @@ def audit_case(case):
     state = json.loads(paths["state"].read_text())
     loaded = load_source(source_from_pair(paths["left"], paths["right"], paths["left"].parent))
     transform = state["input_transform"]
-    left = apply_orientation(loaded.left, transform["left_orientation"], transform["left_mirror"])
-    right = apply_orientation(loaded.right, transform["right_orientation"], transform["right_mirror"])
+    left = master_to_uint8(apply_orientation(loaded.left, transform["left_orientation"], transform["left_mirror"]))
+    right = master_to_uint8(apply_orientation(loaded.right, transform["right_orientation"], transform["right_mirror"]))
     if transform["swap_eyes"]:
         left, right = right, left
     left, right = render_pair_for_disparity_analysis_from_arrays(left, right, state["alignment"]["correction"])
-    result = analyze_horizontal_disparity(left, right, 1500)
+    with patch('stereofine.near_point_recovery.recover_near_edge',
+               side_effect=lambda l,r,d,c,base,*native:(base,{})):
+        result = analyze_horizontal_disparity(left, right, 1500)
     old = result["near_confirmation"]
     # Use exactly the analysis images used by production, captured below by
     # resizing the same arrays with the production helper.

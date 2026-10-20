@@ -95,9 +95,11 @@ class NearPointTests(unittest.TestCase):
             source = source_from_pair(*paths, root)
             process_source(source)
             payload = json.loads(source.sidecar_path.read_text())
-            payload["pipeline"]["disparity"] = "sf-disparity-1"
+            payload["pipeline"]["disparity"] = "sf-disparity-2"
             payload["manual"]["delta_x_px"] = 7
             payload["favorite"] = True
+            payload["floating_window"]["right_permille"] = 4
+            payload["framing"]["auto_near_offset_x_px"] = 9999
             source.sidecar_path.write_text(json.dumps(payload))
             browsed = browse_source(source)
             self.assertTrue(browsed.state.alignment.valid)
@@ -105,6 +107,16 @@ class NearPointTests(unittest.TestCase):
             self.assertIsNone(browsed.state.framing.auto_near_offset_x_px)
             self.assertEqual(browsed.state.manual.delta_x_px, 7)
             self.assertTrue(browsed.state.favorite)
+            refreshed = process_source(source)
+            self.assertTrue(refreshed.alignment_from_cache)
+            self.assertFalse(refreshed.disparity_from_cache)
+            self.assertTrue(refreshed.state.favorite)
+            self.assertEqual(refreshed.state.manual.delta_x_px, 7)
+            self.assertEqual(refreshed.state.floating_window.right_permille, 4)
+            self.assertNotEqual(refreshed.state.framing.auto_near_offset_x_px, 9999)
+            cached = process_source(source)
+            self.assertTrue(cached.alignment_from_cache)
+            self.assertTrue(cached.disparity_from_cache)
 
 
 if __name__ == "__main__":

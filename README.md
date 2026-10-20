@@ -4,7 +4,7 @@ Prerelease for checking the revised alignment. [RC3 packages](https://github.com
 
 [Deutsch](README_DE.md)
 
-This development branch adds JPS/PNS input after RC3. The linked RC3 packages do not include this addition. The [current alignment review](docs/APPLIED_MODEL_SCORING_1.1.md) documents a corrected quadratic model score and its regression checks. Native subpixel measurement and the alternative coefficient fit remain experimental.
+This development branch adds JPS/PNS input after RC3. The linked RC3 packages do not include this addition. The [alignment review](docs/APPLIED_MODEL_SCORING_1.1.md) documents a corrected quadratic model score. The [native near-point recovery](docs/NATIVE_NEAR_RECOVERY_1.1.md) adds corroborated measurements for previously unconfirmed cases. Native subpixel alignment measurement and the alternative coefficient fit remain experimental.
 
 StereoFine is a local desktop tool for automatically aligning, checking, framing and exporting stereoscopic image pairs. It is designed to do as much reliable work automatically as possible without taking manual control away from the user. The interface therefore stays deliberately compact and keyboard-friendly.
 

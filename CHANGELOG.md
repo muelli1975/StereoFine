@@ -2,6 +2,9 @@
 
 ## 1.1 – Unreleased
 
+- Recover missed near-point evidence only after same-location native patch confirmation, independent spatial support and a veto for unresolved nearer surfaces.
+- Preserve existing confirmed results and uncertainty guards; retain the conservative measurement reserve and advance disparity calculation to sf-disparity-3.
+
 - Score quadratic correction chains against the applied symmetric destination field, including both eyes, frozen normalization and per-eye clipping.
 - Advance the alignment calculation version to sf-align-5; retain manual sidecar edits while recomputing dependent automatic analyses.
 - Add analytic/renderer-map regressions, original-image comparisons and separate Windows/Linux/macOS development validation.

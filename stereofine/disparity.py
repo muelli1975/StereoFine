@@ -238,6 +238,14 @@ def analyze_horizontal_disparity(
     low_edge = low_1
     from .near_point import confirm_near_edge
     near_confirmation = confirm_near_edge(gray_l, gray_r, disp_l_raw, confidence_mask, high_99)
+    if not near_confirmation["confirmed"]:
+        from .near_point_recovery import recover_near_edge
+        native_h = min(left_rgb.shape[0], right_rgb.shape[0])
+        native_w = min(left_rgb.shape[1], right_rgb.shape[1])
+        near_confirmation, _ = recover_near_edge(
+            gray_l, gray_r, disp_l_raw, confidence_mask, near_confirmation,
+            left_rgb[:native_h, :native_w], right_rgb[:native_h, :native_w],
+        )
     high_edge = float(near_confirmation["edge_permille"])
     deviation_permille = abs(high_edge - low_edge)
     deviation_permille_0_5_99_5 = abs(high_995 - low_05)
