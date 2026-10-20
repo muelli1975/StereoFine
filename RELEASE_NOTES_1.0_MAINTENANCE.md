@@ -16,6 +16,9 @@ und die 1.1-RC3-Pakete werden nicht überschrieben.
 - SIFT verwendet eine speicherbegrenzte exakte Distanzberechnung für die
   quantisierten OpenCV-Deskriptoren. Derselbe Ratio-Test, dieselben Matches;
   für andere Deskriptorformate bleibt der bisherige Matcher erhalten.
+- Windows-Dokumentation verwendet den tatsächlichen Archivnamen
+  `StereoFine_1.0_Windows_x64.zip`; Programmordner `StereoFine` und
+  Programmdatei `StereoFine.exe` sind ohne Versions-/Architekturzusatz.
 - Plattformpakete enthalten einen vor dem Build gesicherten, gegen rohe
   Git-Blobs geprüften Quellstand, auch bei Windows-Zeilenenden.
 

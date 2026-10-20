@@ -8,7 +8,7 @@ For image quality, the selected affine, Vergence/Trapezoid and Y-Polish geometry
 
 ## Portable Windows release
 
-Download `StereoFine_1.0.zip`, extract the complete folder and start `StereoFine.exe`. No separate Python installation is required.
+Download [StereoFine_1.0_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.0/StereoFine_1.0_Windows_x64.zip), extract the complete archive, open the `StereoFine` folder and start `StereoFine.exe`. No separate Python installation is required.
 
 ## Deliberate scope
 
