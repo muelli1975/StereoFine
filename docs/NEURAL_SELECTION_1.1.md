@@ -256,3 +256,19 @@ noch keine implementierte Formatänderung:
 Das öffentliche Format wird erst mit einer tatsächlich geprüften und integrierten
 Geometrie erweitert. Forschungsversuche ändern weder bestehende .sfin-Dateien
 noch die veröffentlichte Version 1.0.
+
+## Durchgeführter Geometrievergleich
+
+Der [Rektifizierungspilot mit 29 Paaren](RECTIFICATION_PILOT_1.1.md) vergleicht
+die bisherige Geometrie mit OpenCV auf extern zurückgehaltenen Blöcken.
+Der S95-Gewinn bestätigt sich am Raster; eine allgemeine Umstellung ist durch
+die überwiegenden Verschlechterungen nicht begründet.
+
+Projektentscheidung vom 20. Oktober 2026 nach Erinnerung an frühere Versuche:
+Vollrektifizierung/freie Homographien werden nicht als produktive Korrektur
+weiterverfolgt. Frühere Überlegungen zu einer solchen Integration sind damit
+überholt. Es bleibt bei Affine-LMS, kontrollierter symmetrischer Vergenz/Trapez
+und Y-Polish; die Messpräzision wird zunächst innerhalb dieser Pipeline geprüft.
+
+Der [Subpixel-Pilot](SUBPIXEL_PILOT_1.1.md) prüft anschließend ausschließlich
+präzisere Korrespondenzmessungen innerhalb der bestehenden Geometrie.
