@@ -1,6 +1,6 @@
 # StereoFine 1.1 RC3
 
-Vorabversion zum Prüfen der überarbeiteten Justage. [RC1-Pakete](https://github.com/muelli1975/StereoFine/releases/tag/v1.1-rc3) · [Änderungen](RELEASE_NOTES_1.1-rc3.md). Die bisherige stabile 1.0 bleibt separat verfügbar.
+Vorabversion zum Prüfen der überarbeiteten Justage. [RC3-Pakete](https://github.com/muelli1975/StereoFine/releases/tag/v1.1-rc3) · [Änderungen](RELEASE_NOTES_1.1-rc3.md). Die bisherige stabile 1.0 bleibt separat verfügbar.
 
 [English](README_EN.md)
 
@@ -12,13 +12,17 @@ StereoFine arbeitet vollständig lokal: kein Konto, keine Cloud, kein Tracking u
   <a href="docs/screenshots/StereoFine01.png"><img src="docs/screenshots/StereoFine01.png" alt="StereoFine 1.0 – Hauptansicht" width="900"></a>
 </p>
 
-## Stabile Windows-Version 1.0
+## Windows-Vorabversion 1.1 RC3
 
-Die veröffentlichte Windows-Version ist portabel:
+Die Windows-Vorabversion ist portabel:
 
-1. [StereoFine_1.0_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.0/StereoFine_1.0_Windows_x64.zip) herunterladen und das Archiv vollständig in einen normalen beschreibbaren Ordner entpacken.
-2. `StereoFine.exe` starten.
+1. [StereoFine_1.1-rc3_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.1-rc3/StereoFine_1.1-rc3_Windows_x64.zip) herunterladen und das Archiv vollständig in einen normalen beschreibbaren Ordner entpacken.
+2. Den entpackten Ordner `StereoFine` öffnen und `StereoFine.exe` starten.
 3. Den Programmordner zusammenlassen; `tools`, `_internal` und die übrigen mitgelieferten Dateien gehören zur Anwendung.
+
+Version und Architektur stehen im ZIP-Dateinamen. Der Programmordner heißt `StereoFine`, die Programmdatei `StereoFine.exe`, jeweils ohne Versions- oder Architekturzusatz.
+
+Die separate stabile Version ist [StereoFine_1.0_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.0/StereoFine_1.0_Windows_x64.zip). RC3 in einen eigenen Ordner getrennt von 1.0 entpacken.
 
 Eine Python-Installation ist für die portable Version nicht erforderlich. Globale Einstellungen werden als `settings.json` direkt neben `StereoFine.exe` gespeichert.
 

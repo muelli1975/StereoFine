@@ -1,6 +1,6 @@
 # StereoFine 1.1 RC3
 
-Prerelease for checking the revised alignment. [RC1 packages](https://github.com/muelli1975/StereoFine/releases/tag/v1.1-rc3) · [Changes](RELEASE_NOTES_1.1-rc3.md). The existing stable 1.0 remains available separately.
+Prerelease for checking the revised alignment. [RC3 packages](https://github.com/muelli1975/StereoFine/releases/tag/v1.1-rc3) · [Changes](RELEASE_NOTES_1.1-rc3.md). The existing stable 1.0 remains available separately.
 
 [Deutsch](README_DE.md)
 
@@ -12,13 +12,17 @@ StereoFine works completely locally: no account, no cloud, no tracking and no au
   <a href="docs/screenshots/StereoFine01.png"><img src="docs/screenshots/StereoFine01.png" alt="StereoFine 1.0 main view" width="900"></a>
 </p>
 
-## Stable Windows 1.0 release
+## Windows 1.1 RC3 prerelease
 
-The published Windows version is portable:
+The Windows prerelease is portable:
 
-1. Download [StereoFine_1.0_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.0/StereoFine_1.0_Windows_x64.zip) and extract the complete archive into a normal writable folder.
-2. Start `StereoFine.exe`.
+1. Download [StereoFine_1.1-rc3_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.1-rc3/StereoFine_1.1-rc3_Windows_x64.zip) and extract the complete archive into a normal writable folder.
+2. Open the extracted `StereoFine` folder and start `StereoFine.exe`.
 3. Keep the application folder together; `tools`, `_internal` and the other supplied files belong to the application.
+
+Version and architecture appear in the ZIP filename. The application folder is `StereoFine` and the executable is `StereoFine.exe`, without a version or architecture suffix.
+
+The separate stable release is [StereoFine_1.0_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.0/StereoFine_1.0_Windows_x64.zip). Extract RC3 into its own folder, separately from 1.0.
 
 The portable version does not require a separate Python installation. Global settings are stored as `settings.json` next to `StereoFine.exe`.
 
