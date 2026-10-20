@@ -1,4 +1,4 @@
-# Building StereoFine 1.1-rc2 on Windows
+# Building StereoFine 1.1-rc3 on Windows
 
 StereoFine is published as a **portable Windows x64 onedir application**. The public executable must be built on Windows; PyInstaller is not used to cross-compile it from Linux.
 
@@ -7,7 +7,7 @@ StereoFine is published as a **portable Windows x64 onedir application**. The pu
 - Windows x64
 - Python **3.12.10**, 64 bit, installed with the standard Python installer
 - Internet access for the one-time installation of the pinned Python build dependencies
-- the complete StereoFine 1.1-rc2 source directory, including `assets/` and `tools/`
+- the complete StereoFine 1.1-rc3 source directory, including `assets/` and `tools/`
 
 Runtime dependencies are pinned in `requirements-lock.txt`. The build tool is pinned in `requirements-build.txt`:
 
@@ -15,7 +15,7 @@ Runtime dependencies are pinned in `requirements-lock.txt`. The build tool is pi
 
 ## Build
 
-Open PowerShell in the exact StereoFine 1.1-rc2 source directory and run:
+Open PowerShell in the exact StereoFine 1.1-rc3 source directory and run:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
@@ -29,7 +29,7 @@ Expected final artifacts:
 
 ```text
 release/
-    StereoFine_1.1-rc2_Windows_x64.zip
+    StereoFine_1.1-rc3_Windows_x64.zip
     SHA256SUMS.txt
 
 dist/
@@ -54,7 +54,7 @@ StereoFine stores `settings.json` beside `StereoFine.exe` at runtime. This is de
 
 ## Required manual Windows smoke check
 
-After the script finishes, extract `release/StereoFine_1.1-rc2_Windows_x64.zip` into a fresh folder and check at least:
+After the script finishes, extract `release/StereoFine_1.1-rc3_Windows_x64.zip` into a fresh folder and check at least:
 
 1. `StereoFine.exe` starts without an external Python installation being used.
 2. The application icon is correct in Explorer, the title bar and taskbar.
@@ -80,7 +80,7 @@ A genuine camera MPO and additional real camera color-mismatch material are usef
 The public release archive is simply:
 
 ```text
-StereoFine_1.1-rc2_Windows_x64.zip
+StereoFine_1.1-rc3_Windows_x64.zip
 ```
 
-Upload it manually to the GitHub release for version `1.1-rc2`. The SHA-256 produced in `release/SHA256SUMS.txt` can be copied into the release notes.
+Upload it manually to the GitHub release for version `1.1-rc3`. The SHA-256 produced in `release/SHA256SUMS.txt` can be copied into the release notes.

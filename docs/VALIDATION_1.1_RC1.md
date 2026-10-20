@@ -1,4 +1,4 @@
-# StereoFine 1.1 RC1/RC2: geprüfter Verarbeitungsstand
+# StereoFine 1.1 RC1/RC2/RC3: geprüfter Verarbeitungsstand
 
 20.10.2026. Vorabversion zur praktischen Windows-Prüfung, keine allgemeine
 Zusicherung für beliebige Kameragespanne. Die veröffentlichten 1.0-Pakete
@@ -169,7 +169,7 @@ StereoPhoto Maker auf Christophs Rechner und keine universelle Zeitgarantie.
 
 ## Automatische und manuelle Freigabe
 
-132 automatische Tests bestehen lokal. Hinzu kommen Kompilierung, Modulimporte,
+133 automatische Tests bestehen lokal. Hinzu kommen Kompilierung, Modulimporte,
 Original-Asset-Hashes und die obigen echten Bildprüfungen. Neue Regressionen
 prüfen unter anderem ein echtes nahes Objekt mit nur rund 0,32 % Bildfläche im
 ehemaligen Messrand, mehrdeutige Muster, isolierte falsche Extreme, überschrittene
@@ -198,3 +198,9 @@ Build nochmals Datei für Datei geprüft; Windows-Zeilenenden verändern die
 Quellkopie nicht. Die Bildverarbeitung ist unverändert. RC1 wird als durch RC2 ersetzt markiert;
 1.0 bleibt unverändert. Die ausgelieferten Archive werden erneut mit den
 getrackten Quelldateien und dem angegebenen Commit verglichen.
+
+RC3 ergänzt die kanonische Bytekopie direkt aus Git-Blobs: Auch `git archive`
+wendet unter Windows `core.autocrlf` an. Dies wurde mit aktivierter Umwandlung
+reproduziert und durch eine eigene Regression abgesichert. Der externe
+Archivvergleich verwendet gespeicherte Blob-Bytes als plattformunabhängige
+Referenz. Die Bildverarbeitung bleibt unverändert.

@@ -105,10 +105,14 @@ wäre zusätzliche Absicherung, ersetzt aber nicht die schwierigen Rohpaare.
   einschließlich Randbereichen und schnelleres exaktes SIFT-Matching sind für
   1.1 RC1 integriert. Vier neue IXUS-Paare erweitern die Prüfung auf elf Paare;
   eine zusätzlich geprüfte kubische Höhenkorrektur adressiert lokale Randreste. Aktuelle Versionen sind
-  sf-align-4 und sf-disparity-2. 132 automatische Tests bestehen lokal.
+  sf-align-4 und sf-disparity-2. 133 automatische Tests bestehen lokal.
   Siehe [VALIDATION_1.1_RC1.md](VALIDATION_1.1_RC1.md). Ein gesonderter RC1-Build
   dient der praktischen Windows-Prüfung; eine stabile 1.1 ist noch nicht freigegeben.
 
 - Die Paketprüfung von RC1 fand eine von PyInstaller neu erzeugte `.spec` in
   Linux-/macOS-Quellkopien. RC2 sichert saubere Build-Eingaben vor PyInstaller;
   die Verarbeitungsmathematik und das Bildprüfprotokoll bleiben unverändert.
+
+- RC3 liest rohe Git-Blobs statt `git archive`, das ebenfalls Windows-
+  Zeilenenden umwandelt. Eine neue Regression reproduziert genau diesen Fall;
+  die Verarbeitungsmathematik bleibt unverändert.

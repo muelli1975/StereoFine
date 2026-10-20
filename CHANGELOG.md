@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1-rc3 – 2026-10-20 (prerelease)
+
+- Read canonical source blobs directly; git archive also applies Windows autocrlf conversion.
+- Verify source byte identity independently of checkout line endings; image processing unchanged.
+
 ## 1.1-rc2 – 2026-10-20 (prerelease)
 
 - Snapshot clean source inputs before PyInstaller can replace generated build files.

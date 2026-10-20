@@ -4,7 +4,6 @@ from __future__ import annotations
 import io
 import subprocess
 import sys
-import tarfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,7 +12,7 @@ FILES = {".gitignore", "AGENTS.md", "DESIGN_STANDARD_STEREOTOOLS.txt", "StereoFi
          "version_info.txt", "build_windows.ps1", "requirements-lock.txt", "requirements-build.txt",
          "README.md", "README_DE.md", "README_EN.md", "LICENSE.txt", "THIRD_PARTY_NOTICES.md",
          "BUILD_WINDOWS.md", "RELEASE_CHECKLIST.md", "CHANGELOG.md", "RELEASE_NOTES_1.1-rc1.md",
-         "RELEASE_NOTES_1.1-rc2.md"}
+         "RELEASE_NOTES_1.1-rc2.md", "RELEASE_NOTES_1.1-rc3.md"}
 
 
 def included(name: str) -> bool:
@@ -29,10 +28,30 @@ def committed_sources() -> tuple[str, dict[str, bytes]]:
     if Path(repository_root).resolve() != ROOT:
         raise subprocess.CalledProcessError(1, "source directory is not the repository root")
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
-    archive = subprocess.check_output(["git", "archive", "--format=tar", "HEAD"], cwd=ROOT)
-    with tarfile.open(fileobj=io.BytesIO(archive)) as snapshot:
-        files = {member.name: snapshot.extractfile(member).read()
-                 for member in snapshot if member.isfile() and included(member.name)}
+    # Read raw blobs: unlike git archive, cat-file never applies checkout
+    # conversion rules (including core.autocrlf on Windows).
+    tree = subprocess.check_output(["git", "ls-tree", "-rz", "--full-tree", "HEAD"], cwd=ROOT)
+    entries = []
+    for record in tree.split(b"\0"):
+        if not record:
+            continue
+        metadata, name_bytes = record.split(b"\t", 1)
+        _, kind, sha = metadata.split()
+        name = name_bytes.decode("utf-8")
+        if kind == b"blob" and included(name):
+            entries.append((name, sha))
+    data = subprocess.check_output(
+        ["git", "cat-file", "--batch"], cwd=ROOT,
+        input=b"".join(sha + b"\n" for _, sha in entries),
+    )
+    stream = io.BytesIO(data)
+    files = {}
+    for name, sha in entries:
+        actual_sha, kind, length = stream.readline().split()
+        content = stream.read(int(length))
+        if actual_sha != sha or kind != b"blob" or len(content) != int(length) or stream.read(1) != b"\n":
+            raise RuntimeError("Invalid Git source blob response.")
+        files[name] = content
     if "StereoFine.py" not in files:
         raise subprocess.CalledProcessError(1, "git archive")
     return commit, files
@@ -78,7 +97,7 @@ def main(destination: Path) -> None:
     for name, content in files.items():
         target = destination / name
         target.parent.mkdir(parents=True, exist_ok=True)
-        # Git archive preserves canonical bytes even on Windows EOL checkouts.
+        # Raw Git blobs preserve canonical bytes even on Windows EOL checkouts.
         target.write_bytes(content)
     (destination / "SOURCE_COMMIT.txt").write_bytes((commit + "\n").encode())
 

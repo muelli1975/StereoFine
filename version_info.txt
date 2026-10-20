@@ -1,7 +1,7 @@
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(1, 1, 0, 2),
-    prodvers=(1, 1, 0, 2),
+    filevers=(1, 1, 0, 3),
+    prodvers=(1, 1, 0, 3),
     mask=0x3f,
     flags=0x2,
     OS=0x40004,
@@ -16,12 +16,12 @@ VSVersionInfo(
         [
           StringStruct('CompanyName', 'Christoph'),
           StringStruct('FileDescription', 'StereoFine stereoscopic image alignment tool'),
-          StringStruct('FileVersion', '1.1-rc2'),
+          StringStruct('FileVersion', '1.1-rc3'),
           StringStruct('InternalName', 'StereoFine'),
           StringStruct('LegalCopyright', 'Copyright (c) 2026 Christoph'),
           StringStruct('OriginalFilename', 'StereoFine.exe'),
           StringStruct('ProductName', 'StereoFine'),
-          StringStruct('ProductVersion', '1.1-rc2')
+          StringStruct('ProductVersion', '1.1-rc3')
         ]
       )
     ]),
