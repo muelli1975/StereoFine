@@ -226,7 +226,32 @@ def load_sidecar(path: Path, expected_source: SourceStamp | None = None) -> Side
     return SidecarLoadResult(SidecarStatus.INVALID, message="Unbekanntes Sidecar-Schema.")
 
 
+def _source_path_identity(source: dict[str, Any]) -> tuple[str, str, str] | None:
+    try:
+        kind = str(source["kind"])
+        left = str(source["left"]["path"]).replace("\\", "/").casefold()
+        right = str(source["right"]["path"]).replace("\\", "/").casefold()
+        return (kind, left, right) if left and right else None
+    except (KeyError, TypeError):
+        return None
+
+
 def save_sidecar(path: Path, document: SidecarDocument) -> Path:
+    # Changed pixels/mtime may invalidate analysis, but another source must not
+    # silently take ownership of an existing pair's edits and favorite flag.
+    if path.is_file():
+        try:
+            saved = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            saved = None
+        if isinstance(saved, dict):
+            previous = _source_path_identity(saved.get("source") or {})
+            current = _source_path_identity(document.source)
+            if previous is not None and current is not None and previous != current:
+                raise ValueError(
+                    "Die Einstellungsdatei gehört zu anderen Quelldateien. Bitte Quelldateien eindeutig umbenennen: "
+                    + str(path)
+                )
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = json.dumps(document.to_dict(), ensure_ascii=False, indent=2) + "\n"
     fd, temp_name = tempfile.mkstemp(prefix=path.name + ".", suffix=".tmp", dir=path.parent)
