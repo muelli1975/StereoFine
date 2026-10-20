@@ -149,8 +149,6 @@ By default StereoFine creates an `output` folder inside the input folder. Altern
 
 Existing image outputs with the same name are deliberately replaced.
 
-Give source files with the same stem, such as `Scene.jpg` and `Scene.png`, unique names before processing. StereoFine reports these collisions and protects existing settings belonging to other sources.
-
 ## Metadata
 
 Where possible, StereoFine copies metadata using the bundled ExifTool. Preview, Orientation and MPF/MPO container metadata are not copied into ordinary SBS/anaglyph JPEG files. If only metadata copying fails, a successfully written image remains valid and StereoFine shows a warning.

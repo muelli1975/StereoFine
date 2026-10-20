@@ -12,7 +12,7 @@ from .processing import BatchProgress, ProcessedSource, ProcessingOptions, proce
 from .render import render_final_pair
 from .reports import write_analysis_report
 from .sidecar import save_sidecar, source_stamp_to_dict
-from .sources import StereoSource, validate_source_names
+from .sources import StereoSource
 from .worker import CancellationToken, JobCancelled
 
 BATCH_PREVIEW_MAX_WIDTH = 960
@@ -95,7 +95,6 @@ def run_batch(
     """
 
     source_list = list(sources)
-    validate_source_names(source_list, check_outputs=not options.analysis_only)
     total = len(source_list)
     result = BatchRunResult(language=options.language)
     records: list[AnalysisRecord] = []

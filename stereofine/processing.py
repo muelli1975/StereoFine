@@ -21,7 +21,7 @@ from .inputs import LoadedStereoPair, master_to_uint8
 from .models import AnalysisRecord, SourceStamp
 from .preview_render import build_preview_base_from_oriented_pair, render_preview_from_base
 from .sidecar import SidecarLoadResult, SidecarStatus, load_sidecar, save_sidecar, source_stamp_to_dict
-from .sources import StereoSource, build_source_stamp, load_source, validate_source_names
+from .sources import StereoSource, build_source_stamp, load_source
 from .state import AlignmentState, DisparityState, PairState, reproducible_alignment_correction
 from .worker import CancellationToken
 
@@ -424,7 +424,6 @@ def process_batch_analysis(
 
     token = cancellation or _NullCancellationToken()
     source_list = list(sources)
-    validate_source_names(source_list, check_outputs=False)
     result = BatchAnalysisResult()
     total = len(source_list)
     for index, source in enumerate(source_list, start=1):

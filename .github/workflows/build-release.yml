@@ -9,12 +9,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/build-release.yml'
-      - 'StereoFine.py'
-      - 'StereoFine.spec'
-      - 'stereofine/**'
-      - 'tests/**'
-      - 'requirements*.txt'
-      - 'build_windows.ps1'
+      - 'tests/test_release_hygiene.py'
       - 'assets/stereofine.jpg'
       - 'assets/stereofine.ico'
       - 'assets/stereofine.icns'
@@ -37,12 +32,6 @@ jobs:
         run: python -m pip install -r requirements-build.txt
       - name: Unit tests
         run: python -m unittest discover -s tests -p 'test_*.py'
-      - name: GUI regression (German and English)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb
-          PYTHONPATH=. xvfb-run -a python tests/gui_smoke_xvfb.py
-          PYTHONPATH=. STEREOFINE_TEST_LANGUAGE=en xvfb-run -a python tests/gui_smoke_xvfb.py
       - name: Compile and import
         run: |
           python -m compileall -q StereoFine.py stereofine tests

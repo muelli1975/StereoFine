@@ -1,13 +1,5 @@
 # Changelog
 
-## 1.0 maintenance – 2026-10-20
-
-- Preserve the oriented source aspect ratio for `Original` exports, matching preview and disparity analysis.
-- Report ambiguous source/result names before writing and protect existing `.sfin` files belonging to another source; normal filenames remain unchanged.
-- Apply integer color curves through exact lookup tables, retaining the released arithmetic, rounding and sidecar format.
-- Accelerate the valid-rectangle search with equal-height histogram runs, retaining the released crop, tie selection and safety margin.
-- Add compatibility regressions, a reference-image analysis check, and German/English GUI regression checks before the platform builds.
-
 ## 1.0 – 2026-09-07
 
 Initial public release.

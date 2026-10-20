@@ -1345,25 +1345,18 @@ class StereoFineApp(ctk.CTk):
         )
         if not selected:
             return
-        try:
-            path = Path(selected)
-            source = source_from_selected_stereo_file(path)
-            sources = discover_stereo_file_sources(path.parent)
-            index = next((i for i, item in enumerate(sources) if item.left_path == path), 0)
-            self._set_source_collection(sources or [source], index, batch=False)
-        except Exception as exc:
-            messagebox.showerror(APP_NAME, self.tr.message(str(exc)))
+        path = Path(selected)
+        source = source_from_selected_stereo_file(path)
+        sources = discover_stereo_file_sources(path.parent)
+        index = next((i for i, item in enumerate(sources) if item.left_path == path), 0)
+        self._set_source_collection(sources or [source], index, batch=False)
 
     def choose_batch_pair(self) -> None:
         selected = filedialog.askdirectory(title=self._t("batch_pair_dialog"), initialdir=self._dialog_initial_dir())
         if not selected:
             return
         folder = Path(selected)
-        try:
-            sources = discover_pair_sources(folder)
-        except Exception as exc:
-            messagebox.showerror(APP_NAME, self.tr.message(str(exc)))
-            return
+        sources = discover_pair_sources(folder)
         if not sources:
             messagebox.showerror(APP_NAME, self._t("no_pair_files"))
             return
@@ -1374,11 +1367,7 @@ class StereoFineApp(ctk.CTk):
         if not selected:
             return
         folder = Path(selected)
-        try:
-            sources = discover_stereo_file_sources(folder)
-        except Exception as exc:
-            messagebox.showerror(APP_NAME, self.tr.message(str(exc)))
-            return
+        sources = discover_stereo_file_sources(folder)
         if not sources:
             messagebox.showerror(APP_NAME, self._t("no_stereo_files"))
             return

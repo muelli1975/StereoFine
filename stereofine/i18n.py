@@ -397,9 +397,6 @@ CORE_MESSAGE_TRANSLATIONS: dict[str, dict[str, str]] = {
 
 CORE_PREFIX_TRANSLATIONS: dict[str, dict[str, str]] = {
     "en": {
-        "Gleicher Dateistamm – bitte Quelldateien eindeutig umbenennen: ": "Duplicate filename stem – please give the source files unique names: ",
-        "Mehrere Quellen verwenden denselben Ergebnisnamen. Bitte Quelldateien eindeutig umbenennen: ": "Multiple sources use the same output name. Please give the source files unique names: ",
-        "Die Einstellungsdatei gehört zu anderen Quelldateien. Bitte Quelldateien eindeutig umbenennen: ": "The settings file belongs to different source files. Please give the source files unique names: ",
         "Trapez-Fit nicht stabil genug: ": "Trapezoid fit not stable enough: ",
         "Unbekanntes Analyseverfahren: ": "Unknown analysis method: ",
         "Linkes und rechtes Bild müssen gleich groß sein: ": "Left and right images must have the same size: ",
