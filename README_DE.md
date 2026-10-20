@@ -4,7 +4,7 @@ Vorabversion zum Prüfen der überarbeiteten Justage. [RC3-Pakete](https://githu
 
 [English](README_EN.md)
 
-Dieser Entwicklungszweig ergänzt JPS/PNS-Eingaben nach RC3. Die verlinkten RC3-Pakete enthalten diese Ergänzung noch nicht.
+Dieser Entwicklungszweig ergänzt JPS/PNS-Eingaben nach RC3. Die verlinkten RC3-Pakete enthalten diese Ergänzung noch nicht. Die [Untersuchung der Justage in Originalauflösung](docs/NATIVE_SUBPIXEL_1.1.md) dokumentiert den aktuellen Forschungsstand; ihre Kandidaten sind im Programm nicht aktiviert.
 
 StereoFine ist ein lokales Desktop-Werkzeug zum automatischen Ausrichten, Prüfen, Rahmen und Ausgeben stereoskopischer Bildpaare. Es soll möglichst viel zuverlässig automatisch erledigen, ohne die manuelle Kontrolle aus der Hand zu nehmen. Die Oberfläche bleibt deshalb bewusst schlank und tastaturfreundlich.
 
