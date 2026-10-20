@@ -1,8 +1,10 @@
-# StereoFine 1.1 RC3
+# StereoFine 1.1 – Entwicklung
 
 Vorabversion zum Prüfen der überarbeiteten Justage. [RC3-Pakete](https://github.com/muelli1975/StereoFine/releases/tag/v1.1-rc3) · [Änderungen](RELEASE_NOTES_1.1-rc3.md). Die bisherige stabile 1.0 bleibt separat verfügbar.
 
 [English](README_EN.md)
+
+Dieser Entwicklungszweig ergänzt JPS/PNS-Eingaben nach RC3. Die verlinkten RC3-Pakete enthalten diese Ergänzung noch nicht.
 
 StereoFine ist ein lokales Desktop-Werkzeug zum automatischen Ausrichten, Prüfen, Rahmen und Ausgeben stereoskopischer Bildpaare. Es soll möglichst viel zuverlässig automatisch erledigen, ohne die manuelle Kontrolle aus der Hand zu nehmen. Die Oberfläche bleibt deshalb bewusst schlank und tastaturfreundlich.
 
@@ -51,13 +53,15 @@ Für ganze Ordner steht derselbe Rechenkern als Stapelverarbeitung zur Verfügun
 
 Offiziell unterstützt werden:
 
-- JPEG/JPG
-- PNG
+- JPEG/JPG, einschließlich JPS
+- PNG, einschließlich PNS
 - TIFF/TIF
 - MPO
-- Full-SBS in JPEG, PNG oder TIFF
+- Full-SBS in JPEG/JPS, PNG/PNS oder TIFF
 - getrennte Links/Rechts-Paare als `*_l` / `*_r`
 - getrennte Paare in den Unterordnern `l` und `r`
+
+JPS/PNS verwenden die vorhandenen JPEG-/PNG-Ladewege. Gepackte Bilder über **Full-SBS/MPO** öffnen und die Augenzuordnung prüfen; nötigenfalls **L/R tauschen** verwenden. Die Dateiendung wählt weder automatisch ein Layout noch die Augenreihenfolge. Andere Packungen wie Over/Under werden dadurch nicht zusätzlich unterstützt.
 
 HEIC/HEIF- und RAW-Bilder vor dem Öffnen in StereoFine in JPEG, PNG oder TIFF konvertieren.
 

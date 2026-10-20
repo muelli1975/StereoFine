@@ -144,7 +144,7 @@ def _to_rgb_keep_depth(decoded: np.ndarray) -> np.ndarray:
 
 
 def load_master_image(path: Path) -> np.ndarray:
-    """Load JPEG/PNG/TIFF as RGB while retaining uint8/uint16 precision."""
+    """Load JPEG/PNG/TIFF, including JPS/PNS aliases, retaining uint8/uint16."""
     suffix = path.suffix.lower()
     if suffix not in SUPPORTED_IMAGE_EXTENSIONS:
         raise InputError(f"Nicht unterstütztes Bildformat: {suffix or path.name}")

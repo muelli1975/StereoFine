@@ -1,37 +1,40 @@
-# StereoFine 1.1 – Testbuild RC1
+**Superseded by [RC3](https://github.com/muelli1975/StereoFine/releases/tag/v1.1-rc3).** RC3 fixes source packaging, including Windows line endings; image processing is unchanged.
 
-Dieser Build ist eine Vorabversion zum Prüfen der überarbeiteten Justage.
-Die reguläre 1.0 bleibt separat verfügbar.
+# StereoFine 1.1 – Release candidate 1
 
-- Verbesserte automatische Modellwahl mit robusten und räumlich verteilten
-  Prüfungen; vollständige Korrekturketten werden miteinander verglichen.
-- Erneute Auswahl bildlich bestätigter Punktpaare bei Restverzeichnung.
-  Ganze Bildblöcke prüfen die Neuberechnung, ohne sie selbst zu trainieren.
-- Zusätzliche begrenzte kubische Höhenkorrektur für glatte Restfehler an den
-  Bildrändern. Sie benötigt bildlich bestätigte Punkte und Verbesserungen an
-  zurückgehaltenen Bildblöcken; die äußeren Ecken werden gesondert geschützt.
-  Dies ist keine vollständige Objektivkalibrierung.
-- Nahpunktprüfung berücksichtigt kleine echte Vordergrundflächen und die
-  bisherigen breiten Messlücken an den Bildrändern. Extreme Kandidaten werden
-  durch eindeutige gegenseitige Bildvergleiche und benachbarte Punkte geprüft.
-- Schnellere exakte SIFT-Zuordnung; Vergleich mit dem bisherigen Verfahren
-  verwendet dieselben Punktpaare, ohne Näherungssuche.
-- TIFF-Ausrichtung bei 8/16 Bit korrigiert. Alte automatische Berechnungen
-  werden erneuert; manuelle Werte und Favoriten bleiben erhalten.
-- Frühere Korrekturen zu Original-Seitenverhältnis und Namenskollisionen sowie
-  ergebnisgleiche Beschleunigungen bei Farbe und gültigem Beschnitt enthalten.
+This is a prerelease for testing the revised alignment pipeline. The regular
+1.0 release remains available separately.
 
-Die Bedienung und die Ampelgrenzen bleiben erhalten. Durch die vollständigere
-Erkennung naher Flächen können Nahpunkt und gesamter Disparitätsumfang andere,
-größere Werte als in 1.0 ergeben. Unsichere Messungen bleiben als solche markiert.
+- Improved automatic model selection with robust, spatially distributed checks
+  comparing complete correction chains.
+- Recovery of photometrically confirmed correspondences for residual distortion.
+  Entire image blocks validate each refit without training it.
+- An additional bounded cubic vertical correction for smooth residual errors
+  near image borders. It requires confirmed correspondences and improvement on
+  withheld image blocks, with separate corner protections. This is not a full
+  lens calibration.
+- Near-point checks account for small genuine foreground areas and previous
+  measurement gaps near image borders. Extreme candidates are checked through
+  unambiguous mutual image comparisons and neighboring correspondences.
+- Faster exact SIFT matching retains the same correspondence pairs without
+  approximate nearest-neighbor search.
+- Corrected TIFF orientation for 8/16-bit input. Outdated automatic calculations
+  are invalidated while applicable manual edits and favorites are retained.
+- Includes the earlier original-aspect-ratio and filename-collision fixes,
+  plus result-preserving color and valid-crop accelerations.
 
-Geprüft an elf echten Paaren (sieben Canon S110, vier Canon IXUS 100 IS) mit
-AKAZE und SIFT, zusätzlich automatische Regressionen und Plattform-Builds.
-Bei den vier gelieferten IXUS-Paaren ist die Eingabedrehung links auf 180° zu
-stellen: Die Pixel sind kopfstehend gespeichert, EXIF meldet dennoch normal.
-Die Nahpunktmessung von IXUS/bild008 bleibt in beiden Verfahren unsicher.
-Lokale Restfehler sind weiterhin möglich; der RC ersetzt noch nicht die
-praktische Prüfung auf Christophs Windows-Rechner.
+Controls and traffic-light thresholds are unchanged. More complete foreground
+detection can produce larger near-point and total-disparity values than 1.0.
+Uncertain measurements remain explicitly marked as uncertain.
 
-Die Archive enthalten den genauen Quellstand unter `Source/`. Programme lokal
-aus einem entpackten Ordner starten; vorhandene 1.0-Installation separat halten.
+Validated on eleven real pairs (seven Canon S110, four Canon IXUS 100 IS) using
+AKAZE and SIFT, together with automated regressions and platform builds. For
+the four supplied IXUS pairs, set the left input rotation to 180 degrees: their
+pixels are stored upside down despite normal EXIF orientation. Near-point
+measurement for IXUS/bild008 remains uncertain with both methods. Local residual
+errors remain possible; this prerelease still requires practical validation
+on Christoph's Windows computer.
+
+Archives include the exact source revision under `Source/`. Start the application
+locally from a fully extracted folder and keep the existing 1.0 installation
+separate.

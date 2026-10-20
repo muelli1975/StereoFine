@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1 – Unreleased
+
+- Accept JPS/PNS through the existing JPEG/PNG readers, Full-SBS and paired-image discovery, including 16-bit PNS data.
+- Derive both input-dialog filters from the supported extension sets.
+- Keep layout and eye order explicit; retain existing alignment, near-point and export procedures.
+- Use English release notes and titles consistently, with localized READMEs kept separate.
+
 ## 1.1-rc3 – 2026-10-20 (prerelease)
 
 - Read canonical source blobs directly; git archive also applies Windows autocrlf conversion.
@@ -17,6 +24,13 @@
 - Confirmed foreground near points and improved physical-rim coverage.
 - Exact batched SIFT matching, TIFF orientation/cache migration and the four maintenance corrections.
 - See RELEASE_NOTES_1.1-rc1.md and docs/VALIDATION_1.1_RC1.md for scope and validation.
+
+## 1.0 – Quality update, 2026-10-20
+
+- Correct TIFF orientation for 8/16-bit input, original aspect ratio and input/output name collisions.
+- Accelerate integer color transfer, valid-rectangle calculation and exact SIFT distances while retaining identical results.
+- Preserve canonical source bytes before building and document the actual Windows filenames.
+- Keep version and archive names at 1.0; retain existing alignment and near-point procedures.
 
 ## 1.0 – 2026-09-07
 

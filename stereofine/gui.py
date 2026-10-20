@@ -20,6 +20,8 @@ from .config import (
     ASPECT_RATIOS,
     CROP_ZOOM_LEVELS,
     GRID_SPACING_OPTIONS,
+    SUPPORTED_IMAGE_EXTENSIONS,
+    SUPPORTED_STEREO_SINGLE_EXTENSIONS,
 )
 from .geometry import framing_crop_geometry
 from .i18n import (
@@ -303,14 +305,16 @@ class StereoFineApp(ctk.CTk):
         self._rebuild_for_language()
 
     def _image_filetypes(self) -> list[tuple[str, str]]:
+        patterns = " ".join(f"*{ext}" for ext in sorted(SUPPORTED_IMAGE_EXTENSIONS))
         if self.settings.language == "en":
-            return [("Image files", "*.jpg *.jpeg *.png *.tif *.tiff"), ("All files", "*.*")]
-        return [("Bilddateien", "*.jpg *.jpeg *.png *.tif *.tiff"), ("Alle Dateien", "*.*")]
+            return [("Image files", patterns), ("All files", "*.*")]
+        return [("Bilddateien", patterns), ("Alle Dateien", "*.*")]
 
     def _stereo_filetypes(self) -> list[tuple[str, str]]:
+        patterns = " ".join(f"*{ext}" for ext in sorted(SUPPORTED_STEREO_SINGLE_EXTENSIONS))
         if self.settings.language == "en":
-            return [("Stereo files", "*.jpg *.jpeg *.png *.tif *.tiff *.mpo"), ("All files", "*.*")]
-        return [("Stereodateien", "*.jpg *.jpeg *.png *.tif *.tiff *.mpo"), ("Alle Dateien", "*.*")]
+            return [("Stereo files", patterns), ("All files", "*.*")]
+        return [("Stereodateien", patterns), ("Alle Dateien", "*.*")]
 
     @staticmethod
     def _font(size: int = 13, weight: str = "normal") -> tuple[str, int, str]:

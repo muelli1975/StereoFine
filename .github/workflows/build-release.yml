@@ -246,18 +246,18 @@ jobs:
           gh release create v1.1-rc3 artifacts/* \
             --target "$GITHUB_SHA" \
             --prerelease --latest=false \
-            --title 'StereoFine 1.1 RC3 – Testbuild' \
+            --title 'StereoFine 1.1 RC3 - Release candidate' \
             --notes-file RELEASE_NOTES_1.1-rc3.md
           python - <<'PYRC'
           from pathlib import Path
-          notice = '**Ersetzt durch [RC3](https://github.com/muelli1975/StereoFine/releases/tag/v1.1-rc3).** RC3 korrigiert die Quellpaketierung einschließlich Windows-Zeilenenden; die Bildverarbeitung bleibt unverändert.\n\n'
+          notice = '**Superseded by [RC3](https://github.com/muelli1975/StereoFine/releases/tag/v1.1-rc3).** RC3 fixes source packaging, including Windows line endings; image processing is unchanged.\n\n'
           for version in ('rc1', 'rc2'):
               previous = Path(f'RELEASE_NOTES_1.1-{version}.md').read_text(encoding='utf-8')
-              Path(f'/tmp/{version}-superseded.md').write_text(notice + previous, encoding='utf-8')
+              Path(f'/tmp/{version}-superseded.md').write_text(previous if previous.startswith('**Superseded') else notice + previous, encoding='utf-8')
           PYRC
           gh release edit v1.1-rc1 --prerelease --latest=false \
-            --title 'StereoFine 1.1 RC1 – ersetzt durch RC3' \
+            --title 'StereoFine 1.1 RC1 - superseded by RC3' \
             --notes-file /tmp/rc1-superseded.md
           gh release edit v1.1-rc2 --prerelease --latest=false \
-            --title 'StereoFine 1.1 RC2 – ersetzt durch RC3' \
+            --title 'StereoFine 1.1 RC2 - superseded by RC3' \
             --notes-file /tmp/rc2-superseded.md
