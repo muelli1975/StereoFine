@@ -266,7 +266,13 @@ def analyze_horizontal_disparity(
         uncertain_reasons.append("low_edge_cluster_missing")
     if not high_components:
         uncertain_reasons.append("high_edge_cluster_missing")
-    if deviation_permille < 0.5:
+    range_evidence_permille = deviation_permille
+    if (near_confirmation.get("recovery_validation") or {}).get("accepted"):
+        # A measurement reserve is a framing allowance, not evidence of scene
+        # depth. It must not make an otherwise uniform plane look certain.
+        measured_near = max(high_99, float(near_confirmation["maximum_supported_px"]) * 1000 / w)
+        range_evidence_permille = abs(measured_near - low_edge)
+    if range_evidence_permille < 0.5:
         uncertain_reasons.append("disparity_range_unreliable")
     if not near_confirmation["confirmed"] or near_confirmation["unsupported_extreme"]:
         uncertain_reasons.append("near_edge_unconfirmed")

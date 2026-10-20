@@ -154,7 +154,8 @@ def recover_near_edge(left,right,disparity,confidence,baseline,native_left,nativ
     # Retain the established half-analysis-pixel reserve for the nearer of
     # the independently supported measurements, including native localization.
     result['maximum_supported_px']=max(candidate['maximum_supported_px'],result['maximum_supported_px'],native_support['maximum_supported_px'])
-    result['edge_permille']=max(candidate['edge_permille'],result['edge_permille'],native_support['edge_permille'])
+    result['edge_permille']=max(candidate['edge_permille'],result['edge_permille'],native_support['edge_permille'],
+                                (result['maximum_supported_px']+.5)*1000/w)
     result.update(probed_points=candidate['probed_points'],
                   baseline_percentile_permille=baseline['baseline_percentile_permille'],
                   method='percentile_99_plus_native_confirmed_recovery',recovery_validation=audit)

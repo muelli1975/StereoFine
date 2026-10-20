@@ -40,8 +40,9 @@ their calculation version are unchanged by this step.
    than the native-supported surface **vetoes recovery**. Confirmed farther
    points cannot silently replace unresolved nearer evidence.
 6. Retain original evidence and the more conservative of the supported analysis
-   and native near envelopes. Preserve the existing half-analysis-pixel reserve
-   for a newly extended near edge. Apply all other disparity uncertainty checks,
+   and native near envelopes. Keep the half-analysis-pixel reserve
+   above every recovered supported maximum, including measurements just above
+   the previous percentile. Already confirmed results still bypass recovery. Apply all other disparity uncertainty checks,
    including the search-range limit, in the unchanged downstream code.
 
 Native dimensions must be at least 1.5 times the analysis dimensions in both
@@ -122,15 +123,15 @@ and near framing are recalculated, while valid alignment and user edits remain.
 A processing integration test verifies the old-version transition and later
 cache reuse. Another test exercises real dense matching, native recovery,
 rendered 3‰ placement and disk/cache reuse after deliberately withholding the
-initial near seeds. A separate uniform-depth uncertainty reason remains intact.
+initial near seeds. A separate uniform-depth uncertainty reason remains intact: the new framing reserve is excluded from the physical depth-range evidence, so a safety allowance cannot by itself make a uniform plane appear certain.
 
 ## Validation and limits
 
-Local checks: **165 application tests and 42 research tests pass**. Twelve new
+Local checks: **166 application tests and 42 research tests pass**. Thirteen new
 application tests cover real patch recovery, native correspondence agreement,
 contradictory nearer evidence, both measurement reserves, unsupported extremes,
 overestimated P99, missing texture/confidence/native resolution, full-range
-16-bit proxies, final framing and sidecar/cache integration. All application
+16-bit proxies, the near-percentile reserve boundary, final framing and sidecar/cache integration. All application
 modules import, sources compile and original asset hashes are preserved.
 
 The existing cross-platform development workflow checks Windows, Linux and

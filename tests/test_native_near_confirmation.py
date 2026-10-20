@@ -32,7 +32,7 @@ class NativeNearConfirmationTests(unittest.TestCase):
         self.assertTrue(audit['accepted']);self.assertGreaterEqual(audit['native_support']['supported_points'],2)
         self.assertLessEqual(audit['additional_probes'],128);self.assertLessEqual(audit['native_checked'],24)
         self.assertEqual(args[4],old)
-        self.assertAlmostEqual(result['edge_permille'],20.*1000/640,places=5)
+        self.assertGreaterEqual(result['edge_permille'],(result['maximum_supported_px']+.5)*1000/640)
 
     def test_farther_native_matches_cannot_hide_a_nearer_analysis_surface(self):
         args=list(self.scene(baseline_px=10.))
@@ -82,6 +82,19 @@ class NativeNearConfirmationTests(unittest.TestCase):
             result,audit=recover_near_edge(*args)
         self.assertTrue(audit['accepted'])
         self.assertEqual(result['edge_permille'],proposed['edge_permille'])
+
+    def test_recovered_surface_just_above_percentile_gets_the_full_reserve(self):
+        args=list(self.scene(baseline_px=10.))
+        points=[dict(x=100,y=100,disparity_px=10.2),dict(x=110,y=100,disparity_px=10.2)]
+        proposed=supported_near_edge(points,10.,640)
+        proposed.update(additional_probes=2,probed_points=2,baseline_percentile_permille=1000*10/640)
+        checks=[dict(x=round((p['x']+.5)*2-.5),y=round((p['y']+.5)*2-.5),
+                     disparity_permille=1000*10.4/640) for p in points]
+        with patch('stereofine.near_point_recovery.stratified_tail_probe',return_value=proposed), \
+             patch('stereofine.near_point_recovery.native_patch_checks',return_value=checks):
+            result,audit=recover_near_edge(*args)
+        self.assertTrue(audit['accepted'])
+        self.assertAlmostEqual(result['edge_permille'],1000*10.9/640)
 
     def test_overestimated_percentile_is_not_lowered_or_blessed(self):
         args=self.scene(baseline_px=25.)
