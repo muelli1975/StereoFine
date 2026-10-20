@@ -2,6 +2,8 @@
 
 [English](README_EN.md)
 
+Qualitätsupdate vom 20. Oktober 2026: [Korrekturen und Prüfstand](RELEASE_NOTES_1.0_MAINTENANCE.md).
+
 StereoFine ist ein lokales Desktop-Werkzeug zum automatischen Ausrichten, Prüfen, Rahmen und Ausgeben stereoskopischer Bildpaare. Es soll möglichst viel zuverlässig automatisch erledigen, ohne die manuelle Kontrolle aus der Hand zu nehmen. Die Oberfläche bleibt deshalb bewusst schlank und tastaturfreundlich.
 
 StereoFine arbeitet vollständig lokal: kein Konto, keine Cloud, kein Tracking und kein automatischer Download während der Nutzung.

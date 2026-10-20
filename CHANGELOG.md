@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0 – Qualitätsupdate 2026-10-20
+
+- TIFF-Ausrichtung für 8/16 Bit, Original-Seitenverhältnis und Dateikollisionsschutz korrigiert.
+- Integer-Farbtransfer, gültiges Rechteck und exakte SIFT-Distanzen ergebnisgleich beschleunigt.
+- Kanonischen Quellstand vor dem Build sichern und Windows-Dateinamen dokumentieren.
+- Versionsnummer und Archivnamen bleiben 1.0; bisherige Justage- und Nahpunktverfahren bleiben erhalten.
+
 ## 1.0 – 2026-09-07
 
 Initial public release.

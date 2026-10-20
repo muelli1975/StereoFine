@@ -1,7 +1,8 @@
 # StereoFine 1.0 – Wartungsstand vom 20. Oktober 2026
 
-Getrennter Wartungsbuild zur praktischen Prüfung. Der bisherige Release v1.0
-und die 1.1-RC3-Pakete werden nicht überschrieben.
+Qualitätsupdate der bestehenden Version 1.0. Versionsnummer, Programmname und
+Archivnamen bleiben 1.0; die Downloads des Releases v1.0 werden nach erfolgreichen
+Tests und Plattform-Builds aktualisiert. Die 1.1-RC3-Pakete bleiben unverändert.
 
 - „Original“ erhält bei Justage und Ausgabe das Seitenverhältnis der orientierten
   Eingabebilder statt des bereits verkleinerten gemeinsamen Ausschnitts.
@@ -29,6 +30,18 @@ Bekannte Grenzen bei schwierigen Randbereichen und der Nahpunktbestimmung
 sind damit nicht pauschal beseitigt. Bedienung, Regler, Originalgrafiken und
 CPU-Betrieb bleiben erhalten; zusätzliche Modelle oder GPU werden nicht benötigt.
 
-Dieser Build wird zunächst als Actions-Artefakt zur Prüfung angeboten. Eine
-allgemeine Zusicherung fehlerfreier Justage beliebiger Motive ist damit nicht
-verbunden; die praktische Windows-Prüfung ist gesondert vorzunehmen.
+101 automatisierte Tests prüfen den Wartungsstand. Die Veröffentlichung setzt
+erfolgreiche Tests, deutsche und englische GUI-Smoke-Tests unter Linux sowie
+Windows-, Linux- und beide macOS-Builds voraus. Quellstand und Originalgrafiken
+werden in allen vier Paketen vor der Veröffentlichung bytegenau kontrolliert.
+Die praktische Windows-Prüfung mit den Originalbildern bleibt gesondert
+vorzunehmen; macOS/Linux sind auf echten Desktops weiterhin nicht validiert.
+
+[Windows herunterladen](https://github.com/muelli1975/StereoFine/releases/download/v1.0/StereoFine_1.0_Windows_x64.zip).
+Das vollständige Archiv entpacken, den Ordner `StereoFine` öffnen und
+`StereoFine.exe` starten. Die enthaltene Datei `Source/SOURCE_COMMIT.txt`
+kennzeichnet den genauen Quellstand dieses Builds.
+
+Vorheriger Release-Quellstand: `83e7fb4526df841aaddfc952f27e5b178bd184a9`.
+Eine allgemeine Zusicherung fehlerfreier Justage beliebiger Motive ist mit
+diesem Qualitätsupdate nicht verbunden.

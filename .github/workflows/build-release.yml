@@ -1,4 +1,4 @@
-name: Build StereoFine 1.0 maintenance
+name: Update StereoFine 1.0
 
 env:
   EXIFTOOL_VERSION: '13.59'
@@ -16,6 +16,7 @@ on:
       - 'build_windows.ps1'
       - 'version_info.txt'
       - 'RELEASE_NOTES_1.0.md'
+      - 'RELEASE_NOTES_1.0_MAINTENANCE.md'
       - 'assets/stereofine.jpg'
       - 'assets/stereofine.ico'
       - 'assets/stereofine.icns'
@@ -118,7 +119,7 @@ jobs:
             StereoFine.py
           mkdir -p dist/StereoFine/tools
           cp -R portable-tools/* dist/StereoFine/tools/
-          cp README_DE.md README_EN.md LICENSE.txt THIRD_PARTY_NOTICES.md dist/StereoFine/
+          cp README_DE.md README_EN.md RELEASE_NOTES_1.0_MAINTENANCE.md LICENSE.txt THIRD_PARTY_NOTICES.md dist/StereoFine/
           cp -R licenses dist/StereoFine/licenses
           cp -R "$RUNNER_TEMP/StereoFine-Source" dist/StereoFine/Source
           python scripts/package_source.py --verify dist/StereoFine/Source
@@ -165,7 +166,7 @@ jobs:
           cp -R portable-tools/* "$APP/Contents/MacOS/tools/"
           mkdir -p package/StereoFine
           cp -R "$APP" package/StereoFine/
-          cp README_DE.md README_EN.md LICENSE.txt THIRD_PARTY_NOTICES.md package/StereoFine/
+          cp README_DE.md README_EN.md RELEASE_NOTES_1.0_MAINTENANCE.md LICENSE.txt THIRD_PARTY_NOTICES.md package/StereoFine/
           cp -R licenses package/StereoFine/licenses
           cp -R "$RUNNER_TEMP/StereoFine-Source" package/StereoFine/Source
           python scripts/package_source.py --verify package/StereoFine/Source
@@ -212,7 +213,7 @@ jobs:
           cp -R portable-tools/* "$APP/Contents/MacOS/tools/"
           mkdir -p package/StereoFine
           cp -R "$APP" package/StereoFine/
-          cp README_DE.md README_EN.md LICENSE.txt THIRD_PARTY_NOTICES.md package/StereoFine/
+          cp README_DE.md README_EN.md RELEASE_NOTES_1.0_MAINTENANCE.md LICENSE.txt THIRD_PARTY_NOTICES.md package/StereoFine/
           cp -R licenses package/StereoFine/licenses
           cp -R "$RUNNER_TEMP/StereoFine-Source" package/StereoFine/Source
           python scripts/package_source.py --verify package/StereoFine/Source
@@ -222,3 +223,28 @@ jobs:
           name: StereoFine_1.0_macOS_Intel
           path: StereoFine_1.0_macOS_Intel.zip
           if-no-files-found: error
+
+  release:
+    needs: [test, windows, linux, mac-arm64, mac-intel]
+    if: github.ref == 'refs/heads/maintenance/1.0-20261020'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+      - name: Verify all native packages
+        run: python scripts/verify_release_packages.py release-assets
+      - name: Update existing 1.0 downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view v1.0 >/dev/null
+          test "$(gh api repos/${{ github.repository }}/git/ref/tags/v1.0 --jq .object.sha)" = '83e7fb4526df841aaddfc952f27e5b178bd184a9'
+          (cd release-assets && sha256sum *.zip *.tar.gz > SHA256SUMS.txt)
+          gh release upload v1.0 release-assets/* --clobber
+          gh api --method PATCH repos/${{ github.repository }}/git/refs/tags/v1.0 -f sha='${{ github.sha }}' -F force=true
+          gh release edit v1.0 --title 'StereoFine 1.0' --notes-file RELEASE_NOTES_1.0_MAINTENANCE.md --latest

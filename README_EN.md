@@ -2,6 +2,8 @@
 
 [Deutsch](README_DE.md)
 
+Quality update of 20 October 2026: [fixes and validation](RELEASE_NOTES_1.0_MAINTENANCE.md).
+
 StereoFine is a local desktop tool for automatically aligning, checking, framing and exporting stereoscopic image pairs. It is designed to do as much reliable work automatically as possible without taking manual control away from the user. The interface therefore stays deliberately compact and keyboard-friendly.
 
 StereoFine works completely locally: no account, no cloud, no tracking and no automatic downloads during use.

@@ -84,6 +84,7 @@ Copy-Item -Recurse -Force $ToolsSource (Join-Path $Dist "tools")
 foreach ($File in @(
     "README_DE.md",
     "README_EN.md",
+    "RELEASE_NOTES_1.0_MAINTENANCE.md",
     "LICENSE.txt",
     "THIRD_PARTY_NOTICES.md"
 )) {
