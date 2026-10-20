@@ -117,7 +117,20 @@ application modules import, sources compile, and original asset hashes match.
 The separate `validate-development.yml` workflow runs both suites on Windows,
 Linux and macOS and the existing German/English GUI smoke tests on Linux. It has
 read-only repository permissions and no package or release publication step.
-Remote outcomes are recorded separately when available.
+
+Remote validation completed successfully in
+[GitHub Actions run 39468269894](https://github.com/muelli1975/StereoFine/actions/runs/39468269894)
+for code commit `d8b434fd7ca076cc47efd5ec014940fb5063b8db`:
+
+| Runner | Application tests | Research tests | Additional checks |
+| --- | ---: | ---: | --- |
+| Windows 2022 | 153 passed | 42 passed | Compilation and original asset hashes passed |
+| Ubuntu 22.04 | 153 passed | 42 passed | Compilation, original asset hashes and German/English GUI smoke passed |
+| macOS 14 | 153 passed | 42 passed | Compilation and original asset hashes passed |
+
+CI uses Python 3.12.10 and the pinned runtime dependencies. Private original-image
+comparisons ran locally; these platform jobs use the public regression fixtures.
+No private originals were uploaded to GitHub Actions.
 
 Published stable 1.0 and RC3 packages are not changed. The development branch's
 app version label remains the existing RC3 baseline until a separately validated
