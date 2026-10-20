@@ -1,0 +1,46 @@
+name: Validate StereoFine 1.1 development
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [development/1.1-image-formats]
+    paths:
+      - '.github/workflows/validate-development.yml'
+      - 'stereofine/**'
+      - 'tests/**'
+      - 'experiments/**'
+      - 'requirements-lock.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-2022, macos-14]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - name: Install pinned runtime dependencies
+        run: python -m pip install -r requirements-lock.txt
+      - name: Application regression tests
+        run: python -m unittest discover -s tests -p 'test_*.py'
+      - name: Research safety and synthetic geometry tests
+        run: python -m unittest discover -s experiments/tests -p 'test_*.py'
+      - name: Compile and verify original assets
+        run: |
+          python -m compileall -q StereoFine.py stereofine tests experiments
+          python -c "import hashlib,pathlib; p=pathlib.Path('assets'); rows=[s.split() for s in (p/'ASSET_HASHES.txt').read_text().splitlines() if s.strip() and not s.startswith('#')]; assert all(hashlib.sha256((p/name).read_bytes()).hexdigest()==digest for digest,name in rows); print('Original assets verified')"
+      - name: Linux GUI smoke in German and English
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb
+          PYTHONPATH=. STEREOFINE_TEST_LANGUAGE=de xvfb-run -a -s '-screen 0 1920x1080x24' python tests/gui_smoke_xvfb.py
+          PYTHONPATH=. STEREOFINE_TEST_LANGUAGE=en xvfb-run -a -s '-screen 0 1920x1080x24' python tests/gui_smoke_xvfb.py

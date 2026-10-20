@@ -1122,18 +1122,35 @@ class ProcessingIntegrationTests(unittest.TestCase):
     def test_alignment_pipeline_mismatch_forces_reanalysis(self):
         from stereofine.processing import ProcessingOptions, process_source
         from stereofine.sources import discover_pair_sources
+        from stereofine.config import ALIGNMENT_PIPELINE_VERSION
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             self._write_textured_pair(root)
             source = discover_pair_sources(root)[0]
             process_source(source, ProcessingOptions())
             payload = json.loads(source.sidecar_path.read_text(encoding="utf-8"))
-            payload["pipeline"]["alignment"] = "old-test-pipeline"
+            payload["pipeline"]["alignment"] = "sf-align-4"
+            payload["favorite"] = True
+            payload["manual"] = {"delta_x_px": 7, "delta_y_px": -2}
+            payload["floating_window"]["left_permille"] = 4
+            payload["framing"]["auto_near_offset_x_px"] = 9999
+            payload["framing"]["auto_near_shift_permille"] = 9999
             source.sidecar_path.write_text(json.dumps(payload), encoding="utf-8")
 
             processed = process_source(source, ProcessingOptions())
             self.assertFalse(processed.alignment_from_cache)
             self.assertFalse(processed.disparity_from_cache)
+            self.assertTrue(processed.state.favorite)
+            self.assertEqual(processed.state.manual.delta_x_px, 7)
+            self.assertEqual(processed.state.manual.delta_y_px, -2)
+            self.assertEqual(processed.state.floating_window.left_permille, 4)
+            self.assertNotEqual(processed.state.framing.auto_near_offset_x_px, 9999)
+            self.assertNotEqual(processed.state.framing.auto_near_shift_permille, 9999)
+            rewritten = json.loads(source.sidecar_path.read_text(encoding="utf-8"))
+            self.assertEqual(rewritten["pipeline"]["alignment"], ALIGNMENT_PIPELINE_VERSION)
+            again = process_source(source, ProcessingOptions())
+            self.assertTrue(again.alignment_from_cache)
+            self.assertTrue(again.disparity_from_cache)
 
     def test_batch_progress_has_lightweight_preview_and_releases_master_pair(self):
         from stereofine.batch import BatchRunOptions, run_batch

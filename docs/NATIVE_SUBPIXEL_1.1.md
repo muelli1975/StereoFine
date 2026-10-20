@@ -3,6 +3,8 @@
 Status: 20 October 2026. Research checkpoint after
 [the earlier subpixel selection review](SUBPIXEL_SELECTION_1.1.md).
 
+This checkpoint is followed by the [renderer-consistent scoring review](APPLIED_MODEL_SCORING_1.1.md), which integrates a separate scoring correctness fix. The native subpixel and bounded-field candidates below remain experimental.
+
 ## Decision
 
 Keep the existing application alignment unchanged at this checkpoint. Native

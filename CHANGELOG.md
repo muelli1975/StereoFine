@@ -2,9 +2,13 @@
 
 ## 1.1 – Unreleased
 
+- Score quadratic correction chains against the applied symmetric destination field, including both eyes, frozen normalization and per-eye clipping.
+- Advance the alignment calculation version to sf-align-5; retain manual sidecar edits while recomputing dependent automatic analyses.
+- Add analytic/renderer-map regressions, original-image comparisons and separate Windows/Linux/macOS development validation.
+
 - Accept JPS/PNS through the existing JPEG/PNG readers, Full-SBS and paired-image discovery, including 16-bit PNS data.
 - Derive both input-dialog filters from the supported extension sets.
-- Keep layout and eye order explicit; retain existing alignment, near-point and export procedures.
+- Keep layout and eye order explicit for JPS/PNS inputs; retain the existing near-point and export procedures.
 - Use English release notes and titles consistently, with localized READMEs kept separate.
 
 ## 1.1-rc3 – 2026-10-20 (prerelease)

@@ -7,7 +7,7 @@ SIDECAR_SCHEMA_VERSION = 3
 # Pipeline versions are intentionally separate from the app version so a later
 # GUI-only release does not invalidate valid analysis results.
 INPUT_PIPELINE_VERSION = "sf-input-2"
-ALIGNMENT_PIPELINE_VERSION = "sf-align-4"
+ALIGNMENT_PIPELINE_VERSION = "sf-align-5"
 DISPARITY_PIPELINE_VERSION = "sf-disparity-2"
 COLOR_PIPELINE_VERSION = "sf-color-1"
 ANAGLYPH_PIPELINE_VERSION = "sf-anaglyph-1"

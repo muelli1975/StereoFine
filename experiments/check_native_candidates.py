@@ -36,7 +36,7 @@ def digest(left, right):
 
 def evaluate(case, results, kind):
     name = case['name']
-    variants = ['rc3', 'full_candidate'] if kind == 'native' else ['rc3', 'bounded']
+    variants = ['rc3', 'full_candidate'] if kind in ('native', 'applied') else ['rc3', 'bounded']
     corrections = json.loads((results/(name+'_'+kind+'_corrections.json')).read_text())
     transform = json.loads(Path(case['state']).read_text())['input_transform']
     source = source_from_pair(Path(case['left']), Path(case['right']), Path(case['left']).parent)
@@ -87,7 +87,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('manifest', type=Path)
     parser.add_argument('--results', type=Path, required=True)
-    parser.add_argument('--kind', choices=['native', 'bounded'], required=True)
+    parser.add_argument('--kind', choices=['native', 'bounded', 'applied'], required=True)
     parser.add_argument('--names', nargs='+', required=True)
     args = parser.parse_args()
     cv2.setNumThreads(4)

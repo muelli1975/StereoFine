@@ -1472,11 +1472,22 @@ def _holdout_model_is_better(candidate: dict | None) -> bool:
 
 
 def _candidate_vertical_residuals(candidate: dict, left: np.ndarray, right: np.ndarray, image_shape: tuple[int, int]) -> np.ndarray:
-    matrix, labels = _y_residual_design_matrix(left, right, image_shape, candidate["terms"])
-    coefficients = {row["term"]: row["coefficient_analysis_px"] for row in candidate["coefficients"]}
-    model = matrix @ np.array([coefficients[label] for label in labels], dtype=np.float64)
-    limit = candidate["max_abs_model_analysis_px"]
-    return right[:, 1] - left[:, 1] - np.clip(model, -limit, limit)
+    """Score the applied symmetric destination field, including both eyes.
+
+    A field evaluated only at the left source point predicts a different
+    operation from the renderer, particularly with nonzero scene disparity.
+    Retain the fitted normalization and the existing per-eye displacement cap.
+    """
+    from .alignment_refinement import corrected_point_residuals
+
+    payload = _pipeline_y_payload_from_candidate(candidate, enabled=True,
+                                                  source="model_selection_applied_geometry")
+    correction = {"scale": 1.0, "rotation_deg": 0.0, "vertical_shift_px": 0.0,
+                  "y_residual_apply": payload}
+    # The inputs have already passed through the common affine/trapezoid
+    # stages. Apply only the candidate residual field in these coordinates.
+    return corrected_point_residuals(correction, left, right, image_shape,
+                                     float(candidate["analysis_scale"]))
 
 
 def _select_validated_pipeline(candidates: list[dict], analysis_scale: float) -> tuple[dict, list[dict]]:
