@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 APP_NAME = "StereoFine"
-APP_VERSION = "1.1-rc1"
+APP_VERSION = "1.1-rc2"
 SIDECAR_SCHEMA_VERSION = 3
 
 # Pipeline versions are intentionally separate from the app version so a later

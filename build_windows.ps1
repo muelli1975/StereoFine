@@ -9,10 +9,11 @@ $BuildDir = Join-Path $Root "build"
 $DistRoot = Join-Path $Root "dist"
 $Dist = Join-Path $DistRoot "StereoFine"
 $ReleaseDir = Join-Path $Root "release"
-$ZipPath = Join-Path $ReleaseDir "StereoFine_1.1-rc1_Windows_x64.zip"
+$ZipPath = Join-Path $ReleaseDir "StereoFine_1.1-rc2_Windows_x64.zip"
 $SourceOut = Join-Path $Dist "Source"
+$SourceSnapshot = Join-Path $Venv "StereoFine-Source"
 
-Write-Host "StereoFine 1.1-rc1 - clean Windows release build"
+Write-Host "StereoFine 1.1-rc2 - clean Windows release build"
 Write-Host "Source:" $Root
 
 # Always build the public release from a clean Python environment and clean
@@ -33,7 +34,7 @@ if (Get-Command py -ErrorAction SilentlyContinue) {
 }
 if (-not $BootstrapPython) {
     $PythonCommand = Get-Command python -ErrorAction Stop
-    & $PythonCommand.Source -c "import sys; assert sys.version_info[:3] == (3, 12, 10), f'StereoFine 1.1-rc1 requires Python 3.12.10, got {sys.version}'"
+    & $PythonCommand.Source -c "import sys; assert sys.version_info[:3] == (3, 12, 10), f'StereoFine 1.1-rc2 requires Python 3.12.10, got {sys.version}'"
     $BootstrapPython = @($PythonCommand.Source)
 }
 
@@ -45,7 +46,7 @@ else {
 }
 $Python = Join-Path $Venv "Scripts\python.exe"
 
-& $Python -c "import sys; assert sys.version_info[:3] == (3, 12, 10), f'StereoFine 1.1-rc1 requires Python 3.12.10 for the reference build, got {sys.version}'; assert sys.maxsize > 2**32, '64-bit Python required'; print(sys.version)"
+& $Python -c "import sys; assert sys.version_info[:3] == (3, 12, 10), f'StereoFine 1.1-rc2 requires Python 3.12.10 for the reference build, got {sys.version}'; assert sys.maxsize > 2**32, '64-bit Python required'; print(sys.version)"
 & $Python -m pip install --upgrade pip
 & $Python -m pip install -r requirements-build.txt
 
@@ -57,6 +58,10 @@ if ($LASTEXITCODE -ne 0) { throw "Unit tests failed; release build stopped." }
 if ($LASTEXITCODE -ne 0) { throw "Compilation checks failed; release build stopped." }
 & $Python -c "import importlib, pkgutil, stereofine; mods=[m.name for m in pkgutil.iter_modules(stereofine.__path__, stereofine.__name__+'.')]; [importlib.import_module(n) for n in sorted(mods)]; print(f'Imported {len(mods)} StereoFine modules')"
 if ($LASTEXITCODE -ne 0) { throw "Module import checks failed; release build stopped." }
+
+# Snapshot the checked inputs before build tools can generate/replace files.
+& $Python (Join-Path $Root "scripts/package_source.py") $SourceSnapshot
+if ($LASTEXITCODE -ne 0) { throw "Source snapshot packaging failed." }
 
 & $Python -m PyInstaller --noconfirm --clean StereoFine.spec
 
@@ -136,9 +141,9 @@ foreach ($Item in $TclTkLicenseCandidates) {
 }
 
 # The portable release contains the exact source snapshot used for the EXE.
-New-Item -ItemType Directory -Force $SourceOut | Out-Null
-& $Python (Join-Path $Root "scripts/package_source.py") $SourceOut
-if ($LASTEXITCODE -ne 0) { throw "Source snapshot packaging failed." }
+Copy-Item -Recurse -Force $SourceSnapshot $SourceOut
+& $Python (Join-Path $Root "scripts/package_source.py") --verify $SourceOut
+if ($LASTEXITCODE -ne 0) { throw "Source snapshot verification failed." }
 
 # No generated caches or local state belong in the release source snapshot.
 Get-ChildItem -Path $Dist -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -Force
@@ -155,7 +160,7 @@ $PillowVersion = (& $Python -c "import PIL; print(PIL.__version__)").Trim()
 
 $BuildInfoPath = Join-Path $Dist "BUILD_INFO.txt"
 $BuildLines = @(
-    "StereoFine 1.1-rc1",
+    "StereoFine 1.1-rc2",
     "Built: $((Get-Date).ToString('yyyy-MM-dd HH:mm:ss K'))",
     "Platform: Windows x64",
     "Python: $PythonVersion",
@@ -175,7 +180,7 @@ if (Test-Path $ZipPath) {
 Compress-Archive -Path $Dist -DestinationPath $ZipPath -CompressionLevel Optimal
 
 $Hash = (Get-FileHash -Algorithm SHA256 $ZipPath).Hash.ToLowerInvariant()
-"$Hash  StereoFine_1.1-rc1_Windows_x64.zip" | Set-Content -Encoding ASCII (Join-Path $ReleaseDir "SHA256SUMS.txt")
+"$Hash  StereoFine_1.1-rc2_Windows_x64.zip" | Set-Content -Encoding ASCII (Join-Path $ReleaseDir "SHA256SUMS.txt")
 
 Write-Host ""
 Write-Host "Release build created successfully."

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1-rc2 – 2026-10-20 (prerelease)
+
+- Snapshot clean source inputs before PyInstaller can replace generated build files.
+- Preserve exact repository sources in every platform archive; image processing unchanged from RC1.
+
 ## 1.1-rc1 – 2026-10-20 (prerelease)
 
 - Robust spatial model selection and independently checked nonlinear inlier recovery.

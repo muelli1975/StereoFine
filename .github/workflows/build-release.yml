@@ -1,4 +1,4 @@
-name: Build StereoFine 1.1-rc1
+name: Build StereoFine 1.1-rc2
 
 env:
   EXIFTOOL_VERSION: '13.59'
@@ -15,7 +15,7 @@ on:
       - 'requirements*.txt'
       - 'build_windows.ps1'
       - 'version_info.txt'
-      - 'RELEASE_NOTES_1.1-rc1.md'
+      - 'RELEASE_NOTES_1.1-rc2.md'
       - 'assets/stereofine.jpg'
       - 'assets/stereofine.ico'
       - 'assets/stereofine.icns'
@@ -83,8 +83,8 @@ jobs:
         run: .\build_windows.ps1
       - uses: actions/upload-artifact@v4
         with:
-          name: StereoFine_1.1-rc1_Windows_x64
-          path: release/StereoFine_1.1-rc1_Windows_x64.zip
+          name: StereoFine_1.1-rc2_Windows_x64
+          path: release/StereoFine_1.1-rc2_Windows_x64.zip
           if-no-files-found: error
 
   linux:
@@ -110,6 +110,7 @@ jobs:
           perl portable-tools/exiftool -ver
       - name: Build Linux x64
         run: |
+          python scripts/package_source.py "$RUNNER_TEMP/StereoFine-Source"
           python -m PyInstaller --noconfirm --clean --onedir --windowed \
             --name StereoFine \
             --collect-data customtkinter \
@@ -119,12 +120,13 @@ jobs:
           cp -R portable-tools/* dist/StereoFine/tools/
           cp README_DE.md README_EN.md LICENSE.txt THIRD_PARTY_NOTICES.md dist/StereoFine/
           cp -R licenses dist/StereoFine/licenses
-          python scripts/package_source.py dist/StereoFine/Source
-          tar -C dist -czf StereoFine_1.1-rc1_Linux_x64.tar.gz StereoFine
+          cp -R "$RUNNER_TEMP/StereoFine-Source" dist/StereoFine/Source
+          python scripts/package_source.py --verify dist/StereoFine/Source
+          tar -C dist -czf StereoFine_1.1-rc2_Linux_x64.tar.gz StereoFine
       - uses: actions/upload-artifact@v4
         with:
-          name: StereoFine_1.1-rc1_Linux_x64
-          path: StereoFine_1.1-rc1_Linux_x64.tar.gz
+          name: StereoFine_1.1-rc2_Linux_x64
+          path: StereoFine_1.1-rc2_Linux_x64.tar.gz
           if-no-files-found: error
 
   mac-arm64:
@@ -150,6 +152,7 @@ jobs:
           perl portable-tools/exiftool -ver
       - name: Build macOS Apple Silicon
         run: |
+          python scripts/package_source.py "$RUNNER_TEMP/StereoFine-Source"
           python -m PyInstaller --noconfirm --clean --onedir --windowed \
             --name StereoFine \
             --collect-data customtkinter \
@@ -164,12 +167,13 @@ jobs:
           cp -R "$APP" package/StereoFine/
           cp README_DE.md README_EN.md LICENSE.txt THIRD_PARTY_NOTICES.md package/StereoFine/
           cp -R licenses package/StereoFine/licenses
-          python scripts/package_source.py package/StereoFine/Source
-          ditto -c -k --sequesterRsrc --keepParent package/StereoFine StereoFine_1.1-rc1_macOS_AppleSilicon.zip
+          cp -R "$RUNNER_TEMP/StereoFine-Source" package/StereoFine/Source
+          python scripts/package_source.py --verify package/StereoFine/Source
+          ditto -c -k --sequesterRsrc --keepParent package/StereoFine StereoFine_1.1-rc2_macOS_AppleSilicon.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: StereoFine_1.1-rc1_macOS_AppleSilicon
-          path: StereoFine_1.1-rc1_macOS_AppleSilicon.zip
+          name: StereoFine_1.1-rc2_macOS_AppleSilicon
+          path: StereoFine_1.1-rc2_macOS_AppleSilicon.zip
           if-no-files-found: error
 
   mac-intel:
@@ -195,6 +199,7 @@ jobs:
           perl portable-tools/exiftool -ver
       - name: Build macOS Intel
         run: |
+          python scripts/package_source.py "$RUNNER_TEMP/StereoFine-Source"
           python -m PyInstaller --noconfirm --clean --onedir --windowed \
             --name StereoFine \
             --collect-data customtkinter \
@@ -209,12 +214,13 @@ jobs:
           cp -R "$APP" package/StereoFine/
           cp README_DE.md README_EN.md LICENSE.txt THIRD_PARTY_NOTICES.md package/StereoFine/
           cp -R licenses package/StereoFine/licenses
-          python scripts/package_source.py package/StereoFine/Source
-          ditto -c -k --sequesterRsrc --keepParent package/StereoFine StereoFine_1.1-rc1_macOS_Intel.zip
+          cp -R "$RUNNER_TEMP/StereoFine-Source" package/StereoFine/Source
+          python scripts/package_source.py --verify package/StereoFine/Source
+          ditto -c -k --sequesterRsrc --keepParent package/StereoFine StereoFine_1.1-rc2_macOS_Intel.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: StereoFine_1.1-rc1_macOS_Intel
-          path: StereoFine_1.1-rc1_macOS_Intel.zip
+          name: StereoFine_1.1-rc2_macOS_Intel
+          path: StereoFine_1.1-rc2_macOS_Intel.zip
           if-no-files-found: error
 
   release:
@@ -225,7 +231,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          pattern: StereoFine_1.1-rc1_*
+          pattern: StereoFine_1.1-rc2_*
           path: artifacts
           merge-multiple: true
       - name: Create checksums
@@ -237,8 +243,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create v1.1-rc1 artifacts/* \
+          gh release create v1.1-rc2 artifacts/* \
             --target "$GITHUB_SHA" \
             --prerelease --latest=false \
-            --title 'StereoFine 1.1 RC1 – Testbuild' \
-            --notes-file RELEASE_NOTES_1.1-rc1.md
+            --title 'StereoFine 1.1 RC2 – Testbuild' \
+            --notes-file RELEASE_NOTES_1.1-rc2.md
+          python - <<'PYRC'
+          from pathlib import Path
+          previous = Path('RELEASE_NOTES_1.1-rc1.md').read_text(encoding='utf-8')
+          notice = '**Ersetzt durch [RC2](https://github.com/muelli1975/StereoFine/releases/tag/v1.1-rc2).** Bei RC1 enthielten die Linux-/macOS-Quellpakete eine von PyInstaller erzeugte Builddatei statt der unveränderten Repository-Datei. RC2 korrigiert die Paketierung; die Bildverarbeitung ist unverändert.\n\n'
+          Path('/tmp/rc1-superseded.md').write_text(notice + previous, encoding='utf-8')
+          PYRC
+          gh release edit v1.1-rc1 --prerelease --latest=false \
+            --title 'StereoFine 1.1 RC1 – ersetzt durch RC2' \
+            --notes-file /tmp/rc1-superseded.md

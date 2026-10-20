@@ -108,3 +108,7 @@ wäre zusätzliche Absicherung, ersetzt aber nicht die schwierigen Rohpaare.
   sf-align-4 und sf-disparity-2. 132 automatische Tests bestehen lokal.
   Siehe [VALIDATION_1.1_RC1.md](VALIDATION_1.1_RC1.md). Ein gesonderter RC1-Build
   dient der praktischen Windows-Prüfung; eine stabile 1.1 ist noch nicht freigegeben.
+
+- Die Paketprüfung von RC1 fand eine von PyInstaller neu erzeugte `.spec` in
+  Linux-/macOS-Quellkopien. RC2 sichert saubere Build-Eingaben vor PyInstaller;
+  die Verarbeitungsmathematik und das Bildprüfprotokoll bleiben unverändert.

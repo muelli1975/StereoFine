@@ -1,4 +1,4 @@
-# StereoFine 1.1 RC1: geprüfter Entwicklungsstand
+# StereoFine 1.1 RC1/RC2: geprüfter Verarbeitungsstand
 
 20.10.2026. Vorabversion zur praktischen Windows-Prüfung, keine allgemeine
 Zusicherung für beliebige Kameragespanne. Die veröffentlichten 1.0-Pakete
@@ -186,3 +186,15 @@ Alle Archive enthalten den genauen Quellstand samt Commit unter `Source/`.
 Ausstehend bleibt die praktische Prüfung der portablen Windows-Version durch
 Christoph, insbesondere mit den problematischen TIFF-Paaren, vorhandenen
 Einstellungen und weiteren Gespannen. Erst danach ist eine stabile 1.1 sinnvoll.
+
+## RC2-Paketkorrektur
+
+Die externe Archivkontrolle von RC1 fand unter Linux/macOS eine Abweichung in
+`Source/StereoFine.spec`: PyInstaller erzeugt bei seinem CLI-Build diese Datei
+neu, bevor der ursprüngliche Ablauf die Quellkopie anlegte. RC2 legt die
+Quellkopie vor dem Buildwerkzeug an und verlangt einen sauberen Checkout.
+Die Quelldateien werden in kanonischer Git-Schreibweise kopiert und nach dem
+Build nochmals Datei für Datei geprüft; Windows-Zeilenenden verändern die
+Quellkopie nicht. Die Bildverarbeitung ist unverändert. RC1 wird als durch RC2 ersetzt markiert;
+1.0 bleibt unverändert. Die ausgelieferten Archive werden erneut mit den
+getrackten Quelldateien und dem angegebenen Commit verglichen.

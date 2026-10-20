@@ -1,6 +1,6 @@
-# StereoFine 1.1 RC1
+# StereoFine 1.1 RC2
 
-Vorabversion zum Prüfen der überarbeiteten Justage. [RC1-Pakete](https://github.com/muelli1975/StereoFine/releases/tag/v1.1-rc1) · [Änderungen](RELEASE_NOTES_1.1-rc1.md). Die bisherige stabile 1.0 bleibt separat verfügbar.
+Vorabversion zum Prüfen der überarbeiteten Justage. [RC1-Pakete](https://github.com/muelli1975/StereoFine/releases/tag/v1.1-rc2) · [Änderungen](RELEASE_NOTES_1.1-rc2.md). Die bisherige stabile 1.0 bleibt separat verfügbar.
 
 [English](README_EN.md)
 
