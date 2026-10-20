@@ -95,13 +95,16 @@ wäre zusätzliche Absicherung, ersetzt aber nicht die schwierigen Rohpaare.
 - Die automatische Modellwahl wurde jetzt überarbeitet: robuste globale und
   regionale Holdout-Prüfung sowie Vergleich vollständiger Korrekturketten;
   siehe [MODEL_SELECTION_1.1.md](MODEL_SELECTION_1.1.md). 14 reale Läufe mit
-  unabhängigen Render-Kontrollen sind dokumentiert. Die zuvor guten SIFT-Fälle
-  bild089 und bild092 sind in den Vollauflösungsrendern pixelidentisch erhalten.
-  Die Alignments-Pipeline ist auf sf-align-3 angehoben; abhängige alte Caches
+  unabhängigen Render-Kontrollen sind dokumentiert. In diesem Zwischenstand blieben die guten SIFT-Fälle
+  bild089 und bild092 in den Vollauflösungsrendern pixelidentisch erhalten.
+  Die Alignments-Pipeline wurde zunächst auf sf-align-3 angehoben; abhängige alte Caches
   werden verworfen, manuelle Einstellungen bleiben erhalten.
 - 109 automatische Tests bestehen; Kompilierung und Original-Asset-Hashes
   geprüft. Das ist getrennt von der realen Bildqualitätsprüfung zu bewerten.
-- Eine erneute Inlier-Auswahl verbessert den Campingplatz in separaten
-  Experimenten weiter. Sie ist noch nicht in die Produktivlogik integriert.
-  Nahpunktalgorithmus und Laufzeitoptimierung stehen ebenfalls noch aus.
-  Ein 1.1-Build ist noch nicht freigegeben.
+- Fortsetzung: Punkterholung mit unabhängiger Blockprüfung, bestätigter Nahpunkt
+  einschließlich Randbereichen und schnelleres exaktes SIFT-Matching sind für
+  1.1 RC1 integriert. Vier neue IXUS-Paare erweitern die Prüfung auf elf Paare;
+  eine zusätzlich geprüfte kubische Höhenkorrektur adressiert lokale Randreste. Aktuelle Versionen sind
+  sf-align-4 und sf-disparity-2. 132 automatische Tests bestehen lokal.
+  Siehe [VALIDATION_1.1_RC1.md](VALIDATION_1.1_RC1.md). Ein gesonderter RC1-Build
+  dient der praktischen Windows-Prüfung; eine stabile 1.1 ist noch nicht freigegeben.

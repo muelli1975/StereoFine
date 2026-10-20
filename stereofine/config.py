@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 APP_NAME = "StereoFine"
-APP_VERSION = "1.0"
+APP_VERSION = "1.1-rc1"
 SIDECAR_SCHEMA_VERSION = 3
 
 # Pipeline versions are intentionally separate from the app version so a later
 # GUI-only release does not invalidate valid analysis results.
 INPUT_PIPELINE_VERSION = "sf-input-2"
-ALIGNMENT_PIPELINE_VERSION = "sf-align-3"
-DISPARITY_PIPELINE_VERSION = "sf-disparity-1"
+ALIGNMENT_PIPELINE_VERSION = "sf-align-4"
+DISPARITY_PIPELINE_VERSION = "sf-disparity-2"
 COLOR_PIPELINE_VERSION = "sf-color-1"
 ANAGLYPH_PIPELINE_VERSION = "sf-anaglyph-1"
 

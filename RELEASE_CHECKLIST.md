@@ -1,8 +1,8 @@
-# StereoFine 1.0 – release checklist
+# StereoFine 1.1-rc1 – release checklist
 
 ## Automated source checks
 
-- [ ] `APP_VERSION` is exactly `1.0`.
+- [ ] `APP_VERSION` is exactly `1.1-rc1`.
 - [ ] `python -m unittest discover -s tests -p "test_*.py"` passes.
 - [ ] `compileall` passes.
 - [ ] all `stereofine` modules import successfully.
@@ -43,8 +43,8 @@
 
 ## GitHub release
 
-- [ ] repository contains the exact 1.0 source.
-- [ ] tag/release is named `1.0` (or `v1.0` if that is the repository convention).
-- [ ] upload `StereoFine_1.0_Windows_x64.zip` from `release/`.
+- [ ] repository contains the exact 1.1-rc1 source.
+- [ ] tag/release is named `1.1-rc1` (or `v1.1-rc1` if that is the repository convention).
+- [ ] upload `StereoFine_1.1-rc1_Windows_x64.zip` from `release/`.
 - [ ] copy SHA-256 from `release/SHA256SUMS.txt` into the release notes.
-- [ ] use `RELEASE_NOTES_1.0.md` as the starting release text.
+- [ ] use `RELEASE_NOTES_1.1-rc1.md` as the starting release text.

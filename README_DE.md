@@ -1,4 +1,6 @@
-# StereoFine 1.0
+# StereoFine 1.1 RC1
+
+Vorabversion zum Prüfen der überarbeiteten Justage. [RC1-Pakete](https://github.com/muelli1975/StereoFine/releases/tag/v1.1-rc1) · [Änderungen](RELEASE_NOTES_1.1-rc1.md). Die bisherige stabile 1.0 bleibt separat verfügbar.
 
 [English](README_EN.md)
 
@@ -10,7 +12,7 @@ StereoFine arbeitet vollständig lokal: kein Konto, keine Cloud, kein Tracking u
   <a href="docs/screenshots/StereoFine01.png"><img src="docs/screenshots/StereoFine01.png" alt="StereoFine 1.0 – Hauptansicht" width="900"></a>
 </p>
 
-## Portable Windows-Version
+## Stabile Windows-Version 1.0
 
 Die veröffentlichte Windows-Version ist portabel:
 

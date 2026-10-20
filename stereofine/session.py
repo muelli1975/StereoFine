@@ -76,6 +76,8 @@ def browse_source(source: StereoSource, defaults: ProcessingDefaults = Processin
         if not sidecar.disparity_cache_valid:
             state.disparity.valid = False
             state.disparity.stale = True
+            if "disparity" in sidecar.pipeline_mismatches:
+                state.framing.clear_auto_near(status="stale")
         if not sidecar.color_cache_valid:
             state.color.valid = False
         if {"input", "alignment"}.intersection(sidecar.pipeline_mismatches):

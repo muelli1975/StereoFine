@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1-rc1 – 2026-10-20 (prerelease)
+
+- Robust spatial model selection and independently checked nonlinear inlier recovery.
+- Bounded cubic vertical edge correction with blocked validation and explicit corner checks.
+- Confirmed foreground near points and improved physical-rim coverage.
+- Exact batched SIFT matching, TIFF orientation/cache migration and the four maintenance corrections.
+- See RELEASE_NOTES_1.1-rc1.md and docs/VALIDATION_1.1_RC1.md for scope and validation.
+
 ## 1.0 – 2026-09-07
 
 Initial public release.

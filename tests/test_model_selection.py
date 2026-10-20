@@ -112,6 +112,17 @@ class ModelSelectionTests(unittest.TestCase):
         self.assertFalse(candidate["ready"])
         self.assertFalse(candidate["design_quality"]["supported"])
 
+    def test_refinement_can_trade_small_errors_below_explicit_quality_ceiling(self):
+        before, after = zones([2, 2, .2]), zones([.4, .4, .45])
+        strict = _assess_spatial_holdout(summary(2), summary(.5), before, after, 1)
+        flexible = _assess_spatial_holdout(summary(2), summary(.5), before, after, 1,
+                                           region_quality_floor_analysis=(.5, 1.5))
+        self.assertFalse(strict["accepted"])
+        self.assertTrue(flexible["accepted"])
+        after["zones"][-1]["p90_abs"] = 2.
+        self.assertFalse(_assess_spatial_holdout(summary(2), summary(.5), before, after, 1,
+                                                region_quality_floor_analysis=(.5, 1.5))["accepted"])
+
 
 if __name__ == "__main__":
     unittest.main()

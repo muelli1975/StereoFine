@@ -9,10 +9,10 @@ $BuildDir = Join-Path $Root "build"
 $DistRoot = Join-Path $Root "dist"
 $Dist = Join-Path $DistRoot "StereoFine"
 $ReleaseDir = Join-Path $Root "release"
-$ZipPath = Join-Path $ReleaseDir "StereoFine_1.0_Windows_x64.zip"
+$ZipPath = Join-Path $ReleaseDir "StereoFine_1.1-rc1_Windows_x64.zip"
 $SourceOut = Join-Path $Dist "Source"
 
-Write-Host "StereoFine 1.0 - clean Windows release build"
+Write-Host "StereoFine 1.1-rc1 - clean Windows release build"
 Write-Host "Source:" $Root
 
 # Always build the public release from a clean Python environment and clean
@@ -33,7 +33,7 @@ if (Get-Command py -ErrorAction SilentlyContinue) {
 }
 if (-not $BootstrapPython) {
     $PythonCommand = Get-Command python -ErrorAction Stop
-    & $PythonCommand.Source -c "import sys; assert sys.version_info[:3] == (3, 12, 10), f'StereoFine 1.0 requires Python 3.12.10, got {sys.version}'"
+    & $PythonCommand.Source -c "import sys; assert sys.version_info[:3] == (3, 12, 10), f'StereoFine 1.1-rc1 requires Python 3.12.10, got {sys.version}'"
     $BootstrapPython = @($PythonCommand.Source)
 }
 
@@ -45,15 +45,18 @@ else {
 }
 $Python = Join-Path $Venv "Scripts\python.exe"
 
-& $Python -c "import sys; assert sys.version_info[:3] == (3, 12, 10), f'StereoFine 1.0 requires Python 3.12.10 for the reference build, got {sys.version}'; assert sys.maxsize > 2**32, '64-bit Python required'; print(sys.version)"
+& $Python -c "import sys; assert sys.version_info[:3] == (3, 12, 10), f'StereoFine 1.1-rc1 requires Python 3.12.10 for the reference build, got {sys.version}'; assert sys.maxsize > 2**32, '64-bit Python required'; print(sys.version)"
 & $Python -m pip install --upgrade pip
 & $Python -m pip install -r requirements-build.txt
 
 # Fast reproducible pre-build checks. GUI smoke is deliberately manual on the
 # target Windows desktop because display scaling and dialogs are part of it.
 & $Python -m unittest discover -s tests -p "test_*.py"
+if ($LASTEXITCODE -ne 0) { throw "Unit tests failed; release build stopped." }
 & $Python -m compileall -q StereoFine.py stereofine tests
+if ($LASTEXITCODE -ne 0) { throw "Compilation checks failed; release build stopped." }
 & $Python -c "import importlib, pkgutil, stereofine; mods=[m.name for m in pkgutil.iter_modules(stereofine.__path__, stereofine.__name__+'.')]; [importlib.import_module(n) for n in sorted(mods)]; print(f'Imported {len(mods)} StereoFine modules')"
+if ($LASTEXITCODE -ne 0) { throw "Module import checks failed; release build stopped." }
 
 & $Python -m PyInstaller --noconfirm --clean StereoFine.spec
 
@@ -134,30 +137,8 @@ foreach ($Item in $TclTkLicenseCandidates) {
 
 # The portable release contains the exact source snapshot used for the EXE.
 New-Item -ItemType Directory -Force $SourceOut | Out-Null
-$SourceFiles = @(
-    ".gitignore",
-    "StereoFine.py",
-    "StereoFine.spec",
-    "version_info.txt",
-    "build_windows.ps1",
-    "requirements-lock.txt",
-    "requirements-build.txt",
-    "README.md",
-    "README_DE.md",
-    "README_EN.md",
-    "LICENSE.txt",
-    "THIRD_PARTY_NOTICES.md",
-    "BUILD_WINDOWS.md",
-    "RELEASE_CHECKLIST.md",
-    "CHANGELOG.md",
-    "RELEASE_NOTES_1.0.md"
-)
-foreach ($File in $SourceFiles) {
-    Copy-Item -Force (Join-Path $Root $File) (Join-Path $SourceOut $File)
-}
-foreach ($Directory in @("stereofine", "assets", "tests", "docs", "licenses")) {
-    Copy-Item -Recurse -Force (Join-Path $Root $Directory) (Join-Path $SourceOut $Directory)
-}
+& $Python (Join-Path $Root "scripts/package_source.py") $SourceOut
+if ($LASTEXITCODE -ne 0) { throw "Source snapshot packaging failed." }
 
 # No generated caches or local state belong in the release source snapshot.
 Get-ChildItem -Path $Dist -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -Force
@@ -174,7 +155,7 @@ $PillowVersion = (& $Python -c "import PIL; print(PIL.__version__)").Trim()
 
 $BuildInfoPath = Join-Path $Dist "BUILD_INFO.txt"
 $BuildLines = @(
-    "StereoFine 1.0",
+    "StereoFine 1.1-rc1",
     "Built: $((Get-Date).ToString('yyyy-MM-dd HH:mm:ss K'))",
     "Platform: Windows x64",
     "Python: $PythonVersion",
@@ -183,7 +164,7 @@ $BuildLines = @(
     "NumPy: $NumPyVersion",
     "OpenCV-Python: $OpenCVVersion",
     "Pillow: $PillowVersion",
-    "ExifTool package: 13.53"
+    "ExifTool package: 13.59"
 )
 $BuildLines | Set-Content -Encoding UTF8 $BuildInfoPath
 
@@ -194,7 +175,7 @@ if (Test-Path $ZipPath) {
 Compress-Archive -Path $Dist -DestinationPath $ZipPath -CompressionLevel Optimal
 
 $Hash = (Get-FileHash -Algorithm SHA256 $ZipPath).Hash.ToLowerInvariant()
-"$Hash  StereoFine_1.0_Windows_x64.zip" | Set-Content -Encoding ASCII (Join-Path $ReleaseDir "SHA256SUMS.txt")
+"$Hash  StereoFine_1.1-rc1_Windows_x64.zip" | Set-Content -Encoding ASCII (Join-Path $ReleaseDir "SHA256SUMS.txt")
 
 Write-Host ""
 Write-Host "Release build created successfully."

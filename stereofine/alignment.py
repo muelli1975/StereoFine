@@ -829,6 +829,14 @@ def _y_residual_field_from_payload(height: int, width: int, payload: dict | None
             field += coeff * ((x * x) - x2_mean)
         elif term == "y2":
             field += coeff * ((y * y) - y2_mean)
+        elif term == "x3":
+            field += coeff * x * x * x
+        elif term == "x2y":
+            field += coeff * x * x * y
+        elif term == "xy2":
+            field += coeff * x * y * y
+        elif term == "y3":
+            field += coeff * y * y * y
 
     max_abs = float(payload.get("max_abs_correction_px", 0.0) or 0.0)
     if max_abs > 0:
@@ -1397,6 +1405,7 @@ def _assess_spatial_holdout(
     baseline: dict | None, corrected: dict | None,
     baseline_zones: dict | None, corrected_zones: dict | None,
     analysis_scale: float,
+    *, region_quality_floor_analysis: tuple[float, float] = (0.0, 0.0),
 ) -> dict:
     """Compare the same held-out identities globally and per supported zone."""
     if not np.isfinite(analysis_scale) or analysis_scale <= 0:
@@ -1422,7 +1431,7 @@ def _assess_spatial_holdout(
         if count < MODEL_SELECTION_MIN_ZONE_POINTS:
             continue
         checks = {}
-        for key in ("mean_abs", "p90_abs"):
+        for key, acceptable_analysis in zip(("mean_abs", "p90_abs"), region_quality_floor_analysis):
             try:
                 base_value, cand_value = float(base[key]), float(cand[key])
             except (KeyError, TypeError, ValueError):
@@ -1432,7 +1441,7 @@ def _assess_spatial_holdout(
                 result["reason"] = "invalid_holdout_region"
                 return result
             allowance = max(region_floor, 0.10 * base_value)
-            checks[key] = cand_value <= base_value + allowance
+            checks[key] = cand_value <= max(base_value + allowance, acceptable_analysis / analysis_scale)
         result["regions"].append({"label": label, "count": count, "checks": checks})
         if not all(checks.values()):
             result["reason"] = "regional_regression"
@@ -1500,27 +1509,21 @@ def analyze_pair_features(
     method: str,
     max_width: int,
 ) -> dict:
-    """Vergence model basis: keep affine output, compare V/H candidates.
+    """Select a stereo-safe correction using shared spatial holdout evidence.
 
-    This basis deliberately does not promote a new correction model.  The
-    actual applied correction remains the stable unweighted Affine-LMS result.
-    The sidecar stores the measured residual fields for:
-      - Affine only
-      - Affine + V only (vertical residual slope over x)
-      - Affine + H only (current horizontal vergence term; vertical residual is
-        expected to stay unchanged in this point model)
-      - Affine + V+H
-
-    The purpose is to evaluate the current Vergence model over multiple data
-    sets without adding UI controls or changing the stable basis.
+    Feature matching is exhaustive. Fits score vertical residuals without
+    optimizing away scene depth. A single independently checked recovery pass
+    may regain true matches rejected by the initial affine-plane filter.
     """
     try:
         import cv2
     except Exception as exc:
         raise RuntimeError("OpenCV ist nicht installiert oder konnte nicht geladen werden.") from exc
 
+    import time
+    started = time.perf_counter()
     left_gray, right_gray, analysis_scale = resize_pair_for_analysis(left, right, max_width)
-    h, w = left_gray.shape[:2]
+    resized_at = time.perf_counter()
 
     method_upper = method.upper()
     if method_upper == "AKAZE":
@@ -1536,42 +1539,72 @@ def analyze_pair_features(
 
     kp_left, desc_left = detector.detectAndCompute(left_gray, None)
     kp_right, desc_right = detector.detectAndCompute(right_gray, None)
+    detected_at = time.perf_counter()
 
     if desc_left is None or desc_right is None or len(kp_left) < 4 or len(kp_right) < 4:
         raise RuntimeError("Zu wenige Merkmale für eine zuverlässige Analyse gefunden.")
 
-    matcher = cv2.BFMatcher(norm_type, crossCheck=False)
-    raw_matches = matcher.knnMatch(desc_right, desc_left, k=2)
-
-    good_matches = []
-    for pair in raw_matches:
-        if len(pair) != 2:
-            continue
-        m, n = pair
-        if m.distance < 0.75 * n.distance:
-            good_matches.append(m)
+    if method_upper == "SIFT":
+        from .feature_matching import sift_ratio_matches
+        good_matches = sift_ratio_matches(desc_right, desc_left)
+    else:
+        matcher = cv2.BFMatcher(norm_type, crossCheck=False)
+        raw_matches = matcher.knnMatch(desc_right, desc_left, k=2)
+        good_matches = []
+        for pair in raw_matches:
+            if len(pair) != 2:
+                continue
+            m, n = pair
+            if m.distance < 0.75 * n.distance:
+                good_matches.append(m)
 
     if len(good_matches) < 8:
         raise RuntimeError("Zu wenige stabile Übereinstimmungen nach dem Matching gefunden.")
 
     pts_right = np.float32([kp_right[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
     pts_left = np.float32([kp_left[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+    matched_at = time.perf_counter()
 
+    left_points = pts_left.reshape(-1, 2).astype(np.float64)
+    right_points = pts_right.reshape(-1, 2).astype(np.float64)
+    initial = _fit_vertical_ransac_filter(.5 * (left_points + right_points), right_points, left_points,
+                                        left_gray.shape, threshold_analysis_px=3.0)
+    inlier_mask = np.asarray(initial.get("mask", []), dtype=bool)
+    baseline = _analyze_matched_points(left_points, right_points, left_gray.shape, analysis_scale,
+                                       method_upper, inlier_mask=inlier_mask)
+    fitted_at = time.perf_counter()
+    from .alignment_refinement import refine_alignment
+    result = refine_alignment(baseline, left_points, right_points, inlier_mask,
+                              left_gray, right_gray, analysis_scale, method_upper)
+    from .lens_refinement import refine_residual_field
+    result = refine_residual_field(result, left_points, right_points,
+                                   left_gray, right_gray, analysis_scale)
+    result["correction"]["timings_seconds"] = {
+        "resize": resized_at - started, "detection": detected_at - resized_at,
+        "matching": matched_at - detected_at, "initial_fit": fitted_at - matched_at,
+        "refinement": time.perf_counter() - fitted_at,
+    }
+    return result
+
+def _analyze_matched_points(
+    raw_left_points_all: np.ndarray, raw_right_points_all: np.ndarray,
+    image_shape: tuple[int, int], analysis_scale: float, method_upper: str,
+    *, inlier_mask: np.ndarray | None = None,
+) -> dict:
+    """Fit existing correction chains to supplied measured correspondences."""
+    h, w = image_shape[:2]
     # y-RANSAC is the stereoscopic first-stage filter: it scores only vertical
     # plausibility and deliberately ignores horizontal disparity, because
     # horizontal disparity is scene depth, not an alignment error.
-    raw_right_points_all = pts_right.reshape(-1, 2).astype(np.float64)
-    raw_left_points_all = pts_left.reshape(-1, 2).astype(np.float64)
     raw_anchor_points_all = 0.5 * (raw_right_points_all + raw_left_points_all)
 
-    y_filter_result = _fit_vertical_ransac_filter(
-        raw_anchor_points_all,
-        raw_right_points_all,
-        raw_left_points_all,
-        left_gray.shape,
-        threshold_analysis_px=3.0,
-    )
-    mask = np.asarray(y_filter_result.get("mask", []), dtype=bool).reshape(-1)
+    if inlier_mask is None:
+        y_filter_result = _fit_vertical_ransac_filter(
+            raw_anchor_points_all, raw_right_points_all, raw_left_points_all,
+            image_shape, threshold_analysis_px=3.0,
+        )
+        inlier_mask = y_filter_result.get("mask", [])
+    mask = np.asarray(inlier_mask, dtype=bool).reshape(-1)
     if len(mask) != len(raw_right_points_all):
         raise RuntimeError("y-RANSAC konnte keine stabile Inlier-Gruppe bestimmen.")
     if int(mask.sum()) < 8:
@@ -1583,7 +1616,7 @@ def analyze_pair_features(
     scale, rotation_deg, centre_shift_y_analysis, affine_fit_method = _lms_affine_from_vertical_residuals(
         right_in,
         left_in,
-        left_gray.shape,
+        image_shape,
     )
     vertical_shift_px = centre_shift_y_analysis / analysis_scale
 
@@ -1592,7 +1625,7 @@ def analyze_pair_features(
     half_scale = max(1e-6, scale) ** 0.5
     left_mid = _transform_points_by_center_params(
         left_in,
-        left_gray.shape,
+        image_shape,
         -rotation_deg / 2.0,
         1.0 / half_scale,
         0.0,
@@ -1600,7 +1633,7 @@ def analyze_pair_features(
     )
     right_mid = _transform_points_by_center_params(
         right_in,
-        right_gray.shape,
+        image_shape,
         rotation_deg / 2.0,
         half_scale,
         0.0,
@@ -1615,7 +1648,7 @@ def analyze_pair_features(
     horizontal_signed = right_mid[:, 0] - left_mid[:, 0]
     horizontal_abs = np.abs(horizontal_signed) / analysis_scale
 
-    coverage_percent = _point_coverage_percent(left_in, left_gray.shape)
+    coverage_percent = _point_coverage_percent(left_in, image_shape)
     # Pipeline v4: keine Quadrantenbedingung mehr.  Die alte einfache V/H-
     # Diagnose bleibt nur als Messwert erhalten; die eigentliche Trapez-/
     # Vergence-Stufe wird weiter unten über Gesamt-Inlier, Trainingspunkte,
@@ -1625,7 +1658,7 @@ def analyze_pair_features(
     vergence_v_analysis, vergence_h_analysis = _fit_vergence_from_affine_residuals(
         left_mid,
         right_mid,
-        left_gray.shape,
+        image_shape,
     )
     vergence_v_candidate_px = vergence_v_analysis / analysis_scale
     vergence_h_candidate_px = vergence_h_analysis / analysis_scale
@@ -1673,35 +1706,35 @@ def analyze_pair_features(
     pre_affine_zone3x3 = _vertical_residual_zone_stats(
         pre_affine_anchor_points,
         pre_affine_vertical_signed,
-        left_gray.shape,
+        image_shape,
         analysis_scale,
         ZONE_DIAGNOSTICS_GRID,
     )
     affine_zone3x3 = _vertical_residual_zone_stats(
         left_mid,
         affine_vertical_signed,
-        left_gray.shape,
+        image_shape,
         analysis_scale,
         ZONE_DIAGNOSTICS_GRID,
     )
     v_only_zone3x3 = _vertical_residual_zone_stats(
         left_mid,
         v_only_vertical_signed,
-        left_gray.shape,
+        image_shape,
         analysis_scale,
         ZONE_DIAGNOSTICS_GRID,
     )
     h_only_zone3x3 = _vertical_residual_zone_stats(
         left_mid,
         h_only_vertical_signed,
-        left_gray.shape,
+        image_shape,
         analysis_scale,
         ZONE_DIAGNOSTICS_GRID,
     )
     vh_zone3x3 = _vertical_residual_zone_stats(
         left_mid,
         vh_vertical_signed,
-        left_gray.shape,
+        image_shape,
         analysis_scale,
         ZONE_DIAGNOSTICS_GRID,
     )
@@ -1715,7 +1748,7 @@ def analyze_pair_features(
             left_mid,
             right_mid,
             affine_vertical_signed,
-            left_gray.shape,
+            image_shape,
             analysis_scale,
             holdout_mask=shared_holdout,
         )
@@ -1803,7 +1836,7 @@ def analyze_pair_features(
     # Audit-/Gewichtungslogik, aber kein Mesh und kein Blocker.
     y_residual_apply_payload_affine = dict(y_residual_apply_payload)
     train_idx, holdout_idx = np.where(~shared_holdout)[0], np.where(shared_holdout)[0]
-    trapez_zone_counts = _grid_zone_counts(left_mid, left_gray.shape, ZONE_DIAGNOSTICS_GRID)
+    trapez_zone_counts = _grid_zone_counts(left_mid, image_shape, ZONE_DIAGNOSTICS_GRID)
     trapez_support = {
         "rule": "no_quadrant_gate_total_points_train_points_design_stability",
         "total_inliers": int(mask.sum()),
@@ -1851,17 +1884,17 @@ def analyze_pair_features(
 
     if trapez_supported:
         try:
-            trapez_params = fit_pipeline_trapez_projective_model(left_mid, right_mid, left_gray.shape, train_idx)
-            trapez_plaus = pipeline_trapez_plausibility(left_gray.shape, trapez_params)
-            left_trap, right_trap = apply_pipeline_trapez_projective_to_points(left_mid, right_mid, left_gray.shape, trapez_params)
+            trapez_params = fit_pipeline_trapez_projective_model(left_mid, right_mid, image_shape, train_idx)
+            trapez_plaus = pipeline_trapez_plausibility(image_shape, trapez_params)
+            left_trap, right_trap = apply_pipeline_trapez_projective_to_points(left_mid, right_mid, image_shape, trapez_params)
             trapez_vertical_signed = right_trap[:, 1] - left_trap[:, 1]
             trapez_summary = residual_summary(trapez_vertical_signed)
             affine_holdout_summary = residual_summary(affine_vertical_signed[holdout_idx]) if len(holdout_idx) else None
             trapez_holdout_summary = residual_summary(trapez_vertical_signed[holdout_idx]) if len(holdout_idx) else None
             trapez_validation = _assess_spatial_holdout(
                 affine_holdout_summary, trapez_holdout_summary,
-                _vertical_residual_zone_stats(left_mid[holdout_idx], affine_vertical_signed[holdout_idx], left_gray.shape, analysis_scale),
-                _vertical_residual_zone_stats(left_mid[holdout_idx], trapez_vertical_signed[holdout_idx], left_gray.shape, analysis_scale),
+                _vertical_residual_zone_stats(left_mid[holdout_idx], affine_vertical_signed[holdout_idx], image_shape, analysis_scale),
+                _vertical_residual_zone_stats(left_mid[holdout_idx], trapez_vertical_signed[holdout_idx], image_shape, analysis_scale),
                 analysis_scale,
             )
             trapez_holdout_better = bool(trapez_validation["accepted"])
@@ -1899,7 +1932,7 @@ def analyze_pair_features(
                     left_trap,
                     right_trap,
                     trapez_vertical_signed,
-                    left_gray.shape,
+                    image_shape,
                     analysis_scale,
                     holdout_mask=shared_holdout,
                 )
@@ -1931,7 +1964,7 @@ def analyze_pair_features(
         return {
             "label": label, "summary": residual_summary(residuals),
             "holdout": residual_summary(residuals[holdout_idx]),
-            "zones": _vertical_residual_zone_stats(left_mid[holdout_idx], residuals[holdout_idx], left_gray.shape, analysis_scale),
+            "zones": _vertical_residual_zone_stats(left_mid[holdout_idx], residuals[holdout_idx], image_shape, analysis_scale),
             "trapez_enabled": use_trapez, "y_payload": y_payload,
         }
 
@@ -1939,12 +1972,12 @@ def analyze_pair_features(
     if trapez_plausible:
         complete_candidates.append(complete_candidate("Affine + Vergence", trapez_vertical_signed, True, disabled_y))
     if y_residual_apply_candidate.get("ready"):
-        direct_y = _candidate_vertical_residuals(y_residual_apply_candidate, left_mid, right_mid, left_gray.shape)
+        direct_y = _candidate_vertical_residuals(y_residual_apply_candidate, left_mid, right_mid, image_shape)
         complete_candidates.append(complete_candidate(
             "Affine + yQuad", direct_y, False, {**y_residual_apply_payload_affine, "enabled": True},
         ))
     if trapez_plausible and y_after_trapez_candidate.get("ready"):
-        chain_y = _candidate_vertical_residuals(y_after_trapez_candidate, left_trap, right_trap, left_gray.shape)
+        chain_y = _candidate_vertical_residuals(y_after_trapez_candidate, left_trap, right_trap, image_shape)
         complete_candidates.append(complete_candidate(
             "Affine + Vergence + yQuad", chain_y, True, {**y_after_trapez_payload, "enabled": True},
         ))
@@ -1995,7 +2028,7 @@ def analyze_pair_features(
         "actual_output_model": pipeline_model_label,
         "candidate_names": list(Y_RESIDUAL_MODEL_SPECS.keys()),
         "candidates": y_residual_candidates,
-        "support": _residual_model_support_summary(left_mid, left_gray.shape),
+        "support": _residual_model_support_summary(left_mid, image_shape),
         "pre_affine_vertical": residual_summary(pre_affine_vertical_signed),
         "affine_vertical": residual_summary(affine_vertical_signed),
         "horizontal_disparity": {
@@ -2059,7 +2092,7 @@ def analyze_pair_features(
         "rotation": float(rotation_deg),
         "scale": float(scale),
         "correction": correction,
-        "matches": len(good_matches),
+        "matches": len(raw_left_points_all),
         "inliers": int(mask.sum()),
         "residual_vertical_mean": float(applied_mean),
         "residual_vertical_median": float(applied_median),

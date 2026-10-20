@@ -153,8 +153,15 @@ def analyze_horizontal_disparity(
         mode=cv2.STEREO_SGBM_MODE_SGBM_3WAY,
     )
 
-    disp_l_raw = matcher.compute(gray_l_eq, gray_r_eq).astype(np.float32) / 16.0
-    disp_r_raw = matcher.compute(gray_r_eq, gray_l_eq).astype(np.float32) / 16.0
+    # SGBM's common full-search ROI otherwise removes large physical rims,
+    # even for disparities whose correspondence is inside the real image.
+    # Pad only for the matcher, then check every correspondence in the actual
+    # unpadded images through LR consistency and independent patch evidence.
+    padding = max(abs(min_disp), abs(min_disp + num_disp)) + block_size
+    padded_l = cv2.copyMakeBorder(gray_l_eq, 0, 0, padding, padding, cv2.BORDER_REFLECT_101)
+    padded_r = cv2.copyMakeBorder(gray_r_eq, 0, 0, padding, padding, cv2.BORDER_REFLECT_101)
+    disp_l_raw = matcher.compute(padded_l, padded_r)[:, padding:padding+w].astype(np.float32) / 16.0
+    disp_r_raw = matcher.compute(padded_r, padded_l)[:, padding:padding+w].astype(np.float32) / 16.0
 
     invalid_low = float(min_disp - 1)
     valid_l = np.isfinite(disp_l_raw) & (disp_l_raw > invalid_low + 0.5) & (disp_l_raw < min_disp + num_disp - 1)
@@ -217,11 +224,8 @@ def analyze_horizontal_disparity(
 
     pct = _robust_percentiles(valid_values, [0, 0.5, 1, 2, 5, 50, 95, 98, 99, 99.5, 100])
 
-    # Near/far must not be selected from the absolute most extreme component.
-    # In the first probe that caused tiny SGBM artefact islands to dominate the
-    # Deviation although the robust percentiles already matched Cosima closely.
-    # v1c therefore uses robust global percentile edges for the numeric value
-    # and keeps connected components as visual/support diagnostics only.
+    # Robust percentiles remain the baseline. Small genuinely near surfaces
+    # require separate physical evidence; a raw maximum remains unsafe.
     low_05 = float(np.percentile(valid_values, 0.5))
     high_995 = float(np.percentile(valid_values, 99.5))
     low_1 = float(np.percentile(valid_values, 1))
@@ -232,7 +236,9 @@ def analyze_horizontal_disparity(
     # 1/99 is the conservative default estimate.  0.5/99.5 is recorded as a
     # slightly more extreme cross-check; 0/100 remains diagnostic only.
     low_edge = low_1
-    high_edge = high_99
+    from .near_point import confirm_near_edge
+    near_confirmation = confirm_near_edge(gray_l, gray_r, disp_l_raw, confidence_mask, high_99)
+    high_edge = float(near_confirmation["edge_permille"])
     deviation_permille = abs(high_edge - low_edge)
     deviation_permille_0_5_99_5 = abs(high_995 - low_05)
     deviation_permille_2_98 = abs(high_98 - low_2)
@@ -254,6 +260,11 @@ def analyze_horizontal_disparity(
         uncertain_reasons.append("high_edge_cluster_missing")
     if deviation_permille < 0.5:
         uncertain_reasons.append("disparity_range_unreliable")
+    if not near_confirmation["confirmed"] or near_confirmation["unsupported_extreme"]:
+        uncertain_reasons.append("near_edge_unconfirmed")
+    supported_max = near_confirmation.get("maximum_supported_px")
+    if supported_max is not None and supported_max >= max_disp - 2:
+        uncertain_reasons.append("disparity_search_limit")
 
     warning_reasons = []
     if deviation_permille_0_5_99_5 - deviation_permille > max(5.0, deviation_permille * 0.25):
@@ -287,8 +298,8 @@ def analyze_horizontal_disparity(
         "min_disparity_px": int(min_disp),
         "num_disparities_px": int(num_disp),
         "search_half_range_permille": float(search_half_range_permille),
-        "expected_side_no_data_px": int(max_disp),
-        "expected_side_no_data_permille": float(1000.0 * max_disp / max(1.0, float(w))),
+        "expected_side_no_data_px": int(border),
+        "expected_side_no_data_permille": float(1000.0 * border / max(1.0, float(w))),
         "valid_pixels": valid_count,
         "valid_percent": float(valid_ratio),
         "texture_threshold": float(texture_thresh),
@@ -297,7 +308,8 @@ def analyze_horizontal_disparity(
         "low_edge_permille": float(low_edge),
         "high_edge_permille": float(high_edge),
         "deviation_permille": float(deviation_permille),
-        "deviation_method": "percentile_1_99",
+        "deviation_method": "percentile_1_confirmed_near",
+        "near_confirmation": near_confirmation,
         "deviation_permille_0_5_99_5": float(deviation_permille_0_5_99_5),
         "deviation_permille_2_98": float(deviation_permille_2_98),
         "uncertain_reasons": uncertain_reasons,

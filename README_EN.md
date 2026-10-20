@@ -1,4 +1,6 @@
-# StereoFine 1.0
+# StereoFine 1.1 RC1
+
+Prerelease for checking the revised alignment. [RC1 packages](https://github.com/muelli1975/StereoFine/releases/tag/v1.1-rc1) · [Changes](RELEASE_NOTES_1.1-rc1.md). The existing stable 1.0 remains available separately.
 
 [Deutsch](README_DE.md)
 
@@ -10,7 +12,7 @@ StereoFine works completely locally: no account, no cloud, no tracking and no au
   <a href="docs/screenshots/StereoFine01.png"><img src="docs/screenshots/StereoFine01.png" alt="StereoFine 1.0 main view" width="900"></a>
 </p>
 
-## Portable Windows release
+## Stable Windows 1.0 release
 
 The published Windows version is portable:
 
