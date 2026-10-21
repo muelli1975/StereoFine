@@ -79,14 +79,18 @@ def main():
     if sys.platform == 'darwin':
         shutil.copytree(ROOT/'dist/StereoFine.app', package/'StereoFine.app', symlinks=True)
         executable_root = package/'StereoFine.app/Contents/MacOS'
+        tools_root = package/'StereoFine.app/Contents/Resources/tools'
+        tools_root.mkdir(parents=True, exist_ok=True)
+        (executable_root/'tools').symlink_to('../Resources/tools', target_is_directory=True)
     else:
         shutil.copytree(ROOT/'dist/StereoFine', package)
         executable_root = package
-    shutil.copytree(ROOT/'tools/heif', executable_root/'tools/heif', symlinks=sys.platform == 'darwin')
+        tools_root = executable_root/'tools'
+    shutil.copytree(ROOT/'tools/heif', tools_root/'heif', symlinks=sys.platform == 'darwin')
     # Build CI supplies the official ExifTool tree before calling this script.
     for path in (ROOT/'tools').iterdir():
         if path.name == 'heif': continue
-        target = executable_root/'tools'/path.name
+        target = tools_root/path.name
         if path.is_dir(): shutil.copytree(path, target)
         else: shutil.copy2(path, target)
     for name in ('README_DE.md', 'README_EN.md', 'LICENSE.txt', 'THIRD_PARTY_NOTICES.md', 'RELEASE_NOTES_1.1.md'):
