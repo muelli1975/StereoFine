@@ -47,3 +47,18 @@ The release build repeats application and synthetic research regressions on
 Windows, Linux and macOS, German/English GUI smoke on Linux, source/asset byte
 verification and actual packaged input/session/export checks on all four targets.
 Final build evidence and checksums accompany the release.
+
+## Validation
+
+198 application and 48 research tests passed on each of Windows, Linux and macOS. All four native archives passed source/asset/architecture verification and repeated input/session/export checks after extraction. German/English GUI smoke passed on Linux; extracted executable startup was checked on every target.
+
+[Build validation](https://github.com/muelli1975/StereoFine/actions/runs/39594205017). Detailed results are attached as `BUILD_CHECKS.json`.
+
+## SHA-256
+
+```text
+883be049175061c57f6dec2cfec1133fd0edbb54a511f2a9e293aa33c7792b4e  StereoFine_1.1_Windows_x64.zip
+8ab0819449eaebeacf8ac29b5a07672d88930aa6f3eb6bde89ec38cb0619477e  StereoFine_1.1_Linux_x64.tar.gz
+b20a0e90be718405ace10bf04ea5f5d9309e55102ddb547329cc7e6c6783d3b7  StereoFine_1.1_macOS_AppleSilicon.zip
+f740edbb93fdc469132ad3cfb6807549b18fb04a8c5c2df980250a653eff2da6  StereoFine_1.1_macOS_Intel.zip
+```

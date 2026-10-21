@@ -117,3 +117,14 @@ python -m unittest discover -s experiments/tests -p 'test_*.py'
 
 The production verifier lives in `stereofine/range_evidence.py`. The research
 adapter reuses it; the larger native-footprint fallback remains research-only.
+
+## Final 1.1 release
+
+[All eight candidate jobs passed](https://github.com/muelli1975/StereoFine/actions/runs/39594205017)
+for commit `ef735bc6d1d98db046d41672f09ae87ee48eac6c`: 198 application and
+48 research tests on each source-test platform, Linux DE/EN GUI smoke, all four
+native packages, extraction/session/export/startup checks and common archive
+verification. The [publication workflow](https://github.com/muelli1975/StereoFine/actions/runs/39595010950)
+then downloaded the uploaded assets and verified their bytes before publishing.
+[Release evidence](RELEASE_1.1_RESULTS.json) records the immutable package hashes.
+The final packaging changes do not alter the image-processing algorithms.

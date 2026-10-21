@@ -1,8 +1,10 @@
 # StereoFine 1.1 release checklist
 
-The source identifies itself as `1.1`. A completed source test is
-not evidence that a Windows/macOS/Linux package has passed. Record results for
-the exact final source commit and archive hashes.
+Completed on 21 October 2026. Published source commit:
+`ef735bc6d1d98db046d41672f09ae87ee48eac6c`.
+See [structured release evidence](docs/RELEASE_1.1_RESULTS.json),
+[candidate validation](https://github.com/muelli1975/StereoFine/actions/runs/39594205017)
+and [publication verification](https://github.com/muelli1975/StereoFine/actions/runs/39595010950).
 
 ## Source validation
 
@@ -26,21 +28,21 @@ the exact final source commit and archive hashes.
 ## Final metadata and candidate build
 
 - [x] After source validation, set APP_VERSION, Windows FileVersion and ProductVersion to `1.1`; clear Windows prerelease flags.
-- [ ] Commit the exact reviewed sources. Packaging rejects dirty source snapshots and inconsistent final metadata.
-- [ ] Run `prepare-release.yml` on that commit. It reuses source/platform validation and never creates tags or releases.
-- [ ] All three source-test platforms and all four package targets pass.
-- [ ] Actual packaged `--check-inputs` passes for raster/HEIF/Spatial Photo/orientation, metadata export, session reuse and rendering.
-- [ ] No HEIF codec is linked into the main executable; separate helper, sources, ExifTool and licenses are present.
-- [ ] Canonical `Source/` matches the exact commit, including Windows line-ending-independent bytes.
-- [ ] Extract each archive and check application startup, icon, DE/EN interface and one save on the corresponding system.
-- [ ] Candidate archive set matches `scripts/release_checksums.py`; its verified four-file SHA256SUMS.txt is available.
+- [x] Commit the exact reviewed sources. Packaging rejects dirty source snapshots and inconsistent final metadata.
+- [x] Run `prepare-release.yml` on that commit. It reuses source/platform validation and never creates tags or releases.
+- [x] All three source-test platforms and all four package targets pass.
+- [x] Actual packaged `--check-inputs` passes for raster/HEIF/Spatial Photo/orientation, metadata export, session reuse and rendering.
+- [x] No HEIF codec is linked into the main executable; separate helper, sources, ExifTool and licenses are present.
+- [x] Canonical `Source/` matches the exact commit, including Windows line-ending-independent bytes.
+- [x] Extract each archive and repeat native input/session/export checks and six-second GUI startup on its corresponding system. Original icons are byte-verified; DE/EN GUI layout smoke runs on Linux. Visual inspection at other desktop/DPI settings is supplementary.
+- [x] Candidate archive set matches `scripts/release_checksums.py`; its verified four-file SHA256SUMS.txt is available.
 
 ## Publication
 
-- [ ] Replace draft status in `RELEASE_NOTES_1.1.md` with actual validation results and SHA-256 values.
-- [ ] Update English/default and German README download links to the actual 1.1 archives.
-- [ ] Verify release/tag naming against the repository's existing convention (`v1.1-rc3` for RC3).
-- [ ] Publish only the verified final commit and archives; preserve historical RC3 and 1.0 downloads.
+- [x] Replace draft status in `RELEASE_NOTES_1.1.md` with actual validation results and SHA-256 values.
+- [x] Update English/default and German README download links to the actual 1.1 archives.
+- [x] Verify release/tag naming against the repository's existing convention (`v1.1-rc3` for RC3).
+- [x] Publish only the verified final commit and archives; preserve historical RC3 and 1.0 downloads.
 
 The archived `build-release.yml` remains disabled. `build_windows.ps1` is an
 alternative Windows build, not the four-platform final-candidate route.
