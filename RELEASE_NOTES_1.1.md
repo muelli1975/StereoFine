@@ -30,6 +30,24 @@ measurements. Every save produces both an SBS JPEG and an anaglyph JPEG.
 See [measurement evidence and limitations](docs/OBSERVED_RANGE_1.1.md) and
 [input-format scope](docs/IMAGE_FORMATS_1.1.md).
 
+## Updated 1.1 packages — 21 October 2026
+
+- Recover a supported far endpoint even when the additional near control cannot
+  confirm its own endpoint. Keep unresolved near evidence and incomplete scene
+  coverage explicitly uncertain.
+- Show the uncertainty warning in bold gold with a warning triangle and a fixed
+  two-line layout in German and English. Hold M to check with the measurement cross.
+- Reuse the scaled preview background while moving that cross. Keyboard steps,
+  hold delay, speed and acceleration are unchanged.
+- Restore the dark Windows titlebar when leaving fullscreen through the button,
+  F11 or Escape.
+
+The version remains **1.1**, including archive names. Replace the extracted
+application with the complete updated package. Outdated automatic disparity
+measurements are recalculated while valid alignment, saved manual adjustments
+and favorites remain reusable. Near-point recognition and all measurement
+thresholds are unchanged by this final GUI update.
+
 ## Downloads
 
 | Platform | Filename |
@@ -46,19 +64,7 @@ in `SHA256SUMS.txt` alongside the downloads.
 The release build repeats application and synthetic research regressions on
 Windows, Linux and macOS, German/English GUI smoke on Linux, source/asset byte
 verification and actual packaged input/session/export checks on all four targets.
-Final build evidence and checksums accompany the release.
-
-## Validation
-
-198 application and 48 research tests passed on each of Windows, Linux and macOS. All four native archives passed source/asset/architecture verification and repeated input/session/export checks after extraction. German/English GUI smoke passed on Linux; extracted executable startup was checked on every target.
-
-[Build validation](https://github.com/muelli1975/StereoFine/actions/runs/39594205017). Detailed results are attached as `BUILD_CHECKS.json`.
-
-## SHA-256
-
-```text
-883be049175061c57f6dec2cfec1133fd0edbb54a511f2a9e293aa33c7792b4e  StereoFine_1.1_Windows_x64.zip
-8ab0819449eaebeacf8ac29b5a07672d88930aa6f3eb6bde89ec38cb0619477e  StereoFine_1.1_Linux_x64.tar.gz
-b20a0e90be718405ace10bf04ea5f5d9309e55102ddb547329cc7e6c6783d3b7  StereoFine_1.1_macOS_AppleSilicon.zip
-f740edbb93fdc469132ad3cfb6807549b18fb04a8c5c2df980250a653eff2da6  StereoFine_1.1_macOS_Intel.zip
-```
+The accompanying `BUILD_CHECKS.json` identifies the exact source commit and
+validation run for these updated archives. Its checks include reticle pixel
+identity and native Windows titlebar restoration. Use the accompanying
+`SHA256SUMS.txt` for this package update; earlier 1.1 checksums do not apply.

@@ -3,7 +3,7 @@ name: Prepare StereoFine 1.1 candidates (no publication)
 on:
   workflow_dispatch:
   push:
-    branches: [release/1.1]
+    branches: [release/1.1, release/1.1-update]
     paths:
       - '.github/workflows/prepare-release.yml'
       - '.github/workflows/validate-development.yml'
