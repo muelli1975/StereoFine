@@ -1,0 +1,48 @@
+name: Return unrequested 1.1 release candidates to drafts
+
+on:
+  push:
+    branches: [maintenance/hide-1.1-rcs]
+    paths: ['.github/workflows/hide-1.1-rcs.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  hide-candidates:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Set only RC1, RC2 and RC3 to drafts and verify preservation
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess
+          repo = os.environ['GITHUB_REPOSITORY']
+          def api(path, *args):
+              return json.loads(subprocess.check_output(['gh', 'api', 'repos/'+repo+'/'+path, *args], text=True))
+          candidates = {418297157:'v1.1-rc1', 418304182:'v1.1-rc2', 418311002:'v1.1-rc3'}
+          stable = {384265475:'v1.0', 419496903:'v1.1'}
+          def snapshot(release):
+              return dict(id=release['id'], tag=release['tag_name'], name=release['name'],
+                          body=release['body'], prerelease=release['prerelease'],
+                          assets=sorted((a['id'],a['name'],a.get('digest'),a['size']) for a in release['assets']))
+          before = {ident:api('releases/'+str(ident)) for ident in candidates | stable}
+          for ident, tag in (candidates | stable).items():
+              assert before[ident]['tag_name'] == tag
+          assert all(not before[ident]['draft'] for ident in stable)
+          refs = {tag:api('git/ref/tags/'+tag)['object'] for tag in list(candidates.values())+list(stable.values())}
+          for ident in candidates:
+              changed = api('releases/'+str(ident), '--method', 'PATCH', '-F', 'draft=true')
+              assert changed['draft'] and snapshot(changed) == snapshot(before[ident])
+          for ident in candidates | stable:
+              after = api('releases/'+str(ident))
+              assert snapshot(after) == snapshot(before[ident])
+              assert after['draft'] == (ident in candidates)
+          assert all(api('git/ref/tags/'+tag)['object'] == value for tag,value in refs.items())
+          public = sorted(r['tag_name'] for r in api('releases?per_page=100') if not r['draft'])
+          assert public == ['v1.0','v1.1'], public
+          print(json.dumps(dict(drafts=list(candidates.values()), public_releases=public,
+                                stable_releases_unchanged=True, assets_preserved=True, tags_preserved=True)))
+          PY
