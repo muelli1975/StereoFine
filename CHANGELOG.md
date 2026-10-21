@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1 – Unreleased
+## 1.1 – 2026-10-21
 
 - Admit conditional native endpoint evidence at two analysis widths for uncertain far estimates; retain gray uncertainty when a smaller observed span cannot establish scene completeness.
 - Share the endpoint verifier between application and research, preserve existing supported extremes and confirmed results, and advance disparity cache version to sf-disparity-5.

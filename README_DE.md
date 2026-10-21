@@ -1,12 +1,8 @@
-# StereoFine 1.1 – Entwicklung
+# StereoFine 1.1
 
-Vorabversion zum Prüfen der überarbeiteten Justage. [RC3-Pakete](https://github.com/muelli1975/StereoFine/releases/tag/v1.1-rc3) · [Änderungen](RELEASE_NOTES_1.1-rc3.md). Die bisherige stabile 1.0 bleibt separat verfügbar.
+[StereoFine 1.1 herunterladen](https://github.com/muelli1975/StereoFine/releases/tag/v1.1) · [Änderungen](RELEASE_NOTES_1.1.md) · [English](README_EN.md)
 
-[English](README_EN.md)
-
-Dieser Entwicklungszweig ergänzt nach RC3 JPS/PNS, statisches WebP/BMP und SDR-HEIC/HEIF sowie die unten dokumentierten Messkorrekturen. Die verlinkten RC3-Pakete enthalten diese Ergänzungen noch nicht. Die [Justageprüfung](docs/APPLIED_MODEL_SCORING_1.1.md) dokumentiert eine korrigierte quadratische Modellbewertung. Die [Nahpunktbestätigung in Originalauflösung](docs/NATIVE_NEAR_RECOVERY_1.1.md) ergänzt abgesicherte Messungen für bislang unsichere Fälle. Subpixel-Nachmessung der Justage und die alternative Koeffizientenschätzung bleiben experimentell.
-
-Aktuelle Entwicklungspakete werden separat in der [Entwicklungsprüfung](https://github.com/muelli1975/StereoFine/actions/workflows/validate-development.yml) gebaut und geprüft. Sie kennzeichnen sich als **1.1-dev** und enthalten die Änderungen nach RC3; die folgenden RC3-Downloads bleiben die ältere Vorabversion. [Formatumfang und Prüfungen](docs/IMAGE_FORMATS_1.1.md).
+Version 1.1 verbessert die automatische Modellwahl, die vertikale Randkorrektur und die Nah-/Fernpunktmessung. Neu sind JPS/PNS, statisches WebP/BMP und unterstützte SDR-HEIC/HEIF-Dateien einschließlich geeigneter Stereo- und Spatial-Photo-Container. Ungeklärte Tiefenmessungen bleiben ausdrücklich als unsicher markiert. Siehe [Messvalidierung](docs/OBSERVED_RANGE_1.1.md) und [Formatumfang](docs/IMAGE_FORMATS_1.1.md) (Englisch).
 
 StereoFine ist ein lokales Desktop-Werkzeug zum automatischen Ausrichten, Prüfen, Rahmen und Ausgeben stereoskopischer Bildpaare. Es soll möglichst viel zuverlässig automatisch erledigen, ohne die manuelle Kontrolle aus der Hand zu nehmen. Die Oberfläche bleibt deshalb bewusst schlank und tastaturfreundlich.
 
@@ -16,17 +12,26 @@ StereoFine arbeitet vollständig lokal: kein Konto, keine Cloud, kein Tracking u
   <a href="docs/screenshots/StereoFine01.png"><img src="docs/screenshots/StereoFine01.png" alt="StereoFine 1.0 – Hauptansicht" width="900"></a>
 </p>
 
-## Windows-Vorabversion 1.1 RC3
+## Downloads
 
-Die Windows-Vorabversion ist portabel:
+| Plattform | Archiv |
+| --- | --- |
+| Windows x64 | [StereoFine_1.1_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.1/StereoFine_1.1_Windows_x64.zip) |
+| Linux x64 | [StereoFine_1.1_Linux_x64.tar.gz](https://github.com/muelli1975/StereoFine/releases/download/v1.1/StereoFine_1.1_Linux_x64.tar.gz) |
+| macOS Apple Silicon | [StereoFine_1.1_macOS_AppleSilicon.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.1/StereoFine_1.1_macOS_AppleSilicon.zip) |
+| macOS Intel | [StereoFine_1.1_macOS_Intel.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.1/StereoFine_1.1_macOS_Intel.zip) |
 
-1. [StereoFine_1.1-rc3_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.1-rc3/StereoFine_1.1-rc3_Windows_x64.zip) herunterladen und das Archiv vollständig in einen normalen beschreibbaren Ordner entpacken.
+[SHA-256-Prüfsummen](https://github.com/muelli1975/StereoFine/releases/download/v1.1/SHA256SUMS.txt). Vor dem Start das gesamte Archiv entpacken. Unter macOS `StereoFine.app`, unter Linux `StereoFine` starten.
+
+Das Windows-Paket ist portabel:
+
+1. [StereoFine_1.1_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.1/StereoFine_1.1_Windows_x64.zip) herunterladen und das Archiv vollständig in einen normalen beschreibbaren Ordner entpacken.
 2. Den entpackten Ordner `StereoFine` öffnen und `StereoFine.exe` starten.
 3. Den Programmordner zusammenlassen; `tools`, `_internal` und die übrigen mitgelieferten Dateien gehören zur Anwendung.
 
 Version und Architektur stehen im ZIP-Dateinamen. Der Programmordner heißt `StereoFine`, die Programmdatei `StereoFine.exe`, jeweils ohne Versions- oder Architekturzusatz.
 
-Die separate stabile Version ist [StereoFine_1.0_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.0/StereoFine_1.0_Windows_x64.zip). RC3 in einen eigenen Ordner getrennt von 1.0 entpacken.
+Die separate stabile Version ist [StereoFine_1.0_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.0/StereoFine_1.0_Windows_x64.zip). 1.1 in einen eigenen Ordner getrennt von 1.0 entpacken.
 
 Eine Python-Installation ist für die portable Version nicht erforderlich. Globale Einstellungen werden als `settings.json` direkt neben `StereoFine.exe` gespeichert.
 

@@ -1,4 +1,4 @@
-# Building StereoFine 1.1 development on Windows
+# Building StereoFine 1.1 on Windows
 
 StereoFine is published as a **portable Windows x64 onedir application**. The public executable must be built on Windows; PyInstaller is not used to cross-compile it from Linux.
 
@@ -9,7 +9,7 @@ The read-only development workflow builds commit-labelled artifacts with `script
 - Windows x64
 - Python **3.12.10**, 64 bit, installed with the standard Python installer
 - Internet access for the one-time installation of the pinned Python build dependencies
-- the complete committed StereoFine development source directory, including `assets/`, `native/heif/` and the official ExifTool tree under `tools/`
+- the complete committed StereoFine 1.1 source directory, including `assets/`, `native/heif/` and the official ExifTool tree under `tools/`
 
 Runtime dependencies are pinned in `requirements-lock.txt`. The build tool is pinned in `requirements-build.txt`:
 
@@ -18,7 +18,7 @@ Runtime dependencies are pinned in `requirements-lock.txt`. The build tool is pi
 
 ## Build
 
-Open PowerShell in the exact StereoFine 1.1-dev source directory and run:
+Open PowerShell in the exact StereoFine 1.1 source directory and run:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
@@ -32,7 +32,7 @@ Expected final artifacts:
 
 ```text
 release/
-    StereoFine_1.1-dev_Windows_x64.zip
+    StereoFine_1.1_Windows_x64.zip
     SHA256SUMS.txt
 
 dist/
@@ -62,7 +62,7 @@ StereoFine stores `settings.json` beside `StereoFine.exe` at runtime. This is de
 
 ## Required manual Windows smoke check
 
-After the script finishes, extract `release/StereoFine_1.1-dev_Windows_x64.zip` into a fresh folder and check at least:
+After the script finishes, extract `release/StereoFine_1.1_Windows_x64.zip` into a fresh folder and check at least:
 
 1. `StereoFine.exe` starts without an external Python installation being used.
 2. The application icon is correct in Explorer, the title bar and taskbar.
@@ -83,12 +83,12 @@ After the script finishes, extract `release/StereoFine_1.1-dev_Windows_x64.zip` 
 
 A genuine camera MPO and additional real camera color-mismatch material are useful extra checks when available, and actual Windows camera validation remains required for this release candidate.
 
-## Development artifacts
+## Alternative Windows archive
 
 The alternative PowerShell build produces:
 
 ```text
-StereoFine_1.1-dev_Windows_x64.zip
+StereoFine_1.1_Windows_x64.zip
 ```
 
-Do not upload development artifacts over RC3 or stable 1.0. The development workflow uses commit/platform-specific archive names and attaches checksums plus an input-check report to the Actions run. A stable 1.1 release requires separate validation and an explicit release step.
+The four-platform release route is `prepare-release.yml`. It verifies canonical sources and assets, executable architecture, the separate reader and metadata tools, then repeats actual input/session/export checks after extraction. Development artifacts retain separate commit/platform-specific names; preserve the historical RC3 and 1.0 archives.

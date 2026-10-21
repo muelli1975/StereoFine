@@ -97,6 +97,11 @@ jobs:
           perl tools/exiftool -ver
       - name: Prepare checksum-pinned stereo, Spatial Photo and orientation fixtures
         run: python scripts/prepare_heif_fixtures.py build/heif-fixtures
+      - name: Prepare Linux display for extracted-package startup
+        if: ${{ inputs.candidate && runner.os == 'Linux' }}
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb
       - name: Build both executables and test actual packaged imports
         if: ${{ !inputs.candidate }}
         run: python scripts/build_development.py --fixtures build/heif-fixtures
@@ -122,5 +127,8 @@ jobs:
           path: |
             build/development-input-check.json
             build/candidate-input-check.json
+            build/candidate-extracted-input-check.json
+            build/candidate-archive-check.json
+            build/candidate-startup.log
           if-no-files-found: error
           retention-days: 30

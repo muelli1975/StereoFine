@@ -1,4 +1,4 @@
-# PyInstaller onedir specification for StereoFine 1.1 development.
+# PyInstaller onedir specification for StereoFine 1.1.
 # Build from a clean Windows x64 Python 3.12.10 environment.
 
 from PyInstaller.utils.hooks import collect_data_files

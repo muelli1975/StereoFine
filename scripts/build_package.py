@@ -4,11 +4,15 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import platform
+import plistlib
 import shutil
 import subprocess
 import sys
+import tempfile
+import time
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -73,12 +77,12 @@ def main():
     if package.exists(): shutil.rmtree(package)
     package.parent.mkdir(parents=True, exist_ok=True)
     if sys.platform == 'darwin':
-        shutil.copytree(ROOT/'dist/StereoFine.app', package/'StereoFine.app')
+        shutil.copytree(ROOT/'dist/StereoFine.app', package/'StereoFine.app', symlinks=True)
         executable_root = package/'StereoFine.app/Contents/MacOS'
     else:
         shutil.copytree(ROOT/'dist/StereoFine', package)
         executable_root = package
-    shutil.copytree(ROOT/'tools/heif', executable_root/'tools/heif')
+    shutil.copytree(ROOT/'tools/heif', executable_root/'tools/heif', symlinks=sys.platform == 'darwin')
     # Build CI supplies the official ExifTool tree before calling this script.
     for path in (ROOT/'tools').iterdir():
         if path.name == 'heif': continue
@@ -90,6 +94,14 @@ def main():
     shutil.copytree(ROOT/'licenses', package/'licenses')
     shutil.copytree(snapshot, package/'Source')
     run(sys.executable, 'scripts/package_source.py', '--verify', package/'Source')
+    if args.candidate and sys.platform == 'darwin':
+        info = package/'StereoFine.app/Contents/Info.plist'
+        data = plistlib.loads(info.read_bytes())
+        data.update(CFBundleShortVersionString='1.1', CFBundleVersion='1.1.0',
+                    CFBundleIdentifier='org.stereotools.stereofine')
+        info.write_bytes(plistlib.dumps(data))
+        run('codesign', '--force', '--deep', '--sign', '-', package/'StereoFine.app')
+        run('codesign', '--verify', '--deep', '--strict', package/'StereoFine.app')
     executable = executable_root/('StereoFine.exe' if sys.platform == 'win32' else 'StereoFine')
     report = ROOT/f'build/{build_kind}-input-check.json'
     run(executable, '--check-inputs', report, args.fixtures.resolve())
@@ -98,10 +110,10 @@ def main():
     if not all(row.get('metadata_success', True) for row in checked['checks']):
         raise RuntimeError('Packaged metadata export failed')
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
-    marker = 'RELEASE_CANDIDATE.txt' if args.candidate else 'DEVELOPMENT_BUILD.txt'
+    marker = 'BUILD_INFO.txt' if args.candidate else 'DEVELOPMENT_BUILD.txt'
     (package/marker).write_text(
-        f'StereoFine 1.1 {build_kind}\nCommit: {commit}\n'
-        'Unpublished build; platform verification is required before release.\n', 'utf-8')
+        f'StereoFine 1.1\nCommit: {commit}\nPlatform: {platform.system()} {platform.machine()}\n'
+        'Build checks and SHA-256 manifest accompany the release.\n', 'utf-8')
     label = {'win32': 'Windows', 'darwin': 'macOS'}.get(sys.platform, 'Linux')
     name, archive_format = archive_spec(args.candidate, commit, label, platform.machine())
     output = ROOT/'release'; output.mkdir(exist_ok=True)
@@ -111,6 +123,52 @@ def main():
     else:
         archive = Path(shutil.make_archive(str(output/name), archive_format, package.parent, 'StereoFine'))
     archive.with_name(archive.name+'.sha256').write_text(hashlib.sha256(archive.read_bytes()).hexdigest()+'  '+archive.name+'\n', 'utf-8')
+    if args.candidate:
+        from package_source import committed_sources
+        from verify_release_packages import PACKAGES, verify_archive
+        _, expected = committed_sources()
+        expected['SOURCE_COMMIT.txt'] = (commit+'\n').encode()
+        verified = verify_archive(archive, PACKAGES[archive.name], expected)
+        with tempfile.TemporaryDirectory(prefix='sf-extracted-release-') as temporary:
+            destination = Path(temporary)
+            if sys.platform == 'darwin':
+                run('ditto', '-x', '-k', archive, destination)
+            else:
+                shutil.unpack_archive(archive, destination)
+            extracted = destination/'StereoFine'
+            executable = (extracted/'StereoFine.app/Contents/MacOS/StereoFine' if sys.platform == 'darwin'
+                          else extracted/('StereoFine.exe' if sys.platform == 'win32' else 'StereoFine'))
+            extracted_report = ROOT/'build/candidate-extracted-input-check.json'
+            subprocess.run([str(executable), '--check-inputs', str(extracted_report), str(args.fixtures.resolve())],
+                           cwd=extracted, check=True)
+            if json.loads(extracted_report.read_text('utf-8')) != checked:
+                raise RuntimeError('Extracted application differs from the pre-archive input checks')
+            command = [str(executable)]
+            if sys.platform.startswith('linux'):
+                command = ['xvfb-run', '-a', *command]
+            with (ROOT/'build/candidate-startup.log').open('wb') as log:
+                process = subprocess.Popen(command, cwd=extracted, stdout=log, stderr=log,
+                                           start_new_session=sys.platform.startswith('linux'))
+                try:
+                    deadline = time.monotonic()+6
+                    while time.monotonic() < deadline:
+                        if process.poll() is not None:
+                            raise RuntimeError('Extracted GUI exited during startup; see candidate-startup.log')
+                        time.sleep(.2)
+                    verified.update(extracted_input_checks=True, gui_startup_survived_seconds=6)
+                finally:
+                    if process.poll() is None:
+                        if sys.platform.startswith('linux'):
+                            import signal
+                            os.killpg(process.pid, signal.SIGTERM)
+                        else:
+                            process.terminate()
+                    try:
+                        process.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+                        process.wait(timeout=5)
+        (ROOT/'build/candidate-archive-check.json').write_text(json.dumps(verified, indent=2)+'\n', 'utf-8')
     print(f'{build_kind.capitalize()} artifact:', archive)
 
 

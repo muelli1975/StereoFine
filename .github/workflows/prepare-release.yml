@@ -2,6 +2,18 @@ name: Prepare StereoFine 1.1 candidates (no publication)
 
 on:
   workflow_dispatch:
+  push:
+    branches: [release/1.1]
+    paths:
+      - '.github/workflows/prepare-release.yml'
+      - '.github/workflows/validate-development.yml'
+      - 'stereofine/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'native/**'
+      - 'requirements*.txt'
+      - 'StereoFine*'
+      - 'version_info.txt'
 
 permissions:
   contents: read
@@ -17,15 +29,22 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
       - uses: actions/download-artifact@v4
         with:
           pattern: StereoFine-1.1-candidate-*
           path: release
           merge-multiple: true
       - name: Verify complete candidate set and write checksums
-        run: python scripts/release_checksums.py release
+        run: |
+          python scripts/release_checksums.py release
+          python scripts/verify_release_packages.py release > release/ARCHIVE_CHECKS.jsonl
       - uses: actions/upload-artifact@v4
         with:
           name: StereoFine-1.1-candidate-checksums
-          path: release/SHA256SUMS.txt
+          path: |
+            release/SHA256SUMS.txt
+            release/ARCHIVE_CHECKS.jsonl
           if-no-files-found: error

@@ -1,6 +1,6 @@
 # Integrated input formats and quality components for 1.1
 
-Unreleased development source, not the published RC3 packages or stable 1.0.
+StereoFine 1.1 source; historical development runs below are identified separately.
 
 ## Processing admitted to production
 

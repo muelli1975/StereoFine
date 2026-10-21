@@ -1,8 +1,8 @@
-# StereoFine 1.1 — release notes draft
+# StereoFine 1.1
 
-Unreleased. This document describes the current source changes; final platform
-archives and their checksums must be verified before publication. Existing
-1.0 and RC3 downloads do not contain all changes described here.
+StereoFine 1.1 improves alignment and measurement reliability and adds supported
+SDR HEIC/HEIF and additional raster input formats. Existing 1.0 and RC3 downloads
+remain available separately.
 
 StereoFine 1.1 improves automatic alignment and the evidence behind near/far
 measurements while keeping the compact workflow and automatic 3-permille
@@ -30,7 +30,7 @@ measurements. Every save produces both an SBS JPEG and an anaglyph JPEG.
 See [measurement evidence and limitations](docs/OBSERVED_RANGE_1.1.md) and
 [input-format scope](docs/IMAGE_FORMATS_1.1.md).
 
-## Planned downloads
+## Downloads
 
 | Platform | Filename |
 | --- | --- |
@@ -39,6 +39,11 @@ See [measurement evidence and limitations](docs/OBSERVED_RANGE_1.1.md) and
 | macOS Apple Silicon | `StereoFine_1.1_macOS_AppleSilicon.zip` |
 | macOS Intel | `StereoFine_1.1_macOS_Intel.zip` |
 
-The candidate workflow prepares these archives without publishing a release.
-Add verified SHA-256 values and actual platform validation results here before
-publishing; do not reuse checksums or download links from RC3.
+All archives include the exact corresponding source under `Source/`. Extract
+the complete archive before starting the application. SHA-256 values are supplied
+in `SHA256SUMS.txt` alongside the downloads.
+
+The release build repeats application and synthetic research regressions on
+Windows, Linux and macOS, German/English GUI smoke on Linux, source/asset byte
+verification and actual packaged input/session/export checks on all four targets.
+Final build evidence and checksums accompany the release.

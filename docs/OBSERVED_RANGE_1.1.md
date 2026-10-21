@@ -1,7 +1,9 @@
 # Observed-range recovery for StereoFine 1.1
 
-Date: 21 October 2026. Implemented locally; application version remains `1.1-dev`.
-Cross-platform packages for this change have not yet been built or verified.
+Date: 21 October 2026. Implemented in StereoFine 1.1.
+The preceding development source passed all seven platform jobs in
+[run 39591469702](https://github.com/muelli1975/StereoFine/actions/runs/39591469702).
+Final 1.1 archives are verified separately by the release preparation workflow.
 
 ## Result and limits
 
@@ -95,12 +97,12 @@ Python sources, import of every runtime module, original asset hashes and
 byte-identical default/English READMEs. The local environment is Python 3.12.14,
 OpenCV 4.13.0, NumPy 2.4.6 and Pillow 12.2.0. Candidate filename, metadata guard
 and checksum tests are included in those application tests. The final-candidate
-command correctly rejects the current development metadata before building.
+command requires consistent final application and Windows version metadata.
 
-The local host has no Xvfb/display for a fresh GUI smoke run. The prepared CI
-workflow still needs to exercise the exact new commit on its pinned Python
-3.12.10 platforms, including GUI smoke and the actual frozen packages. No new
-application archive or published release is claimed by these source checks.
+The platform run on Python 3.12.10 passed 195 application and 48 research tests
+on each test system, German/English GUI smoke on Linux, and actual frozen
+packages on Windows, Linux, macOS Apple Silicon and macOS Intel. Final archive
+verification is repeated after versioning; development checksums are not reused.
 
 ## Reproduction
 
