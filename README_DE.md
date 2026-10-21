@@ -87,9 +87,9 @@ Die Geometrieanalyse arbeitet mit maximal 3000 px Breite. Alle ausgewählten geo
 
 ## Deviation, Nahpunkt und Fernpunkt
 
-Nach der geometrischen Korrektur erfolgt eine separate halb-dichte horizontale Disparitätsanalyse mit maximal 1500 px Breite. Hauptwerte sind robuste P1/P99-Grenzen; zusätzliche robuste Bereiche dienen der Unsicherheitsbewertung.
+Nach der geometrischen Korrektur erfolgt eine separate halb-dichte horizontale Disparitätsanalyse mit maximal 1500 px Breite. Die Basis bilden robuste P1/P99-Grenzen mit zusätzlichen Unsicherheitsprüfungen. Bei dafür geeigneten unsicheren Fernpunktwerten werden beide Tiefenenden in Originalauflösung sowie bei 1500 und 1000 px Analysebreite bestätigt. Ein kleinerer beobachteter Bereich bleibt grau als unsicher markiert, weil die vollständige Szenentiefe damit nicht bewiesen ist. Siehe [Annahmeregel und Validierung](docs/OBSERVED_RANGE_1.1.md) (Englisch).
 
-Die Breitenbegrenzungen gelten pro Auge. Zusätzliche Punktprüfungen vergleichen lokale Helligkeitsmuster von 17×17 Pixeln im Analysebild; die bestehende Nachprüfung zunächst unbestätigter Nahpunkte verwendet 41×41 Pixel in Originalauflösung. Das sind Messumgebungen, keine unabhängig verformten Bildkacheln oder Ausgabeausschnitte. Die [Erklärung der Messfenster](docs/MEASUREMENT_WINDOWS_1.1.md) trennt die vorhandenen Prüfungen vom aktuellen Forschungsversuch für beide Tiefenenden.
+Die Breitenbegrenzungen gelten pro Auge. Zusätzliche Punktprüfungen vergleichen lokale Helligkeitsmuster von 17×17 Pixeln im Analysebild; die Nahpunkt-Nachprüfung und die bedingte Bestätigung beider Tiefenenden verwenden 41×41 Pixel in Originalauflösung. Das sind Messumgebungen, keine unabhängig verformten Bildkacheln oder Ausgabeausschnitte. Die [Erklärung der Messfenster](docs/MEASUREMENT_WINDOWS_1.1.md) erklärt diese Prüfungen und grenzt den Forschungsversuch mit größeren Messfenstern ab.
 
 Die Ampel ist eine praktische Orientierung:
 

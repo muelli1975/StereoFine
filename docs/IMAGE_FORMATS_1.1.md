@@ -7,9 +7,11 @@ Unreleased development source, not the published RC3 packages or stable 1.0.
 The robust complete-chain model selection, photometrically checked inlier
 recovery and bounded cubic vertical correction from RC1/RC3 remain active.
 Renderer-consistent quadratic scoring (`sf-align-5`) and native-confirmed
-near-point recovery (`sf-disparity-3`) are active, as documented in
+near-point recovery and conditional observed-range confirmation (`sf-disparity-5`)
+are active, as documented in
 [applied scoring](APPLIED_MODEL_SCORING_1.1.md) and
-[near-point recovery](NATIVE_NEAR_RECOVERY_1.1.md).
+[near-point recovery](NATIVE_NEAR_RECOVERY_1.1.md) and
+[observed-range validation](OBSERVED_RANGE_1.1.md).
 
 The current format integration does not change their coefficients, thresholds,
 guards, horizontal disparity, framing controls or resampling. Native LK alignment
@@ -86,7 +88,7 @@ native libraries, sources and notices. The workflow has only `contents: read`
 and no release/tag publication step. Builds identify as `1.1-dev`, with commit
 and platform in the artifact name; published RC3 and stable 1.0 are untouched.
 
-Final code commit `e00b168fc54d65750bcf7a7210326cc181cdbefb` passed all seven jobs in [run 39489282334](https://github.com/muelli1975/StereoFine/actions/runs/39489282334): 178 application and 42 research tests on each of Windows, Linux and macOS, DE/EN GUI smoke, and actual frozen packages on Windows, Linux, macOS ARM and macOS Intel. The package checks include all four checksum-pinned public HEIF fixtures. A locally built Linux ZIP was additionally extracted into a fresh temporary directory and its frozen application/reader passed all six input/session/export checks. [Structured evidence](IMAGE_FORMATS_1.1_RESULTS.json). Automated
+The earlier input-format commit `e00b168fc54d65750bcf7a7210326cc181cdbefb` passed all seven jobs in [run 39489282334](https://github.com/muelli1975/StereoFine/actions/runs/39489282334): 178 application and 42 research tests on each of Windows, Linux and macOS, DE/EN GUI smoke, and actual frozen packages on Windows, Linux, macOS ARM and macOS Intel. The package checks include all four checksum-pinned public HEIF fixtures. A locally built Linux ZIP was additionally extracted into a fresh temporary directory and its frozen application/reader passed all six input/session/export checks. [Structured evidence](IMAGE_FORMATS_1.1_RESULTS.json). Those platform results precede the current observed-range changes and do not validate the new commit. See [current local checks and remaining platform gates](OBSERVED_RANGE_1.1.md). Automated
 package checks do not replace desktop operation with the user's original images.
 
 Reproduction:

@@ -1,0 +1,1096 @@
+{
+  "protocol": "sf-disparity-5-production-validation",
+  "cases": 60,
+  "original_pairs": 30,
+  "already_confirmed_unchanged": 24,
+  "recovery_accepted": 15,
+  "remaining_uncertain": 23,
+  "baseline_reproduced": true,
+  "dense_arrays_unchanged": true,
+  "input_files_unchanged": true,
+  "scope": "Frozen geometric corrections; original photographs read only; no calibrated full-scene ground truth",
+  "results": [
+    {
+      "name": "ixus_bild008_AKAZE",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 17.791750545210533,
+      "total_permille": 17.791750545210533,
+      "baseline_near_permille": 13.166750545210535,
+      "near_permille": 13.166750545210535,
+      "baseline_far_permille": -4.625,
+      "far_permille": -4.625,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "ixus_bild008_SIFT",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 17.704123646857795,
+      "total_permille": 17.704123646857795,
+      "baseline_near_permille": 13.03745713913685,
+      "near_permille": 13.03745713913685,
+      "baseline_far_permille": -4.666666507720947,
+      "far_permille": -4.666666507720947,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "ixus_bild015_AKAZE",
+      "recovery_accepted": true,
+      "reason": "native_endpoints_supported_at_both_scales",
+      "baseline_total_permille": 11.427700055621766,
+      "total_permille": 12.440468872826067,
+      "baseline_near_permille": 5.3027000556217665,
+      "near_permille": 5.3027000556217665,
+      "baseline_far_permille": -6.125,
+      "far_permille": -7.137768817204301,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "ixus_bild015_SIFT",
+      "recovery_accepted": true,
+      "reason": "native_endpoints_supported_at_both_scales",
+      "baseline_total_permille": 11.272076152708367,
+      "total_permille": 12.119893721955743,
+      "baseline_near_permille": 4.98040964498742,
+      "near_permille": 4.98040964498742,
+      "baseline_far_permille": -6.291666507720947,
+      "far_permille": -7.139484076968323,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "ixus_bild027_AKAZE",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 13.876019823781581,
+      "total_permille": 13.876019823781581,
+      "baseline_near_permille": 9.209353316060634,
+      "near_permille": 9.209353316060634,
+      "baseline_far_permille": -4.666666507720947,
+      "far_permille": -4.666666507720947,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "ixus_bild027_SIFT",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 14.359172353347384,
+      "total_permille": 14.359172353347384,
+      "baseline_near_permille": 9.77583933790549,
+      "near_permille": 9.77583933790549,
+      "baseline_far_permille": -4.5833330154418945,
+      "far_permille": -4.5833330154418945,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "ixus_bild050_AKAZE",
+      "recovery_accepted": true,
+      "reason": "native_endpoints_supported_at_both_scales",
+      "baseline_total_permille": 15.55511673506796,
+      "total_permille": 16.734952333121978,
+      "baseline_near_permille": 1.5551167350679596,
+      "near_permille": 1.5551167350679596,
+      "baseline_far_permille": -14.0,
+      "far_permille": -15.179835598054018,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "ixus_bild050_SIFT",
+      "recovery_accepted": true,
+      "reason": "native_endpoints_supported_at_both_scales",
+      "baseline_total_permille": 15.14376519239681,
+      "total_permille": 16.441132730961534,
+      "baseline_near_permille": 1.2687651923968106,
+      "near_permille": 1.2687651923968106,
+      "baseline_far_permille": -13.875,
+      "far_permille": -15.172367538564723,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild001_AKAZE",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 16.952403881850167,
+      "total_permille": 16.952403881850167,
+      "baseline_near_permille": 8.160737850966377,
+      "near_permille": 8.160737850966377,
+      "baseline_far_permille": -8.791666030883789,
+      "far_permille": -8.791666030883789,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild001_SIFT",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 16.90527325503095,
+      "total_permille": 16.90527325503095,
+      "baseline_near_permille": 8.113607224147158,
+      "near_permille": 8.113607224147158,
+      "baseline_far_permille": -8.791666030883789,
+      "far_permille": -8.791666030883789,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild004_AKAZE",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 28.80770404432142,
+      "total_permille": 28.80770404432142,
+      "baseline_near_permille": 6.39103801343763,
+      "near_permille": 6.39103801343763,
+      "baseline_far_permille": -22.41666603088379,
+      "far_permille": -22.41666603088379,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild004_SIFT",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 21.33333331346512,
+      "total_permille": 21.33333331346512,
+      "baseline_near_permille": 0.5833333134651184,
+      "near_permille": 0.5833333134651184,
+      "baseline_far_permille": -20.75,
+      "far_permille": -20.75,
+      "uncertain_reasons": [
+        "near_edge_unconfirmed"
+      ],
+      "baseline_uncertain_reasons": [
+        "near_edge_unconfirmed"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild008_AKAZE",
+      "recovery_accepted": false,
+      "reason": "primary_endpoints_unconfirmed",
+      "baseline_total_permille": 24.294171366913304,
+      "total_permille": 24.294171366913304,
+      "baseline_near_permille": 17.6275043823552,
+      "near_permille": 17.6275043823552,
+      "baseline_far_permille": -6.6666669845581055,
+      "far_permille": -6.6666669845581055,
+      "uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild008_SIFT",
+      "recovery_accepted": true,
+      "reason": "native_endpoints_supported_at_both_scales",
+      "baseline_total_permille": 24.31288468450091,
+      "total_permille": 25.305558359283467,
+      "baseline_near_permille": 17.646217699942806,
+      "near_permille": 17.646217699942806,
+      "baseline_far_permille": -6.6666669845581055,
+      "far_permille": -7.659340659340659,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild012_AKAZE",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 17.92940427390299,
+      "total_permille": 17.92940427390299,
+      "baseline_near_permille": 11.262737289344882,
+      "near_permille": 11.262737289344882,
+      "baseline_far_permille": -6.6666669845581055,
+      "far_permille": -6.6666669845581055,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild012_SIFT",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 17.05122407089106,
+      "total_permille": 17.05122407089106,
+      "baseline_near_permille": 10.509557563170114,
+      "near_permille": 10.509557563170114,
+      "baseline_far_permille": -6.541666507720947,
+      "far_permille": -6.541666507720947,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild023_AKAZE",
+      "recovery_accepted": false,
+      "reason": "primary_endpoints_unconfirmed",
+      "baseline_total_permille": 18.30399912505731,
+      "total_permille": 18.30399912505731,
+      "baseline_near_permille": 13.67899912505731,
+      "near_permille": 13.67899912505731,
+      "baseline_far_permille": -4.625,
+      "far_permille": -4.625,
+      "uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild023_SIFT",
+      "recovery_accepted": false,
+      "reason": "primary_endpoints_unconfirmed",
+      "baseline_total_permille": 17.291666507720947,
+      "total_permille": 17.291666507720947,
+      "baseline_near_permille": 12.625,
+      "near_permille": 12.625,
+      "baseline_far_permille": -4.666666507720947,
+      "far_permille": -4.666666507720947,
+      "uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild029_AKAZE",
+      "recovery_accepted": false,
+      "reason": "control_endpoints_unconfirmed",
+      "baseline_total_permille": 24.959108166296595,
+      "total_permille": 24.959108166296595,
+      "baseline_near_permille": 17.709108166296595,
+      "near_permille": 17.709108166296595,
+      "baseline_far_permille": -7.25,
+      "far_permille": -7.25,
+      "uncertain_reasons": [
+        "far_edge_unconfirmed"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_unconfirmed"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild029_SIFT",
+      "recovery_accepted": false,
+      "reason": "primary_endpoints_unconfirmed",
+      "baseline_total_permille": 23.249999523162842,
+      "total_permille": 23.249999523162842,
+      "baseline_near_permille": 16.04166603088379,
+      "near_permille": 16.04166603088379,
+      "baseline_far_permille": -7.208333492279053,
+      "far_permille": -7.208333492279053,
+      "uncertain_reasons": [
+        "far_edge_unconfirmed"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_unconfirmed"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild033_AKAZE",
+      "recovery_accepted": false,
+      "reason": "primary_endpoints_unconfirmed",
+      "baseline_total_permille": 25.387905776826788,
+      "total_permille": 25.387905776826788,
+      "baseline_near_permille": -2.3620942231732123,
+      "near_permille": -2.3620942231732123,
+      "baseline_far_permille": -27.75,
+      "far_permille": -27.75,
+      "uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild033_SIFT",
+      "recovery_accepted": true,
+      "reason": "native_endpoints_supported_at_both_scales",
+      "baseline_total_permille": 25.56114370911445,
+      "total_permille": 27.0345944007652,
+      "baseline_near_permille": -4.272190260001761,
+      "near_permille": -4.272190260001761,
+      "baseline_far_permille": -29.83333396911621,
+      "far_permille": -31.30678466076696,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild041_AKAZE",
+      "recovery_accepted": false,
+      "reason": "primary_endpoints_unconfirmed",
+      "baseline_total_permille": 10.666666507720947,
+      "total_permille": 10.666666507720947,
+      "baseline_near_permille": 4.125,
+      "near_permille": 4.125,
+      "baseline_far_permille": -6.541666507720947,
+      "far_permille": -6.541666507720947,
+      "uncertain_reasons": [
+        "far_edge_unconfirmed"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_unconfirmed"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild041_SIFT",
+      "recovery_accepted": false,
+      "reason": "primary_endpoints_unconfirmed",
+      "baseline_total_permille": 11.534405598933105,
+      "total_permille": 11.534405598933105,
+      "baseline_near_permille": 5.076072583491212,
+      "near_permille": 5.076072583491212,
+      "baseline_far_permille": -6.4583330154418945,
+      "far_permille": -6.4583330154418945,
+      "uncertain_reasons": [
+        "far_edge_unconfirmed"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_unconfirmed"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild043_AKAZE",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 15.648482477748011,
+      "total_permille": 15.648482477748011,
+      "baseline_near_permille": 7.731815970027064,
+      "near_permille": 7.731815970027064,
+      "baseline_far_permille": -7.916666507720947,
+      "far_permille": -7.916666507720947,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild043_SIFT",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 15.75143105953687,
+      "total_permille": 15.75143105953687,
+      "baseline_near_permille": 7.876431059536871,
+      "near_permille": 7.876431059536871,
+      "baseline_far_permille": -7.875,
+      "far_permille": -7.875,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild045_AKAZE",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 17.958333492279053,
+      "total_permille": 17.958333492279053,
+      "baseline_near_permille": 10.75,
+      "near_permille": 10.75,
+      "baseline_far_permille": -7.208333492279053,
+      "far_permille": -7.208333492279053,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild045_SIFT",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 19.58869787313967,
+      "total_permille": 19.58869787313967,
+      "baseline_near_permille": 12.380364380860616,
+      "near_permille": 12.380364380860616,
+      "baseline_far_permille": -7.208333492279053,
+      "far_permille": -7.208333492279053,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s110_bild005_AKAZE",
+      "recovery_accepted": false,
+      "reason": "primary_endpoints_unconfirmed",
+      "baseline_total_permille": 31.465925174271042,
+      "total_permille": 31.465925174271042,
+      "baseline_near_permille": 38.63259168199199,
+      "near_permille": 38.63259168199199,
+      "baseline_far_permille": 7.166666507720947,
+      "far_permille": 7.166666507720947,
+      "uncertain_reasons": [
+        "far_edge_unconfirmed"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_unconfirmed"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s110_bild005_SIFT",
+      "recovery_accepted": false,
+      "reason": "control_endpoints_unconfirmed",
+      "baseline_total_permille": 31.343489443510364,
+      "total_permille": 31.343489443510364,
+      "baseline_near_permille": 38.343489443510364,
+      "near_permille": 38.343489443510364,
+      "baseline_far_permille": 7.0,
+      "far_permille": 7.0,
+      "uncertain_reasons": [
+        "far_edge_unconfirmed"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_unconfirmed"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s110_bild023_AKAZE",
+      "recovery_accepted": true,
+      "reason": "native_endpoints_supported_at_both_scales",
+      "baseline_total_permille": 31.01180899601492,
+      "total_permille": 31.991342003956813,
+      "baseline_near_permille": 36.34514248829397,
+      "near_permille": 36.34514248829397,
+      "baseline_far_permille": 5.333333492279053,
+      "far_permille": 4.353800484337161,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s110_bild023_SIFT",
+      "recovery_accepted": false,
+      "reason": "primary_endpoints_unconfirmed",
+      "baseline_total_permille": 31.710078063639877,
+      "total_permille": 31.710078063639877,
+      "baseline_near_permille": 37.04341155591893,
+      "near_permille": 37.04341155591893,
+      "baseline_far_permille": 5.333333492279053,
+      "far_permille": 5.333333492279053,
+      "uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s110_bild026_AKAZE",
+      "recovery_accepted": true,
+      "reason": "native_endpoints_supported_at_both_scales",
+      "baseline_total_permille": 26.161418977014378,
+      "total_permille": 27.111498973892548,
+      "baseline_near_permille": 34.03641897701438,
+      "near_permille": 34.03641897701438,
+      "baseline_far_permille": 7.875,
+      "far_permille": 6.92492000312183,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s110_bild026_SIFT",
+      "recovery_accepted": true,
+      "reason": "native_endpoints_supported_at_both_scales",
+      "baseline_total_permille": 27.11924873262992,
+      "total_permille": 27.992755090775024,
+      "baseline_near_permille": 34.452581748071815,
+      "near_permille": 34.452581748071815,
+      "baseline_far_permille": 7.3333330154418945,
+      "far_permille": 6.459826657296791,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s110_bild087_AKAZE",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 28.759345161100967,
+      "total_permille": 28.759345161100967,
+      "baseline_near_permille": 35.00934516110097,
+      "near_permille": 35.00934516110097,
+      "baseline_far_permille": 6.25,
+      "far_permille": 6.25,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s110_bild087_SIFT",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 28.6746186412649,
+      "total_permille": 28.6746186412649,
+      "baseline_near_permille": 34.7996186412649,
+      "near_permille": 34.7996186412649,
+      "baseline_far_permille": 6.125,
+      "far_permille": 6.125,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s110_bild089_AKAZE",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 27.520877625406868,
+      "total_permille": 27.520877625406868,
+      "baseline_near_permille": 36.22921159452308,
+      "near_permille": 36.22921159452308,
+      "baseline_far_permille": 8.708333969116211,
+      "far_permille": 8.708333969116211,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s110_bild089_SIFT",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 26.756427868518408,
+      "total_permille": 26.756427868518408,
+      "baseline_near_permille": 35.46476183763462,
+      "near_permille": 35.46476183763462,
+      "baseline_far_permille": 8.708333969116211,
+      "far_permille": 8.708333969116211,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s110_bild090_AKAZE",
+      "recovery_accepted": false,
+      "reason": "control_endpoints_unconfirmed",
+      "baseline_total_permille": 28.140865214348572,
+      "total_permille": 28.140865214348572,
+      "baseline_near_permille": 35.05753219890668,
+      "near_permille": 35.05753219890668,
+      "baseline_far_permille": 6.9166669845581055,
+      "far_permille": 6.9166669845581055,
+      "uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s110_bild090_SIFT",
+      "recovery_accepted": false,
+      "reason": "control_endpoints_unconfirmed",
+      "baseline_total_permille": 27.647166740780527,
+      "total_permille": 27.647166740780527,
+      "baseline_near_permille": 34.813833248501474,
+      "near_permille": 34.813833248501474,
+      "baseline_far_permille": 7.166666507720947,
+      "far_permille": 7.166666507720947,
+      "uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s110_bild092_AKAZE",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 12.999643579404854,
+      "total_permille": 12.999643579404854,
+      "baseline_near_permille": 22.374643579404854,
+      "near_permille": 22.374643579404854,
+      "baseline_far_permille": 9.375,
+      "far_permille": 9.375,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s110_bild092_SIFT",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 12.889068698420001,
+      "total_permille": 12.889068698420001,
+      "baseline_near_permille": 22.26406869842,
+      "near_permille": 22.26406869842,
+      "baseline_far_permille": 9.375,
+      "far_permille": 9.375,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s110_bild098_AKAZE",
+      "recovery_accepted": true,
+      "reason": "native_endpoints_supported_at_both_scales",
+      "baseline_total_permille": 67.45833587646484,
+      "total_permille": 30.42996640887431,
+      "baseline_near_permille": 34.208335876464844,
+      "near_permille": 37.361690492930244,
+      "baseline_far_permille": -33.25,
+      "far_permille": 6.931724084055934,
+      "uncertain_reasons": [
+        "range_completeness_unconfirmed"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_unconfirmed"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s110_bild098_SIFT",
+      "recovery_accepted": true,
+      "reason": "native_endpoints_supported_at_both_scales",
+      "baseline_total_permille": 73.48445267103236,
+      "total_permille": 29.655221201514536,
+      "baseline_near_permille": 36.8177885474972,
+      "near_permille": 36.8177885474972,
+      "baseline_far_permille": -36.666664123535156,
+      "far_permille": 7.162567345982666,
+      "uncertain_reasons": [
+        "range_completeness_unconfirmed"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_unconfirmed"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild010_AKAZE",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 25.882202704465442,
+      "total_permille": 25.882202704465442,
+      "baseline_near_permille": 39.29886968902355,
+      "near_permille": 39.29886968902355,
+      "baseline_far_permille": 13.416666984558105,
+      "far_permille": 13.416666984558105,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild010_SIFT",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 25.34073334241379,
+      "total_permille": 25.34073334241379,
+      "baseline_near_permille": 38.7574003269719,
+      "near_permille": 38.7574003269719,
+      "baseline_far_permille": 13.416666984558105,
+      "far_permille": 13.416666984558105,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild012_AKAZE",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 20.583334922790527,
+      "total_permille": 20.583334922790527,
+      "baseline_near_permille": 34.16666793823242,
+      "near_permille": 34.16666793823242,
+      "baseline_far_permille": 13.583333015441895,
+      "far_permille": 13.583333015441895,
+      "uncertain_reasons": [
+        "near_edge_unconfirmed"
+      ],
+      "baseline_uncertain_reasons": [
+        "near_edge_unconfirmed"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild012_SIFT",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 21.375,
+      "total_permille": 21.375,
+      "baseline_near_permille": 34.75,
+      "near_permille": 34.75,
+      "baseline_far_permille": 13.375,
+      "far_permille": 13.375,
+      "uncertain_reasons": [
+        "near_edge_unconfirmed"
+      ],
+      "baseline_uncertain_reasons": [
+        "near_edge_unconfirmed"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild032_AKAZE",
+      "recovery_accepted": false,
+      "reason": "primary_endpoints_unconfirmed",
+      "baseline_total_permille": 19.401675247320632,
+      "total_permille": 19.401675247320632,
+      "baseline_near_permille": 33.02667524732063,
+      "near_permille": 33.02667524732063,
+      "baseline_far_permille": 13.625,
+      "far_permille": 13.625,
+      "uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild032_SIFT",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 19.043183491086126,
+      "total_permille": 19.043183491086126,
+      "baseline_near_permille": 32.543183491086126,
+      "near_permille": 32.543183491086126,
+      "baseline_far_permille": 13.5,
+      "far_permille": 13.5,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild038_AKAZE",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 12.666666030883789,
+      "total_permille": 12.666666030883789,
+      "baseline_near_permille": 24.625,
+      "near_permille": 24.625,
+      "baseline_far_permille": 11.958333969116211,
+      "far_permille": 11.958333969116211,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild038_SIFT",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 12.708333969116211,
+      "total_permille": 12.708333969116211,
+      "baseline_near_permille": 24.666667938232422,
+      "near_permille": 24.666667938232422,
+      "baseline_far_permille": 11.958333969116211,
+      "far_permille": 11.958333969116211,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild054_AKAZE",
+      "recovery_accepted": false,
+      "reason": "control_endpoints_unconfirmed",
+      "baseline_total_permille": 33.43798752198431,
+      "total_permille": 33.43798752198431,
+      "baseline_near_permille": 33.35465418616745,
+      "near_permille": 33.35465418616745,
+      "baseline_far_permille": -0.0833333358168602,
+      "far_permille": -0.0833333358168602,
+      "uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild054_SIFT",
+      "recovery_accepted": false,
+      "reason": "primary_endpoints_unconfirmed",
+      "baseline_total_permille": 32.291664123535156,
+      "total_permille": 32.291664123535156,
+      "baseline_near_permille": 32.291664123535156,
+      "near_permille": 32.291664123535156,
+      "baseline_far_permille": 0.0,
+      "far_permille": 0.0,
+      "uncertain_reasons": [
+        "far_edge_unconfirmed",
+        "far_edge_outside_estimate"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_unconfirmed",
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild057_AKAZE",
+      "recovery_accepted": false,
+      "reason": "control_endpoints_disagree",
+      "baseline_total_permille": 17.422311835808824,
+      "total_permille": 17.422311835808824,
+      "baseline_near_permille": 20.08897858194835,
+      "near_permille": 20.08897858194835,
+      "baseline_far_permille": 2.6666667461395264,
+      "far_permille": 2.6666667461395264,
+      "uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild057_SIFT",
+      "recovery_accepted": false,
+      "reason": "unchanged_confirmed_or_ineligible",
+      "baseline_total_permille": 17.856288340937024,
+      "total_permille": 17.856288340937024,
+      "baseline_near_permille": 20.439621594797497,
+      "near_permille": 20.439621594797497,
+      "baseline_far_permille": 2.5833332538604736,
+      "far_permille": 2.5833332538604736,
+      "uncertain_reasons": [
+        "far_edge_outside_estimate",
+        "near_edge_unconfirmed"
+      ],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate",
+        "near_edge_unconfirmed"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild059_AKAZE",
+      "recovery_accepted": true,
+      "reason": "native_endpoints_supported_at_both_scales",
+      "baseline_total_permille": 18.894289659051953,
+      "total_permille": 19.74384237748169,
+      "baseline_near_permille": 28.269289659051953,
+      "near_permille": 28.269289659051953,
+      "baseline_far_permille": 9.375,
+      "far_permille": 8.525447281570262,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild059_SIFT",
+      "recovery_accepted": true,
+      "reason": "native_endpoints_supported_at_both_scales",
+      "baseline_total_permille": 18.887687181636142,
+      "total_permille": 19.73723990006588,
+      "baseline_near_permille": 28.262687181636142,
+      "near_permille": 28.262687181636142,
+      "baseline_far_permille": 9.375,
+      "far_permille": 8.525447281570262,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild067_AKAZE",
+      "recovery_accepted": true,
+      "reason": "native_endpoints_supported_at_both_scales",
+      "baseline_total_permille": 17.45597638286111,
+      "total_permille": 18.588476165790695,
+      "baseline_near_permille": 29.45597638286111,
+      "near_permille": 29.45597638286111,
+      "baseline_far_permille": 12.0,
+      "far_permille": 10.867500217070416,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild067_SIFT",
+      "recovery_accepted": true,
+      "reason": "native_endpoints_supported_at_both_scales",
+      "baseline_total_permille": 17.17794151990913,
+      "total_permille": 18.31044130283871,
+      "baseline_near_permille": 29.17794151990913,
+      "near_permille": 29.17794151990913,
+      "baseline_far_permille": 12.0,
+      "far_permille": 10.867500217070416,
+      "uncertain_reasons": [],
+      "baseline_uncertain_reasons": [
+        "far_edge_outside_estimate"
+      ],
+      "baseline_reproduced": true,
+      "dense_arrays_unchanged": true,
+      "input_files_unchanged": true
+    }
+  ]
+}

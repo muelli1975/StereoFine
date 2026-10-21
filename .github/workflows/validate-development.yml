@@ -2,6 +2,11 @@ name: Validate StereoFine 1.1 development
 
 on:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      candidate:
+        type: boolean
+        default: false
   push:
     branches: [development/1.1-image-formats]
     paths:
@@ -51,7 +56,7 @@ jobs:
           PYTHONPATH=. STEREOFINE_TEST_LANGUAGE=en xvfb-run -a -s '-screen 0 1920x1080x24' python tests/gui_smoke_xvfb.py
 
   packages:
-    name: Development package (${{ matrix.os }})
+    name: Checked package (${{ matrix.os }})
     needs: validate
     timeout-minutes: 30
     strategy:
@@ -93,17 +98,29 @@ jobs:
       - name: Prepare checksum-pinned stereo, Spatial Photo and orientation fixtures
         run: python scripts/prepare_heif_fixtures.py build/heif-fixtures
       - name: Build both executables and test actual packaged imports
+        if: ${{ !inputs.candidate }}
         run: python scripts/build_development.py --fixtures build/heif-fixtures
+      - name: Build final candidate and test actual packaged imports
+        if: ${{ inputs.candidate }}
+        run: python scripts/build_package.py --candidate --fixtures build/heif-fixtures
       - name: Confirm no HEIF codec is linked into the main application
         shell: bash
         run: |
           python -c "from pathlib import Path; p=Path('dist'); files=[str(x) for x in p.rglob('*') if x.is_file() and ('pillow_heif' in x.name or '_pillow_heif' in x.name)]; assert not files, files; print('Main application has no HEIF codec')"
       - uses: actions/upload-artifact@v4
         with:
-          name: StereoFine-1.1-development-${{ matrix.os }}
+          name: StereoFine-1.1-${{ inputs.candidate && 'candidate' || 'development' }}-${{ matrix.os }}
           path: |
-            release/StereoFine_1.1-dev_*.zip
-            release/StereoFine_1.1-dev_*.zip.sha256
+            release/StereoFine_1.1*.zip
+            release/StereoFine_1.1*.tar.gz
+            release/StereoFine_1.1*.sha256
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StereoFine-input-check-${{ matrix.os }}
+          path: |
             build/development-input-check.json
+            build/candidate-input-check.json
           if-no-files-found: error
           retention-days: 30

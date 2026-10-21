@@ -1,6 +1,11 @@
 # Two-ended disparity evidence pilot
 
-Date: 21 October 2026. Research only; no new application package.
+Date: 21 October 2026. Historical research comparison; no application package from this pilot.
+
+The shared verifier now also supports conditional application recovery under a
+stricter admission rule. See [current integration and validation](OBSERVED_RANGE_1.1.md).
+The pilot counts and recommendations below describe the earlier experiment,
+not the current application behavior.
 
 ## Outcome
 

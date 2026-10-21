@@ -66,7 +66,7 @@ def framed_edges_permille(
 ) -> tuple[float | None, float | None]:
     """Return raw far/near disparity edges after a horizontal x framing shift."""
 
-    if low_edge_permille is None or high_edge_permille is None or not base_width_px:
+    if low_edge_permille is None or high_edge_permille is None or base_width_px is None or base_width_px <= 0:
         return None, None
     shift = 1000.0 * float(offset_x_px) / float(base_width_px)
     return float(low_edge_permille) - shift, float(high_edge_permille) - shift

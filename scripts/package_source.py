@@ -7,12 +7,12 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DIRECTORIES = {"stereofine", "assets", "tests", "docs", "licenses", "scripts", "native", ".github"}
+DIRECTORIES = {"stereofine", "assets", "tests", "experiments", "docs", "licenses", "scripts", "native", ".github"}
 FILES = {".gitignore", "AGENTS.md", "DESIGN_STANDARD_STEREOTOOLS.txt", "StereoFine.py", "StereoFine.spec",
          "version_info.txt", "build_windows.ps1", "requirements-lock.txt", "requirements-build.txt", "requirements-heif.txt",
          "README.md", "README_DE.md", "README_EN.md", "LICENSE.txt", "THIRD_PARTY_NOTICES.md",
          "BUILD_WINDOWS.md", "RELEASE_CHECKLIST.md", "CHANGELOG.md", "RELEASE_NOTES_1.1-rc1.md",
-         "RELEASE_NOTES_1.1-rc2.md", "RELEASE_NOTES_1.1-rc3.md"}
+         "RELEASE_NOTES_1.1-rc2.md", "RELEASE_NOTES_1.1-rc3.md", "RELEASE_NOTES_1.1.md"}
 
 
 def included(name: str) -> bool:

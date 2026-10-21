@@ -13,8 +13,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ReleaseHygieneTests(unittest.TestCase):
-    def test_public_version_identifies_unreleased_development(self):
-        self.assertEqual(APP_VERSION, "1.1-dev")
+    def test_public_version_agrees_with_windows_metadata(self):
+        self.assertIn(APP_VERSION, {'1.1-dev', '1.1'})
+        text = (ROOT/'version_info.txt').read_text(encoding='utf-8')
+        for field in ['FileVersion', 'ProductVersion']:
+            self.assertIn(f"StringStruct('{field}', '{APP_VERSION}')", text)
+        self.assertIn('flags=0x0,' if APP_VERSION == '1.1' else 'flags=0x2,', text)
 
     def test_release_files_exist(self):
         required = [

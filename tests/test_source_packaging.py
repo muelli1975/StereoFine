@@ -19,16 +19,20 @@ class SourcePackagingTests(unittest.TestCase):
             root = Path(temp)
             original = b"print('canonical source')\n# second line\n"
             (root / "StereoFine.py").write_bytes(original)
+            research = root/'experiments/tests/test_known_geometry.py'
+            research.parent.mkdir(parents=True)
+            research.write_bytes(b'# source workflow also runs research regressions\n')
             def git(*args):
                 return subprocess.check_output(["git", *args], cwd=root, stderr=subprocess.DEVNULL)
             git("init", "-q")
-            git("-c", "core.autocrlf=false", "add", "StereoFine.py")
+            git("-c", "core.autocrlf=false", "add", "StereoFine.py", "experiments")
             git("-c", "user.name=Packaging test", "-c", "user.email=test@example.invalid",
                 "commit", "-qm", "Source fixture")
             git("config", "core.autocrlf", "true")
             module.ROOT = root.resolve()
             commit, files = module.committed_sources()
             self.assertEqual(files["StereoFine.py"], original)
+            self.assertEqual(files['experiments/tests/test_known_geometry.py'], research.read_bytes())
             self.assertEqual(commit, git("rev-parse", "HEAD").decode().strip())
 
 

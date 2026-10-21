@@ -5,6 +5,7 @@ from typing import Any
 
 from .config import AUTO_NEAR_WINDOW_BACK_PERMILLE, normalize_aspect_code, normalize_orientation_code
 from .sidecar import SidecarDocument
+from .framing import framed_edges_permille
 
 
 @dataclass
@@ -113,6 +114,8 @@ class DisparityState:
     low_edge_permille: float | None = None
     high_edge_permille: float | None = None
     total_permille: float | None = None
+    method: str | None = None
+    measurement_scope: str | None = None
     uncertain: bool = False
     uncertain_reasons: list[str] = field(default_factory=list)
     warning_reasons: list[str] = field(default_factory=list)
@@ -265,12 +268,10 @@ class PairState:
         readable stereoscopic wording.
         """
 
-        low = self.disparity.low_edge_permille
-        high = self.disparity.high_edge_permille
-        shift = self.effective_horizontal_shift_permille()
-        if low is None or high is None or shift is None:
-            return None, None
-        return float(low) - shift, float(high) - shift
+        return framed_edges_permille(low_edge_permille=self.disparity.low_edge_permille,
+            high_edge_permille=self.disparity.high_edge_permille,
+            offset_x_px=self.effective_offset_x_px,
+            base_width_px=self.framing.auto_near_base_width_px)
 
     def current_scene_positions_permille(self) -> tuple[float | None, float | None]:
         """Return the established StereoFine status values (Nahpunkt, Fernpunkt).
@@ -355,6 +356,8 @@ class PairState:
             "low_edge_permille": self.disparity.low_edge_permille,
             "high_edge_permille": self.disparity.high_edge_permille,
             "total_permille": self.disparity.total_permille,
+            "method": self.disparity.method,
+            "measurement_scope": self.disparity.measurement_scope,
             "uncertain": bool(self.disparity.uncertain),
             "uncertain_reasons": list(self.disparity.uncertain_reasons),
             "warning_reasons": list(self.disparity.warning_reasons),

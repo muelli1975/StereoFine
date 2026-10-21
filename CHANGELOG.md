@@ -2,6 +2,12 @@
 
 ## 1.1 – Unreleased
 
+- Admit conditional native endpoint evidence at two analysis widths for uncertain far estimates; retain gray uncertainty when a smaller observed span cannot establish scene completeness.
+- Share the endpoint verifier between application and research, preserve existing supported extremes and confirmed results, and advance disparity cache version to sf-disparity-5.
+- Preserve compact measurement method/scope in sidecars, reuse framing arithmetic and configuration thresholds, and remove an unused internal alias.
+- Prepare one checked development/final-candidate package builder and a read-only candidate workflow with four-platform checksums; final publication remains separate.
+- Include research regression sources in canonical source snapshots so the shipped validation workflow has its required files.
+
 - Make explicit single-image Start recalculate alignment and near framing, clear manual X/Y nudges and retain the selected crop/aspect/pan. Preserve saved fine adjustments during Save and batch processing.
 - Cover zoom/pan/nudge/restart in the real DE/EN GUI worker, native clean-control renders, session reuse and cancellation without committing a reset.
 

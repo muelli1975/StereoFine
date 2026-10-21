@@ -223,6 +223,8 @@ def _store_disparity_result(
         low_edge_permille=float(low) if low is not None else None,
         high_edge_permille=float(high) if high is not None else None,
         total_permille=float(total) if total is not None else None,
+        method=result.get('deviation_method'),
+        measurement_scope=(result.get('range_recovery') or {}).get('scope', 'robust_estimate'),
         uncertain=bool(uncertain_reasons) or str(result.get("status")) == "uncertain",
         uncertain_reasons=uncertain_reasons,
         warning_reasons=warning_reasons,

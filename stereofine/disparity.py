@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import numpy as np
 from PIL import Image
+from .config import DEVIATION_GREEN_MAX_PERMILLE, DEVIATION_ORANGE_MAX_PERMILLE
 
 from .alignment import _warp_pair_symmetric_simple
 from .geometry import center_crop_to_common_size, crop_pair_to_aspect_and_framing, crop_shifted_pair_to_overlap
@@ -83,7 +84,92 @@ def _largest_components_for_mask(mask: np.ndarray, values: np.ndarray, prefer_hi
     comps.sort(key=lambda c: (abs(float(c.get("robust_edge_permille", 0.0))), int(c.get("area_px", 0))), reverse=True)
     return comps[:8]
 
-def analyze_horizontal_disparity(
+def _classify_range(result: dict) -> None:
+    if result['uncertain_reasons']:
+        result.update(status='uncertain', traffic='gray')
+    elif result['deviation_permille'] <= DEVIATION_GREEN_MAX_PERMILLE:
+        result.update(status='ok', traffic='green')
+    elif result['deviation_permille'] <= DEVIATION_ORANGE_MAX_PERMILLE:
+        result.update(status='warning', traffic='orange')
+    else:
+        result.update(status='bad', traffic='red')
+
+
+def analyze_horizontal_disparity(left_rgb, right_rgb, max_width=2000) -> dict:
+    """Measure disparity, retaining uncertainty on an unverified wider tail.
+
+    Confirmed existing results bypass observed-range recovery. A smaller native-
+    confirmed observed span does not establish completeness of the scene.
+    """
+    result = _analyze_horizontal_disparity(left_rgb, right_rgb, max_width)
+    reasons = set(result.get('uncertain_reasons', []))
+    if not result.get('ready') or not reasons.intersection({'far_edge_unconfirmed', 'far_edge_outside_estimate'}):
+        return result
+    near = result['near_confirmation']
+    if not near['confirmed'] or near['unsupported_extreme'] or result['deviation_permille'] < .5:
+        return result
+    nh, nw = min(left_rgb.shape[0], right_rgb.shape[0]), min(left_rgb.shape[1], right_rgb.shape[1])
+    ah, aw = result['analysis_height'], result['analysis_width']
+    if min(nh/ah, nw/aw) < 1.5:
+        return result
+    from .range_evidence import measure_range_evidence
+    left, right = left_rgb[:nh, :nw], right_rgb[:nh, :nw]
+    first = measure_range_evidence(left, right, int(max_width), result)
+    audit = dict(accepted=False, reason='primary_endpoints_unconfirmed',
+                 original_low_edge_permille=result['low_edge_permille'],
+                 original_high_edge_permille=result['high_edge_permille'],
+                 original_deviation_permille=result['deviation_permille'])
+    result['range_recovery'] = audit
+    if not first['endpoints_confirmed'] or first['observed_span_permille'] < .5:
+        return result
+    control_width = max(80, round(aw*2/3))
+    control = _analyze_horizontal_disparity(left, right, control_width)
+    if not control.get('ready'):
+        audit['reason'] = 'control_dense_unavailable'
+        return result
+    second = measure_range_evidence(left, right, control_width, control)
+    if not second['endpoints_confirmed']:
+        audit['reason'] = 'control_endpoints_unconfirmed'
+        return result
+    differences = {end: abs(first['endpoints'][end]['edge_permille']-second['endpoints'][end]['edge_permille'])
+                   for end in ['far', 'near']}
+    audit['endpoint_differences_permille'] = differences
+    if max(differences.values()) > 1.5 or abs(first['observed_span_permille']-second['observed_span_permille']) > 1.5:
+        audit['reason'] = 'control_endpoints_disagree'
+        return result
+    margin = .5*1000/aw
+    native_far = min(e['endpoints']['far']['edge_permille'] for e in [first, second])
+    native_near = max(e['endpoints']['near']['edge_permille'] for e in [first, second])
+    old_far_support = result['far_confirmation']['maximum_supported_px']
+    if old_far_support is not None and native_far > -old_far_support*1000/aw + 1000/aw:
+        audit['reason'] = 'unresolved_original_far_support'
+        return result
+    low = native_far-margin
+    high = result['high_edge_permille']
+    # As in existing near confirmation, do not move a good baseline for a
+    # subpixel fluctuation. Newly supported nearer surfaces retain the reserve.
+    if native_near > high+margin:
+        high = native_near+margin
+    shrunk = low > result['low_edge_permille']+1e-9
+    result['low_edge_permille'], result['high_edge_permille'] = low, high
+    result['deviation_permille'] = high-low
+    result['deviation_method'] = 'two_scale_native_confirmed_observed_range'
+    result['uncertain_reasons'] = [r for r in result['uncertain_reasons']
+        if r not in {'far_edge_unconfirmed', 'far_edge_outside_estimate'}]
+    if shrunk:
+        result['uncertain_reasons'].append('range_completeness_unconfirmed')
+    # Keep source-location evidence, without duplicating every failed probe.
+    for evidence in [first, second]:
+        for endpoint in evidence['endpoints'].values():
+            endpoint.pop('native_audit', None)
+    audit.update(accepted=True, reason='native_endpoints_supported_at_both_scales',
+        scope='observed_range_completeness_unconfirmed' if shrunk else 'confirmed_range_extension',
+        measurement_margin_permille=margin, measurements=[first, second])
+    _classify_range(result)
+    return result
+
+
+def _analyze_horizontal_disparity(
     left_rgb: np.ndarray,
     right_rgb: np.ndarray,
     max_width: int = 2000,
@@ -226,12 +312,12 @@ def analyze_horizontal_disparity(
 
     # Robust percentiles remain the baseline. Small genuinely near surfaces
     # require separate physical evidence; a raw maximum remains unsafe.
-    low_05 = float(np.percentile(valid_values, 0.5))
-    high_995 = float(np.percentile(valid_values, 99.5))
-    low_1 = float(np.percentile(valid_values, 1))
-    high_99 = float(np.percentile(valid_values, 99))
-    low_2 = float(np.percentile(valid_values, 2))
-    high_98 = float(np.percentile(valid_values, 98))
+    low_05 = pct["0_5"]
+    high_995 = pct["99_5"]
+    low_1 = pct["1"]
+    high_99 = pct["99"]
+    low_2 = pct["2"]
+    high_98 = pct["98"]
 
     # 1/99 is the conservative default estimate.  0.5/99.5 is recorded as a
     # slightly more extreme cross-check; 0/100 remains diagnostic only.
@@ -304,18 +390,9 @@ def analyze_horizontal_disparity(
     if valid_ratio < 10.0:
         warning_reasons.append("low_valid_area_warning")
 
-    if uncertain_reasons:
-        traffic = "gray"
-        status = "uncertain"
-    elif deviation_permille <= 33.0:
-        traffic = "green"
-        status = "ok"
-    elif deviation_permille <= 40.0:
-        traffic = "orange"
-        status = "warning"
-    else:
-        traffic = "red"
-        status = "bad"
+    classification = dict(uncertain_reasons=uncertain_reasons, deviation_permille=deviation_permille)
+    _classify_range(classification)
+    traffic, status = classification['traffic'], classification['status']
 
     return {
         "ready": True,
@@ -359,10 +436,6 @@ def json_safe_disparity_summary(result: dict) -> dict:
     """Strip preview arrays from a disparity result before persistence/reporting."""
     return {k: v for k, v in result.items() if not str(k).startswith("_")}
 
-
-# Backward-compatible internal alias for the earlier disparity-analysis code path.
-def _json_safe_disparity_summary(result: dict) -> dict:
-    return json_safe_disparity_summary(result)
 
 def render_pair_for_disparity_analysis_from_arrays(
     left: np.ndarray | None,

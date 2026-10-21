@@ -1,0 +1,31 @@
+name: Prepare StereoFine 1.1 candidates (no publication)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checked-platforms:
+    uses: ./.github/workflows/validate-development.yml
+    with:
+      candidate: true
+
+  checksums:
+    needs: checked-platforms
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: StereoFine-1.1-candidate-*
+          path: release
+          merge-multiple: true
+      - name: Verify complete candidate set and write checksums
+        run: python scripts/release_checksums.py release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StereoFine-1.1-candidate-checksums
+          path: release/SHA256SUMS.txt
+          if-no-files-found: error

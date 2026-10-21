@@ -22,7 +22,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from experiments.range_evidence import measure_range_evidence, PROTOCOL
-from stereofine.disparity import analyze_horizontal_disparity, json_safe_disparity_summary, render_pair_for_disparity_analysis_from_arrays
+from stereofine.disparity import _analyze_horizontal_disparity as analyze_horizontal_disparity
+from stereofine.disparity import json_safe_disparity_summary, render_pair_for_disparity_analysis_from_arrays
 from stereofine.geometry import apply_orientation, center_crop_to_common_size
 from stereofine.inputs import master_to_uint8
 from stereofine.processing import process_source, ProcessingOptions, ProcessingDefaults

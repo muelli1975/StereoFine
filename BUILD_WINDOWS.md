@@ -2,7 +2,7 @@
 
 StereoFine is published as a **portable Windows x64 onedir application**. The public executable must be built on Windows; PyInstaller is not used to cross-compile it from Linux.
 
-The read-only development workflow builds commit-labelled artifacts with `scripts/build_development.py` and checks the actual frozen application and separate HEIF reader. It never publishes a release or changes existing RC3/1.0 files. The PowerShell route below is an alternative clean Windows build.
+The read-only development workflow builds commit-labelled artifacts with `scripts/build_development.py` and checks the actual frozen application and separate HEIF reader. It never publishes a release or changes existing RC3/1.0 files. For final candidates, `prepare-release.yml` reuses the same checked builder with `--candidate`; it requires final 1.1 version metadata and never publishes. See `RELEASE_CHECKLIST.md`. The PowerShell route below is an alternative clean Windows build.
 
 ## Required build environment
 

@@ -1,50 +1,46 @@
-# StereoFine 1.1-rc3 – release checklist
+# StereoFine 1.1 release checklist
 
-## Automated source checks
+The source currently identifies itself as `1.1-dev`. A completed source test is
+not evidence that a Windows/macOS/Linux package has passed. Record results for
+the exact final source commit and archive hashes.
 
-- [ ] `APP_VERSION` is exactly `1.1-rc3`.
-- [ ] `python -m unittest discover -s tests -p "test_*.py"` passes.
-- [ ] `compileall` passes.
-- [ ] all `stereofine` modules import successfully.
-- [ ] no runtime `TODO`, `FIXME`, debug prints or development version labels remain.
-- [ ] new `.sfin` sidecars contain no obsolete window-position fields or localized GUI prose.
+## Source validation
 
-## Validated StereoFine baselines
+- [ ] Run application regressions and research safety/synthetic geometry tests.
+- [ ] Run `compileall`, import all runtime modules, and verify `assets/ASSET_HASHES.txt`.
+- [ ] Confirm README.md and README_EN.md agree; update README_DE.md consistently.
+- [ ] Confirm no runtime TODO/FIXME, obsolete cache assumptions or duplicated measurement implementations remain.
+- [ ] Reproduce the original-image comparison in `docs/OBSERVED_RANGE_1.1.md`; retain uncertainty where completeness is unproven.
+- [ ] Recheck the nominal 20-permille reference: about 19.8 permille, simple Affine, unchanged render and session reload.
+- [ ] Verify migration from older disparity caches retains manual adjustments and favorites.
 
-- [ ] geometry analysis remains max. 3000 px.
-- [ ] disparity analysis remains max. 1500 px with robust P1/P99 as the primary range.
-- [ ] automatic near-point framing remains 3‰ behind the stereo window when the analysis is reliable.
-- [ ] Floating Window remains mask-only and does not affect deviation.
-- [ ] the nominal 20‰ SplatTricia reference remains about 19.8‰ and stays on the simple Affine model.
+## Preserved behavior
 
-## Windows build
+- [ ] Geometry/disparity primary widths remain 3000/1500 pixels per eye.
+- [ ] Additional 1000-pixel evidence is conditional; it does not replace the primary baseline for confirmed cases.
+- [ ] Near framing keeps its measurement reserve and additional 3-permille window allowance.
+- [ ] Floating Window masks and color adjustments do not affect disparity analysis.
+- [ ] Existing GUI keyboard, cancellation, batch progress, DE/EN layout and single completion-sound regressions pass.
+- [ ] Saving produces both SBS and anaglyph JPEGs; original assets and photographs remain byte-identical.
 
-- [ ] build was created with `build_windows.ps1` on Windows x64 / Python 3.12.10.
-- [ ] `StereoFine.exe` starts from the extracted portable folder.
-- [ ] icon is correct in Explorer/title bar/taskbar.
-- [ ] German and English GUI are readable without clipping.
-- [ ] the two subtle separators around the scroll area are visible.
-- [ ] one real pair or Full-SBS aligns and saves correctly.
-- [ ] the single primary button becomes `Abbrechen` / `Cancel` while work is running and returns to the correct start action after success, cancellation or error.
-- [ ] cancelling a source load does not leave source index/collection and visible preview out of sync.
-- [ ] start-button rest/hover/disabled states match the SplatTricia family styling.
-- [ ] activity spinner shows a closed base ring without a visible seam; the moving segment has even thickness and no endpoint bumps.
-- [ ] the complete `G` keyboard cycle stays synchronized with Off/White/Black and the grid-spacing menu; the spacing menu remains usable after the cycle returns to Off.
-- [ ] `L/R/T/B` + arrows change the Floating Window visibly and immediately; `S` changes only coupling; a 30‰ curtain remains fully visible inside the image while the pure-black `3% + 2 px` border stays outside it.
-- [ ] the current projective Vergence stage is shown as `Vergenz (Trapezkorrektur)` / `Vergence (trapezoid correction)` with the actual applied correction magnitude; legacy V/H values appear only for genuine legacy sidecars, and live/reloaded `.sfin` status remains consistent.
-- [ ] batch status advances through every source (`n/N` and filename) independently of whether a lightweight preview frame is available.
-- [ ] successful save, analysis-only batch and image-output batch each produce exactly one completion notification; no extra native Windows info-dialog tone is emitted.
-- [ ] `stereofine_analysis.txt` is the compact aligned quality table (Ampel, Deviation, Nahpunkt, Fernpunkt, Höhenfehler, Vergenz, Rotation, optional uncertainty note) with no technical match/inlier/model ballast.
-- [ ] F1 help is a clean, aligned two-column key/function table and fits without scrolling.
-- [ ] `ready.wav` works after success and not after cancel/error; Windows uses `winsound`, macOS `afplay`, Linux `paplay`/`pw-play`/`aplay` when available.
-- [ ] bundled ExifTool copies metadata without a warning.
-- [ ] `Source/` is present in the portable folder.
-- [ ] `LICENSE.txt`, third-party notices and runtime license files are present.
+## Final metadata and candidate build
 
-## GitHub release
+- [ ] After source validation, set APP_VERSION, Windows FileVersion and ProductVersion to `1.1`; clear Windows prerelease flags.
+- [ ] Commit the exact reviewed sources. Packaging rejects dirty source snapshots and inconsistent final metadata.
+- [ ] Run `prepare-release.yml` on that commit. It reuses source/platform validation and never creates tags or releases.
+- [ ] All three source-test platforms and all four package targets pass.
+- [ ] Actual packaged `--check-inputs` passes for raster/HEIF/Spatial Photo/orientation, metadata export, session reuse and rendering.
+- [ ] No HEIF codec is linked into the main executable; separate helper, sources, ExifTool and licenses are present.
+- [ ] Canonical `Source/` matches the exact commit, including Windows line-ending-independent bytes.
+- [ ] Extract each archive and check application startup, icon, DE/EN interface and one save on the corresponding system.
+- [ ] Candidate archive set matches `scripts/release_checksums.py`; its verified four-file SHA256SUMS.txt is available.
 
-- [ ] repository contains the exact 1.1-rc3 source.
-- [ ] tag/release is named `1.1-rc3` (or `v1.1-rc3` if that is the repository convention).
-- [ ] upload `StereoFine_1.1-rc3_Windows_x64.zip` from `release/`.
-- [ ] copy SHA-256 from `release/SHA256SUMS.txt` into the release notes.
-- [ ] use `RELEASE_NOTES_1.1-rc3.md` as the starting release text.
+## Publication
+
+- [ ] Replace draft status in `RELEASE_NOTES_1.1.md` with actual validation results and SHA-256 values.
+- [ ] Update English/default and German README download links to the actual 1.1 archives.
+- [ ] Verify release/tag naming against the repository's existing convention (`v1.1-rc3` for RC3).
+- [ ] Publish only the verified final commit and archives; preserve historical RC3 and 1.0 downloads.
+
+The archived `build-release.yml` remains disabled. `build_windows.ps1` is an
+alternative Windows build, not the four-platform final-candidate route.

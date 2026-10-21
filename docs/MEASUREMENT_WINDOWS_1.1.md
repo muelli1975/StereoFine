@@ -25,7 +25,7 @@ geometric model; local patch comparison itself does not deform the output.
 | Additional photometric checks during alignment refinement | Geometry-analysis grayscale pair | 17x17 | Check brightness patterns at candidate correspondences before model refinement |
 | SGBM disparity candidate generation | Corrected pair, up to 1500 px per eye | Configured block size 5 | Local matching cost combined by semi-global aggregation |
 | Additional near-point confirmation and far-end confidence audit | Raw-luma disparity-analysis pair | 17x17 | Global horizontal strip search, limited vertical tolerance, uniqueness, reciprocal match and nearby support |
-| Existing native near-point recovery | Corrected pair at original spatial resolution | 41x41 | Additional confirmation for initially unconfirmed near measurements |
+| Native near-point recovery and conditional two-ended range confirmation | Corrected pair at original spatial resolution | 41x41 | Additional native confirmation for initially unconfirmed measurements |
 
 The 17px local verifier permits up to two analysis pixels of vertical mismatch.
 The native verifier permits up to six original pixels. They reject low local
@@ -61,3 +61,11 @@ Missing local texture and reciprocal failures do not trigger this fallback.
 This larger-window fallback is **not enabled in regular processing**. Its
 evaluation is separate from the production 3000/1500 width choice and from the
 output's affine, projective and vertical-polish geometry.
+
+## Current application integration
+
+The fixed 41x41 verifier also checks both observed endpoints during conditional
+range recovery. This runs only for eligible uncertain far estimates and requires
+agreement at the primary width and a second width (normally 1500/1000 pixels).
+A smaller observed range retains an uncertainty flag. The larger-footprint pilot
+is still research-only. See [the admission rule and validation](OBSERVED_RANGE_1.1.md).
