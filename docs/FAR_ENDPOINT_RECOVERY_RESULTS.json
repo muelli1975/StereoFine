@@ -475,7 +475,7 @@
         "controls_stable": true
       }
     ],
-    "native_windows_macos": "pending uniform two-line CI checks"
+    "native_windows_macos": "Passed: explicit two-line hint, fixed 32-pixel logical height, both languages, stable action controls."
   },
   "results": [
     {
@@ -2242,5 +2242,548 @@
       "alignment_identical": true,
       "cache_roundtrip_preserves_measurement_and_manual_edits": true
     }
-  ]
+  ],
+  "ci": {
+    "run_id": 39614453323,
+    "url": "https://github.com/muelli1975/StereoFine/actions/runs/39614453323",
+    "source_commit": "9bc4e86bc0edda9a1713aebe3df6467138c3434a",
+    "test_jobs": [
+      {
+        "name": "Tests (windows-2022)",
+        "id": 119271639729,
+        "conclusion": "success",
+        "warning_cases": [
+          {
+            "language": "de",
+            "size": "1100x700",
+            "scale": 1,
+            "warning_size": [
+              292,
+              32
+            ],
+            "window_size": [
+              1100,
+              700
+            ],
+            "window_scale": 1,
+            "widget_scale": 1,
+            "required_size": [
+              151,
+              30
+            ],
+            "text_lines": [
+              "\u26a0 Einsch\u00e4tzung unsicher \u2013",
+              "bitte mit M pr\u00fcfen!"
+            ],
+            "logical_row_height": 32,
+            "scroll_height": 116,
+            "controls_stable": true
+          },
+          {
+            "language": "de",
+            "size": "1400x850",
+            "scale": 1,
+            "warning_size": [
+              292,
+              32
+            ],
+            "window_size": [
+              1100,
+              749
+            ],
+            "window_scale": 1,
+            "widget_scale": 1,
+            "required_size": [
+              151,
+              30
+            ],
+            "text_lines": [
+              "\u26a0 Einsch\u00e4tzung unsicher \u2013",
+              "bitte mit M pr\u00fcfen!"
+            ],
+            "logical_row_height": 32,
+            "scroll_height": 165,
+            "controls_stable": true
+          },
+          {
+            "language": "en",
+            "size": "1100x700",
+            "scale": 1,
+            "warning_size": [
+              292,
+              32
+            ],
+            "window_size": [
+              1100,
+              700
+            ],
+            "window_scale": 1,
+            "widget_scale": 1,
+            "required_size": [
+              133,
+              30
+            ],
+            "text_lines": [
+              "\u26a0 Estimate uncertain \u2013",
+              "please check with M!"
+            ],
+            "logical_row_height": 32,
+            "scroll_height": 116,
+            "controls_stable": true
+          },
+          {
+            "language": "en",
+            "size": "1400x850",
+            "scale": 1,
+            "warning_size": [
+              292,
+              32
+            ],
+            "window_size": [
+              1100,
+              749
+            ],
+            "window_scale": 1,
+            "widget_scale": 1,
+            "required_size": [
+              133,
+              30
+            ],
+            "text_lines": [
+              "\u26a0 Estimate uncertain \u2013",
+              "please check with M!"
+            ],
+            "logical_row_height": 32,
+            "scroll_height": 165,
+            "controls_stable": true
+          }
+        ],
+        "tests": [
+          "2026-10-21T14:11:31.8842954Z Ran 203 tests in 46.103s",
+          "2026-10-21T14:12:11.9027671Z Ran 48 tests in 39.341s"
+        ]
+      },
+      {
+        "name": "Tests (macos-14)",
+        "id": 119271640112,
+        "conclusion": "success",
+        "warning_cases": [
+          {
+            "language": "de",
+            "size": "1100x700",
+            "scale": 1,
+            "warning_size": [
+              292,
+              32
+            ],
+            "window_size": [
+              1100,
+              700
+            ],
+            "window_scale": 1,
+            "widget_scale": 1,
+            "required_size": [
+              163,
+              30
+            ],
+            "text_lines": [
+              "\u26a0 Einsch\u00e4tzung unsicher \u2013",
+              "bitte mit M pr\u00fcfen!"
+            ],
+            "logical_row_height": 32,
+            "scroll_height": 126,
+            "controls_stable": true
+          },
+          {
+            "language": "de",
+            "size": "1400x850",
+            "scale": 1,
+            "warning_size": [
+              292,
+              32
+            ],
+            "window_size": [
+              1400,
+              850
+            ],
+            "window_scale": 1,
+            "widget_scale": 1,
+            "required_size": [
+              163,
+              30
+            ],
+            "text_lines": [
+              "\u26a0 Einsch\u00e4tzung unsicher \u2013",
+              "bitte mit M pr\u00fcfen!"
+            ],
+            "logical_row_height": 32,
+            "scroll_height": 276,
+            "controls_stable": true
+          },
+          {
+            "language": "en",
+            "size": "1100x700",
+            "scale": 1,
+            "warning_size": [
+              292,
+              32
+            ],
+            "window_size": [
+              1100,
+              700
+            ],
+            "window_scale": 1,
+            "widget_scale": 1,
+            "required_size": [
+              140,
+              30
+            ],
+            "text_lines": [
+              "\u26a0 Estimate uncertain \u2013",
+              "please check with M!"
+            ],
+            "logical_row_height": 32,
+            "scroll_height": 126,
+            "controls_stable": true
+          },
+          {
+            "language": "en",
+            "size": "1400x850",
+            "scale": 1,
+            "warning_size": [
+              292,
+              32
+            ],
+            "window_size": [
+              1400,
+              850
+            ],
+            "window_scale": 1,
+            "widget_scale": 1,
+            "required_size": [
+              140,
+              30
+            ],
+            "text_lines": [
+              "\u26a0 Estimate uncertain \u2013",
+              "please check with M!"
+            ],
+            "logical_row_height": 32,
+            "scroll_height": 276,
+            "controls_stable": true
+          }
+        ],
+        "tests": [
+          "2026-10-21T14:11:03.4390600Z Ran 203 tests in 44.963s",
+          "2026-10-21T14:11:51.8494010Z Ran 48 tests in 47.804s"
+        ]
+      },
+      {
+        "name": "Tests (ubuntu-22.04)",
+        "id": 119271640276,
+        "conclusion": "success",
+        "warning_cases": [
+          {
+            "language": "de",
+            "size": "1100x700",
+            "scale": 1,
+            "warning_size": [
+              292,
+              32
+            ],
+            "window_size": [
+              1100,
+              700
+            ],
+            "window_scale": 1,
+            "widget_scale": 1,
+            "required_size": [
+              180,
+              30
+            ],
+            "text_lines": [
+              "\u26a0 Einsch\u00e4tzung unsicher \u2013",
+              "bitte mit M pr\u00fcfen!"
+            ],
+            "logical_row_height": 32,
+            "scroll_height": 124,
+            "controls_stable": true
+          },
+          {
+            "language": "de",
+            "size": "1400x850",
+            "scale": 1,
+            "warning_size": [
+              292,
+              32
+            ],
+            "window_size": [
+              1400,
+              850
+            ],
+            "window_scale": 1,
+            "widget_scale": 1,
+            "required_size": [
+              180,
+              30
+            ],
+            "text_lines": [
+              "\u26a0 Einsch\u00e4tzung unsicher \u2013",
+              "bitte mit M pr\u00fcfen!"
+            ],
+            "logical_row_height": 32,
+            "scroll_height": 274,
+            "controls_stable": true
+          },
+          {
+            "language": "en",
+            "size": "1100x700",
+            "scale": 1,
+            "warning_size": [
+              292,
+              32
+            ],
+            "window_size": [
+              1100,
+              700
+            ],
+            "window_scale": 1,
+            "widget_scale": 1,
+            "required_size": [
+              154,
+              30
+            ],
+            "text_lines": [
+              "\u26a0 Estimate uncertain \u2013",
+              "please check with M!"
+            ],
+            "logical_row_height": 32,
+            "scroll_height": 124,
+            "controls_stable": true
+          },
+          {
+            "language": "en",
+            "size": "1400x850",
+            "scale": 1,
+            "warning_size": [
+              292,
+              32
+            ],
+            "window_size": [
+              1400,
+              850
+            ],
+            "window_scale": 1,
+            "widget_scale": 1,
+            "required_size": [
+              154,
+              30
+            ],
+            "text_lines": [
+              "\u26a0 Estimate uncertain \u2013",
+              "please check with M!"
+            ],
+            "logical_row_height": 32,
+            "scroll_height": 274,
+            "controls_stable": true
+          },
+          {
+            "language": "de",
+            "size": "1100x700",
+            "scale": 1.5,
+            "warning_size": [
+              438,
+              48
+            ],
+            "window_size": [
+              1650,
+              1050
+            ],
+            "window_scale": 1.5,
+            "widget_scale": 1.5,
+            "required_size": [
+              267,
+              44
+            ],
+            "text_lines": [
+              "\u26a0 Einsch\u00e4tzung unsicher \u2013",
+              "bitte mit M pr\u00fcfen!"
+            ],
+            "logical_row_height": 32,
+            "scroll_height": 183,
+            "controls_stable": true
+          },
+          {
+            "language": "de",
+            "size": "1400x850",
+            "scale": 1.5,
+            "warning_size": [
+              438,
+              48
+            ],
+            "window_size": [
+              2100,
+              1275
+            ],
+            "window_scale": 1.5,
+            "widget_scale": 1.5,
+            "required_size": [
+              267,
+              44
+            ],
+            "text_lines": [
+              "\u26a0 Einsch\u00e4tzung unsicher \u2013",
+              "bitte mit M pr\u00fcfen!"
+            ],
+            "logical_row_height": 32,
+            "scroll_height": 408,
+            "controls_stable": true
+          },
+          {
+            "language": "en",
+            "size": "1100x700",
+            "scale": 1.5,
+            "warning_size": [
+              438,
+              48
+            ],
+            "window_size": [
+              1650,
+              1050
+            ],
+            "window_scale": 1.5,
+            "widget_scale": 1.5,
+            "required_size": [
+              231,
+              44
+            ],
+            "text_lines": [
+              "\u26a0 Estimate uncertain \u2013",
+              "please check with M!"
+            ],
+            "logical_row_height": 32,
+            "scroll_height": 184,
+            "controls_stable": true
+          },
+          {
+            "language": "en",
+            "size": "1400x850",
+            "scale": 1.5,
+            "warning_size": [
+              438,
+              48
+            ],
+            "window_size": [
+              2100,
+              1275
+            ],
+            "window_scale": 1.5,
+            "widget_scale": 1.5,
+            "required_size": [
+              231,
+              44
+            ],
+            "text_lines": [
+              "\u26a0 Estimate uncertain \u2013",
+              "please check with M!"
+            ],
+            "logical_row_height": 32,
+            "scroll_height": 409,
+            "controls_stable": true
+          }
+        ],
+        "tests": [
+          "2026-10-21T14:11:08.5679037Z Ran 203 tests in 42.177s",
+          "2026-10-21T14:11:46.3414387Z Ran 48 tests in 37.373s"
+        ]
+      }
+    ],
+    "run_conclusion": "success",
+    "jobs": [
+      {
+        "id": 119271639729,
+        "name": "Tests (windows-2022)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 119271640112,
+        "name": "Tests (macos-14)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 119271640276,
+        "name": "Tests (ubuntu-22.04)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 119272918193,
+        "name": "Checked package (windows-2022)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 119272918247,
+        "name": "Checked package (ubuntu-22.04)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 119272918255,
+        "name": "Checked package (macos-15-intel)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 119272918303,
+        "name": "Checked package (macos-15)",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "artifacts": [
+      {
+        "id": 12352710268,
+        "name": "StereoFine-1.1-development-ubuntu-22.04",
+        "size_in_bytes": 304543581
+      },
+      {
+        "id": 12352486032,
+        "name": "StereoFine-1.1-development-windows-2022",
+        "size_in_bytes": 166352697
+      },
+      {
+        "id": 12352406861,
+        "name": "StereoFine-input-check-macos-15-intel",
+        "size_in_bytes": 640
+      },
+      {
+        "id": 12352078360,
+        "name": "StereoFine-1.1-development-macos-15",
+        "size_in_bytes": 249227841
+      },
+      {
+        "id": 12351548273,
+        "name": "StereoFine-input-check-windows-2022",
+        "size_in_bytes": 645
+      },
+      {
+        "id": 12351329071,
+        "name": "StereoFine-1.1-development-macos-15-intel",
+        "size_in_bytes": 207866293
+      },
+      {
+        "id": 12351059469,
+        "name": "StereoFine-input-check-ubuntu-22.04",
+        "size_in_bytes": 640
+      },
+      {
+        "id": 12351029774,
+        "name": "StereoFine-input-check-macos-15",
+        "size_in_bytes": 640
+      }
+    ]
+  }
 }

@@ -109,9 +109,19 @@ The full warning was rendered on Linux/Xvfb with Tk 8.6.14 at 100, 125, 150 and
 200 percent scaling, in German and English, at 1100x700 and 1400x850 logical
 window sizes. All 16 combinations fit without clipping or moving the action
 buttons when the warning changes. These are application-scaling checks with
-the Linux font fallback. Native platform checks and development-package
-verification run again for the uniform two-line presentation; the final
-receipt identifies their exact source commit and workflow run.
+the Linux font fallback. Native Windows and macOS checks also pass in both
+languages in [the development workflow](https://github.com/muelli1975/StereoFine/actions/runs/39614453323),
+with the same explicit two-line hint and 32-pixel logical height. The native
+Windows CI desktop limits the larger requested window to 1100x749; that actual
+size and the 1100x700 minimum were tested. The action buttons remain fixed in
+all native cases. All three systems pass 203 application and 48 research tests.
+
+All seven workflow jobs pass, including checked development archives for
+Windows x64, Linux x64, macOS Apple Silicon and macOS Intel. The package checks
+exercise actual frozen programs before and after extraction, compare the
+canonical source snapshot and verify extracted-program startup. The validated
+source commit is `9bc4e86bc0edda9a1713aebe3df6467138c3434a`; later changes to
+this receipt do not change application code or tests.
 
 This is evidence of a narrower, more useful decision rule, not calibrated
 whole-scene ground truth or proof that every sky/foreground case is solved.
