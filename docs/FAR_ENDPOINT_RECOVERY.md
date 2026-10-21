@@ -116,12 +116,19 @@ Windows CI desktop limits the larger requested window to 1100x749; that actual
 size and the 1100x700 minimum were tested. The action buttons remain fixed in
 all native cases. All three systems pass 203 application and 48 research tests.
 
-All seven workflow jobs pass, including checked development archives for
-Windows x64, Linux x64, macOS Apple Silicon and macOS Intel. The package checks
-exercise actual frozen programs before and after extraction, compare the
-canonical source snapshot and verify extracted-program startup. The validated
-source commit is `9bc4e86bc0edda9a1713aebe3df6467138c3434a`; later changes to
-this receipt do not change application code or tests.
+All seven workflow jobs pass, including development builds for Windows x64,
+Linux x64, macOS Apple Silicon and macOS Intel. The development route exercises
+the actual frozen programs' input, render, export and metadata checks before
+archiving and verifies the staged canonical source snapshot. It does not run
+the final-candidate archive inspection, extracted-program comparison or
+extracted-GUI startup check: those are conditional on `--candidate` and remain
+required release preparation. The native warning-layout checks above run the
+source application, separately from these frozen-program checks.
+
+The validated development source commit is
+`9bc4e86bc0edda9a1713aebe3df6467138c3434a`; later changes to this receipt do not
+change application code or tests. The released v1.1 candidate's historical
+archive checks do not validate the newer development source.
 
 This is evidence of a narrower, more useful decision rule, not calibrated
 whole-scene ground truth or proof that every sky/foreground case is solved.

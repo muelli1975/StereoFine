@@ -2784,6 +2784,15 @@
         "name": "StereoFine-input-check-macos-15",
         "size_in_bytes": 640
       }
-    ]
+    ],
+    "package_check_scope": {
+      "build_mode": "development",
+      "frozen_input_render_export_and_metadata_checks_before_archiving": "passed",
+      "staged_canonical_source_snapshot": "passed",
+      "archive_structure_and_architecture_inspection": "not run in development mode; required for final candidates",
+      "extracted_program_comparison": "not run in development mode; required for final candidates",
+      "extracted_gui_startup": "not run in development mode; required for final candidates",
+      "native_warning_layout": "source application checked separately on Windows, Linux and macOS"
+    }
   }
 }
