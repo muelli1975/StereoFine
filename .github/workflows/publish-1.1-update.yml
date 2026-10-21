@@ -1,0 +1,204 @@
+name: Update published StereoFine 1.1 with verified packages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [release/1.1-update]
+    paths: ['.github/workflows/publish-1.1-update.yml']
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: publish-stereofine-1.1
+  cancel-in-progress: false
+
+env:
+  RELEASE_COMMIT: b5adc3e2fcd4492d7fee84ab575642fc30f909b0
+  CANDIDATE_RUN: '39620168553'
+  EXPECTED_MAIN: 324183b5c17fcb03de6cf1bb40c75ae42c902dba
+  EXPECTED_TAG: ef735bc6d1d98db046d41672f09ae87ee48eac6c
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_COMMIT }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - name: Require successful validation of the exact source commit
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN" > candidate-run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN/jobs?per_page=100" > candidate-jobs.json
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          run = json.loads(Path('candidate-run.json').read_text())
+          jobs = json.loads(Path('candidate-jobs.json').read_text())['jobs']
+          assert run['head_sha'] == os.environ['RELEASE_COMMIT']
+          assert run['status'] == 'completed' and run['conclusion'] == 'success'
+          assert len(jobs) == 8 and all(j['conclusion'] == 'success' for j in jobs)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ env.CANDIDATE_RUN }}
+          pattern: StereoFine-1.1-candidate-*
+          merge-multiple: true
+          path: artifacts
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ env.CANDIDATE_RUN }}
+          pattern: StereoFine-input-check-*
+          path: input-reports
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ env.CANDIDATE_RUN }}
+          pattern: StereoFine-final-gui-*
+          path: gui-reports
+      - name: Verify every archive, source byte, asset and extracted-package report
+        run: |
+          python scripts/release_checksums.py artifacts
+          python scripts/verify_release_packages.py artifacts > archive-checks.jsonl
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          manifest = {name: digest for digest, name in (line.split() for line in Path('artifacts/SHA256SUMS.txt').read_text().splitlines())}
+          platforms = ['windows-2022', 'ubuntu-22.04', 'macos-15', 'macos-15-intel']
+          reports = []
+          sources = {'stereo_pair.heic', 'entity_groups.heic', 'pattern_webp.webp', 'pattern_bmp.bmp', 'spatial_photo.heic', 'arrow.heic'}
+          for platform in platforms:
+              root = Path('input-reports')/('StereoFine-input-check-'+platform)
+              before = json.loads((root/'candidate-input-check.json').read_text())
+              after = json.loads((root/'candidate-extracted-input-check.json').read_text())
+              archive = json.loads((root/'candidate-archive-check.json').read_text())
+              assert before == after and after['ok'] and after['codec_isolated']
+              assert {item['source'] for item in after['checks']} == sources
+              assert all(item.get('metadata_success', True) for item in after['checks'])
+              assert archive['passed'] and archive['extracted_input_checks']
+              assert archive['gui_startup_survived_seconds'] >= 6
+              assert archive['sha256'] == manifest[archive['archive']]
+              reports.append(dict(platform=platform, archive=archive, input_checks=after))
+          gui = [json.loads(p.read_text()) for p in Path('gui-reports').rglob('gui-final-update-*.json')]
+          assert {g['platform'] for g in gui} == {'win32', 'darwin', 'linux'}
+          assert all(g['ok'] and g['reticle_pixel_identity_and_cached_background'] for g in gui)
+          assert all(g['fullscreen_exit_routes'] == ['button', 'f11', 'escape'] for g in gui)
+          assert next(g for g in gui if g['platform'] == 'win32')['windows_dark_titlebar_verified']
+          result = dict(version='1.1', source_commit=os.environ['RELEASE_COMMIT'],
+                        validation_run=int(os.environ['CANDIDATE_RUN']),
+                        validation_url='https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['CANDIDATE_RUN'],
+                        application_tests_per_platform=206, research_tests_per_platform=48,
+                        gui_layout_smoke='German and English on Linux',
+                        gui_startup='Extracted executable kept running for six seconds on each package target',
+                        archives=[json.loads(line) for line in Path('archive-checks.jsonl').read_text().splitlines()],
+                        packages=reports, native_gui_checks=gui,
+                        measurement_controls='Original step/hold-delay/speed/acceleration unchanged',
+                        near_point_recognition='Unchanged by final GUI update')
+          Path('BUILD_CHECKS.json').write_text(json.dumps(result, indent=2)+'\n')
+          notes = Path('RELEASE_NOTES_1.1.md').read_text()
+          notes += '\n## Validation\n\n206 application and 48 research tests passed on each of Windows, Linux and macOS. All four native archives passed source/asset/architecture verification and repeated input/session/export checks after extraction. German/English GUI smoke passed on Linux; extracted executable startup was checked on every target. Reticle pixels match the uncached renderer on all three systems. Windows dark-titlebar restoration passed for button, F11 and Escape.\n\n[Build validation]('+result['validation_url']+'). Detailed results are attached as `BUILD_CHECKS.json`.\n\n## SHA-256\n\n```text\n'+Path('artifacts/SHA256SUMS.txt').read_text()+'```\n'
+          Path('release-body.md').write_text(notes)
+          PY
+      - name: Back up and verify the existing published 1.1
+        run: |
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$EXPECTED_MAIN"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v1.1" --jq .object.sha)" = "$EXPECTED_TAG"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/v1.1" > previous-release.json
+          gh release download v1.1 --repo "$GITHUB_REPOSITORY" --dir previous-assets
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          release = json.loads(Path('previous-release.json').read_text())
+          assert release['id'] == 419496903 and not release['draft'] and not release['prerelease']
+          expected = {"BUILD_CHECKS.json":"sha256:6f198fbbce0b13cffa9138b818c70425004a262b506769848eff86cd784c8a90","SHA256SUMS.txt":"sha256:bc5493bbbdc5cbb6de617e215340a20c75330393f1fe9e49488c0176d4e17c1e","StereoFine_1.1_Linux_x64.tar.gz":"sha256:8ab0819449eaebeacf8ac29b5a07672d88930aa6f3eb6bde89ec38cb0619477e","StereoFine_1.1_macOS_AppleSilicon.zip":"sha256:b20a0e90be718405ace10bf04ea5f5d9309e55102ddb547329cc7e6c6783d3b7","StereoFine_1.1_macOS_Intel.zip":"sha256:f740edbb93fdc469132ad3cfb6807549b18fb04a8c5c2df980250a653eff2da6","StereoFine_1.1_Windows_x64.zip":"sha256:883be049175061c57f6dec2cfec1133fd0edbb54a511f2a9e293aa33c7792b4e"}
+          assert {a['name']:a['digest'] for a in release['assets']} == expected
+          assert {p.name for p in Path('previous-assets').iterdir()} == set(expected)
+          for name, digest in expected.items():
+              with (Path('previous-assets')/name).open('rb') as stream:
+                  assert 'sha256:'+hashlib.file_digest(stream, 'sha256').hexdigest() == digest, name
+          Path('previous-release-body.md').write_text(release['body'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StereoFine-1.1-before-update
+          path: |
+            previous-assets/*
+            previous-release.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Replace the six assets of the existing 1.1 release
+        run: |
+          touch release-update-started
+          gh release upload v1.1 --clobber \\
+            artifacts/StereoFine_1.1_Windows_x64.zip \\
+            artifacts/StereoFine_1.1_Linux_x64.tar.gz \\
+            artifacts/StereoFine_1.1_macOS_AppleSilicon.zip \\
+            artifacts/StereoFine_1.1_macOS_Intel.zip \\
+            artifacts/SHA256SUMS.txt BUILD_CHECKS.json \\
+            --repo "$GITHUB_REPOSITORY"
+      - name: Download the uploaded assets and verify their actual bytes
+        run: |
+          gh release download v1.1 --repo "$GITHUB_REPOSITORY" --dir uploaded-verification
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          expected = [Path('artifacts')/name for name in ['StereoFine_1.1_Windows_x64.zip', 'StereoFine_1.1_Linux_x64.tar.gz', 'StereoFine_1.1_macOS_AppleSilicon.zip', 'StereoFine_1.1_macOS_Intel.zip', 'SHA256SUMS.txt']]+[Path('BUILD_CHECKS.json')]
+          actual = Path('uploaded-verification')
+          assert {p.name for p in actual.iterdir()} == {p.name for p in expected}
+          for path in expected:
+              def digest(value):
+                  with value.open('rb') as stream:
+                      return hashlib.file_digest(stream, 'sha256').hexdigest()
+              assert digest(path) == digest(actual/path.name), path.name
+          PY
+      - name: Promote the exact verified source and update release notes
+        run: |
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$EXPECTED_MAIN"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v1.1" --jq .object.sha)" = "$EXPECTED_TAG"
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/v1.1" \\
+            -f sha="$RELEASE_COMMIT" -F force=true
+          gh release edit v1.1 --repo "$GITHUB_REPOSITORY" --target "$RELEASE_COMMIT" \\
+            --title 'StereoFine 1.1' --notes-file release-body.md --draft=false --prerelease=false --latest
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/heads/main" \\
+            -f sha="$RELEASE_COMMIT" -F force=false
+          test "$(gh api "repos/$GITHUB_REPOSITORY/commits/v1.1" --jq .sha)" = "$RELEASE_COMMIT"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$RELEASE_COMMIT"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/v1.1" --jq '{id: .id, url: .html_url, draft: .draft, prerelease: .prerelease, assets: [.assets[] | {name, digest}]}'
+      - name: Restore the previous release if replacement fails
+        if: failure()
+        run: |
+          if [ ! -f release-update-started ]; then exit 0; fi
+          gh release upload v1.1 --repo "$GITHUB_REPOSITORY" --clobber previous-assets/*
+          current=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v1.1" --jq .object.sha)
+          if [ "$current" = "$RELEASE_COMMIT" ]; then
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/v1.1" -f sha="$EXPECTED_TAG" -F force=true
+          else
+            test "$current" = "$EXPECTED_TAG"
+          fi
+          gh release edit v1.1 --repo "$GITHUB_REPOSITORY" --target "$EXPECTED_TAG" \\
+            --title 'StereoFine 1.1' --notes-file previous-release-body.md --draft=false --prerelease=false --latest
+          gh release download v1.1 --repo "$GITHUB_REPOSITORY" --dir rollback-verification
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          for path in Path('previous-assets').iterdir():
+              with path.open('rb') as a, (Path('rollback-verification')/path.name).open('rb') as b:
+                  assert hashlib.file_digest(a,'sha256').digest() == hashlib.file_digest(b,'sha256').digest()
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: StereoFine-1.1-update-publication-evidence
+          path: |
+            BUILD_CHECKS.json
+            release-body.md
+            artifacts/SHA256SUMS.txt
+          if-no-files-found: warn
