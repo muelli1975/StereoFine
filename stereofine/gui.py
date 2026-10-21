@@ -1231,6 +1231,7 @@ class StereoFineApp(ctk.CTk):
         *,
         keep_loaded_pair: bool = False,
         use_batch_defaults: bool = False,
+        restart_alignment: bool = False,
     ) -> ProcessingOptions:
         defaults = self._batch_defaults() if use_batch_defaults else self._processing_defaults()
         return ProcessingOptions(
@@ -1238,6 +1239,7 @@ class StereoFineApp(ctk.CTk):
             save_sidecar=True,
             keep_loaded_pair=keep_loaded_pair,
             defaults=defaults,
+            restart_alignment=restart_alignment,
         )
 
     def _persist_settings(self) -> None:
@@ -1920,7 +1922,7 @@ class StereoFineApp(ctk.CTk):
             self._start_batch_run()
         else:
             source = self.current.source
-            options = self._processing_options(keep_loaded_pair=True)
+            options = self._processing_options(keep_loaded_pair=True, restart_alignment=True)
 
             def job(token, _progress):
                 return process_source(source, options, cancellation=token)

@@ -9,7 +9,7 @@ from typing import Any, Callable, Iterable
 import numpy as np
 
 from .alignment import analyze_pair_features
-from .config import ALIGNMENT_ANALYSIS_MAX_WIDTH, CROP_ZOOM_LEVELS, DISPARITY_ANALYSIS_MAX_WIDTH
+from .config import ALIGNMENT_ANALYSIS_MAX_WIDTH, AUTO_NEAR_WINDOW_BACK_PERMILLE, CROP_ZOOM_LEVELS, DISPARITY_ANALYSIS_MAX_WIDTH
 from .disparity import (
     analyze_horizontal_disparity,
     json_safe_disparity_summary,
@@ -49,6 +49,9 @@ class ProcessingOptions:
     preview_max_width: int | None = None
     preview_max_height: int | None = None
     defaults: ProcessingDefaults = ProcessingDefaults()
+    # Explicit single-image Start: fresh automatic geometry and near framing
+    # for the selected crop, without carrying manual x/y nudges into the result.
+    restart_alignment: bool = False
 
 
 @dataclass
@@ -250,7 +253,7 @@ def _alignment_cache_usable(
     basis: dict[str, Any],
     options: ProcessingOptions,
 ) -> bool:
-    if options.force_alignment:
+    if options.force_alignment or options.restart_alignment:
         return False
     return (
         load_result.alignment_cache_valid
@@ -303,6 +306,13 @@ def process_source(
     # intent (favorite, manual framing, floating window, color enabled flag) is
     # retained.
     if not load_result.color_cache_valid:
+        state.color.valid = False
+    if options.restart_alignment:
+        # Modify only the worker's local state. A failed/cancelled run must not
+        # erase the saved edits or replace the currently displayed session.
+        state.manual.reset()
+        state.framing.auto_near_back_permille = AUTO_NEAR_WINDOW_BACK_PERMILLE
+        state.framing.clear_auto_near(status="stale")
         state.color.valid = False
     messages: list[str] = []
     if load_result.message:

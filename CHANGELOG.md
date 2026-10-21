@@ -2,6 +2,9 @@
 
 ## 1.1 – Unreleased
 
+- Make explicit single-image Start recalculate alignment and near framing, clear manual X/Y nudges and retain the selected crop/aspect/pan. Preserve saved fine adjustments during Save and batch processing.
+- Cover zoom/pan/nudge/restart in the real DE/EN GUI worker, native clean-control renders, session reuse and cancellation without committing a reset.
+
 - Add isolated SDR HEIC/HEIF import using TransCora’s reader, tagged stereo entity IDs, sRGB ICC normalization and explicit rejection of unsupported containers/colour descriptions.
 - Add static WebP/BMP to packed and paired inputs; retain EXIF orientation, explicit alpha handling and duplicate-name protection.
 - Keep HEIF entity IDs in source fingerprints and reproducible sessions; prevent original non-sRGB metadata from being reapplied to normalized exports.

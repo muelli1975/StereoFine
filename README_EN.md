@@ -41,6 +41,8 @@ The same source can also be packaged for macOS (Apple Silicon and Intel) and Lin
 3. Check the result in the anaglyph preview and fine-tune it with the keyboard if required.
 4. Choose **Save**. StereoFine always writes an SBS JPEG and one anaglyph. The preview choice only determines whether the anaglyph is color or grayscale.
 
+Choosing **Start alignment** again recalculates geometry and near-point framing, clears manual horizontal/vertical nudges, and keeps the selected crop, aspect ratio and crop position. The detected near point is framed at least 3‰ behind the stereo window when a measurement is available. Saving and batch processing retain saved fine adjustments.
+
 The same processing core is available for complete folders through batch processing.
 
 ## Screenshots

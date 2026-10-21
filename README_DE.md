@@ -41,6 +41,8 @@ Derselbe Quellcode kann zusätzlich für macOS (Apple Silicon und Intel) sowie L
 3. Ergebnis in der Anaglyphenvorschau prüfen und bei Bedarf per Tastatur feinjustieren.
 4. **Speichern**. StereoFine schreibt immer ein SBS-JPEG und eine Anaglyphe. Über die Vorschauwahl bestimmst du nur, ob die Anaglyphe farbig oder in Graustufen erzeugt wird.
 
+Ein erneuter Klick auf **Justage starten** berechnet Geometrie und Nahpunktrahmung neu und setzt manuelle horizontale/vertikale Verschiebungen zurück. Ausschnitt, Seitenverhältnis und Ausschnittposition bleiben erhalten. Bei verfügbarer Messung wird der erkannte Nahpunkt mindestens 3‰ hinter das Scheinfenster gesetzt. Speichern und Stapelverarbeitung erhalten gespeicherte Feinjustagen.
+
 Für ganze Ordner steht derselbe Rechenkern als Stapelverarbeitung zur Verfügung.
 
 ## Screenshots
