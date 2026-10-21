@@ -8,7 +8,7 @@ on:
         type: boolean
         default: false
   push:
-    branches: [development/1.1-image-formats]
+    branches: [development/1.1-image-formats, research/1.1-y-polish-coverage]
     paths:
       - '.github/workflows/validate-development.yml'
       - 'stereofine/**'
