@@ -93,11 +93,13 @@ def main():
                     pump(app)
                     assert geometry(app) == before, (language, size, before, geometry(app))
                     warning = app._status_line_widgets['warning']
+                    reserved_warning_height = warning.winfo_height()
                     expected = ('⚠ Einschätzung unsicher – bitte mit M prüfen!' if language == 'de'
                                 else '⚠ Estimate uncertain – please check with M!')
                     assert warning.cget('text') == expected
                     assert warning.cget('text_color') == gui.GOLD_LIGHT
                     assert warning.cget('font')[-1] == 'bold'
+                    assert warning.grid_info()['columnspan'] == 2
                     inner = warning._label
                     assert inner.winfo_reqwidth() <= warning.winfo_width(), (language, size, 'width')
                     assert inner.winfo_reqheight() <= warning.winfo_height(), (language, size, 'height')
@@ -113,6 +115,8 @@ def main():
                         window_size=[app.winfo_width(), app.winfo_height()],
                         window_scale=window_scale, widget_scale=widget_scale,
                         required_size=[inner.winfo_reqwidth(), inner.winfo_reqheight()],
+                        unwrapped_width=int(app.tk.call('font', 'measure', inner.cget('font'), expected)),
+                        logical_row_height=warning.cget('height'),
                         scroll_height=scroll_height, controls_stable=True)), flush=True)
                     if args.screenshots:
                         args.screenshots.mkdir(parents=True, exist_ok=True)
@@ -128,7 +132,7 @@ def main():
                     # row by one pixel at fractional scaling; footer controls
                     # and the reserved warning height must still stay fixed.
                     assert geometry(app)[-3:] == before[-3:]
-                    assert warning.winfo_height() == round(32*widget_scale)
+                    assert warning.winfo_height() == reserved_warning_height
                     state.disparity.stale = False
         finally:
             app.destroy()

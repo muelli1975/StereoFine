@@ -47,9 +47,13 @@ The German warning is exactly:
 
 The English equivalent is “⚠ Estimate uncertain – please check with M!”. The
 warning uses light gold `#c6a95e`, bold text and the warning triangle, following
-TransCora's attention style. A permanent 32-logical-pixel warning row reserves
-two lines without changing the sidebar width or symbol column. Empty and
-visible warnings have identical geometry. The existing keyboard help already
+TransCora's attention style. The warning uses the entire status row, including
+the space occupied by symbols in other rows: 292 logical pixels for text.
+The actual scaled font is measured for both translations. The row keeps its
+existing 19-pixel height if both fit on one line; otherwise it reserves 32
+pixels for two lines, even while empty. The sidebar width and symbols in other
+rows are unchanged. Empty and visible warnings have identical geometry.
+The existing keyboard help already
 explains that M is held to display the measurement cross.
 
 `sf-disparity-5` measurements recompute on the next processing pass. Alignment

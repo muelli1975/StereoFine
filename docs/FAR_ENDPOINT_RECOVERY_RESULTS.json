@@ -63,17 +63,21 @@
         "size": "1100x700",
         "scale": 1.0,
         "warning_size": [
-          256,
+          292,
           32
         ],
         "window_size": [
           1100,
           700
         ],
+        "window_scale": 1.0,
+        "widget_scale": 1.0,
         "required_size": [
-          244,
+          260,
           30
         ],
+        "unwrapped_width": 315,
+        "logical_row_height": 32,
         "scroll_height": 124,
         "controls_stable": true
       },
@@ -82,17 +86,21 @@
         "size": "1400x850",
         "scale": 1.0,
         "warning_size": [
-          256,
+          292,
           32
         ],
         "window_size": [
           1400,
           850
         ],
+        "window_scale": 1.0,
+        "widget_scale": 1.0,
         "required_size": [
-          244,
+          260,
           30
         ],
+        "unwrapped_width": 315,
+        "logical_row_height": 32,
         "scroll_height": 274,
         "controls_stable": true
       },
@@ -101,17 +109,21 @@
         "size": "1100x700",
         "scale": 1.0,
         "warning_size": [
-          256,
+          292,
           32
         ],
         "window_size": [
           1100,
           700
         ],
+        "window_scale": 1.0,
+        "widget_scale": 1.0,
         "required_size": [
-          246,
+          280,
           30
         ],
+        "unwrapped_width": 301,
+        "logical_row_height": 32,
         "scroll_height": 124,
         "controls_stable": true
       },
@@ -120,17 +132,21 @@
         "size": "1400x850",
         "scale": 1.0,
         "warning_size": [
-          256,
+          292,
           32
         ],
         "window_size": [
           1400,
           850
         ],
+        "window_scale": 1.0,
+        "widget_scale": 1.0,
         "required_size": [
-          246,
+          280,
           30
         ],
+        "unwrapped_width": 301,
+        "logical_row_height": 32,
         "scroll_height": 274,
         "controls_stable": true
       },
@@ -139,17 +155,21 @@
         "size": "1100x700",
         "scale": 1.25,
         "warning_size": [
-          320,
+          365,
           40
         ],
         "window_size": [
           1375,
           875
         ],
+        "window_scale": 1.25,
+        "widget_scale": 1.25,
         "required_size": [
-          301,
+          321,
           36
         ],
+        "unwrapped_width": 390,
+        "logical_row_height": 32,
         "scroll_height": 154,
         "controls_stable": true
       },
@@ -158,17 +178,21 @@
         "size": "1400x850",
         "scale": 1.25,
         "warning_size": [
-          320,
+          365,
           40
         ],
         "window_size": [
           1750,
           1062
         ],
+        "window_scale": 1.25,
+        "widget_scale": 1.25,
         "required_size": [
-          301,
+          321,
           36
         ],
+        "unwrapped_width": 390,
+        "logical_row_height": 32,
         "scroll_height": 341,
         "controls_stable": true
       },
@@ -177,17 +201,21 @@
         "size": "1100x700",
         "scale": 1.25,
         "warning_size": [
-          320,
+          365,
           40
         ],
         "window_size": [
           1375,
           875
         ],
+        "window_scale": 1.25,
+        "widget_scale": 1.25,
         "required_size": [
-          305,
+          347,
           36
         ],
+        "unwrapped_width": 374,
+        "logical_row_height": 32,
         "scroll_height": 154,
         "controls_stable": true
       },
@@ -196,17 +224,21 @@
         "size": "1400x850",
         "scale": 1.25,
         "warning_size": [
-          320,
+          365,
           40
         ],
         "window_size": [
           1750,
           1062
         ],
+        "window_scale": 1.25,
+        "widget_scale": 1.25,
         "required_size": [
-          305,
+          347,
           36
         ],
+        "unwrapped_width": 374,
+        "logical_row_height": 32,
         "scroll_height": 341,
         "controls_stable": true
       },
@@ -215,17 +247,21 @@
         "size": "1100x700",
         "scale": 1.5,
         "warning_size": [
-          384,
+          438,
           48
         ],
         "window_size": [
           1650,
           1050
         ],
+        "window_scale": 1.5,
+        "widget_scale": 1.5,
         "required_size": [
-          362,
+          386,
           44
         ],
+        "unwrapped_width": 468,
+        "logical_row_height": 32,
         "scroll_height": 183,
         "controls_stable": true
       },
@@ -234,17 +270,21 @@
         "size": "1400x850",
         "scale": 1.5,
         "warning_size": [
-          384,
+          438,
           48
         ],
         "window_size": [
           2100,
           1275
         ],
+        "window_scale": 1.5,
+        "widget_scale": 1.5,
         "required_size": [
-          362,
+          386,
           44
         ],
+        "unwrapped_width": 468,
+        "logical_row_height": 32,
         "scroll_height": 408,
         "controls_stable": true
       },
@@ -253,17 +293,21 @@
         "size": "1100x700",
         "scale": 1.5,
         "warning_size": [
-          384,
+          438,
           48
         ],
         "window_size": [
           1650,
           1050
         ],
+        "window_scale": 1.5,
+        "widget_scale": 1.5,
         "required_size": [
-          368,
+          419,
           44
         ],
+        "unwrapped_width": 451,
+        "logical_row_height": 32,
         "scroll_height": 184,
         "controls_stable": true
       },
@@ -272,17 +316,21 @@
         "size": "1400x850",
         "scale": 1.5,
         "warning_size": [
-          384,
+          438,
           48
         ],
         "window_size": [
           2100,
           1275
         ],
+        "window_scale": 1.5,
+        "widget_scale": 1.5,
         "required_size": [
-          368,
+          419,
           44
         ],
+        "unwrapped_width": 451,
+        "logical_row_height": 32,
         "scroll_height": 409,
         "controls_stable": true
       },
@@ -291,17 +339,21 @@
         "size": "1100x700",
         "scale": 2.0,
         "warning_size": [
-          512,
+          584,
           64
         ],
         "window_size": [
           2200,
           1400
         ],
+        "window_scale": 2.0,
+        "widget_scale": 2.0,
         "required_size": [
-          474,
+          506,
           58
         ],
+        "unwrapped_width": 614,
+        "logical_row_height": 32,
         "scroll_height": 254,
         "controls_stable": true
       },
@@ -310,17 +362,21 @@
         "size": "1400x850",
         "scale": 2.0,
         "warning_size": [
-          512,
+          584,
           64
         ],
         "window_size": [
           2800,
           1700
         ],
+        "window_scale": 2.0,
+        "widget_scale": 2.0,
         "required_size": [
-          474,
+          506,
           58
         ],
+        "unwrapped_width": 614,
+        "logical_row_height": 32,
         "scroll_height": 554,
         "controls_stable": true
       },
@@ -329,17 +385,21 @@
         "size": "1100x700",
         "scale": 2.0,
         "warning_size": [
-          512,
+          584,
           64
         ],
         "window_size": [
           2200,
           1400
         ],
+        "window_scale": 2.0,
+        "widget_scale": 2.0,
         "required_size": [
-          483,
+          549,
           58
         ],
+        "unwrapped_width": 592,
+        "logical_row_height": 32,
         "scroll_height": 254,
         "controls_stable": true
       },
@@ -348,17 +408,21 @@
         "size": "1400x850",
         "scale": 2.0,
         "warning_size": [
-          512,
+          584,
           64
         ],
         "window_size": [
           2800,
           1700
         ],
+        "window_scale": 2.0,
+        "widget_scale": 2.0,
         "required_size": [
-          483,
+          549,
           58
         ],
+        "unwrapped_width": 592,
+        "logical_row_height": 32,
         "scroll_height": 554,
         "controls_stable": true
       }
