@@ -165,7 +165,8 @@ class NativeNearConfirmationTests(unittest.TestCase):
                 self.assertTrue(second.state.favorite)
                 self.assertEqual(second.state.manual.delta_x_px,7)
                 self.assertEqual(first.state.framing.auto_near_offset_x_px,second.state.framing.auto_near_offset_x_px)
-                self.assertEqual(initial.call_count,1)
+                # One reflected far audit and one near audit; cache adds none.
+                self.assertEqual(initial.call_count,2)
 
     def test_native_uint16_uses_full_range_proxy_without_clipping(self):
         from stereofine.near_point_recovery import native_patch_checks

@@ -237,6 +237,17 @@ def analyze_horizontal_disparity(
     # slightly more extreme cross-check; 0/100 remains diagnostic only.
     low_edge = low_1
     from .near_point import confirm_near_edge
+    # Horizontal reflection changes d to -d without exchanging eyes. Reuse
+    # the independent patch verifier to audit the opposite end of the range.
+    # This is a certainty check only: never substitute a narrower range merely
+    # because the actual farthest surface cannot be measured.
+    far_confirmation = confirm_near_edge(
+        np.ascontiguousarray(gray_l[:, ::-1]),
+        np.ascontiguousarray(gray_r[:, ::-1]),
+        np.ascontiguousarray(-disp_l_raw[:, ::-1]),
+        np.ascontiguousarray(confidence_mask[:, ::-1]), -low_edge,
+    )
+    far_confirmation["coordinate_system"] = "horizontally_reflected_analysis_pixels_disparity_negated"
     near_confirmation = confirm_near_edge(gray_l, gray_r, disp_l_raw, confidence_mask, high_99)
     if not near_confirmation["confirmed"]:
         from .near_point_recovery import recover_near_edge
@@ -264,6 +275,11 @@ def analyze_horizontal_disparity(
         uncertain_reasons.append("low_valid_area")
     if not low_components:
         uncertain_reasons.append("low_edge_cluster_missing")
+    if not far_confirmation["confirmed"] or far_confirmation["unsupported_extreme"]:
+        uncertain_reasons.append("far_edge_unconfirmed")
+    supported_far = far_confirmation["maximum_supported_px"]
+    if supported_far is not None and supported_far > -low_edge * w / 1000.0 + .5:
+        uncertain_reasons.append("far_edge_outside_estimate")
     if not high_components:
         uncertain_reasons.append("high_edge_cluster_missing")
     range_evidence_permille = deviation_permille
@@ -324,6 +340,7 @@ def analyze_horizontal_disparity(
         "deviation_permille": float(deviation_permille),
         "deviation_method": "percentile_1_confirmed_near",
         "near_confirmation": near_confirmation,
+        "far_confirmation": far_confirmation,
         "deviation_permille_0_5_99_5": float(deviation_permille_0_5_99_5),
         "deviation_permille_2_98": float(deviation_permille_2_98),
         "uncertain_reasons": uncertain_reasons,
