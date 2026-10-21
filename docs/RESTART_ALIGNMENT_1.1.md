@@ -29,8 +29,9 @@ Save and batch keep the default cache-preserving processing options, including
 saved manual fine adjustments. Ctrl+R retains its separate existing reset
 behavior, which also clears crop zoom/pan and floating windows.
 
-The restart changes are committed only after successful processing. Failure or
-cancellation does not save the reset or replace the displayed session. Existing
+The restart changes remain local until successful processing is ready to save.
+Failure or cancellation before that commit preserves the saved edits and the
+displayed session. Existing
 schema-3 `.sfin` fields store the resulting zero manual offsets and recomputed
 automatic correction. No schema or calculation-version bump is required for
 this explicit-action change; existing sessions remain compatible.
@@ -38,7 +39,7 @@ this explicit-action change; existing sessions remain compatible.
 ## Verification
 
 Local regression checks passed 180 application tests and 42 research tests.
-The new real-image-array test reproduces analyzed input, zoom, crop pan, X/Y
+The new processing test with synthetic image arrays reproduces analyzed input, zoom, crop pan, X/Y
 nudges and restart. Its native output is pixel-identical to a clean control
 analysis with the same crop, the detected near point is at least 3 per mille
 behind the window, and saved/reopened sessions retain zero manual offsets.
@@ -49,5 +50,8 @@ edits remain byte-for-byte unchanged.
 
 The DE/EN GUI smoke adds the same interaction through the real asynchronous
 single-image worker on the supplied stereo reference image in a temporary
-folder. Cross-platform validation and development packages are pending for
-this revision; published RC3 and stable 1.0 are unchanged.
+folder. Code commit `0f2537567b1dca4bf021691608a7329f4f741fe1` passed
+all seven jobs in [run 39563335496](https://github.com/muelli1975/StereoFine/actions/runs/39563335496):
+180 application and 42 research tests on Windows, Linux and macOS, both GUI
+languages, and actual frozen packages on Windows, Linux, macOS ARM and macOS
+Intel. Published RC3 and stable 1.0 are unchanged.
