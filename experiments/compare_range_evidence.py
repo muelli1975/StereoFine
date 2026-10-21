@@ -34,19 +34,21 @@ def digest(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
-def evaluate(case, replay=None, include_dense_tail=True):
+def evaluate(case, replay=None, include_dense_tail=True, native_footprint=False,
+             widths=(1500, 1000)):
     start = time.perf_counter()
     fingerprints = {key: digest(case[key]) for key in ['left', 'right']}
     rows = {}
 
     def measure(left, right, width):
         result = None
-        for size in (1500, 1000):
+        for size in widths:
             t = time.perf_counter()
             dense = analyze_horizontal_disparity(left, right, size)
             dense_time = time.perf_counter()-t
             t = time.perf_counter()
-            observed = measure_range_evidence(left, right, size, dense, include_dense_tail=include_dense_tail)
+            observed = measure_range_evidence(left, right, size, dense, include_dense_tail=include_dense_tail,
+                                             native_footprint=native_footprint)
             rows[str(size)] = dict(baseline=json_safe_disparity_summary(dense), evidence=observed,
                 baseline_seconds=dense_time, evidence_seconds=time.perf_counter()-t)
             if size == width:
@@ -77,12 +79,12 @@ def evaluate(case, replay=None, include_dense_tail=True):
         left, right = render_pair_for_disparity_analysis_from_arrays(left, right, correction)
         measure(left, right, 1500)
         # New research searches must not perturb the production baseline.
-        for width in ['1500', '1000']:
+        for width in [str(w) for w in widths if str(w) in replay['measurements']]:
             for key in ['low_edge_permille', 'high_edge_permille', 'deviation_permille', 'uncertain_reasons']:
                 if rows[width]['baseline'].get(key) != replay['measurements'][width]['baseline'].get(key):
                     raise RuntimeError('Frozen geometry failed baseline replay: '+key)
         offset = replay['native_auto_offset_px']
-    first, second = [rows[str(width)]['evidence'] for width in [1500, 1000]]
+    first, second = [rows[str(width)]['evidence'] for width in widths]
     spans = [x['observed_span_permille'] for x in (first, second)]
     delta = None if None in spans else abs(spans[0]-spans[1])
     endpoint_deltas = {}
@@ -96,6 +98,7 @@ def evaluate(case, replay=None, include_dense_tail=True):
         raise RuntimeError('Input files changed during evaluation')
     return dict(name=case['name'], protocol=first['protocol'], input_sha256=fingerprints,
         model=model, correction=correction, native_auto_offset_px=offset,
+        analysis_widths=list(widths),
         geometry_replayed=replay is not None,
         measurements=rows, span_difference_permille=delta,
         endpoint_differences_permille=endpoint_deltas,
@@ -112,7 +115,11 @@ def main():
     parser.add_argument('--replay-dir', type=Path)
     parser.add_argument('--initial-sampler', action='store_true',
                         help='Reproduce the initial pilot without interior tail seeds')
+    parser.add_argument('--native-footprint', action='store_true')
+    parser.add_argument('--widths', nargs=2, type=int, default=[1500, 1000])
     args = parser.parse_args()
+    if args.widths[0] != 1500 or len(set(args.widths)) != 2 or min(args.widths) < 80:
+        parser.error('Keep the production 1500px baseline first and choose one distinct control width')
     args.output.mkdir(parents=True, exist_ok=True)
     cv2.setNumThreads(2)
     for index, case in enumerate(json.loads(args.manifest.read_text())):
@@ -129,11 +136,12 @@ def main():
             if not source.exists():
                 continue
             previous = json.loads(source.read_text())
-        row = evaluate(case, previous, include_dense_tail=not args.initial_sampler)
+        row = evaluate(case, previous, include_dense_tail=not args.initial_sampler,
+                       native_footprint=args.native_footprint, widths=tuple(args.widths))
         dest.write_text(json.dumps(row, indent=2, allow_nan=False))
         print(row['name'], row['model'], 'stable', row['endpoints_stable_at_two_scales'],
               'span', [None if (value := row['measurements'][str(s)]['evidence']['observed_span_permille']) is None
-                       else round(value, 3) for s in [1500, 1000]],
+                       else round(value, 3) for s in args.widths],
               'seconds', round(row['elapsed_seconds'], 1), flush=True)
         gc.collect()
 

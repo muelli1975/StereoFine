@@ -89,6 +89,8 @@ Geometry analysis uses a maximum width of 3000 px. All selected geometric correc
 
 After geometric correction, StereoFine runs a separate semi-dense horizontal disparity analysis at up to 1500 px width. The main values use robust P1/P99 limits; additional robust ranges are used to assess uncertainty.
 
+The width limits apply per eye. Additional point checks compare local 17x17 brightness windows in the analysis image; existing recovery of unconfirmed near measurements uses 41x41 windows at original spatial resolution. These are measurement neighbourhoods, not independently warped image tiles or export crops. The [measurement-window guide](docs/MEASUREMENT_WINDOWS_1.1.md) distinguishes production checks from the current two-ended research pilot.
+
 The traffic light is practical guidance:
 
 - **green:** up to 33‰ total deviation

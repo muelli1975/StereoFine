@@ -9,7 +9,7 @@ import numpy as np
 
 from stereofine.disparity import _resize_pair_for_disparity, _rgb_to_luma_uint8
 from stereofine.near_point import verify_patch, supported_near_edge
-from stereofine.near_point_recovery import native_patch_checks
+from experiments.native_footprint import check_native_footprint
 
 PROTOCOL = dict(version="range-evidence-3", grid=[8, 6], seeds_per_cell=4,
                 dense_tail_cell_px=16, dense_tail_seeds_per_end=64,
@@ -22,7 +22,8 @@ def supported(points, sign, width):
     return supported_near_edge(signed, -1e10, width)
 
 
-def measure_range_evidence(left, right, max_width=1500, dense=None, *, include_dense_tail=True):
+def measure_range_evidence(left, right, max_width=1500, dense=None, *, include_dense_tail=True,
+                           native_footprint=False):
     import cv2
     small_left, small_right, _ = _resize_pair_for_disparity(left, right, max_width)
     a, b = [_rgb_to_luma_uint8(x) for x in (small_left, small_right)]
@@ -97,9 +98,9 @@ def measure_range_evidence(left, right, max_width=1500, dense=None, *, include_d
         analysis = supported(points, sign, w)
         ranked = sorted(points, key=lambda p: sign*p['disparity_px'], reverse=True)[:24]
         reflected = [dict(p, x=w-1-p['x'], disparity_px=-p['disparity_px']) for p in ranked]
-        checks = native_patch_checks(left if sign == 1 else left[:, ::-1].copy(),
+        checks, native_audit = check_native_footprint(left if sign == 1 else left[:, ::-1].copy(),
                                      right if sign == 1 else right[:, ::-1].copy(),
-                                     a.shape, ranked if sign == 1 else reflected)
+                                     a.shape, ranked if sign == 1 else reflected, enabled=native_footprint)
         associations = {}
         for p in ranked if sign == 1 else reflected:
             xy = (round((p['x']+.5)*nw/w-.5), round((p['y']+.5)*nh/h-.5))
@@ -126,12 +127,15 @@ def measure_range_evidence(left, right, max_width=1500, dense=None, *, include_d
             analysis_supported_points=analysis['supported_points'],
             native_checked=len(ranked), native_verified=len(checks),
             same_point_agreement=len(agreed), native_supported_points=native['supported_points'],
-            native_locations=checks)
+            native_locations=checks, native_audit=native_audit)
     far, near = endpoints['far'], endpoints['near']
     span = None
     if far['edge_permille'] is not None and near['edge_permille'] is not None:
         span = near['edge_permille'] - far['edge_permille']
     protocol = PROTOCOL.copy()
+    if native_footprint:
+        protocol.update(version='range-evidence-4', native_footprint_radius_cap=64,
+                        native_fallback='only failed forward photometric checks; original accepted checks retained')
     if not include_dense_tail:
         protocol['version'] = 'range-evidence-1'
         protocol['dense_tail_seeds_per_end'] = 0

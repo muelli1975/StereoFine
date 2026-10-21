@@ -13,9 +13,15 @@ def summarize(folder, reference=None):
     reasons = Counter()
     times = []
     transitions = Counter()
+    native_rejections = Counter()
+    protocols = set()
+    resolutions = set()
     for path in sorted(Path(folder).glob('*_range.json')):
         r = json.loads(path.read_text())
-        entries = [r['measurements'][str(width)] for width in [1500, 1000]]
+        protocols.add(r['protocol']['version'])
+        widths = r.get('analysis_widths', [1500, 1000])
+        resolutions.add(tuple(widths))
+        entries = [r['measurements'][str(width)] for width in widths]
         evidence = [m['evidence'] for m in entries]
         spans = [m['observed_span_permille'] for m in evidence]
         span_delta = None if None in spans else abs(spans[0]-spans[1])
@@ -33,23 +39,27 @@ def summarize(folder, reference=None):
                 previous = summarize_file(refpath)
                 old_stable = previous
                 transitions[f'{previous}->{stable}'] += 1
-        for m in entries:
+        for width, m in zip(widths, entries):
             times.append(m['evidence_seconds'])
             for end, e in m['evidence']['endpoints'].items():
+                for record in e.get('native_audit', []):
+                    native_rejections[f'{width}:{record["radius"]}:{record["reason"]}'] += 1
                 for reason in e['reasons']:
                     reasons[end+':'+reason] += 1
         rows.append(dict(name=r['name'], model=r['model'], baseline_deviation_permille=baseline.get('deviation_permille'),
             baseline_uncertainty=baseline.get('uncertain_reasons'), observed_spans_permille=spans,
-            endpoints=[{end: {key: value for key, value in e.items() if key != 'native_locations'}
+            endpoints=[{end: {key: value for key, value in e.items() if key not in {'native_locations', 'native_audit'}}
                         for end, e in m['endpoints'].items()} for m in evidence],
             span_difference_permille=span_delta, endpoint_differences_permille=deltas,
             stable_endpoints_at_both_scales=stable, previous_stable=old_stable,
             input_files_unchanged=r['input_files_unchanged']))
     return dict(scope='Observed span only; no ground truth or completeness claim on original images',
-        protocol='range-evidence-3; both endpoints and span must agree within 1.5 permille',
+        protocol='both endpoints and span must agree within 1.5 permille', source_protocols=sorted(protocols),
+        analysis_widths=[list(w) for w in sorted(resolutions)],
         cases=len(rows), image_pairs=len({r['name'].rsplit('_', 1)[0] for r in rows}),
         stable=sum(r['stable_endpoints_at_both_scales'] for r in rows),
         transitions=dict(transitions), unresolved_reasons=dict(reasons),
+        native_check_outcomes=dict(native_rejections),
         all_input_files_unchanged=all(r['input_files_unchanged'] for r in rows),
         evidence_seconds=dict(median=statistics.median(times), maximum=max(times)) if times else {},
         results=rows)
@@ -57,7 +67,7 @@ def summarize(folder, reference=None):
 
 def summarize_file(path):
     r = json.loads(path.read_text())
-    evidence = [r['measurements'][str(w)]['evidence'] for w in [1500, 1000]]
+    evidence = [r['measurements'][str(w)]['evidence'] for w in r.get('analysis_widths', [1500, 1000])]
     if not all(m['endpoints_confirmed'] for m in evidence):
         return False
     for field in ['far', 'near']:

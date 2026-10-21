@@ -55,7 +55,7 @@ def stratified_tail_probe(left, right, disparity, confidence, baseline):
     return result
 
 
-def native_patch_checks(left, right, analysis_shape, points):
+def native_patch_checks(left, right, analysis_shape, points, *, patch_radius=20, audit=None):
     """Separate 41x41 native-pixel NCC, global strip search and reciprocal check.
 
     Uses neither the SGBM disparity nor the analysis-scale NCC match as a
@@ -67,15 +67,23 @@ def native_patch_checks(left, right, analysis_shape, points):
     a, b = _rgb_to_luma_uint8(master_to_uint8(left)), _rgb_to_luma_uint8(master_to_uint8(right))
     h, w = a.shape
     ah, aw = analysis_shape
-    radius, vertical = 20, 6
+    radius, vertical = int(patch_radius), 6
+    if radius < 8:
+        raise ValueError('Native patch radius must be at least eight pixels')
     checked = []
     for point in sorted(points, key=lambda p: p["disparity_px"], reverse=True)[:24]:
         x = round((point["x"]+.5)*w/aw-.5)
         y = round((point["y"]+.5)*h/ah-.5)
+        record = dict(x=x, y=y, radius=radius)
+        def record_outcome(reason):
+            if audit is not None:
+                audit.append(dict(record, reason=reason))
         if not (radius <= x < w-radius and radius+vertical <= y < h-radius-vertical):
+            record_outcome('source_border')
             continue
         template = a[y-radius:y+radius+1, x-radius:x+radius+1]
         if float(template.std()) < 6:
+            record_outcome('source_texture')
             continue
         scores = cv2.matchTemplate(b[y-radius-vertical:y+radius+vertical+1], template, cv2.TM_CCOEFF_NORMED)
         _, peak, _, position = cv2.minMaxLoc(scores)
@@ -83,18 +91,26 @@ def native_patch_checks(left, right, analysis_shape, points):
         other = scores.copy()
         other[max(0, py-2):py+3, max(0, px-4):px+5] = -1
         uniqueness = peak-float(other.max())
+        record.update(correlation=float(peak), uniqueness=float(uniqueness), vertical_px=int(vertical-py))
         if peak < .85 or uniqueness < .05:
+            record_outcome('forward_correlation' if peak < .85 else 'forward_uniqueness')
             continue
         rx, ry = px+radius, y-vertical+py
         if not radius+vertical <= ry < h-radius-vertical:
+            record_outcome('target_border')
             continue
         template = b[ry-radius:ry+radius+1, rx-radius:rx+radius+1]
         if float(template.std()) < 6:
+            record_outcome('target_texture')
             continue
         back = cv2.matchTemplate(a[ry-radius-vertical:ry+radius+vertical+1], template, cv2.TM_CCOEFF_NORMED)
         _, reverse_peak, _, reverse_position = cv2.minMaxLoc(back)
-        if reverse_peak < .85 or np.hypot(reverse_position[0]+radius-x, ry-vertical+reverse_position[1]-y) > 1:
+        reciprocal_error = np.hypot(reverse_position[0]+radius-x, ry-vertical+reverse_position[1]-y)
+        record.update(reverse_correlation=float(reverse_peak), reciprocal_error=float(reciprocal_error))
+        if reverse_peak < .85 or reciprocal_error > 1:
+            record_outcome('reverse_correlation' if reverse_peak < .85 else 'reciprocity')
             continue
+        record_outcome('accepted')
         checked.append(dict(x=x, y=y, disparity_permille=1000*(x-rx)/w,
                             vertical_px=y-ry, correlation=float(peak), uniqueness=uniqueness))
     return checked

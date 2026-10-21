@@ -1,0 +1,1235 @@
+{
+  "scope": "Observed span only; no ground truth or completeness claim on original images",
+  "protocol": "both endpoints and span must agree within 1.5 permille",
+  "source_protocols": [
+    "range-evidence-3"
+  ],
+  "analysis_widths": [
+    [
+      1500,
+      2000
+    ]
+  ],
+  "cases": 17,
+  "image_pairs": 14,
+  "stable": 0,
+  "transitions": {},
+  "unresolved_reasons": {
+    "far:isolated_more_extreme_native_match": 6,
+    "far:unresolved_more_extreme_analysis_surface": 13,
+    "near:isolated_more_extreme_native_match": 3,
+    "near:unresolved_more_extreme_analysis_surface": 10,
+    "far:no_native_spatial_support": 2,
+    "near:no_native_spatial_support": 5
+  },
+  "native_check_outcomes": {
+    "1500:20:accepted": 351,
+    "1500:20:forward_correlation": 208,
+    "1500:20:forward_uniqueness": 165,
+    "1500:20:source_texture": 83,
+    "2000:20:forward_correlation": 196,
+    "2000:20:accepted": 434,
+    "2000:20:source_texture": 19,
+    "2000:20:forward_uniqueness": 138,
+    "1500:20:target_texture": 2,
+    "2000:20:reciprocity": 20,
+    "2000:20:target_texture": 3,
+    "1500:20:reciprocity": 7,
+    "2000:20:source_border": 6
+  },
+  "all_input_files_unchanged": true,
+  "evidence_seconds": {
+    "median": 1.8094015219994617,
+    "maximum": 2.5952406949982105
+  },
+  "results": [
+    {
+      "name": "ixus_bild027_SIFT",
+      "model": "Affine + yQuad",
+      "baseline_deviation_permille": 14.359172353347384,
+      "baseline_uncertainty": [],
+      "observed_spans_permille": [
+        13.612301487269978,
+        13.612301487269978
+      ],
+      "endpoints": [
+        {
+          "far": {
+            "confirmed": false,
+            "reasons": [
+              "isolated_more_extreme_native_match"
+            ],
+            "edge_permille": -4.789513486261659,
+            "analysis_supported_points": 248,
+            "native_checked": 24,
+            "native_verified": 18,
+            "same_point_agreement": 18,
+            "native_supported_points": 17
+          },
+          "near": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 8.822788001008318,
+            "analysis_supported_points": 248,
+            "native_checked": 24,
+            "native_verified": 11,
+            "same_point_agreement": 11,
+            "native_supported_points": 11
+          }
+        },
+        {
+          "far": {
+            "confirmed": false,
+            "reasons": [
+              "isolated_more_extreme_native_match",
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": -4.789513486261659,
+            "analysis_supported_points": 251,
+            "native_checked": 24,
+            "native_verified": 15,
+            "same_point_agreement": 14,
+            "native_supported_points": 12
+          },
+          "near": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 8.822788001008318,
+            "analysis_supported_points": 251,
+            "native_checked": 24,
+            "native_verified": 19,
+            "same_point_agreement": 19,
+            "native_supported_points": 18
+          }
+        }
+      ],
+      "span_difference_permille": 0.0,
+      "endpoint_differences_permille": {
+        "far": 0.0,
+        "near": 0.0
+      },
+      "stable_endpoints_at_both_scales": false,
+      "previous_stable": null,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild004_SIFT",
+      "model": "Affine + yQuad",
+      "baseline_deviation_permille": 21.33333331346512,
+      "baseline_uncertainty": [
+        "near_edge_unconfirmed"
+      ],
+      "observed_spans_permille": [
+        21.87097959933836,
+        22.238559088402866
+      ],
+      "endpoints": [
+        {
+          "far": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": -20.95203087667708,
+            "analysis_supported_points": 208,
+            "native_checked": 24,
+            "native_verified": 21,
+            "same_point_agreement": 21,
+            "native_supported_points": 21
+          },
+          "near": {
+            "confirmed": false,
+            "reasons": [
+              "isolated_more_extreme_native_match",
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": 0.9189487226612755,
+            "analysis_supported_points": 208,
+            "native_checked": 24,
+            "native_verified": 12,
+            "same_point_agreement": 12,
+            "native_supported_points": 10
+          }
+        },
+        {
+          "far": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": -20.95203087667708,
+            "analysis_supported_points": 180,
+            "native_checked": 24,
+            "native_verified": 12,
+            "same_point_agreement": 12,
+            "native_supported_points": 12
+          },
+          "near": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 1.2865282117257857,
+            "analysis_supported_points": 180,
+            "native_checked": 24,
+            "native_verified": 16,
+            "same_point_agreement": 16,
+            "native_supported_points": 16
+          }
+        }
+      ],
+      "span_difference_permille": 0.3675794890645072,
+      "endpoint_differences_permille": {
+        "far": 0.0,
+        "near": 0.3675794890645102
+      },
+      "stable_endpoints_at_both_scales": false,
+      "previous_stable": null,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild008_AKAZE",
+      "model": "Affine + yCubic",
+      "baseline_deviation_permille": 24.294171366913304,
+      "baseline_uncertainty": [
+        "far_edge_outside_estimate"
+      ],
+      "observed_spans_permille": [
+        23.992673992673993,
+        24.358974358974358
+      ],
+      "endpoints": [
+        {
+          "far": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": -7.326007326007326,
+            "analysis_supported_points": 183,
+            "native_checked": 24,
+            "native_verified": 5,
+            "same_point_agreement": 5,
+            "native_supported_points": 4
+          },
+          "near": {
+            "confirmed": false,
+            "reasons": [
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": 16.666666666666668,
+            "analysis_supported_points": 183,
+            "native_checked": 24,
+            "native_verified": 9,
+            "same_point_agreement": 9,
+            "native_supported_points": 8
+          }
+        },
+        {
+          "far": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": -7.326007326007326,
+            "analysis_supported_points": 155,
+            "native_checked": 24,
+            "native_verified": 8,
+            "same_point_agreement": 8,
+            "native_supported_points": 8
+          },
+          "near": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 17.032967032967033,
+            "analysis_supported_points": 155,
+            "native_checked": 24,
+            "native_verified": 12,
+            "same_point_agreement": 12,
+            "native_supported_points": 12
+          }
+        }
+      ],
+      "span_difference_permille": 0.366300366300365,
+      "endpoint_differences_permille": {
+        "far": 0.0,
+        "near": 0.366300366300365
+      },
+      "stable_endpoints_at_both_scales": false,
+      "previous_stable": null,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild023_AKAZE",
+      "model": "Affine + yCubic",
+      "baseline_deviation_permille": 18.30399912505731,
+      "baseline_uncertainty": [
+        "far_edge_outside_estimate"
+      ],
+      "observed_spans_permille": [
+        19.054598754122388,
+        19.054598754122388
+      ],
+      "endpoints": [
+        {
+          "far": {
+            "confirmed": false,
+            "reasons": [
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": -5.679736167094173,
+            "analysis_supported_points": 224,
+            "native_checked": 24,
+            "native_verified": 2,
+            "same_point_agreement": 2,
+            "native_supported_points": 2
+          },
+          "near": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 13.374862587028215,
+            "analysis_supported_points": 224,
+            "native_checked": 24,
+            "native_verified": 15,
+            "same_point_agreement": 15,
+            "native_supported_points": 15
+          }
+        },
+        {
+          "far": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": -5.862953462806889,
+            "analysis_supported_points": 223,
+            "native_checked": 24,
+            "native_verified": 14,
+            "same_point_agreement": 14,
+            "native_supported_points": 14
+          },
+          "near": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 13.191645291315501,
+            "analysis_supported_points": 223,
+            "native_checked": 24,
+            "native_verified": 11,
+            "same_point_agreement": 11,
+            "native_supported_points": 11
+          }
+        }
+      ],
+      "span_difference_permille": 0.0,
+      "endpoint_differences_permille": {
+        "far": 0.1832172957127156,
+        "near": 0.18321729571271383
+      },
+      "stable_endpoints_at_both_scales": false,
+      "previous_stable": null,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild023_SIFT",
+      "model": "Affine + yCubic",
+      "baseline_deviation_permille": 17.291666507720947,
+      "baseline_uncertainty": [
+        "far_edge_outside_estimate"
+      ],
+      "observed_spans_permille": [
+        null,
+        19.054598754122388
+      ],
+      "endpoints": [
+        {
+          "far": {
+            "confirmed": false,
+            "reasons": [
+              "no_native_spatial_support"
+            ],
+            "edge_permille": null,
+            "analysis_supported_points": 231,
+            "native_checked": 24,
+            "native_verified": 1,
+            "same_point_agreement": 1,
+            "native_supported_points": 0
+          },
+          "near": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 13.374862587028215,
+            "analysis_supported_points": 231,
+            "native_checked": 24,
+            "native_verified": 10,
+            "same_point_agreement": 10,
+            "native_supported_points": 10
+          }
+        },
+        {
+          "far": {
+            "confirmed": false,
+            "reasons": [
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": -5.862953462806889,
+            "analysis_supported_points": 228,
+            "native_checked": 24,
+            "native_verified": 12,
+            "same_point_agreement": 12,
+            "native_supported_points": 12
+          },
+          "near": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 13.191645291315501,
+            "analysis_supported_points": 228,
+            "native_checked": 24,
+            "native_verified": 14,
+            "same_point_agreement": 14,
+            "native_supported_points": 14
+          }
+        }
+      ],
+      "span_difference_permille": null,
+      "endpoint_differences_permille": {
+        "far": null,
+        "near": 0.18321729571271383
+      },
+      "stable_endpoints_at_both_scales": false,
+      "previous_stable": null,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild029_SIFT",
+      "model": "Affine + yCubic",
+      "baseline_deviation_permille": 23.249999523162842,
+      "baseline_uncertainty": [
+        "far_edge_unconfirmed"
+      ],
+      "observed_spans_permille": [
+        null,
+        24.193548387096772
+      ],
+      "endpoints": [
+        {
+          "far": {
+            "confirmed": false,
+            "reasons": [
+              "no_native_spatial_support"
+            ],
+            "edge_permille": null,
+            "analysis_supported_points": 240,
+            "native_checked": 24,
+            "native_verified": 2,
+            "same_point_agreement": 2,
+            "native_supported_points": 0
+          },
+          "near": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 17.228739002932553,
+            "analysis_supported_points": 240,
+            "native_checked": 24,
+            "native_verified": 7,
+            "same_point_agreement": 7,
+            "native_supported_points": 7
+          }
+        },
+        {
+          "far": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": -6.781524926686217,
+            "analysis_supported_points": 199,
+            "native_checked": 24,
+            "native_verified": 6,
+            "same_point_agreement": 6,
+            "native_supported_points": 4
+          },
+          "near": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 17.412023460410555,
+            "analysis_supported_points": 199,
+            "native_checked": 24,
+            "native_verified": 9,
+            "same_point_agreement": 9,
+            "native_supported_points": 9
+          }
+        }
+      ],
+      "span_difference_permille": null,
+      "endpoint_differences_permille": {
+        "far": null,
+        "near": 0.1832844574780026
+      },
+      "stable_endpoints_at_both_scales": false,
+      "previous_stable": null,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild033_AKAZE",
+      "model": "Affine + yCubic",
+      "baseline_deviation_permille": 25.387905776826788,
+      "baseline_uncertainty": [
+        "far_edge_outside_estimate"
+      ],
+      "observed_spans_permille": [
+        null,
+        23.157507811064143
+      ],
+      "endpoints": [
+        {
+          "far": {
+            "confirmed": false,
+            "reasons": [
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": -28.303620657967286,
+            "analysis_supported_points": 189,
+            "native_checked": 24,
+            "native_verified": 5,
+            "same_point_agreement": 5,
+            "native_supported_points": 3
+          },
+          "near": {
+            "confirmed": false,
+            "reasons": [
+              "no_native_spatial_support"
+            ],
+            "edge_permille": null,
+            "analysis_supported_points": 189,
+            "native_checked": 24,
+            "native_verified": 1,
+            "same_point_agreement": 1,
+            "native_supported_points": 0
+          }
+        },
+        {
+          "far": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": -28.303620657967286,
+            "analysis_supported_points": 171,
+            "native_checked": 24,
+            "native_verified": 18,
+            "same_point_agreement": 18,
+            "native_supported_points": 17
+          },
+          "near": {
+            "confirmed": false,
+            "reasons": [
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": -5.146112846903143,
+            "analysis_supported_points": 171,
+            "native_checked": 24,
+            "native_verified": 10,
+            "same_point_agreement": 10,
+            "native_supported_points": 9
+          }
+        }
+      ],
+      "span_difference_permille": null,
+      "endpoint_differences_permille": {
+        "far": 0.0,
+        "near": null
+      },
+      "stable_endpoints_at_both_scales": false,
+      "previous_stable": null,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild041_AKAZE",
+      "model": "Affine + yCubic",
+      "baseline_deviation_permille": 10.666666507720947,
+      "baseline_uncertainty": [
+        "far_edge_unconfirmed"
+      ],
+      "observed_spans_permille": [
+        9.340659340659341,
+        10.073260073260073
+      ],
+      "endpoints": [
+        {
+          "far": {
+            "confirmed": false,
+            "reasons": [
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": -4.945054945054945,
+            "analysis_supported_points": 173,
+            "native_checked": 24,
+            "native_verified": 11,
+            "same_point_agreement": 11,
+            "native_supported_points": 11
+          },
+          "near": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 4.395604395604396,
+            "analysis_supported_points": 173,
+            "native_checked": 24,
+            "native_verified": 6,
+            "same_point_agreement": 6,
+            "native_supported_points": 6
+          }
+        },
+        {
+          "far": {
+            "confirmed": false,
+            "reasons": [
+              "isolated_more_extreme_native_match"
+            ],
+            "edge_permille": -5.677655677655678,
+            "analysis_supported_points": 156,
+            "native_checked": 24,
+            "native_verified": 13,
+            "same_point_agreement": 13,
+            "native_supported_points": 12
+          },
+          "near": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 4.395604395604396,
+            "analysis_supported_points": 156,
+            "native_checked": 24,
+            "native_verified": 6,
+            "same_point_agreement": 6,
+            "native_supported_points": 5
+          }
+        }
+      ],
+      "span_difference_permille": 0.7326007326007318,
+      "endpoint_differences_permille": {
+        "far": 0.7326007326007327,
+        "near": 0.0
+      },
+      "stable_endpoints_at_both_scales": false,
+      "previous_stable": null,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild041_SIFT",
+      "model": "Affine + yCubic",
+      "baseline_deviation_permille": 11.534405598933105,
+      "baseline_uncertainty": [
+        "far_edge_unconfirmed"
+      ],
+      "observed_spans_permille": [
+        null,
+        9.523809523809526
+      ],
+      "endpoints": [
+        {
+          "far": {
+            "confirmed": false,
+            "reasons": [
+              "isolated_more_extreme_native_match",
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": -4.945054945054945,
+            "analysis_supported_points": 166,
+            "native_checked": 24,
+            "native_verified": 7,
+            "same_point_agreement": 7,
+            "native_supported_points": 5
+          },
+          "near": {
+            "confirmed": false,
+            "reasons": [
+              "no_native_spatial_support"
+            ],
+            "edge_permille": null,
+            "analysis_supported_points": 166,
+            "native_checked": 24,
+            "native_verified": 2,
+            "same_point_agreement": 2,
+            "native_supported_points": 0
+          }
+        },
+        {
+          "far": {
+            "confirmed": false,
+            "reasons": [
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": -5.128205128205129,
+            "analysis_supported_points": 156,
+            "native_checked": 24,
+            "native_verified": 19,
+            "same_point_agreement": 19,
+            "native_supported_points": 19
+          },
+          "near": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 4.395604395604396,
+            "analysis_supported_points": 156,
+            "native_checked": 24,
+            "native_verified": 6,
+            "same_point_agreement": 6,
+            "native_supported_points": 2
+          }
+        }
+      ],
+      "span_difference_permille": null,
+      "endpoint_differences_permille": {
+        "far": 0.1831501831501834,
+        "near": null
+      },
+      "stable_endpoints_at_both_scales": false,
+      "previous_stable": null,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild045_AKAZE",
+      "model": "Affine + yQuad",
+      "baseline_deviation_permille": 17.958333492279053,
+      "baseline_uncertainty": [],
+      "observed_spans_permille": [
+        17.93557833089312,
+        null
+      ],
+      "endpoints": [
+        {
+          "far": {
+            "confirmed": false,
+            "reasons": [
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": -6.405563689604685,
+            "analysis_supported_points": 198,
+            "native_checked": 24,
+            "native_verified": 5,
+            "same_point_agreement": 5,
+            "native_supported_points": 4
+          },
+          "near": {
+            "confirmed": false,
+            "reasons": [
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": 11.530014641288433,
+            "analysis_supported_points": 198,
+            "native_checked": 24,
+            "native_verified": 4,
+            "same_point_agreement": 4,
+            "native_supported_points": 4
+          }
+        },
+        {
+          "far": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": -6.405563689604685,
+            "analysis_supported_points": 169,
+            "native_checked": 24,
+            "native_verified": 8,
+            "same_point_agreement": 8,
+            "native_supported_points": 6
+          },
+          "near": {
+            "confirmed": false,
+            "reasons": [
+              "no_native_spatial_support"
+            ],
+            "edge_permille": null,
+            "analysis_supported_points": 169,
+            "native_checked": 24,
+            "native_verified": 1,
+            "same_point_agreement": 1,
+            "native_supported_points": 0
+          }
+        }
+      ],
+      "span_difference_permille": null,
+      "endpoint_differences_permille": {
+        "far": 0.0,
+        "near": null
+      },
+      "stable_endpoints_at_both_scales": false,
+      "previous_stable": null,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "nx1000_bild045_SIFT",
+      "model": "Affine + yQuad",
+      "baseline_deviation_permille": 19.58869787313967,
+      "baseline_uncertainty": [],
+      "observed_spans_permille": [
+        null,
+        null
+      ],
+      "endpoints": [
+        {
+          "far": {
+            "confirmed": false,
+            "reasons": [
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": -6.40790919077261,
+            "analysis_supported_points": 204,
+            "native_checked": 24,
+            "native_verified": 3,
+            "same_point_agreement": 3,
+            "native_supported_points": 3
+          },
+          "near": {
+            "confirmed": false,
+            "reasons": [
+              "no_native_spatial_support"
+            ],
+            "edge_permille": null,
+            "analysis_supported_points": 204,
+            "native_checked": 24,
+            "native_verified": 2,
+            "same_point_agreement": 2,
+            "native_supported_points": 0
+          }
+        },
+        {
+          "far": {
+            "confirmed": false,
+            "reasons": [
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": -6.590992310508971,
+            "analysis_supported_points": 173,
+            "native_checked": 24,
+            "native_verified": 9,
+            "same_point_agreement": 9,
+            "native_supported_points": 9
+          },
+          "near": {
+            "confirmed": false,
+            "reasons": [
+              "no_native_spatial_support"
+            ],
+            "edge_permille": null,
+            "analysis_supported_points": 173,
+            "native_checked": 24,
+            "native_verified": 0,
+            "same_point_agreement": 0,
+            "native_supported_points": 0
+          }
+        }
+      ],
+      "span_difference_permille": null,
+      "endpoint_differences_permille": {
+        "far": 0.18308311973636116,
+        "near": null
+      },
+      "stable_endpoints_at_both_scales": false,
+      "previous_stable": null,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s110_bild005_AKAZE",
+      "model": "Affine + yQuad",
+      "baseline_deviation_permille": 31.465925174271042,
+      "baseline_uncertainty": [
+        "far_edge_unconfirmed"
+      ],
+      "observed_spans_permille": [
+        25.592862174219302,
+        24.888471472176565
+      ],
+      "endpoints": [
+        {
+          "far": {
+            "confirmed": false,
+            "reasons": [
+              "isolated_more_extreme_native_match",
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": 12.444235736088284,
+            "analysis_supported_points": 191,
+            "native_checked": 24,
+            "native_verified": 10,
+            "same_point_agreement": 10,
+            "native_supported_points": 7
+          },
+          "near": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 38.03709791030759,
+            "analysis_supported_points": 191,
+            "native_checked": 24,
+            "native_verified": 9,
+            "same_point_agreement": 9,
+            "native_supported_points": 9
+          }
+        },
+        {
+          "far": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 12.444235736088284,
+            "analysis_supported_points": 157,
+            "native_checked": 24,
+            "native_verified": 18,
+            "same_point_agreement": 18,
+            "native_supported_points": 18
+          },
+          "near": {
+            "confirmed": false,
+            "reasons": [
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": 37.33270720826485,
+            "analysis_supported_points": 157,
+            "native_checked": 24,
+            "native_verified": 6,
+            "same_point_agreement": 6,
+            "native_supported_points": 6
+          }
+        }
+      ],
+      "span_difference_permille": 0.7043907020427369,
+      "endpoint_differences_permille": {
+        "far": 0.0,
+        "near": 0.7043907020427369
+      },
+      "stable_endpoints_at_both_scales": false,
+      "previous_stable": null,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s110_bild023_SIFT",
+      "model": "Affine + yQuad",
+      "baseline_deviation_permille": 31.710078063639877,
+      "baseline_uncertainty": [
+        "far_edge_outside_estimate"
+      ],
+      "observed_spans_permille": [
+        31.176746366619785,
+        32.114392873886544
+      ],
+      "endpoints": [
+        {
+          "far": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 4.688232536333802,
+            "analysis_supported_points": 255,
+            "native_checked": 24,
+            "native_verified": 19,
+            "same_point_agreement": 19,
+            "native_supported_points": 19
+          },
+          "near": {
+            "confirmed": false,
+            "reasons": [
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": 35.86497890295359,
+            "analysis_supported_points": 255,
+            "native_checked": 24,
+            "native_verified": 15,
+            "same_point_agreement": 14,
+            "native_supported_points": 14
+          }
+        },
+        {
+          "far": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 4.688232536333802,
+            "analysis_supported_points": 208,
+            "native_checked": 24,
+            "native_verified": 21,
+            "same_point_agreement": 21,
+            "native_supported_points": 20
+          },
+          "near": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 36.802625410220344,
+            "analysis_supported_points": 208,
+            "native_checked": 24,
+            "native_verified": 13,
+            "same_point_agreement": 12,
+            "native_supported_points": 11
+          }
+        }
+      ],
+      "span_difference_permille": 0.9376465072667592,
+      "endpoint_differences_permille": {
+        "far": 0.0,
+        "near": 0.9376465072667557
+      },
+      "stable_endpoints_at_both_scales": false,
+      "previous_stable": null,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild032_AKAZE",
+      "model": "Affine + yQuad",
+      "baseline_deviation_permille": 19.401675247320632,
+      "baseline_uncertainty": [
+        "far_edge_outside_estimate"
+      ],
+      "observed_spans_permille": [
+        18.740239458615303,
+        19.000520562207186
+      ],
+      "endpoints": [
+        {
+          "far": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 13.274336283185843,
+            "analysis_supported_points": 259,
+            "native_checked": 24,
+            "native_verified": 22,
+            "same_point_agreement": 22,
+            "native_supported_points": 22
+          },
+          "near": {
+            "confirmed": false,
+            "reasons": [
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": 32.014575741801146,
+            "analysis_supported_points": 259,
+            "native_checked": 24,
+            "native_verified": 17,
+            "same_point_agreement": 16,
+            "native_supported_points": 16
+          }
+        },
+        {
+          "far": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 13.274336283185841,
+            "analysis_supported_points": 233,
+            "native_checked": 24,
+            "native_verified": 23,
+            "same_point_agreement": 23,
+            "native_supported_points": 23
+          },
+          "near": {
+            "confirmed": false,
+            "reasons": [
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": 32.274856845393025,
+            "analysis_supported_points": 233,
+            "native_checked": 24,
+            "native_verified": 18,
+            "same_point_agreement": 9,
+            "native_supported_points": 9
+          }
+        }
+      ],
+      "span_difference_permille": 0.2602811035918826,
+      "endpoint_differences_permille": {
+        "far": 1.7763568394002505e-15,
+        "near": 0.26028110359187906
+      },
+      "stable_endpoints_at_both_scales": false,
+      "previous_stable": null,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild038_AKAZE",
+      "model": "Affine + yQuad",
+      "baseline_deviation_permille": 12.666666030883789,
+      "baseline_uncertainty": [],
+      "observed_spans_permille": [
+        11.712649661634563,
+        11.712649661634563
+      ],
+      "endpoints": [
+        {
+          "far": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 12.493492972410204,
+            "analysis_supported_points": 185,
+            "native_checked": 24,
+            "native_verified": 15,
+            "same_point_agreement": 15,
+            "native_supported_points": 15
+          },
+          "near": {
+            "confirmed": false,
+            "reasons": [
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": 24.206142634044767,
+            "analysis_supported_points": 185,
+            "native_checked": 24,
+            "native_verified": 7,
+            "same_point_agreement": 7,
+            "native_supported_points": 7
+          }
+        },
+        {
+          "far": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 12.493492972410204,
+            "analysis_supported_points": 144,
+            "native_checked": 24,
+            "native_verified": 19,
+            "same_point_agreement": 19,
+            "native_supported_points": 16
+          },
+          "near": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 24.206142634044767,
+            "analysis_supported_points": 144,
+            "native_checked": 24,
+            "native_verified": 16,
+            "same_point_agreement": 16,
+            "native_supported_points": 15
+          }
+        }
+      ],
+      "span_difference_permille": 0.0,
+      "endpoint_differences_permille": {
+        "far": 0.0,
+        "near": 0.0
+      },
+      "stable_endpoints_at_both_scales": false,
+      "previous_stable": null,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild054_SIFT",
+      "model": "Affine + yQuad",
+      "baseline_deviation_permille": 32.291664123535156,
+      "baseline_uncertainty": [
+        "far_edge_unconfirmed",
+        "far_edge_outside_estimate"
+      ],
+      "observed_spans_permille": [
+        34.321372854914195,
+        33.801352054082166
+      ],
+      "endpoints": [
+        {
+          "far": {
+            "confirmed": false,
+            "reasons": [
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": -1.0400416016640666,
+            "analysis_supported_points": 203,
+            "native_checked": 24,
+            "native_verified": 14,
+            "same_point_agreement": 14,
+            "native_supported_points": 13
+          },
+          "near": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 33.28133125325013,
+            "analysis_supported_points": 203,
+            "native_checked": 24,
+            "native_verified": 20,
+            "same_point_agreement": 20,
+            "native_supported_points": 17
+          }
+        },
+        {
+          "far": {
+            "confirmed": false,
+            "reasons": [
+              "isolated_more_extreme_native_match",
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": -0.5200208008320333,
+            "analysis_supported_points": 201,
+            "native_checked": 24,
+            "native_verified": 14,
+            "same_point_agreement": 14,
+            "native_supported_points": 11
+          },
+          "near": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 33.28133125325013,
+            "analysis_supported_points": 201,
+            "native_checked": 24,
+            "native_verified": 14,
+            "same_point_agreement": 14,
+            "native_supported_points": 14
+          }
+        }
+      ],
+      "span_difference_permille": 0.5200208008320288,
+      "endpoint_differences_permille": {
+        "far": 0.5200208008320333,
+        "near": 0.0
+      },
+      "stable_endpoints_at_both_scales": false,
+      "previous_stable": null,
+      "input_files_unchanged": true
+    },
+    {
+      "name": "s95_bild057_SIFT",
+      "model": "Affine + yQuad",
+      "baseline_deviation_permille": 17.856288340937024,
+      "baseline_uncertainty": [
+        "far_edge_outside_estimate",
+        "near_edge_unconfirmed"
+      ],
+      "observed_spans_permille": [
+        20.82248828735034,
+        15.356585111920875
+      ],
+      "endpoints": [
+        {
+          "far": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 1.041124414367517,
+            "analysis_supported_points": 164,
+            "native_checked": 24,
+            "native_verified": 23,
+            "same_point_agreement": 23,
+            "native_supported_points": 23
+          },
+          "near": {
+            "confirmed": false,
+            "reasons": [
+              "isolated_more_extreme_native_match"
+            ],
+            "edge_permille": 21.863612701717855,
+            "analysis_supported_points": 164,
+            "native_checked": 24,
+            "native_verified": 21,
+            "same_point_agreement": 21,
+            "native_supported_points": 16
+          }
+        },
+        {
+          "far": {
+            "confirmed": true,
+            "reasons": [],
+            "edge_permille": 1.041124414367517,
+            "analysis_supported_points": 151,
+            "native_checked": 24,
+            "native_verified": 20,
+            "same_point_agreement": 20,
+            "native_supported_points": 20
+          },
+          "near": {
+            "confirmed": false,
+            "reasons": [
+              "isolated_more_extreme_native_match",
+              "unresolved_more_extreme_analysis_surface"
+            ],
+            "edge_permille": 16.39770952628839,
+            "analysis_supported_points": 151,
+            "native_checked": 24,
+            "native_verified": 14,
+            "same_point_agreement": 14,
+            "native_supported_points": 9
+          }
+        }
+      ],
+      "span_difference_permille": 5.465903175429464,
+      "endpoint_differences_permille": {
+        "far": 0.0,
+        "near": 5.465903175429464
+      },
+      "stable_endpoints_at_both_scales": false,
+      "previous_stable": null,
+      "input_files_unchanged": true
+    }
+  ]
+}
