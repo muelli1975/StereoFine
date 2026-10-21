@@ -49,12 +49,13 @@ The English equivalent is “⚠ Estimate uncertain – please check with M!”.
 warning uses light gold `#c6a95e`, bold text and the warning triangle, following
 TransCora's attention style. The warning uses the entire status row, including
 the space occupied by symbols in other rows: 292 logical pixels for text.
-The actual scaled font is measured for both translations. The row keeps its
-existing 19-pixel height if both fit on one line; otherwise it reserves 32
-pixels for two lines, even while empty. The sidebar width and symbols in other
-rows are unchanged. Empty and visible warnings have identical geometry.
-The existing keyboard help already
-explains that M is held to display the measurement cross.
+Both translations have an explicit line break after the dash in the GUI and
+reserve 32 logical pixels on every platform, even while empty. This is 13
+logical pixels taller than the released single-line slot; the scrollable
+settings area has that much less height while the bottom action buttons stay
+fixed. The sidebar width and symbols in other rows are unchanged. The line
+break is GUI formatting only; text reports retain a single-line table entry.
+The existing keyboard help explains that M is held to display the cross.
 
 `sf-disparity-5` measurements recompute on the next processing pass. Alignment
 caches, favorites and explicit manual edits remain reusable. The saved method
@@ -108,9 +109,9 @@ The full warning was rendered on Linux/Xvfb with Tk 8.6.14 at 100, 125, 150 and
 200 percent scaling, in German and English, at 1100x700 and 1400x850 logical
 window sizes. All 16 combinations fit without clipping or moving the action
 buttons when the warning changes. These are application-scaling checks with
-the Linux font fallback, not a claim of native Windows/macOS font validation.
-The development workflow also runs native warning-layout checks on those
-systems; their results are recorded separately when available.
+the Linux font fallback. Native platform checks and development-package
+verification run again for the uniform two-line presentation; the final
+receipt identifies their exact source commit and workflow run.
 
 This is evidence of a narrower, more useful decision rule, not calibrated
 whole-scene ground truth or proof that every sky/foreground case is solved.

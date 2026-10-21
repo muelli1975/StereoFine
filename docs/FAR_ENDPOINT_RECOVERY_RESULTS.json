@@ -73,10 +73,13 @@
         "window_scale": 1.0,
         "widget_scale": 1.0,
         "required_size": [
-          260,
+          180,
           30
         ],
-        "unwrapped_width": 315,
+        "text_lines": [
+          "\u26a0 Einsch\u00e4tzung unsicher \u2013",
+          "bitte mit M pr\u00fcfen!"
+        ],
         "logical_row_height": 32,
         "scroll_height": 124,
         "controls_stable": true
@@ -96,10 +99,13 @@
         "window_scale": 1.0,
         "widget_scale": 1.0,
         "required_size": [
-          260,
+          180,
           30
         ],
-        "unwrapped_width": 315,
+        "text_lines": [
+          "\u26a0 Einsch\u00e4tzung unsicher \u2013",
+          "bitte mit M pr\u00fcfen!"
+        ],
         "logical_row_height": 32,
         "scroll_height": 274,
         "controls_stable": true
@@ -119,10 +125,13 @@
         "window_scale": 1.0,
         "widget_scale": 1.0,
         "required_size": [
-          280,
+          155,
           30
         ],
-        "unwrapped_width": 301,
+        "text_lines": [
+          "\u26a0 Estimate uncertain \u2013",
+          "please check with M!"
+        ],
         "logical_row_height": 32,
         "scroll_height": 124,
         "controls_stable": true
@@ -142,10 +151,13 @@
         "window_scale": 1.0,
         "widget_scale": 1.0,
         "required_size": [
-          280,
+          155,
           30
         ],
-        "unwrapped_width": 301,
+        "text_lines": [
+          "\u26a0 Estimate uncertain \u2013",
+          "please check with M!"
+        ],
         "logical_row_height": 32,
         "scroll_height": 274,
         "controls_stable": true
@@ -165,10 +177,13 @@
         "window_scale": 1.25,
         "widget_scale": 1.25,
         "required_size": [
-          321,
+          223,
           36
         ],
-        "unwrapped_width": 390,
+        "text_lines": [
+          "\u26a0 Einsch\u00e4tzung unsicher \u2013",
+          "bitte mit M pr\u00fcfen!"
+        ],
         "logical_row_height": 32,
         "scroll_height": 154,
         "controls_stable": true
@@ -188,10 +203,13 @@
         "window_scale": 1.25,
         "widget_scale": 1.25,
         "required_size": [
-          321,
+          223,
           36
         ],
-        "unwrapped_width": 390,
+        "text_lines": [
+          "\u26a0 Einsch\u00e4tzung unsicher \u2013",
+          "bitte mit M pr\u00fcfen!"
+        ],
         "logical_row_height": 32,
         "scroll_height": 341,
         "controls_stable": true
@@ -211,10 +229,13 @@
         "window_scale": 1.25,
         "widget_scale": 1.25,
         "required_size": [
-          347,
+          191,
           36
         ],
-        "unwrapped_width": 374,
+        "text_lines": [
+          "\u26a0 Estimate uncertain \u2013",
+          "please check with M!"
+        ],
         "logical_row_height": 32,
         "scroll_height": 154,
         "controls_stable": true
@@ -234,10 +255,13 @@
         "window_scale": 1.25,
         "widget_scale": 1.25,
         "required_size": [
-          347,
+          191,
           36
         ],
-        "unwrapped_width": 374,
+        "text_lines": [
+          "\u26a0 Estimate uncertain \u2013",
+          "please check with M!"
+        ],
         "logical_row_height": 32,
         "scroll_height": 341,
         "controls_stable": true
@@ -257,10 +281,13 @@
         "window_scale": 1.5,
         "widget_scale": 1.5,
         "required_size": [
-          386,
+          267,
           44
         ],
-        "unwrapped_width": 468,
+        "text_lines": [
+          "\u26a0 Einsch\u00e4tzung unsicher \u2013",
+          "bitte mit M pr\u00fcfen!"
+        ],
         "logical_row_height": 32,
         "scroll_height": 183,
         "controls_stable": true
@@ -280,10 +307,13 @@
         "window_scale": 1.5,
         "widget_scale": 1.5,
         "required_size": [
-          386,
+          267,
           44
         ],
-        "unwrapped_width": 468,
+        "text_lines": [
+          "\u26a0 Einsch\u00e4tzung unsicher \u2013",
+          "bitte mit M pr\u00fcfen!"
+        ],
         "logical_row_height": 32,
         "scroll_height": 408,
         "controls_stable": true
@@ -303,10 +333,13 @@
         "window_scale": 1.5,
         "widget_scale": 1.5,
         "required_size": [
-          419,
+          231,
           44
         ],
-        "unwrapped_width": 451,
+        "text_lines": [
+          "\u26a0 Estimate uncertain \u2013",
+          "please check with M!"
+        ],
         "logical_row_height": 32,
         "scroll_height": 184,
         "controls_stable": true
@@ -326,10 +359,13 @@
         "window_scale": 1.5,
         "widget_scale": 1.5,
         "required_size": [
-          419,
+          231,
           44
         ],
-        "unwrapped_width": 451,
+        "text_lines": [
+          "\u26a0 Estimate uncertain \u2013",
+          "please check with M!"
+        ],
         "logical_row_height": 32,
         "scroll_height": 409,
         "controls_stable": true
@@ -349,10 +385,13 @@
         "window_scale": 2.0,
         "widget_scale": 2.0,
         "required_size": [
-          506,
+          351,
           58
         ],
-        "unwrapped_width": 614,
+        "text_lines": [
+          "\u26a0 Einsch\u00e4tzung unsicher \u2013",
+          "bitte mit M pr\u00fcfen!"
+        ],
         "logical_row_height": 32,
         "scroll_height": 254,
         "controls_stable": true
@@ -372,10 +411,13 @@
         "window_scale": 2.0,
         "widget_scale": 2.0,
         "required_size": [
-          506,
+          351,
           58
         ],
-        "unwrapped_width": 614,
+        "text_lines": [
+          "\u26a0 Einsch\u00e4tzung unsicher \u2013",
+          "bitte mit M pr\u00fcfen!"
+        ],
         "logical_row_height": 32,
         "scroll_height": 554,
         "controls_stable": true
@@ -395,10 +437,13 @@
         "window_scale": 2.0,
         "widget_scale": 2.0,
         "required_size": [
-          549,
+          303,
           58
         ],
-        "unwrapped_width": 592,
+        "text_lines": [
+          "\u26a0 Estimate uncertain \u2013",
+          "please check with M!"
+        ],
         "logical_row_height": 32,
         "scroll_height": 254,
         "controls_stable": true
@@ -418,16 +463,19 @@
         "window_scale": 2.0,
         "widget_scale": 2.0,
         "required_size": [
-          549,
+          303,
           58
         ],
-        "unwrapped_width": 592,
+        "text_lines": [
+          "\u26a0 Estimate uncertain \u2013",
+          "please check with M!"
+        ],
         "logical_row_height": 32,
         "scroll_height": 554,
         "controls_stable": true
       }
     ],
-    "native_windows_macos": "pending CI"
+    "native_windows_macos": "pending uniform two-line CI checks"
   },
   "results": [
     {

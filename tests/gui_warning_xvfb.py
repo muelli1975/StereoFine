@@ -96,7 +96,10 @@ def main():
                     reserved_warning_height = warning.winfo_height()
                     expected = ('⚠ Einschätzung unsicher – bitte mit M prüfen!' if language == 'de'
                                 else '⚠ Estimate uncertain – please check with M!')
+                    expected = expected.replace(' – ', ' –\n', 1)
                     assert warning.cget('text') == expected
+                    assert warning.cget('text').count('\n') == 1
+                    assert warning.cget('height') == 32
                     assert warning.cget('text_color') == gui.GOLD_LIGHT
                     assert warning.cget('font')[-1] == 'bold'
                     assert warning.grid_info()['columnspan'] == 2
@@ -115,7 +118,7 @@ def main():
                         window_size=[app.winfo_width(), app.winfo_height()],
                         window_scale=window_scale, widget_scale=widget_scale,
                         required_size=[inner.winfo_reqwidth(), inner.winfo_reqheight()],
-                        unwrapped_width=int(app.tk.call('font', 'measure', inner.cget('font'), expected)),
+                        text_lines=expected.splitlines(),
                         logical_row_height=warning.cget('height'),
                         scroll_height=scroll_height, controls_stable=True)), flush=True)
                     if args.screenshots:

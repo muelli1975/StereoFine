@@ -868,18 +868,12 @@ class StereoFineApp(ctk.CTk):
         add_spacer(7)
         add_label("deviation", 8)
         add_label("near_far", 9)
-        # No symbol occupies this row: give the hint the entire status width.
-        # Reserve the larger translation's real font footprint even while
-        # empty, so showing a warning or changing language never moves controls.
-        add_label("warning", 10, muted=True, bold=True)
+        # Keep the same two-line warning on every platform, including while
+        # empty, so showing it or changing language never moves controls.
+        add_label("warning", 10, muted=True, bold=True, height=32)
         warning = self._status_line_widgets["warning"]
         warning.grid_configure(columnspan=2)
         warning.configure(text_color=GOLD_LIGHT, wraplength=292)
-        font = warning._label.cget("font")
-        text_width = max(int(self.tk.call("font", "measure", font,
-                         Translator(language).t("status_uncertain")))
-                         for language in ("de", "en"))
-        warning.configure(height=32 if text_width > 292 * warning._get_widget_scaling() else 19)
         add_spacer(11)
         add_label("floating_title", 12, bold=True)
         add_label("floating_values", 13)
@@ -943,7 +937,9 @@ class StereoFineApp(ctk.CTk):
         warnings = [item.value for item in deviation.rows if item.role == "warning" and item.value] if deviation else []
         # Keep the warning row allocated even when empty. This removes the last
         # source of vertical layout jumps in the status/footer area.
-        labels["warning"].configure(text=warnings[0] if warnings else "")
+        # This line break is presentation only; saved/text reports retain the
+        # complete single-line wording rather than breaking a table row.
+        labels["warning"].configure(text=warnings[0].replace(" – ", " –\n", 1) if warnings else "")
 
         if floating and len(floating.rows) >= 2:
             labels["floating_title"].configure(text=f"{floating.name}:")
