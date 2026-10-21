@@ -137,13 +137,7 @@ jobs:
       - name: Replace the six assets of the existing 1.1 release
         run: |
           touch release-update-started
-          gh release upload v1.1 --clobber \\
-            artifacts/StereoFine_1.1_Windows_x64.zip \\
-            artifacts/StereoFine_1.1_Linux_x64.tar.gz \\
-            artifacts/StereoFine_1.1_macOS_AppleSilicon.zip \\
-            artifacts/StereoFine_1.1_macOS_Intel.zip \\
-            artifacts/SHA256SUMS.txt BUILD_CHECKS.json \\
-            --repo "$GITHUB_REPOSITORY"
+          gh release upload v1.1 --clobber  artifacts/StereoFine_1.1_Windows_x64.zip  artifacts/StereoFine_1.1_Linux_x64.tar.gz  artifacts/StereoFine_1.1_macOS_AppleSilicon.zip  artifacts/StereoFine_1.1_macOS_Intel.zip  artifacts/SHA256SUMS.txt BUILD_CHECKS.json  --repo "$GITHUB_REPOSITORY"
       - name: Download the uploaded assets and verify their actual bytes
         run: |
           gh release download v1.1 --repo "$GITHUB_REPOSITORY" --dir uploaded-verification
@@ -163,12 +157,9 @@ jobs:
         run: |
           test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$EXPECTED_MAIN"
           test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v1.1" --jq .object.sha)" = "$EXPECTED_TAG"
-          gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/v1.1" \\
-            -f sha="$RELEASE_COMMIT" -F force=true
-          gh release edit v1.1 --repo "$GITHUB_REPOSITORY" --target "$RELEASE_COMMIT" \\
-            --title 'StereoFine 1.1' --notes-file release-body.md --draft=false --prerelease=false --latest
-          gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/heads/main" \\
-            -f sha="$RELEASE_COMMIT" -F force=false
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/v1.1"  -f sha="$RELEASE_COMMIT" -F force=true
+          gh release edit v1.1 --repo "$GITHUB_REPOSITORY" --target "$RELEASE_COMMIT"  --title 'StereoFine 1.1' --notes-file release-body.md --draft=false --prerelease=false --latest
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/heads/main"  -f sha="$RELEASE_COMMIT" -F force=false
           test "$(gh api "repos/$GITHUB_REPOSITORY/commits/v1.1" --jq .sha)" = "$RELEASE_COMMIT"
           test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$RELEASE_COMMIT"
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/v1.1" --jq '{id: .id, url: .html_url, draft: .draft, prerelease: .prerelease, assets: [.assets[] | {name, digest}]}'
@@ -183,8 +174,7 @@ jobs:
           else
             test "$current" = "$EXPECTED_TAG"
           fi
-          gh release edit v1.1 --repo "$GITHUB_REPOSITORY" --target "$EXPECTED_TAG" \\
-            --title 'StereoFine 1.1' --notes-file previous-release-body.md --draft=false --prerelease=false --latest
+          gh release edit v1.1 --repo "$GITHUB_REPOSITORY" --target "$EXPECTED_TAG"  --title 'StereoFine 1.1' --notes-file previous-release-body.md --draft=false --prerelease=false --latest
           gh release download v1.1 --repo "$GITHUB_REPOSITORY" --dir rollback-verification
           python - <<'PY'
           import hashlib
