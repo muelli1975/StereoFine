@@ -74,8 +74,19 @@ def main():
                     state.disparity.uncertain = False
                     app._render_status()
                     pump(app)
-                    requested = [round(int(v)*args.scale) for v in size.split('x')]
-                    assert [app.winfo_width(), app.winfo_height()] == requested, (size, args.scale, app.geometry(), requested)
+                    window_scale = app._get_window_scaling()
+                    widget_scale = app._status_line_widgets['warning']._get_widget_scaling()
+                    requested = [round(int(v)*window_scale) for v in size.split('x')]
+                    actual = [app.winfo_width(), app.winfo_height()]
+                    screen = [app.winfo_screenwidth(), app.winfo_screenheight()]
+                    # Native CI desktops can be smaller than the requested
+                    # workspace. Windows caps the client to its work area;
+                    # test that real window instead of changing the product.
+                    if all(r <= s-80 for r, s in zip(requested, screen)):
+                        assert actual == requested, (size, args.scale, actual, requested)
+                    else:
+                        minimum = [round(v*window_scale) for v in [1100, 700]]
+                        assert all(m <= a <= r for m, a, r in zip(minimum, actual, requested))
                     before = geometry(app)
                     state.disparity.uncertain = True
                     app._render_status()
@@ -95,11 +106,12 @@ def main():
                     assert app.traffic_label.grid_info()['column'] == 1
                     scroll_height = (app.sidebar_container.winfo_height()-app.sidebar_header.winfo_height()
                                      -app.sidebar_bottom.winfo_height())
-                    assert scroll_height > 100*args.scale, (language, size, scroll_height)
+                    assert scroll_height > 100*widget_scale, (language, size, scroll_height)
                     assert app.help_footer_label.winfo_rooty()+app.help_footer_label.winfo_height() <= app.winfo_rooty()+app.winfo_height()
                     print(json.dumps(dict(language=language, size=size, scale=args.scale,
                         warning_size=[warning.winfo_width(), warning.winfo_height()],
                         window_size=[app.winfo_width(), app.winfo_height()],
+                        window_scale=window_scale, widget_scale=widget_scale,
                         required_size=[inner.winfo_reqwidth(), inner.winfo_reqheight()],
                         scroll_height=scroll_height, controls_stable=True)), flush=True)
                     if args.screenshots:
@@ -116,7 +128,7 @@ def main():
                     # row by one pixel at fractional scaling; footer controls
                     # and the reserved warning height must still stay fixed.
                     assert geometry(app)[-3:] == before[-3:]
-                    assert warning.winfo_height() == round(32*args.scale)
+                    assert warning.winfo_height() == round(32*widget_scale)
                     state.disparity.stale = False
         finally:
             app.destroy()
