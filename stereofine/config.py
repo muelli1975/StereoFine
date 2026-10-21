@@ -8,7 +8,7 @@ SIDECAR_SCHEMA_VERSION = 3
 # GUI-only release does not invalidate valid analysis results.
 INPUT_PIPELINE_VERSION = "sf-input-2"
 ALIGNMENT_PIPELINE_VERSION = "sf-align-5"
-DISPARITY_PIPELINE_VERSION = "sf-disparity-5"
+DISPARITY_PIPELINE_VERSION = "sf-disparity-6"
 COLOR_PIPELINE_VERSION = "sf-color-1"
 ANAGLYPH_PIPELINE_VERSION = "sf-anaglyph-1"
 

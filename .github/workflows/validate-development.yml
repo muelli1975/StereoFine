@@ -8,7 +8,7 @@ on:
         type: boolean
         default: false
   push:
-    branches: [development/1.1-image-formats, research/1.1-y-polish-coverage]
+    branches: [development/1.1-image-formats, research/1.1-y-polish-coverage, fix/1.1-far-evidence-warning]
     paths:
       - '.github/workflows/validate-development.yml'
       - 'stereofine/**'
@@ -54,6 +54,14 @@ jobs:
           sudo apt-get install -y xvfb
           PYTHONPATH=. STEREOFINE_TEST_LANGUAGE=de xvfb-run -a -s '-screen 0 1920x1080x24' python tests/gui_smoke_xvfb.py
           PYTHONPATH=. STEREOFINE_TEST_LANGUAGE=en xvfb-run -a -s '-screen 0 1920x1080x24' python tests/gui_smoke_xvfb.py
+      - name: Uncertainty warning layout at normal and enlarged scale
+        if: runner.os == 'Linux'
+        run: |
+          PYTHONPATH=. xvfb-run -a -s '-screen 0 4096x2400x24' python tests/gui_warning_xvfb.py
+          PYTHONPATH=. xvfb-run -a -s '-screen 0 4096x2400x24' python tests/gui_warning_xvfb.py --scale 1.5
+      - name: Native uncertainty warning layout
+        if: runner.os != 'Linux'
+        run: python -m tests.gui_warning_xvfb
 
   packages:
     name: Checked package (${{ matrix.os }})

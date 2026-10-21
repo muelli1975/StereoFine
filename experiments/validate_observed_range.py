@@ -50,6 +50,7 @@ def evaluate(case, saved):
             raise RuntimeError('Source file changed')
     return dict(name=case['name'], recovery_accepted=bool(audit.get('accepted')),
         reason=audit.get('reason', 'unchanged_confirmed_or_ineligible'),
+        method=result.get('deviation_method'), scope=audit.get('scope', 'robust_estimate'),
         baseline_total_permille=baseline['deviation_permille'], total_permille=result['deviation_permille'],
         baseline_near_permille=baseline['high_edge_permille'], near_permille=result['high_edge_permille'],
         baseline_far_permille=baseline['low_edge_permille'], far_permille=result['low_edge_permille'],

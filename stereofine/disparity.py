@@ -96,10 +96,12 @@ def _classify_range(result: dict) -> None:
 
 
 def analyze_horizontal_disparity(left_rgb, right_rgb, max_width=2000) -> dict:
-    """Measure disparity, retaining uncertainty on an unverified wider tail.
+    """Measure disparity, retaining uncertainty on unresolved scene evidence.
 
     Confirmed existing results bypass observed-range recovery. A smaller native-
-    confirmed observed span does not establish completeness of the scene.
+    confirmed observed span does not establish completeness of the scene. A
+    confirmed primary near endpoint can accompany a two-scale confirmed far
+    endpoint when the control near check fails, with explicit uncertainty.
     """
     result = _analyze_horizontal_disparity(left_rgb, right_rgb, max_width)
     reasons = set(result.get('uncertain_reasons', []))
@@ -128,18 +130,28 @@ def analyze_horizontal_disparity(left_rgb, right_rgb, max_width=2000) -> dict:
         audit['reason'] = 'control_dense_unavailable'
         return result
     second = measure_range_evidence(left, right, control_width, control)
-    if not second['endpoints_confirmed']:
+    if not second['endpoints']['far']['confirmed']:
         audit['reason'] = 'control_endpoints_unconfirmed'
         return result
-    differences = {end: abs(first['endpoints'][end]['edge_permille']-second['endpoints'][end]['edge_permille'])
+    control_near_unconfirmed = not second['endpoints']['near']['confirmed']
+    differences = {end: (None if second['endpoints'][end]['edge_permille'] is None else
+                        abs(first['endpoints'][end]['edge_permille']-second['endpoints'][end]['edge_permille']))
                    for end in ['far', 'near']}
     audit['endpoint_differences_permille'] = differences
-    if max(differences.values()) > 1.5 or abs(first['observed_span_permille']-second['observed_span_permille']) > 1.5:
+    # The far correction needs agreement at both scales. A confirmed but
+    # conflicting control near endpoint still vetoes recovery as before.
+    # An unconfirmed control near endpoint instead keeps a specific warning;
+    # its value must not replace or extend the supported primary near endpoint.
+    if differences['far'] > 1.5 or (not control_near_unconfirmed and (
+            differences['near'] > 1.5 or
+            abs(first['observed_span_permille']-second['observed_span_permille']) > 1.5)):
         audit['reason'] = 'control_endpoints_disagree'
         return result
     margin = .5*1000/aw
     native_far = min(e['endpoints']['far']['edge_permille'] for e in [first, second])
-    native_near = max(e['endpoints']['near']['edge_permille'] for e in [first, second])
+    native_near = first['endpoints']['near']['edge_permille']
+    if not control_near_unconfirmed:
+        native_near = max(native_near, second['endpoints']['near']['edge_permille'])
     old_far_support = result['far_confirmation']['maximum_supported_px']
     if old_far_support is not None and native_far > -old_far_support*1000/aw + 1000/aw:
         audit['reason'] = 'unresolved_original_far_support'
@@ -153,17 +165,23 @@ def analyze_horizontal_disparity(left_rgb, right_rgb, max_width=2000) -> dict:
     shrunk = low > result['low_edge_permille']+1e-9
     result['low_edge_permille'], result['high_edge_permille'] = low, high
     result['deviation_permille'] = high-low
-    result['deviation_method'] = 'two_scale_native_confirmed_observed_range'
+    result['deviation_method'] = ('two_scale_native_confirmed_far_primary_near'
+                                  if control_near_unconfirmed else
+                                  'two_scale_native_confirmed_observed_range')
     result['uncertain_reasons'] = [r for r in result['uncertain_reasons']
         if r not in {'far_edge_unconfirmed', 'far_edge_outside_estimate'}]
     if shrunk:
         result['uncertain_reasons'].append('range_completeness_unconfirmed')
+    if control_near_unconfirmed:
+        result['uncertain_reasons'].append('near_control_unconfirmed')
     # Keep source-location evidence, without duplicating every failed probe.
     for evidence in [first, second]:
         for endpoint in evidence['endpoints'].values():
             endpoint.pop('native_audit', None)
-    audit.update(accepted=True, reason='native_endpoints_supported_at_both_scales',
-        scope='observed_range_completeness_unconfirmed' if shrunk else 'confirmed_range_extension',
+    audit.update(accepted=True,
+        reason='native_far_supported_at_both_scales' if control_near_unconfirmed else 'native_endpoints_supported_at_both_scales',
+        scope=('observed_range_near_control_unconfirmed' if control_near_unconfirmed else
+               'observed_range_completeness_unconfirmed' if shrunk else 'confirmed_range_extension'),
         measurement_margin_permille=margin, measurements=[first, second])
     _classify_range(result)
     return result

@@ -289,7 +289,7 @@ class FoundationTests(unittest.TestCase):
             self.assertIn("19.00‰", text)
             self.assertIn("0.381 px", text)
             self.assertIn("-0.0042°", text)
-            self.assertIn("Einschätzung unsicher – bitte prüfen!", text)
+            self.assertIn("⚠ Einschätzung unsicher – bitte mit M prüfen!", text)
             self.assertNotIn("Modell", text)
             self.assertNotIn("Matches", text)
             self.assertNotIn("Inlier", text)
@@ -1488,14 +1488,14 @@ class ReleaseStatusTests(unittest.TestCase):
         state.disparity.uncertain = True
         sections = build_status_sections(state, input_text="scene", language="de")
         visible = "\n".join(row.value for section in sections for row in section.rows)
-        self.assertIn("Einschätzung unsicher – bitte prüfen!", visible)
+        self.assertIn("⚠ Einschätzung unsicher – bitte mit M prüfen!", visible)
 
         # Once a framing/manual edit invalidates the deviation, neither the old
         # traffic assessment nor its old uncertainty warning may remain visible.
         state.disparity.stale = True
         sections = build_status_sections(state, input_text="scene", language="de")
         visible = "\n".join(row.value for section in sections for row in section.rows)
-        self.assertNotIn("Einschätzung unsicher – bitte prüfen!", visible)
+        self.assertNotIn("⚠ Einschätzung unsicher – bitte mit M prüfen!", visible)
         self.assertNotIn("grün", visible)
 
 

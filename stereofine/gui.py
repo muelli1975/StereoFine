@@ -868,7 +868,10 @@ class StereoFineApp(ctk.CTk):
         add_spacer(7)
         add_label("deviation", 8)
         add_label("near_far", 9)
-        add_label("warning", 10, muted=True)
+        # Match TransCora's gold, bold attention text and reserve both lines
+        # even while empty: the full translated hint must never move controls.
+        add_label("warning", 10, muted=True, bold=True, height=32)
+        self._status_line_widgets["warning"].configure(text_color=GOLD_LIGHT)
         add_spacer(11)
         add_label("floating_title", 12, bold=True)
         add_label("floating_values", 13)

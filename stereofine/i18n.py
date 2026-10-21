@@ -110,7 +110,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "status_not_analyzed": "Nicht analysiert",
         "status_active": "aktiv",
         "status_stale": "Deviation nach Änderung erneut analysieren.",
-        "status_uncertain": "Einschätzung unsicher – bitte prüfen!",
+        "status_uncertain": "⚠ Einschätzung unsicher – bitte mit M prüfen!",
         "status_input": "Input",
         "status_batch_preview": "Batch: {count} · Vorschau {index}/{count}",
         "loading": "Lädt…",
@@ -263,7 +263,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "status_not_analyzed": "Not analyzed",
         "status_active": "active",
         "status_stale": "Re-analyze deviation after this change.",
-        "status_uncertain": "Estimate uncertain – please check!",
+        "status_uncertain": "⚠ Estimate uncertain – please check with M!",
         "status_input": "Input",
         "status_batch_preview": "Batch: {count} · Preview {index}/{count}",
         "loading": "Loading…",
@@ -317,6 +317,7 @@ TEXTS: dict[str, dict[str, str]] = {
 # at presentation boundaries so algorithms, sidecars and tests remain canonical.
 DIAGNOSTIC_TRANSLATIONS: dict[str, dict[str, str]] = {
     "de": {
+        "near_control_unconfirmed": "zusätzliche Nahpunktkontrolle nicht bestätigt",
         "low_valid_area": "zu wenig gültige Disparitätsfläche",
         "low_edge_cluster_missing": "niedriger Disparitätsrand nicht als Cluster sichtbar – Perzentilwert verwendet",
         "high_edge_cluster_missing": "hoher Disparitätsrand nicht als Cluster sichtbar – Perzentilwert verwendet",
@@ -326,6 +327,7 @@ DIAGNOSTIC_TRANSLATIONS: dict[str, dict[str, str]] = {
         "low_valid_area_warning": "geringe gültige Disparitätsfläche",
     },
     "en": {
+        "near_control_unconfirmed": "additional near-point check unconfirmed",
         "low_valid_area": "too little valid disparity area",
         "low_edge_cluster_missing": "low disparity edge not visible as a cluster – percentile used",
         "high_edge_cluster_missing": "high disparity edge not visible as a cluster – percentile used",
