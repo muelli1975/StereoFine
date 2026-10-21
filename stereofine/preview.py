@@ -9,6 +9,23 @@ MEASURE_CROSS_STEPS_PERMILLE = (10, 20, 30, 40, 50)
 MEASURE_CROSS_MINOR_STEPS_PERMILLE = (5, 15, 25, 35, 45)
 MEASURE_CROSS_SHADOW_RGBA = (0, 0, 0, 105)
 
+
+class PreviewImageCache:
+    """Keep one scaled background; overlays must not modify the returned image."""
+
+    def __init__(self) -> None:
+        self._source: Image.Image | None = None
+        self._key: tuple | None = None
+        self._image: Image.Image | None = None
+
+    def scaled(self, source: Image.Image, size: tuple[int, int], resampling) -> Image.Image:
+        key = (size, resampling)
+        if self._source is not source or self._key != key:
+            image = source.copy() if source.size == size else source.resize(size, resampling)
+            self._source, self._key, self._image = source, key, image
+        return self._image
+
+
 def grid_divisions_for_spacing(spacing: int | str) -> int | None:
     """Return the fixed field count for the visible grid spacing choice."""
     if spacing in GRID_DIVISIONS_BY_SPACING:
@@ -203,4 +220,5 @@ def draw_measure_cross_overlay(
     color = overlay[:, :, :3].astype(np.float32)
     out = color * alpha + base.astype(np.float32) * (1.0 - alpha)
     return Image.fromarray(np.clip(out, 0, 255).astype(np.uint8), "RGB")
+
 

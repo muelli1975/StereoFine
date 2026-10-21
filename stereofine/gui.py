@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import queue
 import re
+import sys
 import time
 import tkinter as tk
 from pathlib import Path
@@ -36,7 +37,7 @@ from .i18n import (
     orientation_label,
 )
 from .notifications import play_ready_sound
-from .preview import draw_grid_overlay, draw_measure_cross_overlay
+from .preview import PreviewImageCache, draw_grid_overlay, draw_measure_cross_overlay
 from .preview_render import PreviewBasePair, build_preview_base, render_preview_from_base
 from .processing import ProcessedSource, ProcessingDefaults, ProcessingOptions, process_source
 from .resources import asset_path
@@ -225,6 +226,7 @@ class StereoFineApp(ctk.CTk):
         self._shortcut_keys_down: set[str] = set()
         self._shortcut_help_window: ctk.CTkToplevel | None = None
         self._preview_pil: Image.Image | None = None
+        self._preview_display_cache = PreviewImageCache()
         self._preview_ctk_image: ctk.CTkImage | None = None
         self._preview_pair_shape: tuple[int, int] | None = None
         self._preview_display_size: tuple[int, int] | None = None
@@ -233,6 +235,7 @@ class StereoFineApp(ctk.CTk):
         self._preview_left_current = None
         self._preview_right_current = None
         self.fullscreen = False
+        self._titlebar_restore_job: str | None = None
 
         self._lock_widgets: list[Any] = []
         self._checkbox_widgets: list[Any] = []
@@ -1824,10 +1827,7 @@ class StereoFineApp(ctk.CTk):
             max(1, int(round(source_w * scale))),
             max(1, int(round(source_h * scale))),
         )
-        if display_size == self._preview_pil.size:
-            image = self._preview_pil.copy()
-        else:
-            image = self._preview_pil.resize(display_size, resampling)
+        image = self._preview_display_cache.scaled(self._preview_pil, display_size, resampling)
 
         # Overlays belong to the visible preview and therefore stay crisp and
         # correctly scaled while the main window changes size.
@@ -2492,17 +2492,32 @@ class StereoFineApp(ctk.CTk):
         self.attributes("-fullscreen", self.fullscreen)
         if hasattr(self, "fullscreen_button"):
             self.fullscreen_button.configure(text=self._t("windowed") if self.fullscreen else self._t("fullscreen"))
+        self._schedule_titlebar_restore()
         return "break"
+
+    def _schedule_titlebar_restore(self) -> None:
+        if sys.platform != "win32":
+            return
+        if self._titlebar_restore_job is not None:
+            self.after_cancel(self._titlebar_restore_job)
+            self._titlebar_restore_job = None
+        if not self.fullscreen:
+            # Tk restores its native window frame asynchronously. Reapply the
+            # dark attribute after that transition without hiding/refocusing it.
+            self._titlebar_restore_job = self.after(100, self._restore_titlebar)
+
+    def _restore_titlebar(self) -> None:
+        from .theme import restore_dark_titlebar
+        self._titlebar_restore_job = None
+        if not self.fullscreen and self.winfo_exists():
+            restore_dark_titlebar(self)
 
     def _on_escape(self, _event=None):
         if self._shortcut_help_window is not None and self._shortcut_help_window.winfo_exists():
             self._close_shortcuts_help()
             return "break"
         if self.fullscreen:
-            self.fullscreen = False
-            self.attributes("-fullscreen", False)
-            if hasattr(self, "fullscreen_button"):
-                self.fullscreen_button.configure(text=self._t("fullscreen"))
+            self.toggle_fullscreen()
         return "break"
 
     def _on_f1(self, event=None):
@@ -2665,3 +2680,4 @@ class StereoFineApp(ctk.CTk):
 def run() -> None:
     app = StereoFineApp()
     app.mainloop()
+

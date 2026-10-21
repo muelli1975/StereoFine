@@ -63,6 +63,18 @@ jobs:
         if: runner.os != 'Linux'
         run: python -m tests.gui_warning_xvfb
 
+      - name: Native reticle and fullscreen regression checks (Linux)
+        if: runner.os == 'Linux'
+        run: PYTHONPATH=. xvfb-run -a -s '-screen 0 1920x1080x24' python tests/gui_final_update.py
+      - name: Native reticle and fullscreen regression checks
+        if: runner.os != 'Linux'
+        run: python -m tests.gui_final_update
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StereoFine-final-gui-${{ matrix.os }}
+          path: build/gui-final-update-*.json
+          if-no-files-found: error
+
   packages:
     name: Checked package (${{ matrix.os }})
     needs: validate
@@ -140,3 +152,4 @@ jobs:
             build/candidate-startup.log
           if-no-files-found: error
           retention-days: 30
+
