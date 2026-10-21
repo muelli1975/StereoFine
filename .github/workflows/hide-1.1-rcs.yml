@@ -1,5 +1,7 @@
 name: Return unrequested 1.1 release candidates to drafts
 
+# One-time repository maintenance explicitly requested by the owner.
+
 on:
   push:
     branches: [maintenance/hide-1.1-rcs]
