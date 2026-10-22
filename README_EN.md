@@ -1,6 +1,6 @@
 # StereoFine 1.1
 
-[Download StereoFine 1.1](https://github.com/muelli1975/StereoFine/releases/tag/v1.1) · [Changes](RELEASE_NOTES_1.1.md) · [Deutsch](README_DE.md)
+[Downloads and SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.1) · [Deutsch](README_DE.md) · [Changes](RELEASE_NOTES_1.1.md)
 
 Version 1.1 improves automatic model selection, vertical edge correction and near/far measurement. It adds JPS/PNS, static WebP/BMP and supported SDR HEIC/HEIF input, including compatible stereo and Spatial Photo containers. Ambiguous depth measurements remain explicitly marked as uncertain. See [measurement validation](docs/OBSERVED_RANGE_1.1.md) and [input-format scope](docs/IMAGE_FORMATS_1.1.md).
 
@@ -31,13 +31,13 @@ The Windows package is portable:
 
 Version and architecture appear in the ZIP filename. The application folder is `StereoFine` and the executable is `StereoFine.exe`, without a version or architecture suffix.
 
-The separate stable release is [StereoFine_1.0_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.0/StereoFine_1.0_Windows_x64.zip). Extract 1.1 into its own folder, separately from 1.0.
+The [previous 1.0 release](https://github.com/muelli1975/StereoFine/releases/tag/v1.0) remains available. Extract updates into a separate folder and retain your settings and saved image adjustments.
 
 The portable version does not require a separate Python installation. Global settings are stored as `settings.json` next to `StereoFine.exe`.
 
 ## macOS and Linux builds
 
-The same source can also be packaged for macOS (Apple Silicon and Intel) and Linux x64. GitHub Actions builds these variants from the tagged source. The Windows build is the reference-tested 1.0 platform; macOS/Linux binaries should be treated as platform builds pending a real desktop smoke test on those systems. No stereo, geometry or color-processing code differs between platforms. The platform packages include ExifTool for metadata handling; on macOS/Linux the official ExifTool distribution is Perl-based and therefore expects a working Perl interpreter on the target system. If metadata copying is unavailable, StereoFine keeps the successfully written image and reports a non-fatal warning.
+The same source can also be packaged for macOS (Apple Silicon and Intel) and Linux x64. GitHub Actions builds these variants from the tagged source. Windows is the reference platform; macOS/Linux binaries should be treated as platform builds pending a real desktop smoke test on those systems. No stereo, geometry or color-processing code differs between platforms. The platform packages include ExifTool for metadata handling; on macOS/Linux the official ExifTool distribution is Perl-based and therefore expects a working Perl interpreter on the target system. If metadata copying is unavailable, StereoFine keeps the successfully written image and reports a non-fatal warning.
 
 ## Quick start
 
@@ -92,7 +92,7 @@ Geometry analysis uses a maximum width of 3000 px. All selected geometric correc
 
 ## Deviation, near point and far point
 
-After geometric correction, StereoFine runs a separate semi-dense horizontal disparity analysis at up to 1500 px width. The baseline uses robust P1/P99 limits and additional checks for uncertainty. Eligible uncertain far estimates receive native endpoint confirmation at both 1500 and 1000 px. A smaller observed span retains the gray uncertainty indication because scene completeness is unproven. See [the admission rule and validation](docs/OBSERVED_RANGE_1.1.md).
+After geometric correction, StereoFine runs a separate semi-dense horizontal disparity analysis at up to 1500 px width. The baseline uses robust P1/P99 limits and additional checks for uncertainty. Eligible uncertain far estimates receive native endpoint confirmation at both 1500 and 1000 px. A smaller observed span retains an uncertainty warning because scene completeness is unproven. See [the admission rule and validation](docs/OBSERVED_RANGE_1.1.md).
 
 The width limits apply per eye. Additional point checks compare local 17x17 brightness windows in the analysis image; native near-point recovery and conditional two-ended confirmation use 41x41 windows at original spatial resolution. These are measurement neighbourhoods, not independently warped image tiles or export crops. The [measurement-window guide](docs/MEASUREMENT_WINDOWS_1.1.md) explains these checks and separates them from the larger-window research pilot.
 
@@ -137,7 +137,7 @@ StereoFine stores the reproducible state of an image pair in a small `.sfin` fil
 - color matching
 - favorite state
 
-Technical analysis and uncertainty diagnostics remain available in the sidecar, while the normal analysis report is deliberately limited to the values needed for stereoscopic quality control. Development diagnostics and localized GUI prose are not stored as sidecar ballast. A valid sidecar can be reused in later batch runs. Changed source files or relevant pipeline versions invalidate only the calculations that need to be recomputed.
+The analysis report shows the values needed for stereoscopic quality control. Additional analysis and uncertainty details are stored in the sidecar. A valid sidecar can be reused in later batch runs. Changed source files or relevant pipeline versions invalidate only the calculations that need to be recomputed.
 
 ## Batch processing
 

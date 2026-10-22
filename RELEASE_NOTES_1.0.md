@@ -1,23 +1,16 @@
 # StereoFine 1.0
 
-StereoFine 1.0 is the first stable public release of the stereoscopic image alignment and inspection tool.
+Automatically align, check and export stereoscopic image pairs, with manual fine adjustments, cropping and floating-window masks.
 
-The release focuses on a compact practical workflow rather than a large toolbox: automatic alignment, robust deviation/near/far analysis, automatic near-point framing, optional manual refinement, Floating Window masks, symmetric color matching and reproducible `.sfin` sidecars for later batch output.
+## Fixes and improvements
 
-For image quality, the selected affine, Vergence/Trapezoid and Y-Polish geometry is composed into one mapping and each half-image is resampled only once with high-quality Lanczos interpolation.
+- Preserve the input aspect ratio when using Original size.
+- Detect conflicting output and sidecar filenames before processing.
+- Correct TIFF orientation handling.
+- Speed up colour matching, common-crop calculation and feature matching.
 
-## Portable Windows release
+## Installation
 
-Download [StereoFine_1.0_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.0/StereoFine_1.0_Windows_x64.zip), extract the complete archive, open the `StereoFine` folder and start `StereoFine.exe`. No separate Python installation is required.
+Extract the complete package for your system into a writable folder. Start `StereoFine.exe` on Windows, `StereoFine` on Linux or `StereoFine.app` on macOS. Keep the supplied tools and application files together. No separate Python installation is required. Linux/macOS metadata transfer requires Perl.
 
-## Deliberate scope
-
-StereoFine 1.0 supports JPEG, PNG, TIFF, MPO and Full-SBS workflows. HEIC/HEIF and RAW are intentionally not included. Output is always an SBS JPEG plus one anaglyph JPEG; the anaglyph can be color or grayscale.
-
-## License
-
-StereoFine source and original documentation: MIT License. Third-party components remain under their own licenses; see the included notices.
-
-## Additional platform builds
-
-GitHub Actions also produces macOS Apple Silicon, macOS Intel and Linux x64 packages from the exact same 1.0 source. Windows is the reference-tested release platform. The macOS/Linux packages are automatically built but should be regarded as unverified on real desktops until platform smoke tests have been completed. They include the official ExifTool Perl distribution locally; metadata handling on macOS/Linux therefore expects a working Perl interpreter on the target system.
+Keep `settings.json` and saved image adjustments when updating. Automatic alignment and near-point measurements can remain uncertain for difficult subjects.

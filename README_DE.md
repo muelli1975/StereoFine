@@ -1,6 +1,6 @@
 # StereoFine 1.1
 
-[StereoFine 1.1 herunterladen](https://github.com/muelli1975/StereoFine/releases/tag/v1.1) · [Änderungen](RELEASE_NOTES_1.1.md) · [English](README_EN.md)
+[Downloads und SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.1) · [English](README.md) · [Änderungen](RELEASE_NOTES_1.1.md)
 
 Version 1.1 verbessert die automatische Modellwahl, die vertikale Randkorrektur und die Nah-/Fernpunktmessung. Neu sind JPS/PNS, statisches WebP/BMP und unterstützte SDR-HEIC/HEIF-Dateien einschließlich geeigneter Stereo- und Spatial-Photo-Container. Ungeklärte Tiefenmessungen bleiben ausdrücklich als unsicher markiert. Siehe [Messvalidierung](docs/OBSERVED_RANGE_1.1.md) und [Formatumfang](docs/IMAGE_FORMATS_1.1.md) (Englisch).
 
@@ -31,13 +31,13 @@ Das Windows-Paket ist portabel:
 
 Version und Architektur stehen im ZIP-Dateinamen. Der Programmordner heißt `StereoFine`, die Programmdatei `StereoFine.exe`, jeweils ohne Versions- oder Architekturzusatz.
 
-Die separate stabile Version ist [StereoFine_1.0_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.0/StereoFine_1.0_Windows_x64.zip). 1.1 in einen eigenen Ordner getrennt von 1.0 entpacken.
+Die [vorherige Version 1.0](https://github.com/muelli1975/StereoFine/releases/tag/v1.0) bleibt verfügbar. Updates in einen eigenen Ordner entpacken und Einstellungen sowie gespeicherte Bildanpassungen übernehmen.
 
 Eine Python-Installation ist für die portable Version nicht erforderlich. Globale Einstellungen werden als `settings.json` direkt neben `StereoFine.exe` gespeichert.
 
 ## macOS- und Linux-Builds
 
-Derselbe Quellcode kann zusätzlich für macOS (Apple Silicon und Intel) sowie Linux x64 paketiert werden. GitHub Actions erzeugt diese Varianten aus demselben getaggten Quellstand. Windows bleibt die praktisch geprüfte Referenzplattform von 1.0; die macOS-/Linux-Binärdateien gelten bis zu einem realen Desktop-Sichttest auf diesen Systemen als Plattform-Builds. Stereo-, Geometrie- und Farbverarbeitung sind plattformübergreifend identisch. Die Plattformpakete enthalten ExifTool für die Metadatenübernahme; unter macOS/Linux basiert die offizielle ExifTool-Distribution auf Perl und setzt daher einen funktionierenden Perl-Interpreter auf dem Zielsystem voraus. Ist die Metadatenübernahme nicht verfügbar, bleibt das erfolgreich geschriebene Bild erhalten und StereoFine meldet lediglich eine nicht fatale Warnung.
+Derselbe Quellcode kann zusätzlich für macOS (Apple Silicon und Intel) sowie Linux x64 paketiert werden. GitHub Actions erzeugt diese Varianten aus demselben getaggten Quellstand. Windows bleibt die Referenzplattform; die macOS-/Linux-Binärdateien gelten bis zu einem realen Desktop-Sichttest auf diesen Systemen als Plattform-Builds. Stereo-, Geometrie- und Farbverarbeitung sind plattformübergreifend identisch. Die Plattformpakete enthalten ExifTool für die Metadatenübernahme; unter macOS/Linux basiert die offizielle ExifTool-Distribution auf Perl und setzt daher einen funktionierenden Perl-Interpreter auf dem Zielsystem voraus. Ist die Metadatenübernahme nicht verfügbar, bleibt das erfolgreich geschriebene Bild erhalten und StereoFine meldet lediglich eine nicht fatale Warnung.
 
 ## Schnellstart
 
@@ -92,7 +92,7 @@ Die Geometrieanalyse arbeitet mit maximal 3000 px Breite. Alle ausgewählten geo
 
 ## Deviation, Nahpunkt und Fernpunkt
 
-Nach der geometrischen Korrektur erfolgt eine separate halb-dichte horizontale Disparitätsanalyse mit maximal 1500 px Breite. Die Basis bilden robuste P1/P99-Grenzen mit zusätzlichen Unsicherheitsprüfungen. Bei dafür geeigneten unsicheren Fernpunktwerten werden beide Tiefenenden in Originalauflösung sowie bei 1500 und 1000 px Analysebreite bestätigt. Ein kleinerer beobachteter Bereich bleibt grau als unsicher markiert, weil die vollständige Szenentiefe damit nicht bewiesen ist. Siehe [Annahmeregel und Validierung](docs/OBSERVED_RANGE_1.1.md) (Englisch).
+Nach der geometrischen Korrektur erfolgt eine separate halb-dichte horizontale Disparitätsanalyse mit maximal 1500 px Breite. Die Basis bilden robuste P1/P99-Grenzen mit zusätzlichen Unsicherheitsprüfungen. Bei dafür geeigneten unsicheren Fernpunktwerten werden beide Tiefenenden in Originalauflösung sowie bei 1500 und 1000 px Analysebreite bestätigt. Ein kleinerer beobachteter Bereich bleibt als unsicher markiert, weil die vollständige Szenentiefe damit nicht bewiesen ist. Siehe [Annahmeregel und Validierung](docs/OBSERVED_RANGE_1.1.md) (Englisch).
 
 Die Breitenbegrenzungen gelten pro Auge. Zusätzliche Punktprüfungen vergleichen lokale Helligkeitsmuster von 17×17 Pixeln im Analysebild; die Nahpunkt-Nachprüfung und die bedingte Bestätigung beider Tiefenenden verwenden 41×41 Pixel in Originalauflösung. Das sind Messumgebungen, keine unabhängig verformten Bildkacheln oder Ausgabeausschnitte. Die [Erklärung der Messfenster](docs/MEASUREMENT_WINDOWS_1.1.md) erklärt diese Prüfungen und grenzt den Forschungsversuch mit größeren Messfenstern ab.
 
@@ -137,7 +137,7 @@ StereoFine speichert den reproduzierbaren Zustand eines Bildpaares in einer klei
 - Farbangleichung
 - Favoritenstatus
 
-Technische Analyse- und Unsicherheitsdiagnosen bleiben im Sidecar nachvollziehbar; der normale Analysebericht ist bewusst auf die für die stereoskopische Qualitätskontrolle relevanten Werte reduziert. Umfangreiche Entwicklungsdiagnosen und sprachabhängige GUI-Texte werden nicht als Ballast gespeichert. Ein gültiges Sidecar kann in späteren Stapelläufen wiederverwendet werden. Geänderte Quellen oder relevante Pipeline-Versionen führen gezielt zu einer Neuberechnung der betroffenen Analyse.
+Der Analysebericht zeigt die für die stereoskopische Qualitätskontrolle relevanten Werte. Zusätzliche Analyse- und Unsicherheitsangaben werden im Sidecar gespeichert. Ein gültiges Sidecar kann in späteren Stapelläufen wiederverwendet werden. Geänderte Quellen oder relevante Pipeline-Versionen führen gezielt zu einer Neuberechnung der betroffenen Analyse.
 
 ## Stapelverarbeitung
 

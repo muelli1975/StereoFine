@@ -1,32 +1,13 @@
 # Changelog
 
-## 1.1 – 2026-10-21
+## 1.1 — 2026-10-21
 
-- Admit conditional native endpoint evidence at two analysis widths for uncertain far estimates; retain gray uncertainty when a smaller observed span cannot establish scene completeness.
-- Share the endpoint verifier between application and research, preserve existing supported extremes and confirmed results, and advance disparity cache version to sf-disparity-5.
-- Preserve compact measurement method/scope in sidecars, reuse framing arithmetic and configuration thresholds, and remove an unused internal alias.
-- Prepare one checked development/final-candidate package builder and a read-only candidate workflow with four-platform checksums; final publication remains separate.
-- Include research regression sources in canonical source snapshots so the shipped validation workflow has its required files.
-
-- Make explicit single-image Start recalculate alignment and near framing, clear manual X/Y nudges and retain the selected crop/aspect/pan. Preserve saved fine adjustments during Save and batch processing.
-- Cover zoom/pan/nudge/restart in the real DE/EN GUI worker, native clean-control renders, session reuse and cancellation without committing a reset.
-
-- Add isolated SDR HEIC/HEIF import using TransCora’s reader, tagged stereo entity IDs, sRGB ICC normalization and explicit rejection of unsupported containers/colour descriptions.
-- Add static WebP/BMP to packed and paired inputs; retain EXIF orientation, explicit alpha handling and duplicate-name protection.
-- Keep HEIF entity IDs in source fingerprints and reproducible sessions; prevent original non-sRGB metadata from being reapplied to normalized exports.
-- Build separately labelled 1.1-dev artifacts, including the replaceable HEIF reader and corresponding sources; validate actual frozen imports and session/render round trips without changing releases.
-
-- Recover missed near-point evidence only after same-location native patch confirmation, independent spatial support and a veto for unresolved nearer surfaces.
-- Preserve existing confirmed results and uncertainty guards; retain the conservative measurement reserve and advance disparity calculation to sf-disparity-3.
-
-- Score quadratic correction chains against the applied symmetric destination field, including both eyes, frozen normalization and per-eye clipping.
-- Advance the alignment calculation version to sf-align-5; retain manual sidecar edits while recomputing dependent automatic analyses.
-- Add analytic/renderer-map regressions, original-image comparisons and separate Windows/Linux/macOS development validation.
-
-- Accept JPS/PNS through the existing JPEG/PNG readers, Full-SBS and paired-image discovery, including 16-bit PNS data.
-- Derive both input-dialog filters from the supported extension sets.
-- Keep layout and eye order explicit for JPS/PNS inputs; retain the existing near-point and export procedures.
-- Use English release notes and titles consistently, with localized READMEs kept separate.
+- Improve automatic alignment, vertical edge correction and near/far measurements.
+- Mark uncertain depth measurements more clearly and add a measurement cross for manual checking.
+- Add JPS/PNS, static WebP/BMP and supported SDR HEIC/HEIF inputs, including stereo images and Spatial Photos.
+- Recalculate outdated analyses while preserving saved fine adjustments during Save and batch processing.
+- Make the measurement-cross preview smoother.
+- Fix the dark Windows titlebar after leaving fullscreen.
 
 ## 1.1-rc3 – 2026-10-20 (prerelease)
 
