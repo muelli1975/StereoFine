@@ -2178,6 +2178,10 @@ class StereoFineApp(ctk.CTk):
     # ------------------------------------------------------------------
     def _bind_shortcuts(self) -> None:
         self.bind("<FocusOut>", self._on_keyboard_focus_out, add="+")
+        # Aqua can move focus between application windows without a root
+        # FocusOut. Observe the receiving widget as well, keeping the same
+        # deferred check so focus changes inside this window retain held keys.
+        self.bind_all("<FocusIn>", self._on_keyboard_focus_out, add="+")
         self.bind("<Unmap>", self._on_keyboard_unmap, add="+")
         self.bind_all("<F11>", self._on_f11)
         self.bind_all("<KeyRelease-F11>", lambda e: self._release_shortcut_key("f11"))
