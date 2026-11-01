@@ -41,6 +41,12 @@ def main():
         reset_focus()
         focus_events.append(dict(reset='after', floating=app._floating_key_edge))
     app._reset_keyboard_if_unfocused = traced_reset
+    import traceback
+    set_key = app._set_floating_key
+    def traced_set(edge, event=None):
+        focus_events.append(dict(set_key=edge, event=str(event), stack=traceback.format_stack(limit=5)))
+        return set_key(edge, event)
+    app._set_floating_key = traced_set
     other = None
     with tempfile.TemporaryDirectory(prefix='sf-keyboard-filename-') as temporary:
         root = Path(temporary)
