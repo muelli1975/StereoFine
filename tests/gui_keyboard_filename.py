@@ -84,8 +84,11 @@ def main():
             other = tk.Toplevel(app)
             other.geometry('160x80+30+30')
             other.title('Focus regression test')
+            pump(app, .5)
+            app.lift()
             app.focus_force()
-            pump(app)
+            pump(app, .5)
+            assert app.focus_get() is not None and app.focus_get().winfo_toplevel() is app, dict(stage='main before latch', events=focus_events)
             app._set_floating_key('top')
             app._g_key_down = True
             app._shortcut_keys_down.add('f11')
