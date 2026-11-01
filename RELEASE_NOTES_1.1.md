@@ -7,7 +7,7 @@
 - Make the measurement-cross preview smoother.
 - Fix the dark Windows titlebar after leaving fullscreen.
 - Restore arrow-key editing after a held-key release is missed while switching windows or opening a dialog.
-- Add the optional **Deviation in filename** checkbox: for example, `_057_sbs.jpg` and `_057_anaglyph.jpg` for 57 permille, with `_uncertain` after uncertain estimates. The option is off by default.
+- Add the optional **Deviation in filename** checkbox: for example, `_057_sbs.jpg` and `_057_anaglyph.jpg` for 57 permille. Filenames use only the number, including for uncertain estimates. The option is off by default.
 
 ## Installation
 

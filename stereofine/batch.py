@@ -174,7 +174,6 @@ def run_batch(
                     and processed.state.disparity.valid
                     and not processed.state.disparity.stale else None
                 ),
-                filename_deviation_uncertain=processed.state.disparity.uncertain,
             )
 
             # Rendering may fit/update the symmetric color-transfer parameters.

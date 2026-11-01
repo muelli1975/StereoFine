@@ -49,11 +49,6 @@ def check_inputs(destination: Path, fixtures: Path) -> None:
                                       filename_deviation_permille=57.1)
             assert named.sbs_path.name == source.base_name+'_057_sbs.jpg'
             assert named.anaglyph_path.name == source.base_name+'_057_anaglyph.jpg'
-            uncertain_named = save_pair_outputs(after[0], after[1], root/'uncertain-output', source.base_name,
-                                                filename_deviation_permille=57.1,
-                                                filename_deviation_uncertain=True)
-            assert uncertain_named.sbs_path.name == source.base_name+'_057_uncertain_sbs.jpg'
-            assert uncertain_named.anaglyph_path.name == source.base_name+'_057_uncertain_anaglyph.jpg'
             # Compare decoded pixels because only the normal export above
             # receives the original HEIF metadata.
             for plain, suffix in [(exported.sbs_path, named.sbs_path),
@@ -69,7 +64,6 @@ def check_inputs(destination: Path, fixtures: Path) -> None:
             checks.append({'source': name, 'entities': list(entities), 'eye_order': True,
                            'session_render_identical': True,
                            'deviation_filename_and_pixels': True,
-                           'uncertain_deviation_filename': True,
                            'metadata_success': all(r.success for r in exported.metadata_results)})
         y, x = np.indices((48, 96))
         rgb = np.stack([(x*7+y)%256, (x+y*9)%256, (x*3+y*5)%256], axis=-1).astype(np.uint8)

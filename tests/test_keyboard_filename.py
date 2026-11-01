@@ -116,8 +116,6 @@ class DeviationFilenameTests(unittest.TestCase):
                                 (float('nan'), ''), (float('inf'), ''), (-1, '')]:
             with self.subTest(value=value):
                 self.assertEqual(deviation_filename_suffix(value), expected)
-        self.assertEqual(deviation_filename_suffix(57.1, uncertain=True), '_057_uncertain')
-        self.assertEqual(deviation_filename_suffix(None, uncertain=True), '')
 
     def test_opt_in_changes_both_names_without_changing_jpeg_bytes(self):
         rng = np.random.default_rng(72)
@@ -133,12 +131,6 @@ class DeviationFilenameTests(unittest.TestCase):
             self.assertEqual(named.anaglyph_path.name, 'photo_057_anaglyph.jpg')
             self.assertEqual(plain.sbs_path.read_bytes(), named.sbs_path.read_bytes())
             self.assertEqual(plain.anaglyph_path.read_bytes(), named.anaglyph_path.read_bytes())
-            uncertain = save_pair_outputs(left, right, root, 'photo',
-                filename_deviation_permille=57.1, filename_deviation_uncertain=True)
-            self.assertEqual(uncertain.sbs_path.name, 'photo_057_uncertain_sbs.jpg')
-            self.assertEqual(uncertain.anaglyph_path.name, 'photo_057_uncertain_anaglyph.jpg')
-            self.assertEqual(plain.sbs_path.read_bytes(), uncertain.sbs_path.read_bytes())
-            self.assertEqual(plain.anaglyph_path.read_bytes(), uncertain.anaglyph_path.read_bytes())
 
     def test_settings_migration_and_disk_roundtrip(self):
         self.assertFalse(AppSettings.from_dict({'language': 'en'}).append_deviation_to_filename)
@@ -170,11 +162,15 @@ class DeviationFilenameTests(unittest.TestCase):
                 with patch('stereofine.batch.validate_source_names'), \
                      patch('stereofine.batch.process_source', return_value=processed), \
                      patch('stereofine.batch.render_final_pair', return_value=(image, image, None)), \
-                     patch('stereofine.batch.save_pair_outputs') as save:
+                     patch('stereofine.batch.save_pair_outputs', wraps=save_pair_outputs) as save:
                     result = run_batch([source], options)
                 self.assertEqual(result.failed, [])
                 self.assertEqual(save.call_args.kwargs['filename_deviation_permille'], expected)
-                self.assertEqual(save.call_args.kwargs['filename_deviation_uncertain'], uncertain)
+                suffix = '' if expected is None else '_057'
+                exported = result.items[0].export
+                self.assertEqual(exported.sbs_path.name, 'photo'+suffix+'_sbs.jpg')
+                self.assertEqual(exported.anaglyph_path.name, 'photo'+suffix+'_anaglyph.jpg')
+                self.assertEqual(state.disparity.uncertain, uncertain)
 
 
 if __name__ == '__main__':

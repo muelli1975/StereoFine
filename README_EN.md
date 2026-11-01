@@ -175,9 +175,9 @@ Existing image outputs with the same name are deliberately replaced.
 **Deviation in filename** optionally adds the measured total deviation in whole
 permille: for example, `photo_057_sbs.jpg` and `photo_057_anaglyph.jpg`. Values are
 rounded to the nearest whole permille and padded to at least three digits. This
-option is off by default and remembered between sessions. Uncertain estimates
-receive `_uncertain` after the number, for example `photo_057_uncertain_sbs.jpg` and
-`photo_057_uncertain_anaglyph.jpg`. No number is added when a current measurement is unavailable.
+option is off by default and remembered between sessions. The filename uses only
+the number, including for uncertain estimates. Uncertainty remains indicated in
+the application and analysis report. No number is added when a current measurement is unavailable.
 
 ## Metadata
 

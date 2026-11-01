@@ -176,8 +176,9 @@ Vorhandene Bildausgaben gleichen Namens werden bewusst ersetzt.
 ganzen Promille: beispielsweise `bild_057_sbs.jpg` und `bild_057_anaglyph.jpg`.
 Der Wert wird gerundet und mindestens dreistellig geschrieben. Die Option ist
 standardmäßig aus und wird für den nächsten Programmstart gespeichert. Ohne
-gültigen aktuellen Messwert entfällt der Zahlenzusatz. Bei unsicherer Einschätzung
-steht `_uncertain` hinter der Zahl: `bild_057_uncertain_sbs.jpg` und `bild_057_uncertain_anaglyph.jpg`.
+gültigen aktuellen Messwert entfällt der Zahlenzusatz. Der Dateiname enthält auch
+bei unsicheren Einschätzungen nur den Zahlenwert. Die Unsicherheit bleibt im
+Programm und im Analysebericht gekennzeichnet.
 
 ## Metadaten
 

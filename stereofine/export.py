@@ -71,12 +71,11 @@ def _save_rgb_jpeg(image: np.ndarray, path: Path, *, quality: int) -> None:
             temp_path.unlink(missing_ok=True)
 
 
-def deviation_filename_suffix(value: float | None, *, uncertain: bool = False) -> str:
+def deviation_filename_suffix(value: float | None) -> str:
     """Round measured total deviation to whole permille, at least three digits."""
     if value is None or not math.isfinite(value) or value < 0:
         return ""
-    suffix = "_uncertain" if uncertain else ""
-    return f"_{math.floor(value + 0.5):03d}{suffix}"
+    return f"_{math.floor(value + 0.5):03d}"
 
 
 def save_pair_outputs(
@@ -89,7 +88,6 @@ def save_pair_outputs(
     gray_anaglyph: bool = False,
     metadata_source: Path | None = None,
     filename_deviation_permille: float | None = None,
-    filename_deviation_uncertain: bool = False,
 ) -> ExportResult:
     if left.shape != right.shape:
         raise ValueError(f"Halbbilder haben unterschiedliche Größen: {left.shape} != {right.shape}")
@@ -99,9 +97,7 @@ def save_pair_outputs(
     left8 = to_uint8_output(left)
     right8 = to_uint8_output(right)
     result = ExportResult()
-    output_stem = base_name + deviation_filename_suffix(
-        filename_deviation_permille, uncertain=filename_deviation_uncertain,
-    )
+    output_stem = base_name + deviation_filename_suffix(filename_deviation_permille)
 
     if output_mode in {"both", "sbs"}:
         sbs = np.concatenate([left8, right8], axis=1)
