@@ -28,6 +28,7 @@ class BatchRunOptions:
     gray_anaglyph: bool = False
     report_path: Path | None = None
     language: str = "de"
+    append_deviation_to_filename: bool = False
 
 
 @dataclass
@@ -167,6 +168,13 @@ def run_batch(
                 output_mode="both",
                 gray_anaglyph=options.gray_anaglyph,
                 metadata_source=source.metadata_source,
+                filename_deviation_permille=(
+                    processed.state.disparity.total_permille
+                    if options.append_deviation_to_filename
+                    and processed.state.disparity.valid
+                    and not processed.state.disparity.stale else None
+                ),
+                filename_deviation_uncertain=processed.state.disparity.uncertain,
             )
 
             # Rendering may fit/update the symmetric color-transfer parameters.

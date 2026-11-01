@@ -172,6 +172,13 @@ Standardmäßig legt StereoFine den Ordner `output` im Eingabeordner an. Alterna
 
 Vorhandene Bildausgaben gleichen Namens werden bewusst ersetzt.
 
+**Deviation im Dateinamen** ergänzt auf Wunsch die gemessene Gesamtdeviation in
+ganzen Promille: beispielsweise `bild_057_sbs.jpg` und `bild_057_anaglyph.jpg`.
+Der Wert wird gerundet und mindestens dreistellig geschrieben. Die Option ist
+standardmäßig aus und wird für den nächsten Programmstart gespeichert. Ohne
+gültigen aktuellen Messwert entfällt der Zahlenzusatz. Bei unsicherer Einschätzung
+steht `_uncertain` hinter der Zahl: `bild_057_uncertain_sbs.jpg` und `bild_057_uncertain_anaglyph.jpg`.
+
 ## Metadaten
 
 Soweit möglich kopiert StereoFine Metadaten mit dem gebündelten ExifTool. Preview-, Orientation- und MPF/MPO-Containerdaten werden nicht in normale SBS-/Anaglyph-JPEGs übernommen. Scheitert nur die Metadatenkopie, bleibt ein erfolgreich geschriebenes Bild gültig und StereoFine zeigt einen Hinweis.

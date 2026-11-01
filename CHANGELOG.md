@@ -1,6 +1,9 @@
 # Changelog
 
-## 1.1 — 2026-10-21
+## 1.1 — 2026-10-21 (updated 2026-11-01)
+
+- Clear transient held-key modes when the main window loses focus or is hidden, restoring manual arrow-key editing after a missed key release.
+- Add an optional, persistent total-deviation suffix in whole permille, such as `_057_sbs.jpg` and `_057_anaglyph.jpg`; mark uncertain estimates with `_uncertain` after the number and preserve existing filenames by default.
 
 - Improve automatic alignment, vertical edge correction and near/far measurements.
 - Mark uncertain depth measurements more clearly and add a measurement cross for manual checking.

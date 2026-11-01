@@ -209,6 +209,7 @@ class StereoFineApp(ctk.CTk):
         self.output_aspect_display = ctk.StringVar(value=aspect_label(self.settings.default_aspect, self.settings.language))
         self.color_match_enabled = ctk.BooleanVar(value=self.settings.color_match_enabled)
         self.use_input_subfolder = ctk.BooleanVar(value=self.settings.use_input_output_subfolder)
+        self.append_deviation_to_filename = ctk.BooleanVar(value=self.settings.append_deviation_to_filename)
         # Batch special modes are session/job state, not persistent preferences.
         self.analysis_only = ctk.BooleanVar(value=False)
         self.favorites_only = ctk.BooleanVar(value=False)
@@ -224,6 +225,7 @@ class StereoFineApp(ctk.CTk):
         self._floating_key_edge: str | None = None
         self._g_key_down = False
         self._shortcut_keys_down: set[str] = set()
+        self._keyboard_focus_after_id: str | None = None
         self._shortcut_help_window: ctk.CTkToplevel | None = None
         self._preview_pil: Image.Image | None = None
         self._preview_display_cache = PreviewImageCache()
@@ -572,6 +574,12 @@ class StereoFineApp(ctk.CTk):
 
         self.color_match_box = self._checkbox(self.sidebar, self._t("color_match"), self.color_match_enabled, self._on_color_match_changed)
         self.color_match_box.grid(row=row, column=0, sticky="w", padx=20, pady=(0, 8)); row += 1
+
+        self.deviation_filename_box = self._checkbox(
+            self.sidebar, self._t("deviation_filename"),
+            self.append_deviation_to_filename, self._persist_settings,
+        )
+        self.deviation_filename_box.grid(row=row, column=0, sticky="w", padx=20, pady=(0, 8)); row += 1
 
         self.use_input_subfolder_box = self._checkbox(
             self.sidebar,
@@ -1257,6 +1265,7 @@ class StereoFineApp(ctk.CTk):
         self.settings.color_match_enabled = bool(self.color_match_enabled.get())
         self.settings.default_aspect = self.output_aspect.get()
         self.settings.use_input_output_subfolder = bool(self.use_input_subfolder.get())
+        self.settings.append_deviation_to_filename = bool(self.append_deviation_to_filename.get())
         # Output is intentionally fixed: SBS plus one anaglyph.
         self.settings.output_mode = "both"
         save_settings(self.settings)
@@ -1954,6 +1963,7 @@ class StereoFineApp(ctk.CTk):
             output_folder=output_folder,
             gray_anaglyph=self.preview_mode.get() == "Graustufen",
             language=self.settings.language,
+            append_deviation_to_filename=bool(self.append_deviation_to_filename.get()),
         )
 
         def job(token, progress):
@@ -1975,6 +1985,7 @@ class StereoFineApp(ctk.CTk):
             output_folder=output_folder,
             gray_anaglyph=self.preview_mode.get() == "Graustufen",
             language=self.settings.language,
+            append_deviation_to_filename=bool(self.append_deviation_to_filename.get()),
         )
         source = self.current.source
 
@@ -2166,6 +2177,8 @@ class StereoFineApp(ctk.CTk):
     # Keyboard handling
     # ------------------------------------------------------------------
     def _bind_shortcuts(self) -> None:
+        self.bind("<FocusOut>", self._on_keyboard_focus_out, add="+")
+        self.bind("<Unmap>", self._on_keyboard_unmap, add="+")
         self.bind_all("<F11>", self._on_f11)
         self.bind_all("<KeyRelease-F11>", lambda e: self._release_shortcut_key("f11"))
         self.bind("<Escape>", self._on_escape)
@@ -2216,6 +2229,40 @@ class StereoFineApp(ctk.CTk):
             self.bind_all(f"<KeyPress-{key.upper()}>", lambda e, edge=edge: self._set_floating_key(edge, e))
             self.bind_all(f"<KeyRelease-{key}>", lambda e, edge=edge: self._clear_floating_key(edge, e))
             self.bind_all(f"<KeyRelease-{key.upper()}>", lambda e, edge=edge: self._clear_floating_key(edge, e))
+
+    def _on_keyboard_focus_out(self, _event=None) -> None:
+        # Focus events also occur between controls inside this window. Wait
+        # until Tk has assigned the next focus before deciding whether it left.
+        if self._keyboard_focus_after_id is None:
+            self._keyboard_focus_after_id = self.after_idle(self._reset_keyboard_if_unfocused)
+
+    def _reset_keyboard_if_unfocused(self) -> None:
+        self._keyboard_focus_after_id = None
+        try:
+            focused = self.focus_get()
+            if focused is not None and focused.winfo_toplevel() is self:
+                return
+        except tk.TclError:
+            pass
+        self._reset_keyboard_modes()
+
+    def _on_keyboard_unmap(self, event) -> None:
+        if event.widget is self:
+            self._reset_keyboard_modes()
+
+    def _reset_keyboard_modes(self) -> None:
+        """Forget held keys whose release may have happened in another window."""
+        if self._keyboard_focus_after_id is not None:
+            self.after_cancel(self._keyboard_focus_after_id)
+            self._keyboard_focus_after_id = None
+        self._floating_key_edge = None
+        self._g_key_down = False
+        self._shortcut_keys_down.clear()
+        was_measuring = self.measure_cross_active
+        self.measure_cross_active = False
+        self._stop_measure_repeat()
+        if was_measuring:
+            self._update_preview_display()
 
     def _is_alt(self, event) -> bool:
         return bool(event is not None and event.state & (0x0008 | 0x0080 | 0x20000))

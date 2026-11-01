@@ -25,6 +25,7 @@ class AppSettings:
     default_aspect: str = "maximum"
     analysis_method: str = "AKAZE"
     color_match_enabled: bool = False
+    append_deviation_to_filename: bool = False
 
     def normalize(self) -> "AppSettings":
         if self.language not in {"de", "en"}:
@@ -42,6 +43,7 @@ class AppSettings:
             self.analysis_method = "AKAZE"
         self.use_input_output_subfolder = bool(self.use_input_output_subfolder)
         self.color_match_enabled = bool(self.color_match_enabled)
+        self.append_deviation_to_filename = bool(self.append_deviation_to_filename)
         return self
 
     @classmethod

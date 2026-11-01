@@ -45,6 +45,21 @@ def check_inputs(destination: Path, fixtures: Path) -> None:
             exported = save_pair_outputs(after[0], after[1], root/'output', source.base_name,
                                          metadata_source=path)
             assert exported.sbs_path.is_file() and exported.anaglyph_path.is_file()
+            named = save_pair_outputs(after[0], after[1], root/'named-output', source.base_name,
+                                      filename_deviation_permille=57.1)
+            assert named.sbs_path.name == source.base_name+'_057_sbs.jpg'
+            assert named.anaglyph_path.name == source.base_name+'_057_anaglyph.jpg'
+            uncertain_named = save_pair_outputs(after[0], after[1], root/'uncertain-output', source.base_name,
+                                                filename_deviation_permille=57.1,
+                                                filename_deviation_uncertain=True)
+            assert uncertain_named.sbs_path.name == source.base_name+'_057_uncertain_sbs.jpg'
+            assert uncertain_named.anaglyph_path.name == source.base_name+'_057_uncertain_anaglyph.jpg'
+            # Compare decoded pixels because only the normal export above
+            # receives the original HEIF metadata.
+            for plain, suffix in [(exported.sbs_path, named.sbs_path),
+                                  (exported.anaglyph_path, named.anaglyph_path)]:
+                with Image.open(plain) as a, Image.open(suffix) as b:
+                    assert np.array_equal(np.asarray(a), np.asarray(b))
             for result in exported.metadata_results:
                 if result.success:
                     for output in (exported.sbs_path, exported.anaglyph_path):
@@ -53,6 +68,8 @@ def check_inputs(destination: Path, fixtures: Path) -> None:
                             assert image.getexif().get_ifd(0x8769).get(0xA001) == 1
             checks.append({'source': name, 'entities': list(entities), 'eye_order': True,
                            'session_render_identical': True,
+                           'deviation_filename_and_pixels': True,
+                           'uncertain_deviation_filename': True,
                            'metadata_success': all(r.success for r in exported.metadata_results)})
         y, x = np.indices((48, 96))
         rgb = np.stack([(x*7+y)%256, (x+y*9)%256, (x*3+y*5)%256], axis=-1).astype(np.uint8)

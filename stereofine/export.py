@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import math
 import os
 from pathlib import Path
 import tempfile
@@ -70,6 +71,14 @@ def _save_rgb_jpeg(image: np.ndarray, path: Path, *, quality: int) -> None:
             temp_path.unlink(missing_ok=True)
 
 
+def deviation_filename_suffix(value: float | None, *, uncertain: bool = False) -> str:
+    """Round measured total deviation to whole permille, at least three digits."""
+    if value is None or not math.isfinite(value) or value < 0:
+        return ""
+    suffix = "_uncertain" if uncertain else ""
+    return f"_{math.floor(value + 0.5):03d}{suffix}"
+
+
 def save_pair_outputs(
     left: np.ndarray,
     right: np.ndarray,
@@ -79,6 +88,8 @@ def save_pair_outputs(
     output_mode: OutputMode = "both",
     gray_anaglyph: bool = False,
     metadata_source: Path | None = None,
+    filename_deviation_permille: float | None = None,
+    filename_deviation_uncertain: bool = False,
 ) -> ExportResult:
     if left.shape != right.shape:
         raise ValueError(f"Halbbilder haben unterschiedliche Größen: {left.shape} != {right.shape}")
@@ -88,10 +99,13 @@ def save_pair_outputs(
     left8 = to_uint8_output(left)
     right8 = to_uint8_output(right)
     result = ExportResult()
+    output_stem = base_name + deviation_filename_suffix(
+        filename_deviation_permille, uncertain=filename_deviation_uncertain,
+    )
 
     if output_mode in {"both", "sbs"}:
         sbs = np.concatenate([left8, right8], axis=1)
-        result.sbs_path = folder / "sbs" / f"{base_name}_sbs.jpg"
+        result.sbs_path = folder / "sbs" / f"{output_stem}_sbs.jpg"
         _save_rgb_jpeg(sbs, result.sbs_path, quality=SBS_JPEG_QUALITY)
         meta = copy_metadata_without_preview_or_orientation(metadata_source, result.sbs_path)
         result.metadata_results.append(meta)
@@ -101,7 +115,7 @@ def save_pair_outputs(
     if output_mode in {"both", "anaglyph"}:
         anaglyph = make_anaglyph(left8, right8, gray=gray_anaglyph)
         anaglyph = resize_array_to_height(anaglyph, ANAGLYPH_TARGET_HEIGHT)
-        result.anaglyph_path = folder / "anaglyph" / f"{base_name}_anaglyph.jpg"
+        result.anaglyph_path = folder / "anaglyph" / f"{output_stem}_anaglyph.jpg"
         _save_rgb_jpeg(anaglyph, result.anaglyph_path, quality=ANAGLYPH_JPEG_QUALITY)
         meta = copy_metadata_without_preview_or_orientation(metadata_source, result.anaglyph_path)
         result.metadata_results.append(meta)

@@ -172,6 +172,13 @@ By default StereoFine creates an `output` folder inside the input folder. Altern
 
 Existing image outputs with the same name are deliberately replaced.
 
+**Deviation in filename** optionally adds the measured total deviation in whole
+permille: for example, `photo_057_sbs.jpg` and `photo_057_anaglyph.jpg`. Values are
+rounded to the nearest whole permille and padded to at least three digits. This
+option is off by default and remembered between sessions. Uncertain estimates
+receive `_uncertain` after the number, for example `photo_057_uncertain_sbs.jpg` and
+`photo_057_uncertain_anaglyph.jpg`. No number is added when a current measurement is unavailable.
+
 ## Metadata
 
 Where possible, StereoFine copies metadata using the bundled ExifTool. Preview, Orientation and MPF/MPO container metadata are not copied into ordinary SBS/anaglyph JPEG files. If only metadata copying fails, a successfully written image remains valid and StereoFine shows a warning.
