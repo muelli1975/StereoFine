@@ -80,13 +80,15 @@ def main():
                     actual = [app.winfo_width(), app.winfo_height()]
                     screen = [app.winfo_screenwidth(), app.winfo_screenheight()]
                     # Native CI desktops can be smaller than the requested
-                    # workspace. Windows caps the client to its work area;
+                    # workspace. Native window managers cap the client to their work area;
                     # test that real window instead of changing the product.
                     if all(r <= s-80 for r, s in zip(requested, screen)):
                         assert actual == requested, (size, args.scale, actual, requested)
                     else:
-                        minimum = [round(v*window_scale) for v in [1100, 700]]
-                        assert all(m <= a <= r for m, a, r in zip(minimum, actual, requested))
+                        minimum = [min(round(v*window_scale), max(1, s-80))
+                                   for v, s in zip([1100, 700], screen)]
+                        assert all(m <= a <= r for m, a, r in zip(minimum, actual, requested)), (
+                            size, args.scale, actual, requested, minimum, screen)
                     before = geometry(app)
                     state.disparity.uncertain = True
                     app._render_status()
