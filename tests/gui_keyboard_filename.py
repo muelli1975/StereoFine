@@ -28,6 +28,12 @@ def main():
     gui.load_settings = lambda: settings
     gui.save_settings = lambda value: saved.append(value.to_dict())
     app = gui.StereoFineApp()
+    focus_events = []
+    def record_focus(event):
+        focus_events.append(dict(type=str(event.type), widget=str(event.widget),
+                                 focus=str(app.focus_get()), pending=app._keyboard_focus_after_id))
+    app.bind_all('<FocusIn>', record_focus, add='+')
+    app.bind_all('<FocusOut>', record_focus, add='+')
     other = None
     with tempfile.TemporaryDirectory(prefix='sf-keyboard-filename-') as temporary:
         root = Path(temporary)
@@ -73,7 +79,9 @@ def main():
             other.focus_force()
             pump(app)
             assert app.focus_get() is not None and app.focus_get().winfo_toplevel() is other
-            assert app._floating_key_edge is None
+            assert app._floating_key_edge is None, dict(events=focus_events, focus=str(app.focus_get()),
+                floating=app._floating_key_edge, pending=app._keyboard_focus_after_id,
+                out_binding=app.bind('<FocusOut>'), in_binding=app.bind_all('<FocusIn>'))
             assert not app._g_key_down and not app._shortcut_keys_down
             assert (state.manual.delta_x_px, state.manual.delta_y_px) == (17, -3)
             app.focus_force()
