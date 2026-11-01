@@ -16,7 +16,11 @@ from stereofine.settings import AppSettings
 from stereofine.theme import restore_dark_titlebar
 
 
-def pump(app, seconds=.3):
+def pump(app, seconds=None):
+    # macOS enters and leaves a native fullscreen Space asynchronously. Allow
+    # its animation to settle before requesting the opposite transition.
+    if seconds is None:
+        seconds = 2.0 if sys.platform == 'darwin' else .3
     deadline = time.perf_counter() + seconds
     while time.perf_counter() < deadline:
         app.update()
