@@ -34,6 +34,13 @@ def main():
                                  focus=str(app.focus_get()), pending=app._keyboard_focus_after_id))
     app.bind_all('<FocusIn>', record_focus, add='+')
     app.bind_all('<FocusOut>', record_focus, add='+')
+    reset_focus = app._reset_keyboard_if_unfocused
+    def traced_reset():
+        focused = app.focus_get()
+        focus_events.append(dict(reset='before', focus=str(focused), top=str(focused.winfo_toplevel()) if focused is not None else None, same=focused.winfo_toplevel() is app if focused is not None else None, floating=app._floating_key_edge))
+        reset_focus()
+        focus_events.append(dict(reset='after', floating=app._floating_key_edge))
+    app._reset_keyboard_if_unfocused = traced_reset
     other = None
     with tempfile.TemporaryDirectory(prefix='sf-keyboard-filename-') as temporary:
         root = Path(temporary)
