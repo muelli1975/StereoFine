@@ -97,9 +97,27 @@ def main():
                 assert app.current.state.disparity == measured
                 assert hint not in label.cget('text')
                 assert app._preview_pil.tobytes() != before_pixels
+                app._adjust_crop_zoom(-1)
+                app.output_aspect.set('1:1')
+                app._on_aspect_changed()
+                pump(app, lambda: app.current.state.disparity.valid and not app.current.state.disparity.stale)
+                small_step = app._framing_step_permille('x')
+                assert 0 < small_step < 1000
+                before_pixels = app._preview_pil.tobytes()
+                old_pan = app.current.state.framing.pan_x_permille
+                app._on_alt_arrow('right')
+                assert app.current.state.framing.pan_x_permille == min(1000, old_pan + small_step)
+                assert app._preview_pil.tobytes() != before_pixels
+                pump(app, lambda: app.current.state.disparity.valid and not app.current.state.disparity.stale)
+                before_pixels = app._preview_pil.tobytes()
+                app._on_alt_arrow('down')
+                assert app.current.state.framing.pan_y_permille == 0
+                assert app._preview_pil.tobytes() == before_pixels
+                assert app._measurement_after_id is None
                 checks.append(dict(language=language, automatic_crop_refresh=True, framing_preserved=True,
                                    calculating_hint=True, color_preview_on_restart=True,
-                                   manual_nudge_without_measurement=True))
+                                   manual_nudge_without_measurement=True, crop_pan_small_steps=True,
+                                   unavailable_axis_keeps_pan=True))
                 with patch('stereofine.processing.refresh_current_disparity', side_effect=RuntimeError('Test failure')):
                     app.current.state.invalidate_disparity_for_framing()
                     app._schedule_disparity_refresh()

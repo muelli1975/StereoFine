@@ -26,7 +26,7 @@ from .config import (
     SUPPORTED_IMAGE_EXTENSIONS,
     SUPPORTED_STEREO_SINGLE_EXTENSIONS,
 )
-from .geometry import framing_crop_geometry
+from .geometry import crop_shifted_pair_to_overlap, framing_crop_geometry
 from .i18n import (
     Translator,
     aspect_code,
@@ -1693,21 +1693,30 @@ class StereoFineApp(ctk.CTk):
             self._schedule_status_refresh()
 
     def _framing_step_permille(self, axis: str = "x") -> int:
-        if self.current is None or self._preview_pair_shape is None:
-            return 1000
-        width, height = self._preview_pair_shape
+        if self.current is None:
+            return 0
+        # Use the same pre-framing overlap as the renderer. The displayed
+        # pair is already cropped and cannot describe the available pan range.
+        base = self._ensure_preview_base(self.current)
         state = self.current.state
+        left, _right, _ = crop_shifted_pair_to_overlap(
+            base.left, base.right,
+            int(round(state.effective_offset_x_px * base.scale)),
+            int(round(state.effective_offset_y_px * base.scale)),
+        )
+        height, width = left.shape[:2]
+        zoom_index = max(0, min(len(CROP_ZOOM_LEVELS) - 1, int(state.framing.crop_zoom_index)))
         crop_w, crop_h, max_x, max_y = framing_crop_geometry(
             width,
             height,
             state.framing.aspect,
-            CROP_ZOOM_LEVELS[state.framing.crop_zoom_index],
-            width / max(1, height),
+            CROP_ZOOM_LEVELS[zoom_index],
+            base.original_aspect,
         )
         _ = crop_w, crop_h
         max_shift = max_x if axis == "x" else max_y
         if max_shift <= 0.5:
-            return 1000
+            return 0
         return max(1, int(round(5.0 / max_shift * 1000.0)))
 
     def _adjust_framing_pan(self, dx: int = 0, dy: int = 0) -> None:
