@@ -243,6 +243,7 @@ class StereoFineApp(ctk.CTk):
         self._preview_ctk_image: ctk.CTkImage | None = None
         self._preview_pair_shape: tuple[int, int] | None = None
         self._preview_display_size: tuple[int, int] | None = None
+        self._measure_display_size: tuple[int, int] | None = None
         self._preview_base: PreviewBasePair | None = None
         self._preview_base_session_id: int | None = None
         self._preview_left_current = None
@@ -1937,12 +1938,13 @@ class StereoFineApp(ctk.CTk):
             else:
                 image = draw_grid_overlay(image, self.grid_spacing.get(), self.grid_mode.get())
         if self.measure_cross_active:
-            if self._preview_display_size and self.measure_cross_x is not None and self.measure_cross_y is not None:
-                old_w, old_h = self._preview_display_size
+            if self._measure_display_size and self.measure_cross_x is not None and self.measure_cross_y is not None:
+                old_w, old_h = self._measure_display_size
                 if old_w > 0 and old_h > 0 and (old_w, old_h) != display_size:
                     self.measure_cross_x *= display_size[0] / old_w
                     self.measure_cross_y *= display_size[1] / old_h
             self._preview_display_size = display_size
+            self._measure_display_size = display_size
             self._clamp_measure_cross(display_size)
             image = draw_measure_cross_overlay(image, self.measure_cross_x, self.measure_cross_y)
         else:
@@ -2554,7 +2556,6 @@ class StereoFineApp(ctk.CTk):
             return "break"
         if not self.measure_cross_active:
             self.measure_cross_active = True
-            self._clamp_measure_cross(self._preview_display_size)
             if self.preview_mode.get() == "Kreuzblick":
                 self._build_preview_anaglyph()
             else:
