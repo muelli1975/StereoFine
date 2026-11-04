@@ -257,6 +257,9 @@ def main() -> None:
             assert app.preview_mode.get() == first_preview_mode
             app._release_shortcut_key("a")
             app._on_a(key_event)
+            assert app.preview_mode.get() not in {original_preview_mode, first_preview_mode}
+            app._release_shortcut_key("a")
+            app._on_a(key_event)
             assert app.preview_mode.get() == original_preview_mode
             app._release_shortcut_key("a")
 
