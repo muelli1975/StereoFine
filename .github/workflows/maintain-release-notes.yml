@@ -39,7 +39,7 @@ jobs:
                       [(a['id'],a['name'],a['size'],a.get('digest')) for a in release['assets']])
           for item in plan['releases']:
               before = api(item['id'])
-              assert before['tag_name'] == item['tag'] and not before['draft']
+              assert before['tag_name'] == item['tag'] and before['draft'] == item.get('draft', False)
               if before['body'] == item['body']:
                   print('Already updated:', item['tag'])
                   continue
