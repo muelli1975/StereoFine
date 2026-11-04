@@ -1,0 +1,17 @@
+{
+  "repository": "muelli1975/StereoFine",
+  "releases": [
+    {
+      "id": 419496903,
+      "tag": "v1.1",
+      "body": "# StereoFine 1.1\n\n- Improve automatic stereo alignment and depth measurement, with a measurement cross for manual checks.\n- Expand image input support to JPS/PNS, WebP/BMP and compatible SDR HEIC/HEIF images, including Spatial Photos.\n- Extend image output with cross-view JPEGs and optional deviation values in filenames.\n\n## Installation\n\nExtract the complete package for your system into a writable folder. Start `StereoFine.exe` on Windows, `StereoFine` on Linux or `StereoFine.app` on macOS. Keep the supplied tools and application files together. No separate Python installation is required. Linux/macOS metadata transfer requires Perl.\n\nKeep `settings.json` and saved image adjustments when updating. Outdated automatic measurements are recalculated. Automatic alignment and depth measurements can remain uncertain for difficult subjects.\n\nSee [supported input formats](https://github.com/muelli1975/StereoFine/blob/main/docs/IMAGE_FORMATS_1.1.md) and [measurement limitations](https://github.com/muelli1975/StereoFine/blob/main/docs/OBSERVED_RANGE_1.1.md).\n\n\n## SHA-256\n\n```text\n4fe004bf87d29b7f7cdbc25312357f91a4d5070f77702dfc8e5a8f21907d4550  StereoFine_1.1_Windows_x64.zip\n18786154cd791801b6c047c3fa800fbeed5648ee309ed96c022f47bbdd6e7c30  StereoFine_1.1_Linux_x64.tar.gz\nf30396befca51f538e855c68dfe619d96a1820f42360008d04e594a7d27e1489  StereoFine_1.1_macOS_AppleSilicon.zip\ncc8eea0debf88ce650380a899196904681c32ca0428922b11c34fd674ece6ad3  StereoFine_1.1_macOS_Intel.zip\n```\n",
+      "expected_body_sha256": "5967a456e811105277a19c7fa54449960d78cb125434c15bc4acd496ac0e8784"
+    },
+    {
+      "id": 384265475,
+      "tag": "v1.0",
+      "body": "# StereoFine 1.0\n\nAutomatically align, check and export stereoscopic image pairs, with manual fine adjustments, cropping and floating-window masks.\n\n## Installation\n\nExtract the complete package for your system into a writable folder. Start `StereoFine.exe` on Windows, `StereoFine` on Linux or `StereoFine.app` on macOS. Keep the supplied tools and application files together. No separate Python installation is required. Linux/macOS metadata transfer requires Perl.\n\nKeep `settings.json` and saved image adjustments when updating. Automatic alignment and near-point measurements can remain uncertain for difficult subjects.\n\n## Downloads and SHA-256\n\n| File | SHA-256 |\n| --- | --- |\n| [StereoFine_1.0_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.0/StereoFine_1.0_Windows_x64.zip) | `416ca3bb8bc54ebf037a89f6c63c6448ac5e8a0910bc9afd50aae70e4499f29c` |\n| [StereoFine_1.0_Linux_x64.tar.gz](https://github.com/muelli1975/StereoFine/releases/download/v1.0/StereoFine_1.0_Linux_x64.tar.gz) | `47bf32058269bbb05430f924e2900aac1f7c6aee211d43bae1569f5a41da3fc2` |\n| [StereoFine_1.0_macOS_AppleSilicon.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.0/StereoFine_1.0_macOS_AppleSilicon.zip) | `32326406a9cf3259cc63149ba57f8957490cdbd591ccc8fb059f091947340281` |\n| [StereoFine_1.0_macOS_Intel.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.0/StereoFine_1.0_macOS_Intel.zip) | `0c9a587bfdfa2ea26a6cabf75243d15f4b0621e45e7aae2934d4de6c6f81ba1f` |\n\n[Download checksum file](https://github.com/muelli1975/StereoFine/releases/download/v1.0/SHA256SUMS.txt).\n",
+      "expected_body_sha256": "f106f82834c815d7e844ca206ab6b6cc43f629fa8029df879829065108d9a34a"
+    }
+  ]
+}
