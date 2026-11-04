@@ -111,9 +111,9 @@ TEXTS: dict[str, dict[str, str]] = {
         "status_ready": "Bereit",
         "status_analysis": "Analyse",
         "status_deviation_open": "Deviation offen",
+        "status_calculating": "Berechne …",
         "status_not_analyzed": "Nicht analysiert",
         "status_active": "aktiv",
-        "status_stale": "Deviation nach Änderung erneut analysieren.",
         "status_uncertain": "⚠ Einschätzung unsicher – bitte mit M prüfen!",
         "status_input": "Input",
         "status_batch_preview": "Batch: {count} · Vorschau {index}/{count}",
@@ -268,9 +268,9 @@ TEXTS: dict[str, dict[str, str]] = {
         "status_ready": "Ready",
         "status_analysis": "Analysis",
         "status_deviation_open": "Deviation pending",
+        "status_calculating": "Calculating …",
         "status_not_analyzed": "Not analyzed",
         "status_active": "active",
-        "status_stale": "Re-analyze deviation after this change.",
         "status_uncertain": "⚠ Estimate uncertain – please check with M!",
         "status_input": "Input",
         "status_batch_preview": "Batch: {count} · Preview {index}/{count}",
@@ -526,24 +526,6 @@ def orientation_code(label: str) -> str:
         "90° rechts": "90_cw", "90° links": "90_ccw",
         "90° right": "90_cw", "90° left": "90_ccw",
     }.get(label, label)
-
-
-def output_mode_label(code: str, language: str) -> str:
-    mapping = {
-        "de": {"both": "SBS + Anaglyphe", "sbs": "SBS", "anaglyph": "Anaglyphe"},
-        "en": {"both": "SBS + Anaglyph", "sbs": "SBS", "anaglyph": "Anaglyph"},
-    }
-    return mapping.get(language, mapping["de"]).get(code, mapping["de"]["both"])
-
-
-def output_mode_code(label: str) -> str:
-    return {
-        "SBS + Anaglyphe": "both",
-        "Anaglyphe": "anaglyph",
-        "SBS + Anaglyph": "both",
-        "Anaglyph": "anaglyph",
-        "SBS": "sbs",
-    }.get(label, "both")
 
 
 def grid_spacing_label(code: str, language: str) -> str:

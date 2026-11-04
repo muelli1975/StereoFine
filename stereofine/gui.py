@@ -150,13 +150,8 @@ MEASURE_MAX_SPEED_PX_PER_SEC = 900.0
 MEASURE_ACCEL_TIME_SEC = 0.55
 MEASURE_MAX_DT_SEC = 0.050
 
-def _count_text(count: int, singular: str, plural: str | None = None) -> str:
-    plural = plural or singular + "e"
-    return f"{count} {singular if count == 1 else plural}"
-
-
 class StereoFineApp(ctk.CTk):
-    """StereoFine 1.0 GUI shell over the GUI-independent processing core."""
+    """GUI shell over the GUI-independent processing core."""
 
     def __init__(self) -> None:
         ctk.set_appearance_mode("dark")
@@ -200,8 +195,8 @@ class StereoFineApp(ctk.CTk):
         self._resize_fast_after_id: str | None = None
         self._status_after_id: str | None = None
 
-        self.preview_mode = ctk.StringVar(value=self.settings.preview_mode)
-        self._last_anaglyph_preview_mode = "Graustufen" if self.settings.preview_mode == "Graustufen" else "Farbig"
+        self.preview_mode = ctk.StringVar(value="Farbig")
+        self._last_anaglyph_preview_mode = "Farbig"
         self.gray_anaglyph = ctk.BooleanVar(value=self.settings.gray_anaglyph)
         self.save_cross = ctk.BooleanVar(value=self.settings.save_cross)
         self.language_display = ctk.StringVar(value=language_label(self.settings.language))
@@ -306,7 +301,6 @@ class StereoFineApp(ctk.CTk):
             if hasattr(self, name):
                 delattr(self, name)
         self._status_line_widgets = {}
-        self._status_widgets = []
         self._build_layout()
         self._refresh_output_state()
         self._render_status()
@@ -718,7 +712,6 @@ class StereoFineApp(ctk.CTk):
             font=self._font(26),
             anchor="center",
         )
-        self._status_widgets: list[Any] = []
         self._render_status()
 
         footer = ctk.CTkFrame(self.sidebar_bottom, fg_color="transparent")
@@ -857,7 +850,6 @@ class StereoFineApp(ctk.CTk):
                 pass
 
         self._status_line_widgets = {}
-        self._status_widgets = []
 
         def add_label(
             name: str,
@@ -879,14 +871,12 @@ class StereoFineApp(ctk.CTk):
             )
             label.grid(row=row, column=0, sticky="ew", padx=(0, 8), pady=0)
             self._status_line_widgets[name] = label
-            self._status_widgets.append(label)
 
         def add_spacer(row: int, height: int = 4) -> None:
             spacer = ctk.CTkFrame(self.status_frame, height=height, fg_color="transparent")
             # Never span the reserved symbol column; doing so caused the old
             # spinner seam/clipping regression on Windows.
             spacer.grid(row=row, column=0, sticky="ew")
-            self._status_widgets.append(spacer)
 
         # Fixed rows deliberately avoid text wrapping/clipping and, more
         # importantly, prevent the bottom controls from jumping while values
@@ -959,7 +949,12 @@ class StereoFineApp(ctk.CTk):
             self.traffic_label.grid_forget()
 
         normal_items = [item for item in deviation.rows if item.role == "normal"] if deviation else []
-        if len(normal_items) >= 2:
+        measurement_pending = self.current is not None and (
+            self._measurement_after_id is not None or self._measurement_job_id is not None
+        )
+        if measurement_pending:
+            labels["near_far"].configure(text=self._t("status_calculating"))
+        elif len(normal_items) >= 2:
             labels["near_far"].configure(
                 text=f"{normal_items[0].label}: {normal_items[0].value} · "
                      f"{normal_items[1].label}: {normal_items[1].value}"
@@ -1290,7 +1285,6 @@ class StereoFineApp(ctk.CTk):
         self.settings.append_deviation_to_filename = bool(self.append_deviation_to_filename.get())
         self.settings.gray_anaglyph = bool(self.gray_anaglyph.get())
         self.settings.save_cross = bool(self.save_cross.get())
-        self.settings.preview_mode = self.preview_mode.get()
         # Output is intentionally fixed: SBS plus one anaglyph.
         self.settings.output_mode = "both"
         save_settings(self.settings)
@@ -1784,15 +1778,20 @@ class StereoFineApp(ctk.CTk):
 
     def _schedule_disparity_refresh(self) -> None:
         self._cancel_disparity_refresh()
-        self._measurement_after_id = self.after(450, self._run_disparity_refresh)
+        if (self.current is not None and self.busy_state == "idle"
+                and self.current.state.alignment.valid and self.current.state.disparity.stale):
+            self._measurement_after_id = self.after(450, self._run_disparity_refresh)
+        self._render_status()
 
     def _run_disparity_refresh(self) -> None:
         from .processing import current_disparity_basis, refresh_current_disparity
         self._measurement_after_id = None
         if self.current is None or self.busy_state != "idle":
+            self._render_status()
             return
         state = self.current.state
         if not state.alignment.valid or not state.disparity.stale:
+            self._render_status()
             return
         if self._measurement_running_id and self.measurement_worker.is_running(self._measurement_running_id):
             self._measurement_after_id = self.after(100, self._run_disparity_refresh)
@@ -1821,10 +1820,11 @@ class StereoFineApp(ctk.CTk):
                     self._measurement_job_id = None
                     self._schedule_state_save()
                     self._render_status()
-                elif message.kind == WorkerMessageKind.ERROR:
+                elif message.kind in {WorkerMessageKind.ERROR, WorkerMessageKind.CANCELLED}:
                     self._measurement_job_id = None
-                    self.current.state.disparity.valid = False
-                    self.current.state.disparity.status = "error"
+                    if message.kind == WorkerMessageKind.ERROR:
+                        self.current.state.disparity.valid = False
+                        self.current.state.disparity.status = "error"
                     self._render_status()
         except queue.Empty:
             pass
@@ -1974,7 +1974,6 @@ class StereoFineApp(ctk.CTk):
     def _on_preview_mode_changed(self) -> None:
         if self.preview_mode.get() != "Kreuzblick":
             self._last_anaglyph_preview_mode = self.preview_mode.get()
-        self._persist_settings()
         if self._preview_left_current is not None and self._preview_right_current is not None:
             self._build_preview_anaglyph()
         else:
@@ -2026,6 +2025,7 @@ class StereoFineApp(ctk.CTk):
         self._cancel_disparity_refresh()
         self.busy_state = kind
         self.current_job_kind = kind
+        self._render_status()
         # ``button_text`` is retained for call-site clarity/history, but the
         # primary action itself is always the active cancellation affordance
         # while work is running. Progress is shown by preview/status/spinner.

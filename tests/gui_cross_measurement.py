@@ -5,6 +5,7 @@ from pathlib import Path
 import platform
 import tempfile
 import time
+from unittest.mock import patch
 
 import customtkinter as ctk
 from stereofine import gui
@@ -30,12 +31,17 @@ def main():
         source = RestartAlignmentTests().source(Path(td))
         process_source(source)
         for language in ('de','en'):
-            gui.load_settings = lambda: AppSettings(language=language, gray_anaglyph=True, save_cross=True)
+            gui.load_settings = lambda: AppSettings.from_dict(dict(language=language, gray_anaglyph=True,
+                save_cross=True, preview_mode='Kreuzblick'))
             saved = []
             gui.save_settings = lambda value: saved.append(value.to_dict())
             app = gui.StereoFineApp()
             try:
                 pump(app, lambda: app._preview_pil is not None)
+                assert app.preview_mode.get() == "Farbig"
+                assert app._effective_preview_mode() == "Farbig"
+                app._persist_settings()
+                assert "preview_mode" not in saved[-1]
                 app.current = browse_source(source)
                 app.sources, app.source_index = [source], 0
                 app._sync_vars_from_current()
@@ -71,12 +77,31 @@ def main():
                     checks.append(dict(language=language, scale=scale, preview='cross-view'))
                 ctk.set_widget_scaling(1.); ctk.set_window_scaling(1.)
                 app._adjust_crop_zoom(1)
+                hint = 'Berechne …' if language == 'de' else 'Calculating …'
+                label = app._status_line_widgets['near_far']
+                assert label.cget('text') == hint
                 geometry = deepcopy(app.current.state.framing)
+                pump(app, lambda: app._measurement_job_id is not None)
+                assert label.cget('text') == hint
                 pump(app, lambda: app.current.state.disparity.valid and not app.current.state.disparity.stale)
+                assert hint not in label.cget('text')
                 assert app.current.state.framing == geometry
                 assert app.current.state.disparity.basis['rendered_pair']
                 assert saved[-1]['gray_anaglyph'] and saved[-1]['save_cross']
-                checks.append(dict(language=language, automatic_crop_refresh=True, framing_preserved=True))
+                checks.append(dict(language=language, automatic_crop_refresh=True, framing_preserved=True,
+                                   calculating_hint=True, color_preview_on_restart=True))
+                with patch('stereofine.processing.refresh_current_disparity', side_effect=RuntimeError('Test failure')):
+                    app.current.state.invalidate_disparity_for_framing()
+                    app._schedule_disparity_refresh()
+                    assert label.cget('text') == hint
+                    pump(app, lambda: app.current.state.disparity.status == 'error')
+                    assert hint not in label.cget('text')
+                app._schedule_disparity_refresh()
+                assert label.cget('text') == hint
+                app._start_worker('load', '', lambda token, progress: None)
+                assert hint not in label.cget('text')
+                pump(app, lambda: app.busy_state == 'idle')
+                checks.append(dict(language=language, calculating_hint_cleared_on_error_and_cancel=True))
             finally:
                 app._cancel_disparity_refresh()
                 app.destroy()

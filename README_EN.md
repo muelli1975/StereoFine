@@ -2,7 +2,7 @@
 
 [Downloads and SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.1) · [Deutsch](README_DE.md) · [Changes](RELEASE_NOTES_1.1.md)
 
-**Output and preview:** Grayscale anaglyphs and Save cross-view are saved independently from the preview under Image and output. Cross-view exports the finished full-colour R/L pair in `cross`. **A** cycles Color, Grayscale and Cross-view previews; **M** temporarily uses the last anaglyph preview. Crop, crop zoom and crop movement automatically refresh deviation without changing alignment or stereo-window framing.
+**Output and preview:** Grayscale anaglyphs and Save cross-view are saved independently from the preview under Image and output. Cross-view exports the finished full-colour R/L pair in `cross`. **A** cycles Color, Grayscale and Cross-view previews; **M** temporarily uses the last anaglyph preview. Crop, crop zoom and crop movement automatically refresh deviation without changing alignment or stereo-window framing. The status shows “Calculating …” while this measurement is pending. Each launch starts with the Color anaglyph preview.
 
 Version 1.1 improves automatic model selection, vertical edge correction and near/far measurement. It adds JPS/PNS, static WebP/BMP and supported SDR HEIC/HEIF input, including compatible stereo and Spatial Photo containers. Ambiguous depth measurements remain explicitly marked as uncertain. See [measurement validation](docs/OBSERVED_RANGE_1.1.md) and [input-format scope](docs/IMAGE_FORMATS_1.1.md).
 
@@ -46,7 +46,7 @@ The same source can also be packaged for macOS (Apple Silicon and Intel) and Lin
 1. Use **Left/Right** to select one image from a stereo pair, or **Full-SBS/MPO** to open a stereo file.
 2. Choose **Start alignment**. StereoFine analyzes the geometry, determines near point, far point and total deviation, and frames the detected near point slightly behind the stereo window by default.
 3. Check the result in the anaglyph preview and fine-tune it with the keyboard if required.
-4. Choose **Save**. StereoFine always writes an SBS JPEG and one anaglyph. The preview choice only determines whether the anaglyph is color or grayscale.
+4. Choose **Save**. StereoFine always writes an SBS JPEG and one anaglyph. The Grayscale anaglyphs checkbox determines whether the saved anaglyph is color or grayscale, independently of the preview.
 
 Choosing **Start alignment** again recalculates geometry and near-point framing, clears manual horizontal/vertical nudges, and keeps the selected crop, aspect ratio and crop position. The detected near point is framed at least 3‰ behind the stereo window when a measurement is available. Saving and batch processing retain saved fine adjustments.
 
@@ -213,7 +213,7 @@ Where possible, StereoFine copies metadata using the bundled ExifTool. Preview, 
 
 ### Preview
 
-- `A` – toggle color/grayscale anaglyph
+- `A` – cycle Color, Grayscale and Cross-view previews
 - `G` – cycle grid
 - `Shift+G` – grid off
 - hold `M` – show measurement cross

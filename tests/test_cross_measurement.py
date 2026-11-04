@@ -38,11 +38,12 @@ class CrossMeasurementTests(unittest.TestCase):
     def test_preview_and_anaglyph_choices_are_independent_and_migrate(self):
         settings = AppSettings.from_dict({'preview_mode':'Graustufen'})
         self.assertTrue(settings.gray_anaglyph)
-        settings.preview_mode = 'Kreuzblick'
         settings.save_cross = True
         restored = AppSettings.from_dict(settings.to_dict())
         self.assertTrue(restored.gray_anaglyph and restored.save_cross)
-        self.assertEqual(restored.preview_mode, 'Kreuzblick')
+        self.assertFalse(hasattr(restored, 'preview_mode'))
+        self.assertNotIn('preview_mode', restored.to_dict())
+        self.assertFalse(AppSettings.from_dict({'preview_mode': 'Graustufen', 'gray_anaglyph': False}).gray_anaglyph)
 
     def test_crop_measurement_keeps_geometry_and_save_reuses_exact_value(self):
         with tempfile.TemporaryDirectory() as td:

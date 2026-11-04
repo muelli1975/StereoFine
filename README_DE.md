@@ -2,7 +2,7 @@
 
 [Downloads und SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.1) · [English](README.md) · [Änderungen](RELEASE_NOTES_1.1.md)
 
-**Ausgabe und Vorschau:** „Graustufen-Anaglyphen“ und „Kreuzblick speichern“ stehen unter „Bild und Ausgabe“ und werden unabhängig von der Vorschau gespeichert. Kreuzblick wird farbig als R/L im Ordner `cross` exportiert. Mit **A** durchlaufen Farbig, Graustufen und Kreuzblick die Vorschau. **M** zeigt im Kreuzblick vorübergehend die zuletzt verwendete Anaglyphenansicht. Nach Beschnitt, Ausschnitt-Zoom oder Ausschnittverschiebung wird die Deviation automatisch neu gemessen; Justage und Scheinfensterrahmung bleiben erhalten.
+**Ausgabe und Vorschau:** „Graustufen-Anaglyphen“ und „Kreuzblick speichern“ stehen unter „Bild und Ausgabe“ und werden unabhängig von der Vorschau gespeichert. Kreuzblick wird farbig als R/L im Ordner `cross` exportiert. Mit **A** durchlaufen Farbig, Graustufen und Kreuzblick die Vorschau. **M** zeigt im Kreuzblick vorübergehend die zuletzt verwendete Anaglyphenansicht. Nach Beschnitt, Ausschnitt-Zoom oder Ausschnittverschiebung wird die Deviation automatisch neu gemessen; Justage und Scheinfensterrahmung bleiben erhalten. Während der Nachberechnung steht im Status „Berechne …“. Bei jedem Programmstart erscheint die farbige Anaglyphenansicht.
 
 Version 1.1 verbessert die automatische Modellwahl, die vertikale Randkorrektur und die Nah-/Fernpunktmessung. Neu sind JPS/PNS, statisches WebP/BMP und unterstützte SDR-HEIC/HEIF-Dateien einschließlich geeigneter Stereo- und Spatial-Photo-Container. Ungeklärte Tiefenmessungen bleiben ausdrücklich als unsicher markiert. Siehe [Messvalidierung](docs/OBSERVED_RANGE_1.1.md) und [Formatumfang](docs/IMAGE_FORMATS_1.1.md) (Englisch).
 
@@ -46,7 +46,7 @@ Derselbe Quellcode kann zusätzlich für macOS (Apple Silicon und Intel) sowie L
 1. Über **Links/Rechts** ein Bild aus einem Stereo-Paar wählen oder über **Full-SBS/MPO** eine Stereo-Datei öffnen.
 2. **Justage starten**. StereoFine analysiert die Geometrie, bestimmt Nahpunkt, Fernpunkt und Gesamtdeviation und rahmt den erkannten Nahpunkt standardmäßig knapp hinter das Scheinfenster.
 3. Ergebnis in der Anaglyphenvorschau prüfen und bei Bedarf per Tastatur feinjustieren.
-4. **Speichern**. StereoFine schreibt immer ein SBS-JPEG und eine Anaglyphe. Über die Vorschauwahl bestimmst du nur, ob die Anaglyphe farbig oder in Graustufen erzeugt wird.
+4. **Speichern**. StereoFine schreibt immer ein SBS-JPEG und eine Anaglyphe. Die Checkbox „Graustufen-Anaglyphen“ bestimmt unabhängig von der Vorschau, ob die gespeicherte Anaglyphe farbig oder in Graustufen erzeugt wird.
 
 Ein erneuter Klick auf **Justage starten** berechnet Geometrie und Nahpunktrahmung neu und setzt manuelle horizontale/vertikale Verschiebungen zurück. Ausschnitt, Seitenverhältnis und Ausschnittposition bleiben erhalten. Bei verfügbarer Messung wird der erkannte Nahpunkt mindestens 3‰ hinter das Scheinfenster gesetzt. Speichern und Stapelverarbeitung erhalten gespeicherte Feinjustagen.
 
@@ -214,7 +214,7 @@ Soweit möglich kopiert StereoFine Metadaten mit dem gebündelten ExifTool. Prev
 
 ### Vorschau
 
-- `A` – Farb-/Grauanaglyphe umschalten
+- `A` – Farbig, Graustufen und Kreuzblick in der Vorschau durchschalten
 - `G` – Gitter durchschalten
 - `Shift+G` – Gitter aus
 - `M` halten – Messkreuz anzeigen
