@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import queue
+from copy import deepcopy
 import re
 import sys
 import time
@@ -11,6 +12,7 @@ from tkinter import filedialog, messagebox
 from typing import Any
 
 import customtkinter as ctk
+import numpy as np
 from PIL import Image, ImageDraw, ImageTk
 
 from .anaglyph import make_anaglyph
@@ -165,6 +167,12 @@ class StereoFineApp(ctk.CTk):
         self.settings: AppSettings = load_settings()
         self.tr = Translator(self.settings.language)
         self.worker = WorkerManager()
+        self.measurement_worker = WorkerManager()
+        self._measurement_after_id = None
+        self._measurement_job_id = None
+        self._measurement_running_id = None
+        self._measurement_session = None
+        self._measurement_basis = None
         self.current_job_id: str | None = None
         self.current_job_kind: str | None = None
         self.busy_state = "idle"
@@ -192,7 +200,10 @@ class StereoFineApp(ctk.CTk):
         self._resize_fast_after_id: str | None = None
         self._status_after_id: str | None = None
 
-        self.preview_mode = ctk.StringVar(value="Farbig")
+        self.preview_mode = ctk.StringVar(value=self.settings.preview_mode)
+        self._last_anaglyph_preview_mode = "Graustufen" if self.settings.preview_mode == "Graustufen" else "Farbig"
+        self.gray_anaglyph = ctk.BooleanVar(value=self.settings.gray_anaglyph)
+        self.save_cross = ctk.BooleanVar(value=self.settings.save_cross)
         self.language_display = ctk.StringVar(value=language_label(self.settings.language))
         self.grid_mode = ctk.StringVar(value="Aus")
         self.grid_spacing = ctk.StringVar(value="50 Promille")
@@ -581,6 +592,15 @@ class StereoFineApp(ctk.CTk):
         )
         self.deviation_filename_box.grid(row=row, column=0, sticky="w", padx=20, pady=(0, 8)); row += 1
 
+        self.gray_anaglyph_box = self._checkbox(
+            self.sidebar, self._t("gray_anaglyph"), self.gray_anaglyph, self._persist_settings,
+        )
+        self.gray_anaglyph_box.grid(row=row, column=0, sticky="w", padx=20, pady=(0, 8)); row += 1
+        self.save_cross_box = self._checkbox(
+            self.sidebar, self._t("save_cross"), self.save_cross, self._persist_settings,
+        )
+        self.save_cross_box.grid(row=row, column=0, sticky="w", padx=20, pady=(0, 8)); row += 1
+
         self.use_input_subfolder_box = self._checkbox(
             self.sidebar,
             self._t("use_input_subfolder"),
@@ -612,12 +632,13 @@ class StereoFineApp(ctk.CTk):
         self._section_title(self.sidebar, self._t("preview"), row); row += 1
         preview_modes = ctk.CTkFrame(self.sidebar, fg_color="transparent")
         preview_modes.grid(row=row, column=0, sticky="ew", padx=20, pady=(0, 8)); row += 1
-        preview_modes.grid_columnconfigure((0, 1), weight=1)
-        for col, (text, value) in enumerate(((self._t("preview_color"), "Farbig"), (self._t("preview_gray"), "Graustufen"))):
+        preview_modes.grid_columnconfigure((0, 1, 2), weight=1)
+        for col, (text, value) in enumerate(((self._t("preview_color"), "Farbig"), (self._t("preview_gray"), "Graustufen"), (self._t("preview_cross"), "Kreuzblick"))):
             radio = ctk.CTkRadioButton(
                 preview_modes,
                 text=text,
                 variable=self.preview_mode,
+                width=1,
                 value=value,
                 command=self._on_preview_mode_changed,
                 fg_color=GOLD_DARK,
@@ -1266,6 +1287,9 @@ class StereoFineApp(ctk.CTk):
         self.settings.default_aspect = self.output_aspect.get()
         self.settings.use_input_output_subfolder = bool(self.use_input_subfolder.get())
         self.settings.append_deviation_to_filename = bool(self.append_deviation_to_filename.get())
+        self.settings.gray_anaglyph = bool(self.gray_anaglyph.get())
+        self.settings.save_cross = bool(self.save_cross.get())
+        self.settings.preview_mode = self.preview_mode.get()
         # Output is intentionally fixed: SBS plus one anaglyph.
         self.settings.output_mode = "both"
         save_settings(self.settings)
@@ -1613,6 +1637,7 @@ class StereoFineApp(ctk.CTk):
             state.framing.pan_x_permille = 0
             state.framing.pan_y_permille = 0
             state.invalidate_disparity_for_framing("aspect_changed")
+            self._schedule_disparity_refresh()
         self._schedule_state_save()
         self._refresh_preview()
         self._render_status()
@@ -1639,6 +1664,7 @@ class StereoFineApp(ctk.CTk):
         if self.current is None or self.busy_state != "idle":
             return
         self.current.state.reset_manual_to_auto()
+        self._schedule_disparity_refresh()
         self._schedule_state_save(immediate=True)
         self._refresh_preview()
         self._render_status()
@@ -1650,9 +1676,10 @@ class StereoFineApp(ctk.CTk):
         state.manual.delta_x_px += int(dx)
         state.manual.delta_y_px += int(dy)
         state.color.valid = False
-        if dy:
+        if dx or dy:
             state.disparity.invalidate()
             state.disparity.status = "stale"
+            self._schedule_disparity_refresh()
         self._schedule_state_save()
         self._refresh_preview()
         self._schedule_status_refresh()
@@ -1665,6 +1692,7 @@ class StereoFineApp(ctk.CTk):
         state.framing.crop_zoom_index = max(0, min(len(CROP_ZOOM_LEVELS) - 1, old + int(delta)))
         if state.framing.crop_zoom_index != old:
             state.invalidate_disparity_for_framing("crop_changed")
+            self._schedule_disparity_refresh()
             self._schedule_state_save()
             self._refresh_preview()
             self._schedule_status_refresh()
@@ -1696,6 +1724,7 @@ class StereoFineApp(ctk.CTk):
         state.framing.pan_y_permille = max(-1000, min(1000, state.framing.pan_y_permille + int(dy)))
         if old != (state.framing.pan_x_permille, state.framing.pan_y_permille):
             state.invalidate_disparity_for_framing("crop_moved")
+            self._schedule_disparity_refresh()
             self._schedule_state_save()
             self._refresh_preview()
             self._schedule_status_refresh()
@@ -1743,6 +1772,62 @@ class StereoFineApp(ctk.CTk):
     # ------------------------------------------------------------------
     # Preview rendering
     # ------------------------------------------------------------------
+    def _cancel_disparity_refresh(self) -> None:
+        if self._measurement_after_id is not None:
+            self.after_cancel(self._measurement_after_id)
+            self._measurement_after_id = None
+        self.measurement_worker.cancel_all()
+        self._measurement_job_id = None
+        self._measurement_session = None
+        self._measurement_basis = None
+
+    def _schedule_disparity_refresh(self) -> None:
+        self._cancel_disparity_refresh()
+        self._measurement_after_id = self.after(450, self._run_disparity_refresh)
+
+    def _run_disparity_refresh(self) -> None:
+        from .processing import current_disparity_basis, refresh_current_disparity
+        self._measurement_after_id = None
+        if self.current is None or self.busy_state != "idle":
+            return
+        state = self.current.state
+        if not state.alignment.valid or not state.disparity.stale:
+            return
+        if self._measurement_running_id and self.measurement_worker.is_running(self._measurement_running_id):
+            self._measurement_after_id = self.after(100, self._run_disparity_refresh)
+            return
+        snapshot = deepcopy(state)
+        loaded = self.current.loaded_pair
+        self._measurement_session = self.current
+        self._measurement_basis = current_disparity_basis(snapshot)
+        def job(token, _progress):
+            refresh_current_disparity(loaded, snapshot, cancellation=token)
+            return snapshot.disparity
+        self._measurement_job_id = self.measurement_worker.start(job, name="StereoFine-measurement").job_id
+        self._measurement_running_id = self._measurement_job_id
+
+    def _poll_disparity_refresh(self) -> None:
+        from .processing import current_disparity_basis
+        try:
+            while True:
+                message = self.measurement_worker.messages.get_nowait()
+                if (message.job_id != self._measurement_job_id or self.current is not self._measurement_session
+                        or self.current is None or self.busy_state != "idle"
+                        or current_disparity_basis(self.current.state) != self._measurement_basis):
+                    continue
+                if message.kind == WorkerMessageKind.RESULT:
+                    self.current.state.disparity = message.payload
+                    self._measurement_job_id = None
+                    self._schedule_state_save()
+                    self._render_status()
+                elif message.kind == WorkerMessageKind.ERROR:
+                    self._measurement_job_id = None
+                    self.current.state.disparity.valid = False
+                    self.current.state.disparity.status = "error"
+                    self._render_status()
+        except queue.Empty:
+            pass
+
     def _invalidate_preview_base(self) -> None:
         self._preview_base = None
         self._preview_base_session_id = None
@@ -1799,9 +1884,12 @@ class StereoFineApp(ctk.CTk):
         # As in the proven v41 data flow, the current preview pair already
         # contains the Floating-Window masks.  Build the anaglyph from that
         # authoritative pair using StereoFine's current colorimetric mixer.
-        gray = self.preview_mode.get() == "Graustufen"
+        mode = self._effective_preview_mode()
+        gray = mode == "Graustufen"
         self._preview_pil = Image.fromarray(
-            make_anaglyph(self._preview_left_current, self._preview_right_current, gray=gray),
+            (np.concatenate([self._preview_right_current, self._preview_left_current], axis=1)
+             if mode == "Kreuzblick" else
+             make_anaglyph(self._preview_left_current, self._preview_right_current, gray=gray)),
             "RGB",
         )
         self._update_preview_display()
@@ -1841,7 +1929,13 @@ class StereoFineApp(ctk.CTk):
         # Overlays belong to the visible preview and therefore stay crisp and
         # correctly scaled while the main window changes size.
         if not self.measure_cross_active and self.grid_mode.get() != "Aus":
-            image = draw_grid_overlay(image, self.grid_spacing.get(), self.grid_mode.get())
+            if self._effective_preview_mode() == "Kreuzblick":
+                split = image.width // 2
+                image = image.copy()
+                for box in ((0, 0, split, image.height), (split, 0, image.width, image.height)):
+                    image.paste(draw_grid_overlay(image.crop(box), self.grid_spacing.get(), self.grid_mode.get()), box)
+            else:
+                image = draw_grid_overlay(image, self.grid_spacing.get(), self.grid_mode.get())
         if self.measure_cross_active:
             if self._preview_display_size and self.measure_cross_x is not None and self.measure_cross_y is not None:
                 old_w, old_h = self._preview_display_size
@@ -1870,7 +1964,15 @@ class StereoFineApp(ctk.CTk):
         else:
             self._load_start_image()
 
+    def _effective_preview_mode(self) -> str:
+        if self.measure_cross_active and self.preview_mode.get() == "Kreuzblick":
+            return self._last_anaglyph_preview_mode
+        return self.preview_mode.get()
+
     def _on_preview_mode_changed(self) -> None:
+        if self.preview_mode.get() != "Kreuzblick":
+            self._last_anaglyph_preview_mode = self.preview_mode.get()
+        self._persist_settings()
         if self._preview_left_current is not None and self._preview_right_current is not None:
             self._build_preview_anaglyph()
         else:
@@ -1919,6 +2021,7 @@ class StereoFineApp(ctk.CTk):
     def _start_worker(self, kind: str, button_text: str, function) -> None:
         if self.busy_state != "idle":
             return
+        self._cancel_disparity_refresh()
         self.busy_state = kind
         self.current_job_kind = kind
         # ``button_text`` is retained for call-site clarity/history, but the
@@ -1961,7 +2064,9 @@ class StereoFineApp(ctk.CTk):
             analysis_only=bool(self.analysis_only.get()),
             favorites_only=bool(self.favorites_only.get()),
             output_folder=output_folder,
-            gray_anaglyph=self.preview_mode.get() == "Graustufen",
+            gray_anaglyph=bool(self.gray_anaglyph.get()),
+            save_cross=bool(self.save_cross.get()),
+            preview_mode=self.preview_mode.get(),
             language=self.settings.language,
             append_deviation_to_filename=bool(self.append_deviation_to_filename.get()),
         )
@@ -1983,7 +2088,9 @@ class StereoFineApp(ctk.CTk):
         options = BatchRunOptions(
             processing=self._processing_options(keep_loaded_pair=False),
             output_folder=output_folder,
-            gray_anaglyph=self.preview_mode.get() == "Graustufen",
+            gray_anaglyph=bool(self.gray_anaglyph.get()),
+            save_cross=bool(self.save_cross.get()),
+            preview_mode=self.preview_mode.get(),
             language=self.settings.language,
             append_deviation_to_filename=bool(self.append_deviation_to_filename.get()),
         )
@@ -2016,6 +2123,7 @@ class StereoFineApp(ctk.CTk):
         except queue.Empty:
             pass
         finally:
+            self._poll_disparity_refresh()
             self.after(20, self._poll_worker_messages)
 
     def _handle_progress(self, payload: Any) -> None:
@@ -2073,6 +2181,7 @@ class StereoFineApp(ctk.CTk):
             self._refresh_preview()
             self._render_status()
             self._refresh_control_states()
+            self._schedule_disparity_refresh()
             return
 
         if kind == "analysis" and isinstance(payload, ProcessedSource):
@@ -2262,7 +2371,10 @@ class StereoFineApp(ctk.CTk):
         self.measure_cross_active = False
         self._stop_measure_repeat()
         if was_measuring:
-            self._update_preview_display()
+            if self.preview_mode.get() == "Kreuzblick":
+                self._build_preview_anaglyph()
+            else:
+                self._update_preview_display()
 
     def _is_alt(self, event) -> bool:
         return bool(event is not None and event.state & (0x0008 | 0x0080 | 0x20000))
@@ -2344,7 +2456,8 @@ class StereoFineApp(ctk.CTk):
     def _on_a(self, event=None):
         if self.busy_state != "idle" or not self._claim_shortcut_key("a", event):
             return "break"
-        self.preview_mode.set("Graustufen" if self.preview_mode.get() == "Farbig" else "Farbig")
+        modes = ("Farbig", "Graustufen", "Kreuzblick")
+        self.preview_mode.set(modes[(modes.index(self.preview_mode.get()) + 1) % len(modes)])
         self._on_preview_mode_changed()
         return "break"
 
@@ -2442,14 +2555,20 @@ class StereoFineApp(ctk.CTk):
         if not self.measure_cross_active:
             self.measure_cross_active = True
             self._clamp_measure_cross(self._preview_display_size)
-            self._update_preview_display()
+            if self.preview_mode.get() == "Kreuzblick":
+                self._build_preview_anaglyph()
+            else:
+                self._update_preview_display()
         return "break"
 
     def _on_measure_release(self, _event=None):
         if self.measure_cross_active:
             self.measure_cross_active = False
             self._stop_measure_repeat()
-            self._update_preview_display()
+            if self.preview_mode.get() == "Kreuzblick":
+                self._build_preview_anaglyph()
+            else:
+                self._update_preview_display()
         return "break"
 
     def _on_arrow_release(self, _event=None):
@@ -2718,7 +2837,8 @@ class StereoFineApp(ctk.CTk):
         if self.busy_state != "idle":
             if not messagebox.askyesno(APP_NAME, self._t("close_busy")):
                 return
-            self.worker.cancel_all()
+        self._cancel_disparity_refresh()
+        self.worker.cancel_all()
         self._flush_state_save()
         self._persist_settings()
         self.destroy()

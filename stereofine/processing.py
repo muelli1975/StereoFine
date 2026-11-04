@@ -209,6 +209,7 @@ def _store_disparity_result(
     *,
     basis: dict[str, Any],
     base_width_px: int,
+    update_framing: bool = True,
 ) -> None:
     summary = json_safe_disparity_summary(result)
     ready = bool(result.get("ready"))
@@ -236,6 +237,9 @@ def _store_disparity_result(
         diagnostics=summary,
     )
 
+    if not update_framing:
+        return
+
     near = compute_auto_near_framing(
         high_edge_permille=state.disparity.high_edge_permille,
         base_width_px=int(base_width_px),
@@ -247,6 +251,26 @@ def _store_disparity_result(
     state.framing.auto_near_shift_permille = near.shift_permille
     state.framing.auto_near_base_width_px = near.base_width_px
     state.framing.auto_near_status = near.status
+
+
+def current_disparity_basis(state: PairState) -> dict[str, Any]:
+    """Identify the exact visible crop, excluding color and presentation masks."""
+    return {**_disparity_basis(state), "rendered_pair": True,
+            "offset_x_px": state.effective_offset_x_px,
+            "offset_y_px": state.effective_offset_y_px}
+
+
+def refresh_current_disparity(loaded: LoadedStereoPair, state: PairState, *, cancellation=None) -> None:
+    """Measure the final crop without changing registration or window framing."""
+    from .render import render_final_pair
+    token = cancellation or _NullCancellationToken()
+    token.raise_if_cancelled()
+    left, right, _ = render_final_pair(loaded, state, apply_color=False, apply_floating_window=False)
+    token.raise_if_cancelled()
+    result = analyze_horizontal_disparity(master_to_uint8(left), master_to_uint8(right), DISPARITY_ANALYSIS_MAX_WIDTH)
+    token.raise_if_cancelled()
+    _store_disparity_result(state, result, basis=current_disparity_basis(state),
+                            base_width_px=left.shape[1], update_framing=False)
 
 
 def _alignment_cache_usable(
@@ -337,7 +361,8 @@ def process_source(
         token.raise_if_cancelled()
         _store_alignment_result(state, result, alignment_basis)
 
-    disparity_basis = _disparity_basis(state)
+    disparity_basis = (current_disparity_basis(state) if alignment_from_cache and state.disparity.basis.get("rendered_pair")
+                       else _disparity_basis(state))
     disparity_from_cache = _disparity_cache_usable(
         load_result,
         state,
@@ -345,7 +370,12 @@ def process_source(
         options,
         alignment_recomputed=not alignment_from_cache,
     )
-    if not disparity_from_cache:
+    if (not disparity_from_cache and alignment_from_cache
+            and "disparity" not in load_result.pipeline_mismatches
+            and state.framing.auto_near_offset_x_px is not None):
+        # Saving a crop must use the same framing as the interactive preview.
+        refresh_current_disparity(loaded, state, cancellation=token)
+    elif not disparity_from_cache:
         token.raise_if_cancelled()
         zoom_index = max(0, min(len(CROP_ZOOM_LEVELS) - 1, int(state.framing.crop_zoom_index)))
         state.framing.crop_zoom_index = zoom_index

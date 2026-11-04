@@ -268,6 +268,8 @@ class PairState:
         readable stereoscopic wording.
         """
 
+        if self.disparity.basis.get("rendered_pair"):
+            return self.disparity.low_edge_permille, self.disparity.high_edge_permille
         return framed_edges_permille(low_edge_permille=self.disparity.low_edge_permille,
             high_edge_permille=self.disparity.high_edge_permille,
             offset_x_px=self.effective_offset_x_px,
@@ -307,7 +309,10 @@ class PairState:
         # disparity made stale by an aspect change must stay stale until the
         # shared processing core recomputes it.
         basis = self.disparity.basis or {}
-        framing_matches_basis = bool(basis) and (
+        if basis.get("rendered_pair"):
+            self.disparity.invalidate()
+            self.disparity.status = "stale"
+        framing_matches_basis = not basis.get("rendered_pair") and bool(basis) and (
             basis.get("aspect") == self.framing.aspect
             and int(basis.get("crop_zoom_index", -1)) == int(self.framing.crop_zoom_index)
             and int(basis.get("pan_x_permille", 999999)) == int(self.framing.pan_x_permille)

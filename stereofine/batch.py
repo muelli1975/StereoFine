@@ -4,6 +4,8 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Callable, Iterable
 
+import numpy as np
+
 from .anaglyph import make_anaglyph
 from .config import ANALYSIS_REPORT_FILENAME
 from .export import ExportResult, save_pair_outputs
@@ -26,6 +28,8 @@ class BatchRunOptions:
     favorites_only: bool = False
     output_folder: Path | None = None
     gray_anaglyph: bool = False
+    save_cross: bool = False
+    preview_mode: str = "Farbig"
     report_path: Path | None = None
     language: str = "de"
     append_deviation_to_filename: bool = False
@@ -132,7 +136,9 @@ def run_batch(
                             total,
                             source.display_name,
                             "preview",
-                            preview_rgb=make_anaglyph(preview_left, preview_right, gray=options.gray_anaglyph),
+                            preview_rgb=(np.concatenate([preview_right, preview_left], axis=1)
+                                         if options.preview_mode == "Kreuzblick" else
+                                         make_anaglyph(preview_left, preview_right, gray=options.preview_mode == "Graustufen")),
                         )
                     )
                 except Exception:
@@ -167,6 +173,7 @@ def run_batch(
                 # StereoFine 1.0 always writes both standard outputs.
                 output_mode="both",
                 gray_anaglyph=options.gray_anaglyph,
+                save_cross=options.save_cross,
                 metadata_source=source.metadata_source,
                 filename_deviation_permille=(
                     processed.state.disparity.total_permille

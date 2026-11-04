@@ -87,6 +87,18 @@ jobs:
           path: build/gui-keyboard-filename-*.json
           if-no-files-found: error
 
+      - name: Independent cross-view output, preview and crop refresh (Linux)
+        if: runner.os == 'Linux'
+        run: PYTHONPATH=. xvfb-run -a -s '-screen 0 1920x1080x24' python tests/gui_cross_measurement.py
+      - name: Independent cross-view output, preview and crop refresh
+        if: runner.os != 'Linux'
+        run: python -m tests.gui_cross_measurement
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StereoFine-cross-measurement-${{ matrix.os }}
+          path: build/gui-cross-measurement-*.json
+          if-no-files-found: error
+
   packages:
     name: Checked package (${{ matrix.os }})
     needs: validate

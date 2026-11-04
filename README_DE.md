@@ -2,6 +2,8 @@
 
 [Downloads und SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.1) · [English](README.md) · [Änderungen](RELEASE_NOTES_1.1.md)
 
+**Ausgabe und Vorschau:** „Graustufen-Anaglyphen“ und „Kreuzblick speichern“ stehen unter „Bild und Ausgabe“ und werden unabhängig von der Vorschau gespeichert. Kreuzblick wird farbig als R/L im Ordner `cross` exportiert. Mit **A** durchlaufen Farbig, Graustufen und Kreuzblick die Vorschau. **M** zeigt im Kreuzblick vorübergehend die zuletzt verwendete Anaglyphenansicht. Nach Beschnitt, Ausschnitt-Zoom oder Ausschnittverschiebung wird die Deviation automatisch neu gemessen; Justage und Scheinfensterrahmung bleiben erhalten.
+
 Version 1.1 verbessert die automatische Modellwahl, die vertikale Randkorrektur und die Nah-/Fernpunktmessung. Neu sind JPS/PNS, statisches WebP/BMP und unterstützte SDR-HEIC/HEIF-Dateien einschließlich geeigneter Stereo- und Spatial-Photo-Container. Ungeklärte Tiefenmessungen bleiben ausdrücklich als unsicher markiert. Siehe [Messvalidierung](docs/OBSERVED_RANGE_1.1.md) und [Formatumfang](docs/IMAGE_FORMATS_1.1.md) (Englisch).
 
 StereoFine ist ein lokales Desktop-Werkzeug zum automatischen Ausrichten, Prüfen, Rahmen und Ausgeben stereoskopischer Bildpaare. Es soll möglichst viel zuverlässig automatisch erledigen, ohne die manuelle Kontrolle aus der Hand zu nehmen. Die Oberfläche bleibt deshalb bewusst schlank und tastaturfreundlich.

@@ -28,6 +28,9 @@ TEXTS: dict[str, dict[str, str]] = {
         "aspect_ratio": "Seitenverhältnis",
         "color_match": "Symmetrische Farbangleichung",
         "deviation_filename": "Deviation im Dateinamen",
+        "gray_anaglyph": "Graustufen-Anaglyphen",
+        "save_cross": "Kreuzblick speichern",
+        "preview_cross": "Kreuzblick",
         "output": "Ausgabe",
         "use_input_subfolder": "Unterordner im Input-Ordner verwenden",
         "custom_output_folder": "Eigener Ausgabeordner",
@@ -96,7 +99,7 @@ TEXTS: dict[str, dict[str, str]] = {
             "  S                        Links/Rechts gekoppelt/separat\n"
             "  L/R/T/B halten + ←/→    Gewählte Kante -/+ 1‰\n\n"
             "Vorschau\n"
-            "  A                        Farbig/Graustufen\n"
+            "  A                        Farbig/Graustufen/Kreuzblick\n"
             "  G                        Gitter durchschalten\n"
             "  Shift + G                Gitter aus\n"
             "  M halten                 Messkreuz anzeigen\n"
@@ -182,6 +185,9 @@ TEXTS: dict[str, dict[str, str]] = {
         "aspect_ratio": "Aspect ratio",
         "color_match": "Symmetric color matching",
         "deviation_filename": "Deviation in filename",
+        "gray_anaglyph": "Grayscale anaglyphs",
+        "save_cross": "Save cross-view",
+        "preview_cross": "Cross-view",
         "output": "Output",
         "use_input_subfolder": "Use subfolder in input folder",
         "custom_output_folder": "Custom output folder",
@@ -250,7 +256,7 @@ TEXTS: dict[str, dict[str, str]] = {
             "  S                        Left/Right linked/separate\n"
             "  Hold L/R/T/B + ←/→      Selected edge -/+ 1‰\n\n"
             "Preview\n"
-            "  A                        Color/Grayscale\n"
+            "  A                        Color/Grayscale/Cross-view\n"
             "  G                        Cycle grid\n"
             "  Shift + G                Grid off\n"
             "  Hold M                   Show measurement cross\n"

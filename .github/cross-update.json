@@ -1,0 +1,25 @@
+{
+  "repository": "muelli1975/StereoFine",
+  "release_id": 419496903,
+  "tag": "v1.1",
+  "branch": "main",
+  "previous_tag": "8a3c06d990e50dedf3b714e6bd68f46b6e305b98",
+  "assets": {
+    "BUILD_CHECKS.json": "sha256:c62a8402e9bba2cc8e2ddf4462935c9b8bc466417de93d21bbfb73ac2e2cc6a2",
+    "SHA256SUMS.txt": "sha256:0d52750af8e6f752a116c4294889f9c5bf2f5b0db3a7275032a70c449becb1ba",
+    "StereoFine_1.1_Linux_x64.tar.gz": "sha256:c76f854676ad197f8fa061a72598c065a72fbd3758a275283eeb95d8f5b88cbd",
+    "StereoFine_1.1_macOS_AppleSilicon.zip": "sha256:27ead62789b418dd537975b3696facf9516ed68d0692780759288c0b1d37b689",
+    "StereoFine_1.1_macOS_Intel.zip": "sha256:c913113c15468acf0a1c6e8ef5a985ad3f50e173a14a3c2ab469eae526985711",
+    "StereoFine_1.1_Windows_x64.zip": "sha256:4137a462e583cd5b2a3b24a8a9703b568122e567ea36c09ed29d5d4be8d04222"
+  },
+  "replace": [
+    "BUILD_CHECKS.json",
+    "SHA256SUMS.txt",
+    "StereoFine_1.1_Linux_x64.tar.gz",
+    "StereoFine_1.1_macOS_AppleSilicon.zip",
+    "StereoFine_1.1_macOS_Intel.zip",
+    "StereoFine_1.1_Windows_x64.zip"
+  ],
+  "notes_prefix": "- Add optional full-colour cross-view JPEG export in R/L order (`cross`).\n- Separate saved grayscale-anaglyph output from the preview selection.\n- Add Cross-view after Color and Grayscale in the preview and the A shortcut cycle; M temporarily uses the last anaglyph preview.\n- Refresh deviation after crop, aspect or framing changes without changing alignment or stereo-window framing; save uses the current measurement.",
+  "validation": "Application and research tests, independent preview/output and automatic crop-refresh GUI checks passed on Windows, Linux and macOS. All four native archives were rebuilt and passed their extracted-package input/export checks. Detailed checks are attached as `BUILD_CHECKS.json`."
+}

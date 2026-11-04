@@ -26,6 +26,9 @@ class AppSettings:
     analysis_method: str = "AKAZE"
     color_match_enabled: bool = False
     append_deviation_to_filename: bool = False
+    gray_anaglyph: bool = False
+    save_cross: bool = False
+    preview_mode: str = "Farbig"
 
     def normalize(self) -> "AppSettings":
         if self.language not in {"de", "en"}:
@@ -44,6 +47,10 @@ class AppSettings:
         self.use_input_output_subfolder = bool(self.use_input_output_subfolder)
         self.color_match_enabled = bool(self.color_match_enabled)
         self.append_deviation_to_filename = bool(self.append_deviation_to_filename)
+        self.gray_anaglyph = bool(self.gray_anaglyph)
+        self.save_cross = bool(self.save_cross)
+        if self.preview_mode not in {"Farbig", "Graustufen", "Kreuzblick"}:
+            self.preview_mode = "Farbig"
         return self
 
     @classmethod
@@ -52,6 +59,8 @@ class AppSettings:
             field: data.get(field, getattr(cls(), field))
             for field in cls.__dataclass_fields__
         }
+        if "gray_anaglyph" not in data:
+            values["gray_anaglyph"] = data.get("preview_mode") == "Graustufen"
         return cls(**values).normalize()
 
     def to_dict(self) -> dict[str, Any]:

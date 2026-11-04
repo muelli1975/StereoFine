@@ -1,0 +1,55 @@
+name: Refresh StereoFine 1.1 release
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: stereofine-current-release
+  cancel-in-progress: false
+jobs:
+  checked-platforms:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'Refresh StereoFine 1.1')
+    uses: ./.github/workflows/validate-development.yml
+    with:
+      candidate: true
+  publish:
+    needs: checked-platforms
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: StereoFine-1.1-candidate-*
+          path: release
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: StereoFine-input-check-*
+          path: checks/inputs
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: StereoFine-cross-measurement-*
+          path: checks/cross
+      - name: Verify all archives and record checks
+        run: |
+          python scripts/release_checksums.py release
+          python scripts/verify_release_packages.py release > checks/archives.jsonl
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          checks = {str(p):json.loads(p.read_text()) for p in Path('checks').rglob('*.json')}
+          checks['archives'] = [json.loads(s) for s in Path('checks/archives.jsonl').read_text().splitlines() if s.startswith('{')]
+          checks['source_commit'] = os.environ['GITHUB_SHA']
+          checks['build_url'] = 'https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID']
+          Path('release/BUILD_CHECKS.json').write_text(json.dumps(checks,indent=2)+'\n')
+          PY
+      - name: Stage and download-verify all replacement assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/publish_update.py --root release --config .github/cross-update.json

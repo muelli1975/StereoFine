@@ -19,6 +19,7 @@ from .models import OutputMode
 class ExportResult:
     sbs_path: Path | None = None
     anaglyph_path: Path | None = None
+    cross_path: Path | None = None
     metadata_results: list[MetadataCopyResult] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
@@ -86,6 +87,7 @@ def save_pair_outputs(
     *,
     output_mode: OutputMode = "both",
     gray_anaglyph: bool = False,
+    save_cross: bool = False,
     metadata_source: Path | None = None,
     filename_deviation_permille: float | None = None,
 ) -> ExportResult:
@@ -107,6 +109,14 @@ def save_pair_outputs(
         result.metadata_results.append(meta)
         if meta.attempted and not meta.success:
             result.warnings.append(f"Metadaten SBS: {meta.message}")
+
+    if save_cross:
+        result.cross_path = folder / "cross" / f"{output_stem}_cross.jpg"
+        _save_rgb_jpeg(np.concatenate([right8, left8], axis=1), result.cross_path, quality=SBS_JPEG_QUALITY)
+        meta = copy_metadata_without_preview_or_orientation(metadata_source, result.cross_path)
+        result.metadata_results.append(meta)
+        if meta.attempted and not meta.success:
+            result.warnings.append(f"Metadaten Kreuzblick: {meta.message}")
 
     if output_mode in {"both", "anaglyph"}:
         anaglyph = make_anaglyph(left8, right8, gray=gray_anaglyph)

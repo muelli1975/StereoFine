@@ -41,6 +41,8 @@ class KeyboardFocusTests(unittest.TestCase):
         app._render_status = lambda: None
         app._schedule_state_save = lambda: None
         app._schedule_status_refresh = lambda: None
+        app._schedule_disparity_refresh = lambda: None
+        app.preview_mode = types.SimpleNamespace(get=lambda: 'Farbig')
         self.focus = None
         app.focus_get = lambda: self.focus
 
