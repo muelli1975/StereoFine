@@ -952,6 +952,10 @@ class StereoFineApp(ctk.CTk):
         measurement_pending = self.current is not None and (
             self._measurement_after_id is not None or self._measurement_job_id is not None
         )
+        labels["near_far"].configure(
+            text_color=GOLD_LIGHT if measurement_pending else TEXT_PRIMARY,
+            font=self._font(13, "bold" if measurement_pending else "normal"),
+        )
         if measurement_pending:
             labels["near_far"].configure(text=self._t("status_calculating"))
         elif len(normal_items) >= 2:
