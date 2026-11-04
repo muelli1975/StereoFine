@@ -1,0 +1,151 @@
+{
+  "repository": "muelli1975/StereoFine",
+  "release_id": 419496903,
+  "tag": "v1.1",
+  "source_sha": "92845fbe68c0048b6a0a229e9786ba70ae727e79",
+  "assets": [
+    {
+      "name": "StereoFine_1.1_Windows_x64.zip",
+      "old_id": 709821539,
+      "old_digest": "sha256:4fe004bf87d29b7f7cdbc25312357f91a4d5070f77702dfc8e5a8f21907d4550",
+      "new_id": 710090380,
+      "new_digest": "sha256:46e1489bf2cc9c1ef76b793dcba0681db760d0092b3528725240c8d9727411ee",
+      "new_size": 167142338
+    },
+    {
+      "name": "BUILD_CHECKS.json",
+      "old_id": 709818901,
+      "old_digest": "sha256:7e5a11d3cbb750816d7ffa1304458642898118f335c63eb9fb62c1fa55a9559b",
+      "new_id": 710090772,
+      "new_digest": "sha256:3e668ef575c138b7b6407b56a3c810749a0e690c8635c7cab988caec83098833",
+      "new_size": 27485
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "old_id": 709818969,
+      "old_digest": "sha256:23675702f29715e09ac6a7c85baf7b4814e9b1d1436b48b67ab365d0d9bbfd84",
+      "new_id": 710090817,
+      "new_digest": "sha256:716719df37ceac33760255e16df7e2d69cd21640a52a700c801755cb059912be",
+      "new_size": 396
+    }
+  ],
+  "drafts": [
+    {
+      "id": 418311002,
+      "tag": "v1.1-rc3",
+      "current_tag": "untagged-b2cf80da70df1c8af9f1",
+      "target_commitish": "081275da0aa394d181f3debf9a8c2e361bdb37e5",
+      "body": "# StereoFine 1.1 — Release candidate 3\n\nHistorical test build of the revised automatic stereo alignment and depth-measurement pipeline.\n\n- Improve automatic alignment and correction of residual vertical errors.\n- Improve near/far-point detection and handling of small foreground areas.\n\nFor normal use, choose the [stable StereoFine 1.1 release](https://github.com/muelli1975/StereoFine/releases/tag/v1.1).\n\nKeep test builds separate from a stable installation. Archives include their source snapshot under `Source/`.\n\nSee the [validation report](https://github.com/muelli1975/StereoFine/blob/development/1.1/docs/VALIDATION_1.1_RC1.md) for technical test details.\n",
+      "assets": [
+        [
+          659107345,
+          "SHA256SUMS.txt",
+          412,
+          "sha256:185ca882d010e1159411585fddf5c9c87f6a303b2262e344fbb6e06482613783"
+        ],
+        [
+          659107339,
+          "StereoFine_1.1-rc3_Linux_x64.tar.gz",
+          157666056,
+          "sha256:b9b0906efdf825e92cc5d137c1c615cafcff6c33acb0a17ec639315c9735aa25"
+        ],
+        [
+          659107342,
+          "StereoFine_1.1-rc3_macOS_AppleSilicon.zip",
+          100624558,
+          "sha256:62d5d6bb9a97c5dbb90abd3a03fd6119718302d721d30b0c1e9e848896b58a86"
+        ],
+        [
+          659107343,
+          "StereoFine_1.1-rc3_macOS_Intel.zip",
+          91269475,
+          "sha256:44ff1836fbe5bd2459e4536f556f743dc5494339c52d5ed7591afb9bde10ed84"
+        ],
+        [
+          659107348,
+          "StereoFine_1.1-rc3_Windows_x64.zip",
+          112596138,
+          "sha256:863d9d6290b79f2e79f8b262085793ced4c688503aa799ac4e8f8f6bab3c2a90"
+        ]
+      ]
+    },
+    {
+      "id": 418304182,
+      "tag": "v1.1-rc2",
+      "current_tag": "v1.1-rc2",
+      "target_commitish": "900bd8560159c9c04a4d92280915900382da6874",
+      "body": "# StereoFine 1.1 — Release candidate 2\n\nHistorical test build of the revised automatic stereo alignment and depth-measurement pipeline.\n\n- Improve automatic alignment and correction of residual vertical errors.\n- Improve near/far-point detection and handling of small foreground areas.\n\nFor normal use, choose the [stable StereoFine 1.1 release](https://github.com/muelli1975/StereoFine/releases/tag/v1.1).\n\nKeep test builds separate from a stable installation. Archives include their source snapshot under `Source/`.\n\nSee the [validation report](https://github.com/muelli1975/StereoFine/blob/development/1.1/docs/VALIDATION_1.1_RC1.md) for technical test details.\n",
+      "assets": [
+        [
+          659090041,
+          "SHA256SUMS.txt",
+          412,
+          "sha256:38a419aadb64ad0a29c07129cc95751f8dc6602e84c1c79a36cbda45036d1260"
+        ],
+        [
+          659090051,
+          "StereoFine_1.1-rc2_Linux_x64.tar.gz",
+          157667781,
+          "sha256:ec90ecc15ef7f1a9b1b3b11d99ce723b78315fecc143a5991a7ca2110c72ee2b"
+        ],
+        [
+          659090046,
+          "StereoFine_1.1-rc2_macOS_AppleSilicon.zip",
+          100621807,
+          "sha256:65fc09dac82085dd056949c13ba502bd9e6f88e07e05cff058d3bc486748f739"
+        ],
+        [
+          659090044,
+          "StereoFine_1.1-rc2_macOS_Intel.zip",
+          91266901,
+          "sha256:ce52f2d80eba45646e973ca6cc76d2f4114f8cdc69580d273dac50158375b487"
+        ],
+        [
+          659090042,
+          "StereoFine_1.1-rc2_Windows_x64.zip",
+          112596646,
+          "sha256:908a2210c8f047e98844b004ad2ef552bb81e27248f304ae1f938ccf3b3a56ea"
+        ]
+      ]
+    },
+    {
+      "id": 418297157,
+      "tag": "v1.1-rc1",
+      "current_tag": "v1.1-rc1",
+      "target_commitish": "8c6de9a32b006f9be0cbc6a0ce331157aebc8cc4",
+      "body": "# StereoFine 1.1 — Release candidate 1\n\nHistorical test build of the revised automatic stereo alignment and depth-measurement pipeline.\n\n- Improve automatic alignment and correction of residual vertical errors.\n- Improve near/far-point detection and handling of small foreground areas.\n\nFor normal use, choose the [stable StereoFine 1.1 release](https://github.com/muelli1975/StereoFine/releases/tag/v1.1).\n\nKeep test builds separate from a stable installation. Archives include their source snapshot under `Source/`.\n\nSee the [validation report](https://github.com/muelli1975/StereoFine/blob/development/1.1/docs/VALIDATION_1.1_RC1.md) for technical test details.\n",
+      "assets": [
+        [
+          659073085,
+          "SHA256SUMS.txt",
+          412,
+          "sha256:d0fb0e819f8874da462c545d565c1ebfac8d3be3b143952fec86930094471cb4"
+        ],
+        [
+          659073087,
+          "StereoFine_1.1-rc1_Linux_x64.tar.gz",
+          157671230,
+          "sha256:eb4b219a49b0d8013fb32b1ecb27c2202c9f71ab378c932ee784412121b035b3"
+        ],
+        [
+          659073081,
+          "StereoFine_1.1-rc1_macOS_AppleSilicon.zip",
+          100619017,
+          "sha256:f7d34ee407469bbf3aa14de094c18c87a41cdc274b4a547ddabdea02fc51438c"
+        ],
+        [
+          659073082,
+          "StereoFine_1.1-rc1_macOS_Intel.zip",
+          91263304,
+          "sha256:3bb51a4475f8813c8716ee49cb1e7bafb480041a5d3f4a8b24264f7051a43625"
+        ],
+        [
+          659073086,
+          "StereoFine_1.1-rc1_Windows_x64.zip",
+          112592620,
+          "sha256:172a9316a601faee74b0fdebae93b9e31b75e727b9a4834da5d188e95770f25d"
+        ]
+      ]
+    }
+  ]
+}

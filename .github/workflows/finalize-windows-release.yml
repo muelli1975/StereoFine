@@ -1,0 +1,83 @@
+name: Finalize checked Windows release
+on:
+  push:
+    branches: [maintenance/windows-release-recovery-20261104]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  finalize:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - name: Finalize already verified assets and descriptions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, time, urllib.request
+          from pathlib import Path
+          plan = json.loads(Path('.github/windows-recovery.json').read_text())
+          assert os.environ['GITHUB_REPOSITORY'] == plan['repository']
+          root = 'https://api.github.com/repos/' + plan['repository']
+          def api(path, method='GET', payload=None):
+              request = urllib.request.Request(root+path,
+                  data=json.dumps(payload).encode() if payload is not None else None, method=method,
+                  headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'], 'Accept':'application/vnd.github+json',
+                           'Content-Type':'application/json','Cache-Control':'no-cache'})
+              with urllib.request.urlopen(request, timeout=120) as response:
+                  data=response.read()
+              return json.loads(data) if data else None
+          release_path='/releases/'+str(plan['release_id'])
+          assert api('/git/ref/tags/'+plan['tag'])['object']['sha'] == plan['source_sha']
+          assert api('/git/ref/heads/main')['object']['sha'] == plan['source_sha']
+          release=api(release_path)
+          assert not release['draft'] and release['target_commitish']==plan['source_sha']
+          for item in plan['assets']:
+              by_id={a['id']:a for a in api(release_path)['assets']}
+              fresh=by_id[item['new_id']]
+              assert fresh['digest']==item['new_digest'] and fresh['size']==item['new_size']
+              if fresh['name'] != item['name']:
+                  old=by_id[item['old_id']]
+                  assert old['digest']==item['old_digest']
+                  if old['name']==item['name']:
+                      api('/releases/assets/'+str(old['id']),'PATCH',{'name':item['name']+'.previous-recovery-'+plan['source_sha'][:12]})
+                  api('/releases/assets/'+str(fresh['id']),'PATCH',{'name':item['name']})
+          release=api(release_path)
+          assets={a['name']:a for a in release['assets']}
+          for item in plan['assets']:
+              asset=assets[item['name']]
+              assert asset['id']==item['new_id'] and asset['digest']==item['new_digest']
+              for attempt in range(3):
+                  url=asset['browser_download_url']+'?verify='+item['new_digest'].split(':')[1]+'&attempt='+str(attempt)
+                  request=urllib.request.Request(url,headers={'Cache-Control':'no-cache'})
+                  with urllib.request.urlopen(request,timeout=300) as response:
+                      digest='sha256:'+hashlib.file_digest(response,'sha256').hexdigest()
+                  if digest==item['new_digest']:break
+                  time.sleep(2)
+              assert digest==item['new_digest'],item['name']
+              print('Final public download verified:',item['name'],flush=True)
+          body=api(release_path)['body']
+          for item in plan['assets']:
+              body=body.replace(item['old_digest'].split(':')[1],item['new_digest'].split(':')[1])
+          api(release_path,'PATCH',{'body':body,'target_commitish':plan['source_sha']})
+          for item in plan['assets']:
+              api('/releases/assets/'+str(item['old_id']),'DELETE')
+          final=api(release_path)
+          assert len(final['assets'])==6
+          assert all(a['name'] in {x['name'] for x in final['assets']} for a in plan['assets'])
+          print('Windows release finalized:',final['html_url'],flush=True)
+          for item in plan['drafts']:
+              old=api('/releases/'+str(item['id']))
+              assert old['draft'] and old['tag_name'] in {item['tag'],item['current_tag']}
+              assert [(a['id'],a['name'],a['size'],a.get('digest')) for a in old['assets']]==[tuple(x) for x in item['assets']]
+              new=api('/releases/'+str(item['id']),'PATCH',
+                      {'body':item['body'],'tag_name':item['tag'],'target_commitish':item['target_commitish'],
+                       'draft':True,'prerelease':True})
+              assert new['draft'] and new['prerelease'] and new['body']==item['body']
+              print('Historical draft description updated:',item['tag'],flush=True)
+          PY
