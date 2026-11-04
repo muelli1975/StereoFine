@@ -26,23 +26,27 @@ def main():
     assets = {item["name"]: item for item in release["assets"]}
     previous_checks = None
     retained = {}
+    def download_request(asset, expected):
+        return urllib.request.Request(asset["browser_download_url"] + "?verify=" + expected.split(":")[1],
+                                      headers={"Cache-Control": "no-cache"})
     for name, expected in config["assets"].items():
         assert assets[name]["digest"] == expected, name
         if name == "BUILD_CHECKS.json":
-            with urllib.request.urlopen(assets[name]["browser_download_url"], timeout=60) as response:
+            with urllib.request.urlopen(download_request(assets[name], expected), timeout=60) as response:
                 data = response.read()
             assert "sha256:" + hashlib.sha256(data).hexdigest() == expected
             previous_checks = json.loads(data)
         elif name not in config["replace"]:
             target = args.root / name
-            with urllib.request.urlopen(assets[name]["browser_download_url"], timeout=300) as source, target.open("wb") as output:
+            with urllib.request.urlopen(download_request(assets[name], expected), timeout=300) as source, target.open("wb") as output:
                 while block := source.read(4 * 1024 * 1024):
                     output.write(block)
             with target.open("rb") as stream:
                 actual = "sha256:" + hashlib.file_digest(stream, "sha256").hexdigest()
             assert actual == expected and target.stat().st_size == assets[name]["size"], name
             target.with_name(name + ".sha256").write_text(actual.split(":", 1)[1] + "  " + name + "\n")
-            retained[name] = {"source_commit": release["target_commitish"], "sha256": actual}
+            retained[name] = {"source_commit": previous_checks.get("platform_source_commits", {}).get(
+                name, release["target_commitish"]), "sha256": actual}
     checks = {str(p.relative_to(args.checks)): json.loads(p.read_text())
               for p in args.checks.rglob("*.json")}
     assert checks and previous_checks

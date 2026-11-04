@@ -3,14 +3,14 @@
   "release_id": 419496903,
   "tag": "v1.1",
   "branch": "main",
-  "previous_tag": "11f04c813f2a05a86a4efbe14de5edc6235af953",
+  "previous_tag": "92845fbe68c0048b6a0a229e9786ba70ae727e79",
   "assets": {
-    "BUILD_CHECKS.json": "sha256:7e5a11d3cbb750816d7ffa1304458642898118f335c63eb9fb62c1fa55a9559b",
-    "SHA256SUMS.txt": "sha256:23675702f29715e09ac6a7c85baf7b4814e9b1d1436b48b67ab365d0d9bbfd84",
+    "BUILD_CHECKS.json": "sha256:3e668ef575c138b7b6407b56a3c810749a0e690c8635c7cab988caec83098833",
+    "SHA256SUMS.txt": "sha256:716719df37ceac33760255e16df7e2d69cd21640a52a700c801755cb059912be",
     "StereoFine_1.1_Linux_x64.tar.gz": "sha256:18786154cd791801b6c047c3fa800fbeed5648ee309ed96c022f47bbdd6e7c30",
     "StereoFine_1.1_macOS_AppleSilicon.zip": "sha256:f30396befca51f538e855c68dfe619d96a1820f42360008d04e594a7d27e1489",
     "StereoFine_1.1_macOS_Intel.zip": "sha256:cc8eea0debf88ce650380a899196904681c32ca0428922b11c34fd674ece6ad3",
-    "StereoFine_1.1_Windows_x64.zip": "sha256:4fe004bf87d29b7f7cdbc25312357f91a4d5070f77702dfc8e5a8f21907d4550"
+    "StereoFine_1.1_Windows_x64.zip": "sha256:46e1489bf2cc9c1ef76b793dcba0681db760d0092b3528725240c8d9727411ee"
   },
   "replace": [
     "StereoFine_1.1_Windows_x64.zip",

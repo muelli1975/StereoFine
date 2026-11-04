@@ -112,7 +112,11 @@ def main():
         for name, item in files.items():
             assert final_assets[name]['digest'] == item['digest'] and final_assets[name]['size'] == item['size']
             if name in config['replace']:
-                with urllib.request.urlopen(final_assets[name]['browser_download_url'], timeout=300) as stream:
+                # Canonical names may still serve the previous release from a
+                # cache immediately after promotion. Verify the new bytes by hash.
+                url = final_assets[name]['browser_download_url'] + '?verify=' + item['digest'].split(':')[1]
+                req = urllib.request.Request(url, headers={'Cache-Control': 'no-cache'})
+                with urllib.request.urlopen(req, timeout=300) as stream:
                     downloaded = 'sha256:' + hashlib.file_digest(stream, 'sha256').hexdigest()
                 assert downloaded == item['digest'], ('Final public download differs', name)
     except BaseException:

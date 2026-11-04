@@ -124,6 +124,7 @@ class DisparityState:
     basis: dict[str, Any] = field(default_factory=dict)
     valid: bool = False
     stale: bool = False
+    reference_width_px: int | None = None
     diagnostics: dict[str, Any] = field(default_factory=dict)
 
     def invalidate(self) -> None:
@@ -269,7 +270,21 @@ class PairState:
         """
 
         if self.disparity.basis.get("rendered_pair"):
-            return self.disparity.low_edge_permille, self.disparity.high_edge_permille
+            # The measured range stays fixed across manual nudges. Translate
+            # both endpoints from the recorded shift, without another match.
+            diagnostics = self.disparity.diagnostics
+            width = self.disparity.reference_width_px
+            if width is None and diagnostics.get("scale", 0) > 0:
+                # Existing sidecars already retain the exact resize scale.
+                width = round(diagnostics["analysis_width"] / diagnostics["scale"])
+            if width is None or width <= 0:
+                return self.disparity.low_edge_permille, self.disparity.high_edge_permille
+            return framed_edges_permille(
+                low_edge_permille=self.disparity.low_edge_permille,
+                high_edge_permille=self.disparity.high_edge_permille,
+                offset_x_px=self.effective_offset_x_px - int(self.disparity.basis["offset_x_px"]),
+                base_width_px=width,
+            )
         return framed_edges_permille(low_edge_permille=self.disparity.low_edge_permille,
             high_edge_permille=self.disparity.high_edge_permille,
             offset_x_px=self.effective_offset_x_px,
@@ -309,15 +324,15 @@ class PairState:
         # disparity made stale by an aspect change must stay stale until the
         # shared processing core recomputes it.
         basis = self.disparity.basis or {}
-        if basis.get("rendered_pair"):
-            self.disparity.invalidate()
-            self.disparity.status = "stale"
-        framing_matches_basis = not basis.get("rendered_pair") and bool(basis) and (
+        framing_matches_basis = bool(basis) and (
             basis.get("aspect") == self.framing.aspect
             and int(basis.get("crop_zoom_index", -1)) == int(self.framing.crop_zoom_index)
             and int(basis.get("pan_x_permille", 999999)) == int(self.framing.pan_x_permille)
             and int(basis.get("pan_y_permille", 999999)) == int(self.framing.pan_y_permille)
         )
+        if basis.get("rendered_pair") and not framing_matches_basis:
+            self.disparity.invalidate()
+            self.disparity.status = "stale"
         if (
             framing_matches_basis
             and self.disparity.low_edge_permille is not None
@@ -369,6 +384,7 @@ class PairState:
             "traffic": self.disparity.traffic,
             "status": self.disparity.status,
             "basis": dict(self.disparity.basis),
+            "reference_width_px": self.disparity.reference_width_px,
             "valid": bool(self.disparity.valid),
             "stale": bool(self.disparity.stale),
         }

@@ -88,8 +88,18 @@ def main():
                 assert app.current.state.framing == geometry
                 assert app.current.state.disparity.basis['rendered_pair']
                 assert saved[-1]['gray_anaglyph'] and saved[-1]['save_cross']
+                measured = deepcopy(app.current.state.disparity)
+                before_pixels = app._preview_pil.tobytes()
+                app._adjust_manual_offset(10, 1)
+                ready = ctk.BooleanVar(value=False)
+                app.after(650, lambda: ready.set(True)); app.wait_variable(ready)
+                assert app._measurement_after_id is None and app._measurement_job_id is None
+                assert app.current.state.disparity == measured
+                assert hint not in label.cget('text')
+                assert app._preview_pil.tobytes() != before_pixels
                 checks.append(dict(language=language, automatic_crop_refresh=True, framing_preserved=True,
-                                   calculating_hint=True, color_preview_on_restart=True))
+                                   calculating_hint=True, color_preview_on_restart=True,
+                                   manual_nudge_without_measurement=True))
                 with patch('stereofine.processing.refresh_current_disparity', side_effect=RuntimeError('Test failure')):
                     app.current.state.invalidate_disparity_for_framing()
                     app._schedule_disparity_refresh()

@@ -1675,10 +1675,6 @@ class StereoFineApp(ctk.CTk):
         state.manual.delta_x_px += int(dx)
         state.manual.delta_y_px += int(dy)
         state.color.valid = False
-        if dx or dy:
-            state.disparity.invalidate()
-            state.disparity.status = "stale"
-            self._schedule_disparity_refresh()
         self._schedule_state_save()
         self._refresh_preview()
         self._schedule_status_refresh()
@@ -1811,13 +1807,13 @@ class StereoFineApp(ctk.CTk):
         self._measurement_running_id = self._measurement_job_id
 
     def _poll_disparity_refresh(self) -> None:
-        from .processing import current_disparity_basis
+        from .processing import current_disparity_basis, disparity_basis_matches
         try:
             while True:
                 message = self.measurement_worker.messages.get_nowait()
                 if (message.job_id != self._measurement_job_id or self.current is not self._measurement_session
                         or self.current is None or self.busy_state != "idle"
-                        or current_disparity_basis(self.current.state) != self._measurement_basis):
+                        or not disparity_basis_matches(current_disparity_basis(self.current.state), self._measurement_basis)):
                     continue
                 if message.kind == WorkerMessageKind.RESULT:
                     self.current.state.disparity = message.payload

@@ -232,6 +232,7 @@ def _store_disparity_result(
         traffic=str(result.get("traffic") or "gray"),
         status=str(result.get("status") or ("ok" if valid else "uncertain")),
         basis=dict(basis),
+        reference_width_px=int(base_width_px) if basis.get("rendered_pair") else None,
         valid=bool(valid),
         stale=False,
         diagnostics=summary,
@@ -258,6 +259,15 @@ def current_disparity_basis(state: PairState) -> dict[str, Any]:
     return {**_disparity_basis(state), "rendered_pair": True,
             "offset_x_px": state.effective_offset_x_px,
             "offset_y_px": state.effective_offset_y_px}
+
+
+def disparity_basis_matches(left: dict[str, Any], right: dict[str, Any]) -> bool:
+    """Reuse a measured crop across manual nudges, retaining its reference shift."""
+    if left.get("rendered_pair") and right.get("rendered_pair"):
+        ignored = {"offset_x_px", "offset_y_px"}
+        return ({key: value for key, value in left.items() if key not in ignored}
+                == {key: value for key, value in right.items() if key not in ignored})
+    return left == right
 
 
 def refresh_current_disparity(loaded: LoadedStereoPair, state: PairState, *, cancellation=None) -> None:
@@ -303,7 +313,7 @@ def _disparity_cache_usable(
         load_result.disparity_cache_valid
         and state.disparity.valid
         and not state.disparity.stale
-        and state.disparity.basis == basis
+        and disparity_basis_matches(state.disparity.basis, basis)
     )
 
 

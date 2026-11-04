@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from copy import deepcopy
 from pathlib import Path
 
 from .inputs import LoadedStereoPair, find_pair_for_image
@@ -86,6 +87,19 @@ def browse_source(source: StereoSource, defaults: ProcessingDefaults = Processin
             # those calculations as if they belonged to the corrected input.
             state.alignment.correction = None
             state.framing.clear_auto_near(status="stale")
+        if (state.disparity.valid and not state.disparity.stale
+                and state.disparity.basis.get("rendered_pair")
+                and state.disparity.reference_width_px is None):
+            # Older sidecars omit the measured crop width. Recover geometry
+            # once while loading, without running a new disparity measurement.
+            from .render import render_final_pair
+            reference = deepcopy(state)
+            basis = state.disparity.basis
+            reference.manual.delta_x_px = int(basis["offset_x_px"]) - reference.auto_offset_x_px
+            reference.manual.delta_y_px = int(basis["offset_y_px"])
+            left, _right, _ = render_final_pair(loaded, reference, apply_color=False,
+                                               apply_floating_window=False)
+            state.disparity.reference_width_px = int(left.shape[1])
     else:
         state = PairState()
         _apply_defaults(state, defaults)
