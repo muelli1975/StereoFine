@@ -7,6 +7,9 @@ on:
       candidate:
         type: boolean
         default: false
+      windows_only:
+        type: boolean
+        default: false
   push:
     branches: [development/1.1-image-formats, research/1.1-y-polish-coverage, fix/1.1-far-evidence-warning]
     paths:
@@ -30,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, windows-2022, macos-15]
+        os: ${{ fromJSON(inputs.windows_only && '["windows-2022"]' || '["ubuntu-22.04","windows-2022","macos-15"]') }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -106,7 +109,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, windows-2022, macos-15, macos-15-intel]
+        os: ${{ fromJSON(inputs.windows_only && '["windows-2022"]' || '["ubuntu-22.04","windows-2022","macos-15","macos-15-intel"]') }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

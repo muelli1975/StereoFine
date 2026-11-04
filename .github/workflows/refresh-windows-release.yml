@@ -1,0 +1,46 @@
+name: Update StereoFine Windows release
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: stereofine-windows-release
+  cancel-in-progress: false
+jobs:
+  checked-windows:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'Publish StereoFine Windows')
+    uses: ./.github/workflows/validate-development.yml
+    with:
+      candidate: true
+      windows_only: true
+  publish:
+    needs: checked-windows
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - uses: actions/download-artifact@v4
+        with:
+          name: StereoFine-1.1-candidate-windows-2022
+          path: release
+      - uses: actions/download-artifact@v4
+        with:
+          name: StereoFine-input-check-windows-2022
+          path: checks/windows/inputs
+      - uses: actions/download-artifact@v4
+        with:
+          name: StereoFine-cross-measurement-windows-2022
+          path: checks/windows/gui
+      - name: Retain existing platform packages and prepare verified metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/prepare_windows_release_update.py --root release --config .github/windows-update.json --checks checks/windows
+      - name: Publish the checked Windows package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/publish_update.py --root release --config .github/windows-update.json

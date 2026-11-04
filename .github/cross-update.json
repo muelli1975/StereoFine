@@ -19,7 +19,5 @@
     "StereoFine_1.1_macOS_AppleSilicon.zip",
     "StereoFine_1.1_macOS_Intel.zip",
     "StereoFine_1.1_Windows_x64.zip"
-  ],
-  "notes_prefix": "- Highlight the automatic deviation-calculation message in light gold and bold at its existing size and position.",
-  "validation": "Application and research tests, independent preview/output, Color-on-launch and calculating-status GUI checks passed on Windows, Linux and macOS. All four native archives were rebuilt and passed their extracted-package input/export checks. Detailed checks are attached as `BUILD_CHECKS.json`."
+  ]
 }
