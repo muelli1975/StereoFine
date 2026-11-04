@@ -41,6 +41,7 @@ def main():
             with target.open("rb") as stream:
                 actual = "sha256:" + hashlib.file_digest(stream, "sha256").hexdigest()
             assert actual == expected and target.stat().st_size == assets[name]["size"], name
+            target.with_name(name + ".sha256").write_text(actual.split(":", 1)[1] + "  " + name + "\n")
             retained[name] = {"source_commit": release["target_commitish"], "sha256": actual}
     checks = {str(p.relative_to(args.checks)): json.loads(p.read_text())
               for p in args.checks.rglob("*.json")}
