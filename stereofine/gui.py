@@ -758,10 +758,12 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             self.status_frame,
             text="●",
             width=STATUS_SYMBOL_COLUMN_WIDTH,
+            height=STATUS_SYMBOL_COLUMN_WIDTH,
             text_color=TRAFFIC_GRAY,
             font=self._font(26),
             anchor="center",
         )
+        self.traffic_label.grid_propagate(False)
         self._render_status()
 
         footer = ctk.CTkFrame(self.sidebar_bottom, fg_color="transparent")
@@ -920,10 +922,10 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
                 anchor="nw" if two_lines else "w",
                 wraplength=246,
             )
-            if two_lines:
+            if name != "input":
                 # CTkLabel's height is otherwise only a minimum: its inner Tk
                 # label can grow on wrapping or shrink to "Calculating ...".
-                # Reserve two full rows, including at fractional DPI scales.
+                # Keep each allocated row size at fractional DPI scales too.
                 label.grid_propagate(False)
             label.grid(row=row, column=0, sticky="ew", padx=(0, 8), pady=0)
             self._status_line_widgets[name] = label

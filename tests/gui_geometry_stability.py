@@ -18,7 +18,7 @@ from tests.test_restart_alignment import RestartAlignmentTests
 
 def rectangles(app):
     names = ('sidebar_container', 'sidebar_header', 'sidebar_bottom', 'status_frame',
-             'preview_frame', 'start_button', 'save_button', 'help_footer_label')
+             'preview_frame', 'traffic_label', 'start_button', 'save_button', 'help_footer_label')
     widgets = {name: getattr(app, name) for name in names}
     widgets.update({'status:'+name: value for name, value in app._status_line_widgets.items()})
     result = {name: [w.winfo_rootx(), w.winfo_rooty(), w.winfo_width(), w.winfo_height()]

@@ -135,7 +135,7 @@ def main():
                     app._render_status()
                     pump(app)
                     assert warning.cget('text') == ''
-                    assert geometry(app) == before
+                    assert geometry(app) == before, (language, size, args.scale, before, geometry(app))
                     assert warning.winfo_height() == reserved_warning_height
                     state.disparity.stale = False
         finally:
