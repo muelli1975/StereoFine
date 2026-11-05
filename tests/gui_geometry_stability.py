@@ -75,7 +75,9 @@ def main():
                 ctk.set_widget_scaling(scale)
                 ctk.set_window_scaling(scale)
                 with patch.object(gui, 'load_settings', return_value=AppSettings(language=language)), \
-                        patch.object(gui, 'save_settings'), patch.object(gui, 'play_ready_sound'):
+                        patch.object(gui, 'save_settings'), patch.object(gui, 'play_ready_sound'), \
+                        patch.object(gui.messagebox, 'showwarning'), patch.object(gui.messagebox, 'showinfo'), \
+                        patch.object(gui.messagebox, 'showerror'):
                     app = gui.StereoFineApp()
                     try:
                         app.geometry('1400x900')
