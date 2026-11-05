@@ -12,7 +12,7 @@ FILES = {".gitignore", "AGENTS.md", "DESIGN_STANDARD_STEREOTOOLS.txt", "StereoFi
          "version_info.txt", "build_windows.ps1", "requirements-lock.txt", "requirements-build.txt", "requirements-heif.txt",
          "README.md", "README_DE.md", "README_EN.md", "LICENSE.txt", "THIRD_PARTY_NOTICES.md",
          "BUILD_WINDOWS.md", "RELEASE_CHECKLIST.md", "CHANGELOG.md", "RELEASE_NOTES_1.1-rc1.md",
-         "RELEASE_NOTES_1.1-rc2.md", "RELEASE_NOTES_1.1-rc3.md", "RELEASE_NOTES_1.1.md"}
+         "RELEASE_NOTES_1.1-rc2.md", "RELEASE_NOTES_1.1-rc3.md", "RELEASE_NOTES_1.1.md", "RELEASE_NOTES_1.2.md"}
 
 
 def included(name: str) -> bool:
@@ -107,3 +107,4 @@ if __name__ == "__main__":
         verify(Path(sys.argv[2]).resolve())
     else:
         main(Path(sys.argv[1]).resolve())
+

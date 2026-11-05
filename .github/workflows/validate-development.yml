@@ -1,4 +1,4 @@
-name: Validate StereoFine 1.1 development
+name: Validate StereoFine 1.2 development
 
 on:
   workflow_dispatch:
@@ -11,7 +11,7 @@ on:
         type: boolean
         default: false
   push:
-    branches: [development/1.1-image-formats, research/1.1-y-polish-coverage, fix/1.1-far-evidence-warning]
+    branches: [development/1.2]
     paths:
       - '.github/workflows/validate-development.yml'
       - 'stereofine/**'
@@ -42,6 +42,8 @@ jobs:
           python-version: '3.12.10'
       - name: Install pinned runtime dependencies
         run: python -m pip install -r requirements-lock.txt -r requirements-heif.txt
+      - name: Build pinned native colour management
+        run: python scripts/prepare_lcms.py
       - name: Application regression tests
         run: python -m unittest discover -s tests -p 'test_*.py'
       - name: Research safety and synthetic geometry tests
@@ -102,6 +104,19 @@ jobs:
           path: build/gui-cross-measurement-*.json
           if-no-files-found: error
 
+      - name: Native TIFF option, pixel-for-pixel detail and DPI checks (Linux)
+        if: runner.os == 'Linux'
+        run: PYTHONPATH=. xvfb-run -a -s '-screen 0 4096x2400x24' python tests/gui_tiff_detail.py
+      - name: Native TIFF option, pixel-for-pixel detail and DPI checks
+        if: runner.os != 'Linux'
+        run: python -m tests.gui_tiff_detail
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: StereoFine-tiff-detail-${{ matrix.os }}
+          path: build/gui-tiff-detail-*
+          if-no-files-found: error
+
   packages:
     name: Checked package (${{ matrix.os }})
     needs: validate
@@ -145,15 +160,15 @@ jobs:
       - name: Prepare checksum-pinned stereo, Spatial Photo and orientation fixtures
         run: python scripts/prepare_heif_fixtures.py build/heif-fixtures
       - name: Prepare Linux display for extracted-package startup
-        if: ${{ inputs.candidate && runner.os == 'Linux' }}
+        if: ${{ (inputs.candidate || github.ref_name == 'development/1.2') && runner.os == 'Linux' }}
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y xvfb
       - name: Build both executables and test actual packaged imports
-        if: ${{ !inputs.candidate }}
+        if: ${{ !(inputs.candidate || github.ref_name == 'development/1.2') }}
         run: python scripts/build_development.py --fixtures build/heif-fixtures
       - name: Build final candidate and test actual packaged imports
-        if: ${{ inputs.candidate }}
+        if: ${{ (inputs.candidate || github.ref_name == 'development/1.2') }}
         run: python scripts/build_package.py --candidate --fixtures build/heif-fixtures
       - name: Confirm no HEIF codec is linked into the main application
         shell: bash
@@ -161,11 +176,11 @@ jobs:
           python -c "from pathlib import Path; p=Path('dist'); files=[str(x) for x in p.rglob('*') if x.is_file() and ('pillow_heif' in x.name or '_pillow_heif' in x.name)]; assert not files, files; print('Main application has no HEIF codec')"
       - uses: actions/upload-artifact@v4
         with:
-          name: StereoFine-1.1-${{ inputs.candidate && 'candidate' || 'development' }}-${{ matrix.os }}
+          name: StereoFine-1.2-${{ (inputs.candidate || github.ref_name == 'development/1.2') && 'candidate' || 'development' }}-${{ matrix.os }}
           path: |
-            release/StereoFine_1.1*.zip
-            release/StereoFine_1.1*.tar.gz
-            release/StereoFine_1.1*.sha256
+            release/StereoFine_1.2*.zip
+            release/StereoFine_1.2*.tar.gz
+            release/StereoFine_1.2*.sha256
           if-no-files-found: error
           retention-days: 30
       - uses: actions/upload-artifact@v4
@@ -179,4 +194,5 @@ jobs:
             build/candidate-startup.log
           if-no-files-found: error
           retention-days: 30
+
 

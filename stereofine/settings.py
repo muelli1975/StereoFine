@@ -28,6 +28,7 @@ class AppSettings:
     append_deviation_to_filename: bool = False
     gray_anaglyph: bool = False
     save_cross: bool = False
+    tiff_sbs: bool = False
 
     def normalize(self) -> "AppSettings":
         if self.language not in {"de", "en"}:
@@ -48,6 +49,7 @@ class AppSettings:
         self.append_deviation_to_filename = bool(self.append_deviation_to_filename)
         self.gray_anaglyph = bool(self.gray_anaglyph)
         self.save_cross = bool(self.save_cross)
+        self.tiff_sbs = bool(self.tiff_sbs)
         return self
 
     @classmethod
@@ -95,3 +97,4 @@ def save_settings(settings: AppSettings, path: Path | None = None) -> Path:
         if temp_path.exists():
             temp_path.unlink(missing_ok=True)
     return path
+

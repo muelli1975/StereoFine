@@ -15,10 +15,10 @@ else:
     from package_source import ROOT, committed_sources
 
 PACKAGES = {
-    'StereoFine_1.1_Windows_x64.zip': 'windows',
-    'StereoFine_1.1_Linux_x64.tar.gz': 'linux',
-    'StereoFine_1.1_macOS_AppleSilicon.zip': 'arm64',
-    'StereoFine_1.1_macOS_Intel.zip': 'intel',
+    'StereoFine_1.2_Windows_x64.zip': 'windows',
+    'StereoFine_1.2_Linux_x64.tar.gz': 'linux',
+    'StereoFine_1.2_macOS_AppleSilicon.zip': 'arm64',
+    'StereoFine_1.2_macOS_Intel.zip': 'intel',
 }
 ASSETS = {'stereofine.jpg', 'stereofine.ico', 'stereofine.icns', 'ready.wav'}
 
@@ -28,10 +28,10 @@ def verify_archive(path: Path, platform: str, expected: dict[str, bytes]) -> dic
     assets = set()
     binary = None
     helper = False
-    tool = exif_version = notes = False
+    tool = exif_version = notes = cms = False
 
     def inspect(name: str, read) -> None:
-        nonlocal binary, helper, tool, exif_version, notes
+        nonlocal binary, helper, tool, exif_version, notes, cms
         if name.startswith('__MACOSX/'):
             return
         if '/Source/' in name:
@@ -45,6 +45,9 @@ def verify_archive(path: Path, platform: str, expected: dict[str, bytes]) -> dic
         if name in {'StereoFine/StereoFine.exe', 'StereoFine/StereoFine',
                     'StereoFine/StereoFine.app/Contents/MacOS/StereoFine'}:
             binary = read()[:4096]
+        native_name={'windows':'lcms2.dll','linux':'liblcms2.so','arm64':'liblcms2.dylib','intel':'liblcms2.dylib'}[platform]
+        if name.endswith('/tools/lcms/'+native_name):
+            cms = bool(read())
         if name.endswith(('/tools/heif/StereoFine-HEIF', '/tools/heif/StereoFine-HEIF.exe')):
             helper = True
         if name.endswith(('/tools/exiftool', '/tools/exiftool.exe')):
@@ -52,9 +55,9 @@ def verify_archive(path: Path, platform: str, expected: dict[str, bytes]) -> dic
         if '/tools/' in name and name.endswith('/Image/ExifTool.pm'):
             body = read()
             exif_version = b"$VERSION = '13.59'" in body or b'$VERSION = "13.59"' in body
-        if name == 'StereoFine/RELEASE_NOTES_1.1.md':
+        if name == 'StereoFine/RELEASE_NOTES_1.2.md':
             # Windows checkout text uses CRLF; canonical Source stays byte-exact.
-            notes = read().replace(b'\r\n', b'\n') == expected['RELEASE_NOTES_1.1.md'].replace(b'\r\n', b'\n')
+            notes = read().replace(b'\r\n', b'\n') == expected['RELEASE_NOTES_1.2.md'].replace(b'\r\n', b'\n')
 
     if path.name.endswith('.tar.gz'):
         with tarfile.open(path, 'r|gz') as archive:
@@ -69,7 +72,7 @@ def verify_archive(path: Path, platform: str, expected: dict[str, bytes]) -> dic
     if sources != expected:
         changed = sorted(k for k in sources.keys() | expected.keys() if sources.get(k) != expected.get(k))
         raise RuntimeError(f'{path.name}: source mismatch: {changed}')
-    if not binary or assets != ASSETS or not all([helper, tool, exif_version, notes]):
+    if not binary or assets != ASSETS or not all([helper, tool, exif_version, notes, cms]):
         raise RuntimeError(f'{path.name}: binary={bool(binary)}, assets={sorted(assets)}, '
                            f'tool={tool}, exif_version={exif_version}, notes={notes}')
     if platform == 'windows':
@@ -91,7 +94,7 @@ def verify_archive(path: Path, platform: str, expected: dict[str, bytes]) -> dic
 
 def main(folder: Path) -> None:
     if not set(PACKAGES).issubset({p.name for p in folder.iterdir()}):
-        raise RuntimeError('Expected all four native 1.1 packages')
+        raise RuntimeError('Expected all four native 1.2 packages')
     commit, expected = committed_sources()
     expected['SOURCE_COMMIT.txt'] = (commit + '\n').encode()
     for name, platform in PACKAGES.items():
@@ -100,3 +103,4 @@ def main(folder: Path) -> None:
 
 if __name__ == '__main__':
     main(Path(sys.argv[1]))
+

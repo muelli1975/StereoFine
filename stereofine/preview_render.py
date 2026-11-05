@@ -38,6 +38,7 @@ class PreviewBasePair:
     scale: float
     original_aspect: float
     color_applied: bool = False
+    icc_profile: bytes | None = None
 
 
 @dataclass(frozen=True)
@@ -102,26 +103,12 @@ def build_preview_base_from_oriented_pair(
         correction = scale_correction_for_preview(state.alignment.correction, scale)
         left, right = warp_pair_symmetric(left, right, correction)
 
-    color_applied = False
-    if apply_color and state.color.enabled:
-        transfer: SymmetricColorTransfer | None = None
-        if state.color.valid and state.color.method == COLOR_METHOD:
-            try:
-                transfer = SymmetricColorTransfer.from_dict(state.color.parameters)
-            except Exception:
-                transfer = None
-        if transfer is None:
-            # Preview-only fit: small, bounded and cached with this base.
-            transfer = fit_symmetric_color_transfer(left, right, max_samples=100_000)
-        left, right = apply_symmetric_color_transfer(left, right, transfer, strength=state.color.strength)
-        color_applied = True
-
     return PreviewBasePair(
         np.ascontiguousarray(left),
         np.ascontiguousarray(right),
         float(scale),
         float(original_aspect),
-        color_applied=color_applied,
+        color_applied=False,
     )
 
 
@@ -141,15 +128,22 @@ def build_preview_base(
     full-resolution color basis.
     """
 
+    if apply_color and state.color.enabled:
+        # Fit on the exact final master crop. GUI callers request an uncoloured
+        # base and prepare these same parameters on their background renderer.
+        from .render import render_final_pair
+        render_final_pair(loaded, state, apply_floating_window=False)
     left, right = _oriented_proxy_pair(loaded, state)
-    return build_preview_base_from_oriented_pair(
+    base = build_preview_base_from_oriented_pair(
         left,
         right,
         state,
         max_width=max_width,
         max_height=max_height,
-        apply_color=apply_color,
+        apply_color=False,
     )
+    from dataclasses import replace
+    return replace(base, icc_profile=loaded.icc_profile)
 
 
 def render_preview_from_base(
@@ -188,9 +182,12 @@ def render_preview_from_base(
                 transfer = SymmetricColorTransfer.from_dict(state.color.parameters)
             except Exception:
                 transfer = None
-        if transfer is None:
-            transfer = fit_symmetric_color_transfer(left, right, max_samples=100_000)
-        left, right = apply_symmetric_color_transfer(left, right, transfer, strength=state.color.strength)
+        if transfer is not None:
+            left, right = apply_symmetric_color_transfer(left, right, transfer, strength=state.color.strength)
+
+    from .color_profiles import transform_rgb
+    left = transform_rgb(left, base.icc_profile)
+    right = transform_rgb(right, base.icc_profile)
 
     if apply_floating_window:
         fw = state.floating_window.normalize()
@@ -226,3 +223,4 @@ def render_preview_pair(
         apply_color=apply_color,
         apply_floating_window=apply_floating_window,
     )
+

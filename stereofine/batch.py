@@ -29,6 +29,7 @@ class BatchRunOptions:
     output_folder: Path | None = None
     gray_anaglyph: bool = False
     save_cross: bool = False
+    tiff_sbs: bool = False
     preview_mode: str = "Farbig"
     report_path: Path | None = None
     language: str = "de"
@@ -174,6 +175,8 @@ def run_batch(
                 output_mode="both",
                 gray_anaglyph=options.gray_anaglyph,
                 save_cross=options.save_cross,
+                tiff_sbs=options.tiff_sbs,
+                icc_profile=processed.loaded_pair.icc_profile,
                 metadata_source=source.metadata_source,
                 filename_deviation_permille=(
                     processed.state.disparity.total_permille
@@ -213,3 +216,4 @@ def run_batch(
         )
 
     return result
+

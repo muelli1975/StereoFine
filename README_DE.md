@@ -1,6 +1,8 @@
-# StereoFine 1.1
+# StereoFine 1.2
 
-[Downloads und SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.1) · [English](README.md) · [Änderungen](RELEASE_NOTES_1.1.md)
+[Downloads und SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.2) · [English](README.md) · [Änderungen](RELEASE_NOTES_1.2.md)
+
+**Version 1.2:** Optionaler verlustfreier TIFF-SBS-Export mit automatisch erhaltener Farbtiefe von 8 oder 16 Bit pro Kanal. **Z** halten zeigt die native 100-%-Ansicht; mit den Pfeiltasten wird sie schrittweise verschoben. Beim Loslassen erscheint wieder die Gesamtansicht. Vorschau und Export verwenden dieselbe Farbangleichung auf Basis des endgültigen Ausschnitts. Fehlgeschlagenes Speichern erhält die Änderungen und verhindert den Export mit alten Einstellungen.
 
 **Ausgabe und Vorschau:** „Graustufen-Anaglyphen“ und „Kreuzblick speichern“ stehen unter „Bild und Ausgabe“ und werden unabhängig von der Vorschau gespeichert. Kreuzblick wird farbig als R/L im Ordner `cross` als JPEG mit Qualität 90 und 4:4:4 exportiert. Mit **A** durchlaufen Farbig, Graustufen und Kreuzblick die Vorschau. **M** zeigt im Kreuzblick vorübergehend die zuletzt verwendete Anaglyphenansicht. Nach Beschnitt, Ausschnitt-Zoom oder Ausschnittverschiebung wird die Deviation automatisch neu gemessen; Justage und Scheinfensterrahmung bleiben erhalten. Während der Nachberechnung steht im Status „Berechne …“. Bei jedem Programmstart erscheint die farbige Anaglyphenansicht.
 
@@ -18,16 +20,16 @@ StereoFine arbeitet vollständig lokal: kein Konto, keine Cloud, kein Tracking u
 
 | Plattform | Archiv |
 | --- | --- |
-| Windows x64 | [StereoFine_1.1_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.1/StereoFine_1.1_Windows_x64.zip) |
-| Linux x64 | [StereoFine_1.1_Linux_x64.tar.gz](https://github.com/muelli1975/StereoFine/releases/download/v1.1/StereoFine_1.1_Linux_x64.tar.gz) |
-| macOS Apple Silicon | [StereoFine_1.1_macOS_AppleSilicon.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.1/StereoFine_1.1_macOS_AppleSilicon.zip) |
-| macOS Intel | [StereoFine_1.1_macOS_Intel.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.1/StereoFine_1.1_macOS_Intel.zip) |
+| Windows x64 | [StereoFine_1.2_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_Windows_x64.zip) |
+| Linux x64 | [StereoFine_1.2_Linux_x64.tar.gz](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_Linux_x64.tar.gz) |
+| macOS Apple Silicon | [StereoFine_1.2_macOS_AppleSilicon.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_macOS_AppleSilicon.zip) |
+| macOS Intel | [StereoFine_1.2_macOS_Intel.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_macOS_Intel.zip) |
 
-[SHA-256-Prüfsummen](https://github.com/muelli1975/StereoFine/releases/download/v1.1/SHA256SUMS.txt). Vor dem Start das gesamte Archiv entpacken. Unter macOS `StereoFine.app`, unter Linux `StereoFine` starten.
+[SHA-256-Prüfsummen](https://github.com/muelli1975/StereoFine/releases/download/v1.2/SHA256SUMS.txt). Vor dem Start das gesamte Archiv entpacken. Unter macOS `StereoFine.app`, unter Linux `StereoFine` starten.
 
 Das Windows-Paket ist portabel:
 
-1. [StereoFine_1.1_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.1/StereoFine_1.1_Windows_x64.zip) herunterladen und das Archiv vollständig in einen normalen beschreibbaren Ordner entpacken.
+1. [StereoFine_1.2_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_Windows_x64.zip) herunterladen und das Archiv vollständig in einen normalen beschreibbaren Ordner entpacken.
 2. Den entpackten Ordner `StereoFine` öffnen und `StereoFine.exe` starten.
 3. Den Programmordner zusammenlassen; `tools`, `_internal` und die übrigen mitgelieferten Dateien gehören zur Anwendung.
 
@@ -46,7 +48,7 @@ Derselbe Quellcode kann zusätzlich für macOS (Apple Silicon und Intel) sowie L
 1. Über **Links/Rechts** ein Bild aus einem Stereo-Paar wählen oder über **Full-SBS/MPO** eine Stereo-Datei öffnen.
 2. **Justage starten**. StereoFine analysiert die Geometrie, bestimmt Nahpunkt, Fernpunkt und Gesamtdeviation und rahmt den erkannten Nahpunkt standardmäßig knapp hinter das Scheinfenster.
 3. Ergebnis in der Anaglyphenvorschau prüfen und bei Bedarf per Tastatur feinjustieren.
-4. **Speichern**. StereoFine schreibt immer ein SBS-JPEG und eine Anaglyphe. Die Checkbox „Graustufen-Anaglyphen“ bestimmt unabhängig von der Vorschau, ob die gespeicherte Anaglyphe farbig oder in Graustufen erzeugt wird.
+4. **Speichern**. StereoFine schreibt ein SBS-JPEG oder bei aktivierter Option **SBS als TIFF (verlustfrei)** ein SBS-TIFF und dazu eine Anaglyphe. Die Checkbox „Graustufen-Anaglyphen“ bestimmt unabhängig von der Vorschau, ob die gespeicherte Anaglyphe farbig oder in Graustufen erzeugt wird.
 
 Ein erneuter Klick auf **Justage starten** berechnet Geometrie und Nahpunktrahmung neu und setzt manuelle horizontale/vertikale Verschiebungen zurück. Ausschnitt, Seitenverhältnis und Ausschnittposition bleiben erhalten. Bei verfügbarer Messung wird der erkannte Nahpunkt mindestens 3‰ hinter das Scheinfenster gesetzt. Speichern und Stapelverarbeitung erhalten gespeicherte Feinjustagen.
 
@@ -165,12 +167,14 @@ Die gespeicherten `.sfin`-Zustände werden wiederverwendet. Nicht favorisierte B
 
 Jeder Bildexport erzeugt immer beides:
 
-- ein SBS-JPEG, Qualität 95
+- ein SBS-JPEG, Qualität 95, oder bei gewählter Option ein verlustfrei komprimiertes SBS-TIFF
 - eine Farb- oder Grauanaglyphe als JPEG, Qualität 90
+
+TIFF erhält 8-Bit-Eingaben mit 8 Bit und 16-Bit-Eingaben mit 16 Bit pro Kanal. Gemischte Paare werden vor der Verarbeitung auf 16 Bit vereinheitlicht. TIFF behält das gemeinsame ICC-Arbeitsprofil; JPEG-Ausgaben und Vorschau verwenden sRGB. Unmarkiertes RGB wird als sRGB behandelt. Die TIFF-Einstellung wird gespeichert und gilt für Einzelbilder und Stapel. Bereits vorhandene Ausgaben eines anderen Formats bleiben erhalten. Kreuzblick bleibt JPEG mit Qualität 90 und 4:4:4.
 
 Anaglyphen werden bei Bedarf auf maximal 2160 px Höhe verkleinert. Die Farbanaglyphe verwendet eine korrekte sRGB-Linearisation.
 
-Standardmäßig legt StereoFine den Ordner `output` im Eingabeordner an. Alternativ kann ein eigener persistenter Ausgabeordner gewählt werden. Fertige JPEGs und Analyseberichte werden vollständig temporär geschrieben und erst danach atomar an ihren endgültigen Namen gesetzt.
+Standardmäßig legt StereoFine den Ordner `output` im Eingabeordner an. Alternativ kann ein eigener persistenter Ausgabeordner gewählt werden. Fertige Bilder und Analyseberichte werden vollständig temporär geschrieben und erst danach atomar an ihren endgültigen Namen gesetzt.
 
 Vorhandene Bildausgaben gleichen Namens werden bewusst ersetzt.
 
@@ -217,6 +221,7 @@ Soweit möglich kopiert StereoFine Metadaten mit dem gebündelten ExifTool. Prev
 - `A` – Farbig, Graustufen und Kreuzblick in der Vorschau durchschalten
 - `G` – Gitter durchschalten
 - `Shift+G` – Gitter aus
+- `Z` halten – native 100-%-Ansicht; `Z` + Pfeiltasten verschiebt sie in festen Schritten von 32 Pixeln mit normaler Tastenwiederholung
 - `M` halten – Messkreuz anzeigen
 - `M` + Pfeiltasten – Messkreuz bewegen
 - `F11` – Vollbild

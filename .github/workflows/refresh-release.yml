@@ -1,4 +1,4 @@
-name: Refresh StereoFine 1.1 release
+name: Release StereoFine 1.2 release
 on:
   push:
     branches: [main]
@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   checked-platforms:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'Refresh StereoFine 1.1')
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'Release StereoFine 1.2')
     uses: ./.github/workflows/validate-development.yml
     with:
       candidate: true
@@ -25,7 +25,7 @@ jobs:
           python-version: '3.12.10'
       - uses: actions/download-artifact@v4
         with:
-          pattern: StereoFine-1.1-candidate-*
+          pattern: StereoFine-1.2-candidate-*
           path: release
           merge-multiple: true
       - uses: actions/download-artifact@v4
@@ -36,6 +36,10 @@ jobs:
         with:
           pattern: StereoFine-cross-measurement-*
           path: checks/cross
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: StereoFine-tiff-detail-*
+          path: checks/tiff-detail
       - name: Verify all archives and record checks
         run: |
           python scripts/release_checksums.py release
@@ -49,7 +53,8 @@ jobs:
           checks['build_url'] = 'https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID']
           Path('release/BUILD_CHECKS.json').write_text(json.dumps(checks,indent=2)+'\n')
           PY
-      - name: Stage and download-verify all replacement assets
+      - name: Publish the new release after checking uploaded bytes
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python scripts/publish_update.py --root release --config .github/cross-update.json
+        run: python scripts/publish_12.py
+

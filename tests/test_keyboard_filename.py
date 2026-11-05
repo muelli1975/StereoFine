@@ -21,6 +21,7 @@ class KeyboardFocusTests(unittest.TestCase):
     def setUp(self):
         gui = _import_gui_without_customtkinter_runtime()
         self.app = object.__new__(gui.StereoFineApp)
+        self.app._init_native_preview()
         app = self.app
         app.current = types.SimpleNamespace(state=PairState())
         app.busy_state = 'idle'
@@ -158,7 +159,7 @@ class DeviationFilenameTests(unittest.TestCase):
                 state.disparity.valid, state.disparity.stale = valid, stale
                 state.disparity.uncertain = uncertain
                 processed = types.SimpleNamespace(state=state, analysis_record=object(),
-                                                  preview_pair=None, loaded_pair=object())
+                                                  preview_pair=None, loaded_pair=types.SimpleNamespace(icc_profile=None))
                 options = BatchRunOptions(processing=ProcessingOptions(save_sidecar=False),
                     output_folder=Path(temporary), append_deviation_to_filename=enabled)
                 with patch('stereofine.batch.validate_source_names'), \
@@ -177,3 +178,4 @@ class DeviationFilenameTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

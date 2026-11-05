@@ -15,15 +15,18 @@ class ReleaseArchiveTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
         (self.root/'assets').mkdir()
-        self.expected = {'RELEASE_NOTES_1.1.md': b'Final notes\n', 'SOURCE_COMMIT.txt': b'test-commit\n'}
+        self.expected = {'RELEASE_NOTES_1.2.md': b'Final notes\n', 'SOURCE_COMMIT.txt': b'test-commit\n'}
         self.files = {'StereoFine/Source/'+name: data for name, data in self.expected.items()}
         for name in ASSETS:
             data = ('original '+name).encode()
             (self.root/'assets'/name).write_bytes(data)
             self.files['StereoFine/_internal/assets/'+name] = data
         self.files.update({
-            'StereoFine/RELEASE_NOTES_1.1.md': b'Final notes\r\n',
+            'StereoFine/RELEASE_NOTES_1.2.md': b'Final notes\r\n',
             'StereoFine/tools/exiftool': b'perl',
+            'StereoFine/tools/lcms/lcms2.dll': b'native',
+            'StereoFine/tools/lcms/liblcms2.so': b'native',
+            'StereoFine/tools/lcms/liblcms2.dylib': b'native',
             'StereoFine/tools/lib/Image/ExifTool.pm': b"$VERSION = '13.59'",
             'StereoFine/tools/heif/StereoFine-HEIF': b'helper',
         })
@@ -50,10 +53,10 @@ class ReleaseArchiveTests(unittest.TestCase):
     def test_windows_requires_x64_and_preserves_canonical_source_bytes(self):
         self.windows()
         self.assertTrue(self.verify()['passed'])
-        self.files['StereoFine/Source/RELEASE_NOTES_1.1.md'] = b'Final notes\r\n'
+        self.files['StereoFine/Source/RELEASE_NOTES_1.2.md'] = b'Final notes\r\n'
         with self.assertRaisesRegex(RuntimeError, 'source mismatch'):
             self.verify()
-        self.files['StereoFine/Source/RELEASE_NOTES_1.1.md'] = self.expected['RELEASE_NOTES_1.1.md']
+        self.files['StereoFine/Source/RELEASE_NOTES_1.2.md'] = self.expected['RELEASE_NOTES_1.2.md']
         self.windows(machine=0x14c)
         with self.assertRaisesRegex(RuntimeError, 'architecture'):
             self.verify()
@@ -84,3 +87,4 @@ class ReleaseArchiveTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

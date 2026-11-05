@@ -15,12 +15,12 @@ class CandidatePackagingTests(unittest.TestCase):
             (root/'stereofine').mkdir()
             config = root/'stereofine/config.py'
             info = root/'version_info.txt'
-            final = "flags=0x0,\nStringStruct('FileVersion', '1.1')\nStringStruct('ProductVersion', '1.1')"
-            config.write_text("APP_VERSION = '1.1-dev'\n")
+            final = "flags=0x0,\nStringStruct('FileVersion', '1.2')\nStringStruct('ProductVersion', '1.2')"
+            config.write_text("APP_VERSION = '1.2-dev'\n")
             info.write_text(final)
             with self.assertRaises(RuntimeError):
                 require_candidate_version(root)
-            config.write_text("APP_VERSION = '1.1'\n")
+            config.write_text("APP_VERSION = '1.2'\n")
             info.write_text(final.replace('flags=0x0,', 'flags=0x2,'))
             with self.assertRaises(RuntimeError):
                 require_candidate_version(root)
@@ -36,7 +36,7 @@ class CandidatePackagingTests(unittest.TestCase):
             names.append(name+('.tar.gz' if kind == 'gztar' else '.zip'))
         self.assertEqual(tuple(names), ARCHIVES)
         self.assertEqual(archive_spec(False, 'abcdef1234', 'Linux', 'x86_64'),
-                         ('StereoFine_1.1-dev_abcdef12_Linux_x86_64', 'zip'))
+                         ('StereoFine_1.2-dev_abcdef12_Linux_x86_64', 'zip'))
         with self.assertRaises(ValueError):
             archive_spec(True, 'abcdef1234', 'Linux', 'arm64')
 
@@ -58,3 +58,4 @@ class CandidatePackagingTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

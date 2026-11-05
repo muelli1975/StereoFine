@@ -6,10 +6,10 @@ from pathlib import Path
 import sys
 
 ARCHIVES = (
-    'StereoFine_1.1_Windows_x64.zip',
-    'StereoFine_1.1_Linux_x64.tar.gz',
-    'StereoFine_1.1_macOS_AppleSilicon.zip',
-    'StereoFine_1.1_macOS_Intel.zip',
+    'StereoFine_1.2_Windows_x64.zip',
+    'StereoFine_1.2_Linux_x64.tar.gz',
+    'StereoFine_1.2_macOS_AppleSilicon.zip',
+    'StereoFine_1.2_macOS_Intel.zip',
 )
 
 
@@ -30,3 +30,4 @@ def write_manifest(directory: Path):
 
 if __name__ == '__main__':
     print(write_manifest(Path(sys.argv[1])))
+

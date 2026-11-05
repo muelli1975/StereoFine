@@ -10,6 +10,7 @@ import numpy as np
 from PIL import Image
 
 from .anaglyph import make_anaglyph
+from .color_profiles import promote_pair, transform_rgb
 from .config import ANAGLYPH_JPEG_QUALITY, ANAGLYPH_TARGET_HEIGHT, CROSS_JPEG_QUALITY, SBS_JPEG_QUALITY
 from .metadata import MetadataCopyResult, copy_metadata_without_preview_or_orientation
 from .models import OutputMode
@@ -72,6 +73,23 @@ def _save_rgb_jpeg(image: np.ndarray, path: Path, *, quality: int) -> None:
             temp_path.unlink(missing_ok=True)
 
 
+def _save_rgb_tiff(image: np.ndarray, path: Path, icc_profile: bytes | None) -> None:
+    import tifffile
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, name = tempfile.mkstemp(prefix=path.name + '.', suffix='.tmp', dir=path.parent)
+    temp = Path(name)
+    try:
+        os.close(fd)
+        with temp.open('w+b') as handle:
+            tifffile.imwrite(handle, image, photometric='rgb', compression='deflate',
+                             metadata=None, iccprofile=icc_profile)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temp, path)
+    finally:
+        temp.unlink(missing_ok=True)
+
+
 def deviation_filename_suffix(value: float | None) -> str:
     """Round measured total deviation to whole permille, at least three digits."""
     if value is None or not math.isfinite(value) or value < 0:
@@ -88,6 +106,8 @@ def save_pair_outputs(
     output_mode: OutputMode = "both",
     gray_anaglyph: bool = False,
     save_cross: bool = False,
+    tiff_sbs: bool = False,
+    icc_profile: bytes | None = None,
     metadata_source: Path | None = None,
     filename_deviation_permille: float | None = None,
 ) -> ExportResult:
@@ -96,16 +116,22 @@ def save_pair_outputs(
     if output_mode not in {"both", "sbs", "anaglyph"}:
         raise ValueError(f"Unbekannter Ausgabemodus: {output_mode}")
 
-    left8 = to_uint8_output(left)
-    right8 = to_uint8_output(right)
+    left, right = promote_pair(left, right)
+    left8 = to_uint8_output(transform_rgb(left, icc_profile))
+    right8 = to_uint8_output(transform_rgb(right, icc_profile))
     result = ExportResult()
     output_stem = base_name + deviation_filename_suffix(filename_deviation_permille)
 
     if output_mode in {"both", "sbs"}:
-        sbs = np.concatenate([left8, right8], axis=1)
-        result.sbs_path = folder / "sbs" / f"{output_stem}_sbs.jpg"
-        _save_rgb_jpeg(sbs, result.sbs_path, quality=SBS_JPEG_QUALITY)
-        meta = copy_metadata_without_preview_or_orientation(metadata_source, result.sbs_path)
+        extension = 'tif' if tiff_sbs else 'jpg'
+        result.sbs_path = folder / "sbs" / f"{output_stem}_sbs.{extension}"
+        if tiff_sbs:
+            _save_rgb_tiff(np.concatenate([left, right], axis=1), result.sbs_path, icc_profile)
+        else:
+            _save_rgb_jpeg(np.concatenate([left8, right8], axis=1), result.sbs_path, quality=SBS_JPEG_QUALITY)
+        meta = copy_metadata_without_preview_or_orientation(
+            metadata_source, result.sbs_path, preserve_output_profile=True,
+            output_srgb=not (tiff_sbs and icc_profile))
         result.metadata_results.append(meta)
         if meta.attempted and not meta.success:
             result.warnings.append(f"Metadaten SBS: {meta.message}")
@@ -113,7 +139,8 @@ def save_pair_outputs(
     if save_cross:
         result.cross_path = folder / "cross" / f"{output_stem}_cross.jpg"
         _save_rgb_jpeg(np.concatenate([right8, left8], axis=1), result.cross_path, quality=CROSS_JPEG_QUALITY)
-        meta = copy_metadata_without_preview_or_orientation(metadata_source, result.cross_path)
+        meta = copy_metadata_without_preview_or_orientation(metadata_source, result.cross_path,
+                                                               preserve_output_profile=True, output_srgb=True)
         result.metadata_results.append(meta)
         if meta.attempted and not meta.success:
             result.warnings.append(f"Metadaten Kreuzblick: {meta.message}")
@@ -123,7 +150,8 @@ def save_pair_outputs(
         anaglyph = resize_array_to_height(anaglyph, ANAGLYPH_TARGET_HEIGHT)
         result.anaglyph_path = folder / "anaglyph" / f"{output_stem}_anaglyph.jpg"
         _save_rgb_jpeg(anaglyph, result.anaglyph_path, quality=ANAGLYPH_JPEG_QUALITY)
-        meta = copy_metadata_without_preview_or_orientation(metadata_source, result.anaglyph_path)
+        meta = copy_metadata_without_preview_or_orientation(metadata_source, result.anaglyph_path,
+                                                               preserve_output_profile=True, output_srgb=True)
         result.metadata_results.append(meta)
         if meta.attempted and not meta.success:
             result.warnings.append(f"Metadaten Anaglyphe: {meta.message}")

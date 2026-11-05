@@ -996,7 +996,8 @@ class PreviewResponsivenessTests(unittest.TestCase):
         state.color.enabled = True
 
         import stereofine.preview_render as preview_render
-        real_fit = preview_render.fit_symmetric_color_transfer
+        from stereofine import render
+        real_fit = render.fit_symmetric_color_transfer
         calls = 0
 
         def counted_fit(*args, **kwargs):
@@ -1004,14 +1005,15 @@ class PreviewResponsivenessTests(unittest.TestCase):
             calls += 1
             return real_fit(*args, **kwargs)
 
-        with patch.object(preview_render, "fit_symmetric_color_transfer", side_effect=counted_fit):
+        with patch.object(render, "fit_symmetric_color_transfer", side_effect=counted_fit):
             base = build_preview_base(loaded, state, max_width=240, max_height=160, apply_color=True)
             self.assertEqual(calls, 1)
             for dx in (1, 2, 3, -1, -2):
                 state.manual.delta_x_px = dx
                 render_preview_from_base(base, state, apply_color=True)
             self.assertEqual(calls, 1)
-            self.assertTrue(base.color_applied)
+            self.assertFalse(base.color_applied)
+            self.assertTrue(state.color.valid)
 
 
 
@@ -1278,6 +1280,7 @@ class GuiIntegrationLogicTests(unittest.TestCase):
                 return self.values.get(key)
 
         app = object.__new__(gui.StereoFineApp)
+        app._init_native_preview()
         app.busy_state = "idle"
         app.grid_mode = Var("Aus")
         app.grid_spacing = Var("50 Promille")
@@ -1333,6 +1336,7 @@ class GuiIntegrationLogicTests(unittest.TestCase):
                 return self.height
 
         app = object.__new__(gui.StereoFineApp)
+        app._init_native_preview()
         for frame_w, frame_h in ((1400, 850), (1100, 700), (900, 600), (640, 480)):
             app.preview_frame = Frame(frame_w, frame_h)
             bound_w, bound_h = app._preview_bounds()
@@ -1348,6 +1352,7 @@ class GuiIntegrationLogicTests(unittest.TestCase):
         from stereofine.processing import BatchProgress
 
         app = object.__new__(gui.StereoFineApp)
+        app._init_native_preview()
         app.current_job_kind = "batch"
         app.busy_state = "batch"
         app._batch_progress_index = None
@@ -1393,6 +1398,7 @@ class GuiIntegrationLogicTests(unittest.TestCase):
                 self.calls.append(kwargs)
 
         app = object.__new__(gui.StereoFineApp)
+        app._init_native_preview()
         app.current_job_kind = "batch"
         app.current_job_id = "synthetic"
         app.busy_state = "batch"
@@ -1628,3 +1634,4 @@ class ReleaseEdgeCaseTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

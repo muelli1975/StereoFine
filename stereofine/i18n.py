@@ -27,6 +27,11 @@ TEXTS: dict[str, dict[str, str]] = {
         "image_output": "Bild und Ausgabe",
         "aspect_ratio": "Seitenverhältnis",
         "color_match": "Symmetrische Farbangleichung",
+        "tiff_sbs": "SBS als TIFF (verlustfrei)",
+        "detail_loading": "100-%-Ansicht wird vorbereitet …",
+        "tiff_tooltip": "Speichert das SBS-Bild als verlustfrei komprimiertes TIFF. Die Farbtiefe wird entsprechend der Eingabe mit 8 oder 16 Bit pro Kanal erhalten.",
+        "state_save_warning": "⚠ Einstellungen nicht gespeichert!\nBitte Schreibrechte prüfen.",
+        "state_save_failed": "Die aktuellen Einstellungen konnten nicht gespeichert werden. Die Änderungen bleiben erhalten.\n\n{text}",
         "deviation_filename": "Deviation im Dateinamen",
         "gray_anaglyph": "Graustufen-Anaglyphen",
         "save_cross": "Kreuzblick speichern",
@@ -102,6 +107,7 @@ TEXTS: dict[str, dict[str, str]] = {
             "  A                        Farbig/Graustufen/Kreuzblick\n"
             "  G                        Gitter durchschalten\n"
             "  Shift + G                Gitter aus\n"
+            "  Z halten + Pfeiltasten   100 % ansehen / verschieben\n"
             "  M halten                 Messkreuz anzeigen\n"
             "  M + Pfeiltasten          Messkreuz bewegen\n"
             "  F11                      Vollbild\n"
@@ -184,6 +190,11 @@ TEXTS: dict[str, dict[str, str]] = {
         "image_output": "Image and output",
         "aspect_ratio": "Aspect ratio",
         "color_match": "Symmetric color matching",
+        "tiff_sbs": "SBS as TIFF (lossless)",
+        "detail_loading": "Preparing 100% view …",
+        "tiff_tooltip": "Saves the SBS image as a losslessly compressed TIFF. The input bit depth is retained automatically at 8 or 16 bits per channel.",
+        "state_save_warning": "⚠ Settings could not be saved!\nPlease check write permissions.",
+        "state_save_failed": "The current settings could not be saved. Your changes have been retained.\n\n{text}",
         "deviation_filename": "Deviation in filename",
         "gray_anaglyph": "Grayscale anaglyphs",
         "save_cross": "Save cross-view",
@@ -259,6 +270,7 @@ TEXTS: dict[str, dict[str, str]] = {
             "  A                        Color/Grayscale/Cross-view\n"
             "  G                        Cycle grid\n"
             "  Shift + G                Grid off\n"
+            "  Hold Z + arrow keys      100% view / pan\n"
             "  Hold M                   Show measurement cross\n"
             "  M + Arrow keys           Move measurement cross\n"
             "  F11                      Fullscreen\n"
@@ -546,3 +558,4 @@ def grid_spacing_code(label: str) -> str:
         "100 ‰": "100 Promille",
         "Rule of thirds": "Drittel-Raster",
     }.get(label, label)
+

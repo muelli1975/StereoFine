@@ -1,6 +1,8 @@
-# StereoFine 1.1
+# StereoFine 1.2
 
-[Downloads and SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.1) · [Deutsch](README_DE.md) · [Changes](RELEASE_NOTES_1.1.md)
+[Downloads and SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.2) · [Deutsch](README_DE.md) · [Changes](RELEASE_NOTES_1.2.md)
+
+**Version 1.2:** Optional lossless TIFF SBS export retains 8 or 16 bits per channel automatically. Hold **Z** for a native 100% view; move the view with the arrow keys in fixed steps and release **Z** to return. Preview and output use the same final-crop colour matching. Failed sidecar writes retain your edits and prevent export with old settings.
 
 **Output and preview:** Grayscale anaglyphs and Save cross-view are saved independently from the preview under Image and output. Cross-view exports the finished full-colour R/L pair in `cross` as JPEG quality 90 with 4:4:4 sampling. **A** cycles Color, Grayscale and Cross-view previews; **M** temporarily uses the last anaglyph preview. Crop, crop zoom and crop movement automatically refresh deviation without changing alignment or stereo-window framing. The status shows “Calculating …” while this measurement is pending. Each launch starts with the Color anaglyph preview.
 
@@ -18,16 +20,16 @@ StereoFine works completely locally: no account, no cloud, no tracking and no au
 
 | Platform | Archive |
 | --- | --- |
-| Windows x64 | [StereoFine_1.1_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.1/StereoFine_1.1_Windows_x64.zip) |
-| Linux x64 | [StereoFine_1.1_Linux_x64.tar.gz](https://github.com/muelli1975/StereoFine/releases/download/v1.1/StereoFine_1.1_Linux_x64.tar.gz) |
-| macOS Apple Silicon | [StereoFine_1.1_macOS_AppleSilicon.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.1/StereoFine_1.1_macOS_AppleSilicon.zip) |
-| macOS Intel | [StereoFine_1.1_macOS_Intel.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.1/StereoFine_1.1_macOS_Intel.zip) |
+| Windows x64 | [StereoFine_1.2_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_Windows_x64.zip) |
+| Linux x64 | [StereoFine_1.2_Linux_x64.tar.gz](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_Linux_x64.tar.gz) |
+| macOS Apple Silicon | [StereoFine_1.2_macOS_AppleSilicon.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_macOS_AppleSilicon.zip) |
+| macOS Intel | [StereoFine_1.2_macOS_Intel.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_macOS_Intel.zip) |
 
-[SHA-256 checksums](https://github.com/muelli1975/StereoFine/releases/download/v1.1/SHA256SUMS.txt). Extract the entire archive before starting the application. On macOS open `StereoFine.app`; on Linux start `StereoFine`.
+[SHA-256 checksums](https://github.com/muelli1975/StereoFine/releases/download/v1.2/SHA256SUMS.txt). Extract the entire archive before starting the application. On macOS open `StereoFine.app`; on Linux start `StereoFine`.
 
 The Windows package is portable:
 
-1. Download [StereoFine_1.1_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.1/StereoFine_1.1_Windows_x64.zip) and extract the complete archive into a normal writable folder.
+1. Download [StereoFine_1.2_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_Windows_x64.zip) and extract the complete archive into a normal writable folder.
 2. Open the extracted `StereoFine` folder and start `StereoFine.exe`.
 3. Keep the application folder together; `tools`, `_internal` and the other supplied files belong to the application.
 
@@ -46,7 +48,7 @@ The same source can also be packaged for macOS (Apple Silicon and Intel) and Lin
 1. Use **Left/Right** to select one image from a stereo pair, or **Full-SBS/MPO** to open a stereo file.
 2. Choose **Start alignment**. StereoFine analyzes the geometry, determines near point, far point and total deviation, and frames the detected near point slightly behind the stereo window by default.
 3. Check the result in the anaglyph preview and fine-tune it with the keyboard if required.
-4. Choose **Save**. StereoFine always writes an SBS JPEG and one anaglyph. The Grayscale anaglyphs checkbox determines whether the saved anaglyph is color or grayscale, independently of the preview.
+4. Choose **Save**. StereoFine writes an SBS JPEG or, with **SBS as TIFF (lossless)** enabled, an SBS TIFF, plus one anaglyph. The Grayscale anaglyphs checkbox determines whether the saved anaglyph is color or grayscale, independently of the preview.
 
 Choosing **Start alignment** again recalculates geometry and near-point framing, clears manual horizontal/vertical nudges, and keeps the selected crop, aspect ratio and crop position. The detected near point is framed at least 3‰ behind the stereo window when a measurement is available. Saving and batch processing retain saved fine adjustments.
 
@@ -165,12 +167,14 @@ Saved `.sfin` states are reused. Non-favorites may still be analyzed, but produc
 
 Every image export produces both:
 
-- an SBS JPEG, quality 95
+- an SBS JPEG, quality 95, or a losslessly compressed SBS TIFF when selected
 - one color or grayscale anaglyph JPEG, quality 90
+
+TIFF keeps 8-bit sources at 8 bits per channel and 16-bit sources at 16 bits. A mixed pair is promoted to 16 bits before processing. TIFF retains the common working ICC profile; JPEGs and the preview use sRGB. Untagged RGB is treated as sRGB. The TIFF setting is remembered and applies to single images and batches. Existing outputs of another format remain in place. Cross-view remains JPEG quality 90 with 4:4:4 sampling.
 
 Anaglyphs are reduced to a maximum height of 2160 px when needed. Color anaglyph output uses proper sRGB linearization.
 
-By default StereoFine creates an `output` folder inside the input folder. Alternatively, a persistent custom output folder can be selected. Finished JPEGs and analysis reports are first written completely to temporary files and only then atomically replaced at their final paths.
+By default StereoFine creates an `output` folder inside the input folder. Alternatively, a persistent custom output folder can be selected. Finished images and analysis reports are first written completely to temporary files and only then atomically replaced at their final paths.
 
 Existing image outputs with the same name are deliberately replaced.
 
@@ -216,6 +220,7 @@ Where possible, StereoFine copies metadata using the bundled ExifTool. Preview, 
 - `A` – cycle Color, Grayscale and Cross-view previews
 - `G` – cycle grid
 - `Shift+G` – grid off
+- hold `Z` – native 100% view; `Z` + Arrow keys pans in fixed 32-pixel steps using normal key repeat
 - hold `M` – show measurement cross
 - `M` + Arrow keys – move measurement cross
 - `F11` – fullscreen

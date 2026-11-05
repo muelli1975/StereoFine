@@ -9,11 +9,11 @@ $BuildDir = Join-Path $Root "build"
 $DistRoot = Join-Path $Root "dist"
 $Dist = Join-Path $DistRoot "StereoFine"
 $ReleaseDir = Join-Path $Root "release"
-$ZipPath = Join-Path $ReleaseDir "StereoFine_1.1_Windows_x64.zip"
+$ZipPath = Join-Path $ReleaseDir "StereoFine_1.2_Windows_x64.zip"
 $SourceOut = Join-Path $Dist "Source"
 $SourceSnapshot = Join-Path $Venv "StereoFine-Source"
 
-Write-Host "StereoFine 1.1 - clean Windows release build"
+Write-Host "StereoFine 1.2 - clean Windows release build"
 Write-Host "Source:" $Root
 
 # Always build the public release from a clean Python environment and clean
@@ -34,7 +34,7 @@ if (Get-Command py -ErrorAction SilentlyContinue) {
 }
 if (-not $BootstrapPython) {
     $PythonCommand = Get-Command python -ErrorAction Stop
-    & $PythonCommand.Source -c "import sys; assert sys.version_info[:3] == (3, 12, 10), f'StereoFine 1.1 requires Python 3.12.10, got {sys.version}'"
+    & $PythonCommand.Source -c "import sys; assert sys.version_info[:3] == (3, 12, 10), f'StereoFine 1.2 requires Python 3.12.10, got {sys.version}'"
     $BootstrapPython = @($PythonCommand.Source)
 }
 
@@ -46,7 +46,7 @@ else {
 }
 $Python = Join-Path $Venv "Scripts\python.exe"
 
-& $Python -c "import sys; assert sys.version_info[:3] == (3, 12, 10), f'StereoFine 1.1 requires Python 3.12.10 for the reference build, got {sys.version}'; assert sys.maxsize > 2**32, '64-bit Python required'; print(sys.version)"
+& $Python -c "import sys; assert sys.version_info[:3] == (3, 12, 10), f'StereoFine 1.2 requires Python 3.12.10 for the reference build, got {sys.version}'; assert sys.maxsize > 2**32, '64-bit Python required'; print(sys.version)"
 & $Python -m pip install --upgrade pip
 & $Python -m pip install -r requirements-build.txt
 
@@ -59,6 +59,8 @@ if ($LASTEXITCODE -ne 0) { throw "Compilation checks failed; release build stopp
 & $Python -c "import importlib, pkgutil, stereofine; mods=[m.name for m in pkgutil.iter_modules(stereofine.__path__, stereofine.__name__+'.')]; [importlib.import_module(n) for n in sorted(mods)]; print(f'Imported {len(mods)} StereoFine modules')"
 if ($LASTEXITCODE -ne 0) { throw "Module import checks failed; release build stopped." }
 
+& $Python (Join-Path $Root "scripts/prepare_lcms.py")
+if ($LASTEXITCODE -ne 0) { throw "LittleCMS build failed" }
 & $Python (Join-Path $Root "scripts/prepare_heif.py")
 if ($LASTEXITCODE -ne 0) { throw "Separate HEIF reader build failed." }
 
@@ -163,7 +165,7 @@ $PillowVersion = (& $Python -c "import PIL; print(PIL.__version__)").Trim()
 
 $BuildInfoPath = Join-Path $Dist "BUILD_INFO.txt"
 $BuildLines = @(
-    "StereoFine 1.1",
+    "StereoFine 1.2",
     "Built: $((Get-Date).ToString('yyyy-MM-dd HH:mm:ss K'))",
     "Platform: Windows x64",
     "Python: $PythonVersion",
@@ -183,7 +185,7 @@ if (Test-Path $ZipPath) {
 Compress-Archive -Path $Dist -DestinationPath $ZipPath -CompressionLevel Optimal
 
 $Hash = (Get-FileHash -Algorithm SHA256 $ZipPath).Hash.ToLowerInvariant()
-"$Hash  StereoFine_1.1_Windows_x64.zip" | Set-Content -Encoding ASCII (Join-Path $ReleaseDir "SHA256SUMS.txt")
+"$Hash  StereoFine_1.2_Windows_x64.zip" | Set-Content -Encoding ASCII (Join-Path $ReleaseDir "SHA256SUMS.txt")
 
 Write-Host ""
 Write-Host "Release build created successfully."
@@ -192,3 +194,4 @@ Write-Host "ZIP:   " $ZipPath
 Write-Host "SHA256:" $Hash
 Write-Host ""
 Write-Host "Now extract the ZIP into a fresh folder and perform the short manual Windows smoke check in BUILD_WINDOWS.md."
+

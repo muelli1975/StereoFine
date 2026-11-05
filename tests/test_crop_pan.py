@@ -21,6 +21,7 @@ class CropPanTests(unittest.TestCase):
         state.framing.aspect = '1:1'
         gui = _import_gui_without_customtkinter_runtime()
         app = object.__new__(gui.StereoFineApp)
+        app._init_native_preview()
         app.current = types.SimpleNamespace(state=state)
         app.busy_state = 'idle'
         app._ensure_preview_base = lambda _session: base
@@ -118,3 +119,4 @@ class CropPanTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

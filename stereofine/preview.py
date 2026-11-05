@@ -44,7 +44,8 @@ def grid_divisions_for_spacing(spacing: int | str) -> int | None:
 
     return None
 
-def draw_grid_overlay(img: Image.Image, spacing_permille: int | str, color_name: str) -> Image.Image:
+def draw_grid_overlay(img: Image.Image, spacing_permille: int | str, color_name: str, *,
+                      reference_size: tuple[int, int] | None = None, origin=(0, 0)) -> Image.Image:
     w, h = img.size
     color = (255, 255, 255, 120) if color_name == "Weiß" else (0, 0, 0, 120)
 
@@ -69,9 +70,10 @@ def draw_grid_overlay(img: Image.Image, spacing_permille: int | str, color_name:
         if 0 < y_line < h - 1:
             draw.line((0, y_line, w, y_line), fill=color, width=1)
 
+    ref_w, ref_h = reference_size or (w, h)
     for index in range(1, divisions):
-        draw_vertical_if_inner(w * index / float(divisions))
-        draw_horizontal_if_inner(h * index / float(divisions))
+        draw_vertical_if_inner(ref_w * index / float(divisions) - origin[0])
+        draw_horizontal_if_inner(ref_h * index / float(divisions) - origin[1])
 
     return Image.alpha_composite(out, overlay).convert("RGB")
 
@@ -81,6 +83,7 @@ def draw_measure_cross_overlay(
     center_y: int | float,
     steps_permille: tuple[int, ...] = MEASURE_CROSS_STEPS_PERMILLE,
     minor_steps_permille: tuple[int, ...] = MEASURE_CROSS_MINOR_STEPS_PERMILLE,
+    *, reference_width: int | None = None,
 ) -> Image.Image:
     """Draw a fast antialiased deviation measurement overlay on a preview image.
 
@@ -107,8 +110,9 @@ def draw_measure_cross_overlay(
         # keep the preview usable instead of carrying a second rendering path.
         return img
 
-    major_radii = [max(1, int(round(width * float(step) / 1000.0))) for step in steps_permille]
-    minor_radii = [max(1, int(round(width * float(step) / 1000.0))) for step in minor_steps_permille]
+    scale_width = reference_width if reference_width is not None else width
+    major_radii = [max(1, int(round(scale_width * float(step) / 1000.0))) for step in steps_permille]
+    minor_radii = [max(1, int(round(scale_width * float(step) / 1000.0))) for step in minor_steps_permille]
     if not major_radii:
         return img
     outer = max(major_radii)
@@ -220,5 +224,6 @@ def draw_measure_cross_overlay(
     color = overlay[:, :, :3].astype(np.float32)
     out = color * alpha + base.astype(np.float32) * (1.0 - alpha)
     return Image.fromarray(np.clip(out, 0, 255).astype(np.uint8), "RGB")
+
 
 
