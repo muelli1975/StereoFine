@@ -44,6 +44,14 @@ class OutputPreferencesTests(unittest.TestCase):
             settings = AppSettings.from_dict({'use_custom_sbs_suffix': enabled, 'sbs_suffix': suffix})
             self.assertEqual(settings.sbs_suffix, expected)
             self.assertEqual(settings.use_custom_sbs_suffix, enabled)
+        # Once upgraded, every later explicit text choice survives a restart,
+        # including typing _sbs and subsequently disabling the custom suffix.
+        chosen = AppSettings(use_custom_sbs_suffix=False, sbs_suffix='_sbs')
+        restored = AppSettings.from_dict(chosen.to_dict())
+        self.assertEqual(restored.sbs_suffix, '_sbs')
+        upgraded = AppSettings.from_dict({'sbs_suffix': '_sbs', 'use_custom_sbs_suffix': False})
+        upgraded.sbs_suffix = '_sbs'
+        self.assertEqual(AppSettings.from_dict(upgraded.to_dict()).sbs_suffix, '_sbs')
 
     def test_preset_labels_and_custom_text_roundtrip_in_both_languages(self):
         for language in ('de', 'en'):

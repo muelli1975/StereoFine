@@ -11,7 +11,7 @@ from .config import ASPECT_RATIOS, normalize_aspect_code
 from .resources import settings_path
 from .output_naming import validate_sbs_suffix
 
-SETTINGS_SCHEMA_VERSION = 1
+SETTINGS_SCHEMA_VERSION = 2
 
 
 @dataclass
@@ -33,6 +33,7 @@ class AppSettings:
     sbs_suffix: str = "_cs"
 
     def normalize(self) -> "AppSettings":
+        self.schema_version = SETTINGS_SCHEMA_VERSION
         if self.language not in {"de", "en"}:
             self.language = "de"
         self.default_aspect = normalize_aspect_code(self.default_aspect)
@@ -63,7 +64,8 @@ class AppSettings:
         }
         # Earlier builds kept the mandatory standard as the inactive custom
         # default. Use COSIMA there; retain active or other custom choices.
-        if not values["use_custom_sbs_suffix"] and data.get("sbs_suffix") == "_sbs":
+        if (data.get("schema_version", 1) != SETTINGS_SCHEMA_VERSION
+                and not values["use_custom_sbs_suffix"] and data.get("sbs_suffix") == "_sbs"):
             values["sbs_suffix"] = "_cs"
         # Preserve the export choice of old settings without restoring a preview.
         if "gray_anaglyph" not in data:
