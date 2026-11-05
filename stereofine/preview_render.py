@@ -85,6 +85,7 @@ def build_preview_base_from_oriented_pair(
     max_width: int,
     max_height: int,
     apply_color: bool = True,
+    icc_profile: bytes | None = None,
 ) -> PreviewBasePair:
     """Build a reduced preview base from an already oriented/cropped pair.
 
@@ -106,6 +107,7 @@ def build_preview_base_from_oriented_pair(
         float(scale),
         float(original_aspect),
         color_applied=False,
+        icc_profile=icc_profile,
     )
 
 

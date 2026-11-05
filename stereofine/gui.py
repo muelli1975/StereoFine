@@ -1605,7 +1605,10 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         try:
             if reusable or self._state_dirty_can_create_sidecar:
                 save_browsed_state(self.current)
-                self.current.sidecar = load_sidecar(self.current.source.sidecar_path, expected_source=self.current.source_stamp)
+                updated = load_sidecar(self.current.source.sidecar_path, expected_source=self.current.source_stamp)
+                if updated.status not in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
+                    raise OSError(updated.message or "Saved settings could not be verified.")
+                self.current.sidecar = updated
         except Exception as exc:
             # Keep the current state dirty. Export/navigation/close must retry
             # successfully before reading a sidecar or discarding this session.

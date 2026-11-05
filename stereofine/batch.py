@@ -86,6 +86,17 @@ def _error_record(source: StereoSource, message: str) -> AnalysisRecord:
     )
 
 
+def _export_preview(left, right, profile):
+    """Reuse the finished master render and curves, without a second warp/fit."""
+    import cv2
+    from .color_profiles import transform_rgb
+    from .inputs import master_to_uint8
+    scale=min(1., BATCH_PREVIEW_MAX_WIDTH / left.shape[1], BATCH_PREVIEW_MAX_HEIGHT / left.shape[0])
+    size=(max(1,round(left.shape[1]*scale)),max(1,round(left.shape[0]*scale)))
+    return tuple(master_to_uint8(transform_rgb(cv2.resize(image,size,interpolation=cv2.INTER_AREA),profile))
+                 for image in (left,right))
+
+
 def run_batch(
     sources: Iterable[StereoSource],
     options: BatchRunOptions = BatchRunOptions(),
@@ -107,13 +118,13 @@ def run_batch(
     records: list[AnalysisRecord] = []
 
     # Build the batch preview from the already existing analysis proxies.
-    # Normal image export still retains only the current master pair and drops
+    # Normal image export retains only the current master pair and drops
     # it immediately afterwards; analysis-only never retains the master pair.
     process_options = replace(
         options.processing,
         keep_loaded_pair=not options.analysis_only,
-        preview_max_width=BATCH_PREVIEW_MAX_WIDTH,
-        preview_max_height=BATCH_PREVIEW_MAX_HEIGHT,
+        preview_max_width=BATCH_PREVIEW_MAX_WIDTH if options.analysis_only else None,
+        preview_max_height=BATCH_PREVIEW_MAX_HEIGHT if options.analysis_only else None,
     )
 
     for index, source in enumerate(source_list, start=1):
@@ -126,8 +137,7 @@ def run_batch(
             records.append(processed.analysis_record)
             item = BatchRunItem(processed=processed)
 
-            # The progress preview was prepared from the existing analysis
-            # proxies, so this path performs no second full-resolution render.
+            # Analysis-only progress uses existing reduced analysis proxies.
             if progress and processed.preview_pair is not None:
                 try:
                     preview_left, preview_right = processed.preview_pair
@@ -166,6 +176,12 @@ def run_batch(
             if progress:
                 progress(BatchProgress(index, total, source.display_name, "export"))
             left, right, _render_info = render_final_pair(processed.loaded_pair, processed.state)
+            if progress:
+                preview_left, preview_right = _export_preview(left, right, processed.loaded_pair.icc_profile)
+                progress(BatchProgress(index, total, source.display_name, "preview",
+                    preview_rgb=(np.concatenate([preview_right, preview_left], axis=1)
+                                 if options.preview_mode == "Kreuzblick" else
+                                 make_anaglyph(preview_left, preview_right, gray=options.preview_mode == "Graustufen"))))
             item.export = save_pair_outputs(
                 left,
                 right,

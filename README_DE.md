@@ -43,6 +43,8 @@ Eine Python-Installation ist für die portable Version nicht erforderlich. Globa
 
 Derselbe Quellcode kann zusätzlich für macOS (Apple Silicon und Intel) sowie Linux x64 paketiert werden. GitHub Actions erzeugt diese Varianten aus demselben getaggten Quellstand. Windows bleibt die Referenzplattform; die macOS-/Linux-Binärdateien gelten bis zu einem realen Desktop-Sichttest auf diesen Systemen als Plattform-Builds. Stereo-, Geometrie- und Farbverarbeitung sind plattformübergreifend identisch. Die Plattformpakete enthalten ExifTool für die Metadatenübernahme; unter macOS/Linux basiert die offizielle ExifTool-Distribution auf Perl und setzt daher einen funktionierenden Perl-Interpreter auf dem Zielsystem voraus. Ist die Metadatenübernahme nicht verfügbar, bleibt das erfolgreich geschriebene Bild erhalten und StereoFine meldet lediglich eine nicht fatale Warnung.
 
+Die native Detailansicht wird mit 100 bis 200 % GUI-Skalierung geprüft. Die Zuordnung zu physischen Retina-Bildschirmpixeln unter macOS benötigt noch eine Prüfung an einem echten Display.
+
 ## Schnellstart
 
 1. Über **Links/Rechts** ein Bild aus einem Stereo-Paar wählen oder über **Full-SBS/MPO** eine Stereo-Datei öffnen.

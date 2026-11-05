@@ -121,6 +121,17 @@ class TiffDepthTests(unittest.TestCase):
         np.testing.assert_array_equal(preview.left,final_a)
         np.testing.assert_array_equal(preview.right,final_b)
 
+    def test_batch_preview_uses_finished_master_colours(self):
+        from stereofine.batch import _export_preview
+        from stereofine.inputs import master_to_uint8
+        profile=linear_rgb_profile()
+        master=np.arange(6000,dtype=np.uint16).reshape(40,50,3)*10
+        a,b=_export_preview(master,master,profile)
+        expected=master_to_uint8(transform_rgb(master,profile))
+        np.testing.assert_array_equal(a,expected)
+        np.testing.assert_array_equal(b,expected)
+
+
 
 class DetailAndSaveTests(unittest.TestCase):
     def app(self):
@@ -165,3 +176,16 @@ class DetailAndSaveTests(unittest.TestCase):
         with patch.object(gui.messagebox,'showerror'), patch.object(gui,'save_browsed_state',side_effect=PermissionError('locked')):
             app._start_worker=lambda *args:self.fail('Export must not read old settings')
             self.assertEqual(app.save_current_result(),'break')
+
+    def test_unreadable_saved_state_remains_dirty(self):
+        app=self.app();app._save_after_id=None
+        app._state_dirty=True;app._state_dirty_can_create_sidecar=True
+        app._state_save_error=None;app.current.sidecar=SimpleNamespace(status='valid')
+        app.current.source=SimpleNamespace(sidecar_path=Path('image.sfin'))
+        app.current.source_stamp=object();app._render_status=lambda:None
+        gui=__import__('stereofine.gui',fromlist=['StereoFineApp'])
+        with patch.object(gui,'save_browsed_state'), patch.object(gui,'load_sidecar',
+                    return_value=SimpleNamespace(status='corrupt',message='read failed')):
+            self.assertFalse(app._flush_state_save())
+            self.assertTrue(app._state_dirty)
+            self.assertEqual(app._state_save_error,'read failed')

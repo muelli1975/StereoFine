@@ -41,7 +41,7 @@ The portable version does not require a separate Python installation. Global set
 
 ## macOS and Linux builds
 
-The same source can also be packaged for macOS (Apple Silicon and Intel) and Linux x64. GitHub Actions builds these variants from the tagged source. Windows is the reference platform; macOS/Linux binaries should be treated as platform builds pending a real desktop smoke test on those systems. No stereo, geometry or color-processing code differs between platforms. The platform packages include ExifTool for metadata handling; on macOS/Linux the official ExifTool distribution is Perl-based and therefore expects a working Perl interpreter on the target system. If metadata copying is unavailable, StereoFine keeps the successfully written image and reports a non-fatal warning.
+The same source can also be packaged for macOS (Apple Silicon and Intel) and Linux x64. GitHub Actions builds these variants from the tagged source. Windows is the reference platform; macOS/Linux binaries should be treated as platform builds pending a real desktop smoke test on those systems. No stereo, geometry or color-processing code differs between platforms. The native detail view has GUI scaling checks from 100 to 200%; physical Retina backing-pixel mapping on macOS still needs a real-display check. The platform packages include ExifTool for metadata handling; on macOS/Linux the official ExifTool distribution is Perl-based and therefore expects a working Perl interpreter on the target system. If metadata copying is unavailable, StereoFine keeps the successfully written image and reports a non-fatal warning.
 
 ## Quick start
 
