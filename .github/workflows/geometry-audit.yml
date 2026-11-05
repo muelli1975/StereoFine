@@ -1,0 +1,41 @@
+name: Measure StereoFine UI geometry
+on:
+  push:
+    branches: [development/geometry-audit]
+    paths:
+      - '.github/workflows/geometry-audit.yml'
+      - 'tests/gui_geometry_stability.py'
+      - 'stereofine/gui.py'
+      - 'stereofine/status.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  geometry:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-2022, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - run: python -m pip install -r requirements-lock.txt -r requirements-heif.txt
+      - run: python scripts/prepare_lcms.py
+      - name: Measure actual UI rectangles (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb
+          PYTHONPATH=. xvfb-run -a -s '-screen 0 4096x2400x24' python tests/gui_geometry_stability.py --report-only
+      - name: Measure actual UI rectangles
+        if: runner.os != 'Linux'
+        run: python -m tests.gui_geometry_stability --report-only
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: StereoFine-geometry-${{ matrix.os }}
+          path: build/gui-geometry-stability-*.json
+          if-no-files-found: error
