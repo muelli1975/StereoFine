@@ -75,10 +75,14 @@ def main():
                         app._on_arrow_release(SimpleNamespace(keysym='Left'))
                         app.update()
                         assert not app._handle_detail_arrow('left')
+                        fitted = app._preview_ctk_image.cget('light_image')
+                        assert app._preview_ctk_image._get_scaled_size(factor) == fitted.size
+                        bounds = app._preview_bounds()
+                        assert fitted.width <= bounds[0] and fitted.height <= bounds[1]
                         app._on_detail_press();app._reset_keyboard_modes()
                         assert not app.detail_active
                         checks.append(dict(language=language,scale=scale,native_pixels=True,
-                                           synchronous_eyes=True,fixed_steps=True,edits_preserved=True))
+                                           synchronous_eyes=True,fixed_steps=True,edits_preserved=True,fit_returns_inside_bounds=True))
                     ctk.set_widget_scaling(1.);ctk.set_window_scaling(1.)
                     # Native background fit and exported master fit must agree
                     # after the final crop changes, without blocking key input.

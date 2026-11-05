@@ -1989,7 +1989,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
 
         border = preview_border_px(display_size[0])
         self.preview_label.grid_configure(padx=border, pady=border)
-        new_image = ctk.CTkImage(light_image=image, dark_image=image, size=image.size)
+        scaling = self.preview_label._get_widget_scaling()
+        logical_size = (image.width / scaling, image.height / scaling)
+        new_image = ctk.CTkImage(light_image=image, dark_image=image, size=logical_size)
         self.preview_label.configure(text="", image=new_image)
         self._preview_ctk_image = new_image
 
