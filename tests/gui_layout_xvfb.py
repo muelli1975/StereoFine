@@ -254,8 +254,8 @@ def main() -> None:
             app.update()
             assert app.settings.language == "en"
             assert app.fullscreen_button.cget("text") == "Fullscreen"
-            assert app.output_aspect.get() == "maximum"
-            assert app.output_aspect_display.get() == "Maximum"
+            assert app.output_aspect.get() == "original"
+            assert app.output_aspect_display.get() == "Original"
             assert not hasattr(app, "output_mode")
             assert app.help_footer_label.cget("text") == "F1 · Keyboard help"
             assert app.help_footer_label.cget("text_color") == gui.GOLD_LIGHT

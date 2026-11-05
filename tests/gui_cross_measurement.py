@@ -62,11 +62,13 @@ def main():
                 assert app._preview_pil.width*2 == cross_width
                 reticle = app.measure_cross_x, app.measure_cross_y
                 app._on_measure_release()
+                app.update_idletasks()
                 assert app._preview_pil.width == cross_width
                 app._on_measure_press()
                 assert abs(app.measure_cross_x-reticle[0]) <= 1
                 assert abs(app.measure_cross_y-reticle[1]) <= 1
                 app._on_measure_release()
+                app.update_idletasks()
                 for scale in (1.,1.25,1.5):
                     ctk.set_widget_scaling(scale); ctk.set_window_scaling(scale)
                     app.geometry('1400x900')

@@ -32,6 +32,7 @@ def main() -> None:
         use_input_output_subfolder=True,
         output_mode="both",
         analysis_method="AKAZE",
+        default_aspect="maximum",  # explicitly retained legacy preferences
         color_match_enabled=False,
     )
 
@@ -365,6 +366,8 @@ def main() -> None:
                 for _ in range(10):
                     app._on_arrow("right", key_event)
                 app._clear_floating_key(edge)
+                app._on_arrow_release(type('KeyRelease', (), {'keysym': 'Right'})())
+                app.update_idletasks()
                 assert getattr(fw, attr) == 10, (edge, fw)
                 assert app._preview_pil.tobytes() != unmasked_preview, edge
 
@@ -471,6 +474,8 @@ def main() -> None:
             for _ in range(10):
                 app._on_arrow("right", key_event)
             app._clear_floating_key("left")
+            app._on_arrow_release(type('KeyRelease', (), {'keysym': 'Right'})())
+            app.update_idletasks()
             assert fw.left_permille == 10
             assert fw.top_permille == 0
             assert fw.bottom_permille == 0
