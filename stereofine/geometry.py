@@ -23,7 +23,8 @@ def _apply_black_mask(img: np.ndarray, mask: Image.Image) -> np.ndarray:
     out *= (1.0 - mask_arr[..., None])
     return np.clip(out, 0.0, max_value).astype(dtype)
 
-def _make_triangle_mask(width: int, height: int, side: str, direction: str, max_px: int, scale: int = 4) -> Image.Image:
+def _make_triangle_mask(width: int, height: int, side: str, direction: str, max_px: int, scale: int = 4,
+                        *, reference_size=None, origin=(0, 0)) -> Image.Image:
     """Create an antialiased triangular floating-window mask.
 
     side: "left" or "right" image border.
@@ -38,11 +39,17 @@ def _make_triangle_mask(width: int, height: int, side: str, direction: str, max_
         return Image.new("L", (width, height), 0)
 
     scale = max(1, int(scale))
-    sw = width * scale
-    sh = height * scale
+    ref_w, ref_h = reference_size or (width, height)
+    ox, oy = origin
+    # Include the Lanczos support around a detail crop. Rasterising this small
+    # region reproduces a crop of the full mask without allocating that mask.
+    x0, y0 = max(0, ox - 3), max(0, oy - 3)
+    x1, y1 = min(ref_w, ox + width + 3), min(ref_h, oy + height + 3)
+    sw = ref_w * scale
+    sh = ref_h * scale
     mx = min(sw, max_px * scale)
 
-    mask_hi = Image.new("L", (sw, sh), 0)
+    mask_hi = Image.new("L", ((x1 - x0) * scale, (y1 - y0) * scale), 0)
     draw = ImageDraw.Draw(mask_hi)
 
     if side == "left" and direction == "bottom":
@@ -56,8 +63,9 @@ def _make_triangle_mask(width: int, height: int, side: str, direction: str, max_
     else:
         raise ValueError(f"Invalid floating-window side/direction: {side}/{direction}")
 
-    draw.polygon(points, fill=255)
-    return mask_hi.resize((width, height), Image.Resampling.LANCZOS)
+    draw.polygon([(x - x0 * scale, y - y0 * scale) for x, y in points], fill=255)
+    mask = mask_hi.resize((x1 - x0, y1 - y0), Image.Resampling.LANCZOS)
+    return mask.crop((ox - x0, oy - y0, ox - x0 + width, oy - y0 + height))
 
 def apply_floating_window_masks(
     left: np.ndarray,
@@ -66,6 +74,7 @@ def apply_floating_window_masks(
     right_permille: float = 0.0,
     top_permille: float = 0.0,
     bottom_permille: float = 0.0,
+    *, reference_size=None, origin=(0, 0),
 ) -> tuple[np.ndarray, np.ndarray]:
     """Apply StereoFine floating-window masks to the final stereo pair.
 
@@ -81,6 +90,8 @@ def apply_floating_window_masks(
     w = min(left.shape[1], right.shape[1])
     if h <= 0 or w <= 0:
         return left, right
+    ref_w, ref_h = reference_size or (w, h)
+    ox, _oy = origin
 
     left_out = left[:h, :w]
     right_out = right[:h, :w]
@@ -101,24 +112,24 @@ def apply_floating_window_masks(
     if top_permille > 0.0 or bottom_permille > 0.0:
         value = top_permille if top_permille > 0.0 else bottom_permille
         direction = "top" if top_permille > 0.0 else "bottom"
-        max_px = int(round(w * value / 1000.0))
+        max_px = int(round(ref_w * value / 1000.0))
         if max_px > 0:
-            left_mask = _make_triangle_mask(w, h, "left", direction, max_px)
-            right_mask = _make_triangle_mask(w, h, "right", direction, max_px)
+            left_mask = _make_triangle_mask(w, h, "left", direction, max_px, reference_size=(ref_w, ref_h), origin=origin)
+            right_mask = _make_triangle_mask(w, h, "right", direction, max_px, reference_size=(ref_w, ref_h), origin=origin)
             left_out = _apply_black_mask(left_out, left_mask)
             right_out = _apply_black_mask(right_out, right_mask)
         return left_out, right_out
 
-    left_px = int(round(w * left_permille / 1000.0))
-    right_px = int(round(w * right_permille / 1000.0))
+    left_px = max(0, int(round(ref_w * left_permille / 1000.0)) - ox)
+    right_start = max(0, ref_w - int(round(ref_w * right_permille / 1000.0)) - ox)
 
     if left_px > 0:
         left_out = left_out.copy()
         left_out[:, :min(w, left_px), :] = 0
 
-    if right_px > 0:
+    if right_start < w:
         right_out = right_out.copy()
-        right_out[:, max(0, w - right_px):, :] = 0
+        right_out[:, right_start:, :] = 0
 
     return left_out, right_out
 

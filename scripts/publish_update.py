@@ -97,7 +97,7 @@ def main():
             api('/git/refs/tags/' + tag, 'PATCH', {'sha': sha, 'force': True})
             tag_moved = True
         # Keep the existing release prose. Only refresh existing hash/source references.
-        body = old_body
+        body = Path(config["notes_file"]).read_text(encoding="utf-8") if config.get("notes_file") else old_body
         for name, item in files.items():
             body = body.replace(assets[name]['digest'].split(':')[-1], item['digest'].split(':')[-1])
         # Release prose is curated separately from routine asset refreshes.

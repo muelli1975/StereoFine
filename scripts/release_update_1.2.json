@@ -1,0 +1,32 @@
+{
+  "repository": "muelli1975/StereoFine",
+  "tag": "v1.2",
+  "branch": "main",
+  "previous_tag": "85c98b227a63af5de3276e93f08c5cb2f1c4ba09",
+  "release_id": 435146194,
+  "notes_file": "RELEASE_NOTES_1.2.md",
+  "assets": {
+    "BUILD_CHECKS.json": "sha256:17369d7ecb70827973ef1d52a48e8c87c0904fd1329ab387179843164d208d6a",
+    "SHA256SUMS.txt": "sha256:e0eae4295d8a1d712c6d559ee9780b09103b1f856d6126b8c0e3f4577408b85d",
+    "StereoFine_1.2_Linux_x64.tar.gz": "sha256:44b4a8e47d7ffb4124452afc02de8a6be57697818c5739f139ac3d5c30832f1d",
+    "StereoFine_1.2_Linux_x64.tar.gz.sha256": "sha256:c66fa8ecd3f7072258d58a3d0d98eb14c1b7441b6147ab386d624a011972f474",
+    "StereoFine_1.2_macOS_AppleSilicon.zip": "sha256:b40b9d48bbf3ef333d68b33289a8e388f28438bbd85a98bd242db474d77d0038",
+    "StereoFine_1.2_macOS_AppleSilicon.zip.sha256": "sha256:b0ac80300ea2cd07cb63577cbe12fe64a72344b5ba7e58808d196a674548994c",
+    "StereoFine_1.2_macOS_Intel.zip": "sha256:ddaaefcda5224764e3187f2bf3bfcf0806087652238f3ed4e97e89b2f83ef4f1",
+    "StereoFine_1.2_macOS_Intel.zip.sha256": "sha256:a665d008784816e66f06a263285742f08a90cf4a8f1495c38b24ab529ec7c28d",
+    "StereoFine_1.2_Windows_x64.zip": "sha256:74eb422da1c02800b36746777808f60be7731e5fd0e764a217b12224469c29dc",
+    "StereoFine_1.2_Windows_x64.zip.sha256": "sha256:7c25b0021fd56e27b8e8cb7a94af006f73fe81a6ae4142c344b2ba983d44f473"
+  },
+  "replace": [
+    "BUILD_CHECKS.json",
+    "SHA256SUMS.txt",
+    "StereoFine_1.2_Linux_x64.tar.gz",
+    "StereoFine_1.2_Linux_x64.tar.gz.sha256",
+    "StereoFine_1.2_macOS_AppleSilicon.zip",
+    "StereoFine_1.2_macOS_AppleSilicon.zip.sha256",
+    "StereoFine_1.2_macOS_Intel.zip",
+    "StereoFine_1.2_macOS_Intel.zip.sha256",
+    "StereoFine_1.2_Windows_x64.zip",
+    "StereoFine_1.2_Windows_x64.zip.sha256"
+  ]
+}

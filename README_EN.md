@@ -2,7 +2,7 @@
 
 [Downloads and SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.2) · [Deutsch](README_DE.md) · [Changes](RELEASE_NOTES_1.2.md)
 
-**Version 1.2:** Optional lossless TIFF SBS export retains 8 or 16 bits per channel automatically. Hold **Z** for a native 100% view; move the view with the arrow keys in fixed steps and release **Z** to return. Preview and output use the same final-crop colour matching. Failed sidecar writes retain your edits and prevent export with old settings.
+**Version 1.2:** Optional lossless TIFF SBS export retains 8 or 16 bits per channel automatically. Hold **Z** for a native 100% view; pan with the arrow keys, accelerating when held and release **Z** to return. Preview and output use the same final-crop colour matching. Failed sidecar writes retain your edits and prevent export with old settings.
 
 **Output and preview:** Grayscale anaglyphs and Save cross-view are saved independently from the preview under Image and output. Cross-view exports the finished full-colour R/L pair in `cross` as JPEG quality 90 with 4:4:4 sampling. **A** cycles Color, Grayscale and Cross-view previews; **M** temporarily uses the last anaglyph preview. Crop, crop zoom and crop movement automatically refresh deviation without changing alignment or stereo-window framing. The status shows “Calculating …” while this measurement is pending. Each launch starts with the Color anaglyph preview.
 
@@ -220,7 +220,7 @@ Where possible, StereoFine copies metadata using the bundled ExifTool. Preview, 
 - `A` – cycle Color, Grayscale and Cross-view previews
 - `G` – cycle grid
 - `Shift+G` – grid off
-- hold `Z` – native 100% view; `Z` + Arrow keys pans in fixed 32-pixel steps using normal key repeat
+- hold `Z` – native 100% view; `Z` + Arrow keys pans with fine taps and smooth acceleration when held, like the measurement cross
 - hold `M` – show measurement cross
 - `M` + Arrow keys – move measurement cross
 - `F11` – fullscreen

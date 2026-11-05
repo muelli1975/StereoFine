@@ -14,9 +14,10 @@ from PIL import ImageGrab
 
 from stereofine import gui
 from stereofine.inputs import LoadedStereoPair
-from stereofine.native_preview import detail_box, native_key, DETAIL_STEP_PX
+from stereofine.native_preview import detail_box, native_key
 from stereofine.render import render_final_pair
 from stereofine.session import browse_source
+from stereofine.processing import process_source
 from stereofine.settings import AppSettings
 from tests.gui_cross_measurement import pump
 from tests.test_restart_alignment import RestartAlignmentTests
@@ -68,7 +69,7 @@ def main():
                         np.testing.assert_array_equal(np.asarray(image),expected)
                         previous=app._detail_center
                         app._on_arrow('left')
-                        assert app._detail_center[0] >= previous[0]-DETAIL_STEP_PX
+                        assert app._detail_center[0] >= previous[0]-1
                         assert app.current.state==before
                         app._end_detail_preview()
                         assert app._handle_detail_arrow('left')  # held key remains view-only
@@ -82,7 +83,7 @@ def main():
                         app._on_detail_press();app._reset_keyboard_modes()
                         assert not app.detail_active
                         checks.append(dict(language=language,scale=scale,native_pixels=True,
-                                           synchronous_eyes=True,fixed_steps=True,edits_preserved=True,fit_returns_inside_bounds=True))
+                                           synchronous_eyes=True,fine_tap=True,edits_preserved=True,fit_returns_inside_bounds=True))
                     ctk.set_widget_scaling(1.);ctk.set_window_scaling(1.)
                     # Native background fit and exported master fit must agree
                     # after the final crop changes, without blocking key input.
@@ -95,6 +96,33 @@ def main():
                     render_final_pair(app.current.loaded_pair,expected)
                     assert app.current.state.color.parameters==expected.color.parameters
                     assert app.current.state.color.basis==expected.color.basis
+                    # Mask edits must not invalidate the native image or swap
+                    # to a proxy while their delayed sidecar write completes.
+                    for mode in ('Farbig', 'Graustufen', 'Kreuzblick'):
+                        app.preview_mode.set(mode);app._on_preview_mode_changed()
+                        app._adjust_floating_edge('bottom', 5-app.current.state.floating_window.bottom_permille)
+                        stable=app._preview_pil.copy()
+                        cached=app._native_cache
+                        since=time.monotonic()
+                        pump(app,lambda:time.monotonic()-since>.4)
+                        np.testing.assert_array_equal(np.asarray(app._preview_pil),np.asarray(stable))
+                        assert app._native_cache is cached
+                    # The detail view has the same timed acceleration as M.
+                    app._on_detail_press()
+                    app._detail_center=(app._native_cache[1].shape[1]/2,app._native_cache[1].shape[0]/2)
+                    app._on_arrow('right')
+                    tapped=app._detail_center[0]
+                    for _ in range(10):app._on_arrow('right')
+                    assert app._detail_center[0]==tapped
+                    since=time.monotonic()
+                    pump(app,lambda:time.monotonic()-since>.9)
+                    assert app._detail_center[0]>tapped+100
+                    app._on_arrow_release(SimpleNamespace(keysym='Right'));app.update()
+                    stopped=app._detail_center
+                    since=time.monotonic();pump(app,lambda:time.monotonic()-since>.1)
+                    assert app._detail_center==stopped
+                    app._end_detail_preview()
+                    checks.append(dict(language=language,window_preview_stable=True,accelerated_pan=True,release_stops=True))
                     app.show_shortcuts_help()
                     app.update()
                     screenshot=Path('build')/f'gui-tiff-detail-{platform.system()}-{language}.png'
@@ -106,6 +134,32 @@ def main():
                 finally:
                     app._native_worker.cancel_all()
                     app._cancel_disparity_refresh();app.destroy()
+        # Exercise real Save, including its worker and persisted colour state.
+        process_source(source)
+        with patch.object(gui,'load_settings',return_value=AppSettings()), patch.object(gui,'save_settings'), \
+                patch.object(gui,'play_ready_sound'):
+            app=gui.StereoFineApp()
+            try:
+                app.current=browse_source(source)
+                app.current.state.color.enabled=True
+                app.sources,app.source_index=[source],0
+                app._sync_vars_from_current();app._refresh_control_states();app._refresh_preview()
+                pump(app,lambda:app._native_cache is not None and app._native_cache[0]==native_key(app.current))
+                app._adjust_floating_edge('bottom',5-app.current.state.floating_window.bottom_permille)
+                app._detail_center=(179,117)
+                app._effective_output_folder=lambda _root:Path(td)/'output'
+                app._flush_state_save(explicit=True)
+                since=time.monotonic();pump(app,lambda:time.monotonic()-since>.4)
+                stable=app._preview_pil.copy();session=app.current;cache=app._native_cache
+                for tiff in (False,True):
+                    app.tiff_sbs.set(tiff);app.save_current_result()
+                    pump(app,lambda:app.busy_state=='idle',timeout=45)
+                    np.testing.assert_array_equal(np.asarray(app._preview_pil),np.asarray(stable))
+                    assert app.current is session and app._native_cache is cache
+                    assert app._detail_center==(179,117)
+                    assert app.current.state.floating_window.bottom_permille==5
+                checks.append(dict(real_jpeg_and_tiff_save=True,preview_pixels_unchanged=True,detail_position_preserved=True))
+            finally:app.destroy()
         ctk.set_widget_scaling(1.);ctk.set_window_scaling(1.)
     output=Path('build')/f'gui-tiff-detail-{platform.system()}.json'
     output.write_text(json.dumps(dict(ok=True,checks=checks),indent=2),encoding='utf-8')

@@ -15,7 +15,7 @@ from stereofine.color_profiles import _library, promote_pair, transform_rgb
 from stereofine.color_transfer import _sample_rgb
 from stereofine.export import save_pair_outputs
 from stereofine.inputs import load_pair, LoadedStereoPair
-from stereofine.native_preview import detail_box, native_key, DETAIL_STEP_PX
+from stereofine.native_preview import detail_box, native_key
 from stereofine.preview_render import build_preview_base, render_preview_from_base
 from stereofine.render import render_final_pair
 from stereofine.settings import AppSettings
@@ -143,13 +143,15 @@ class DetailAndSaveTests(unittest.TestCase):
         app.busy_state='idle'
         return app
 
-    def test_detail_pan_fixed_steps_preserves_entire_edit_state(self):
+    def test_detail_pan_ignores_os_repeat_and_preserves_entire_edit_state(self):
         app=self.app();app.detail_active=True;app._detail_center=(1000,800)
         app._native_cache=(native_key(app.current), np.zeros((1,1,3),np.uint8), None)
         app._show_detail_preview=lambda:None
         before=deepcopy(app.current.state)
+        app.after=lambda *args:1
+        app.after_cancel=lambda *args:None
         for _ in range(9):app._on_arrow('right')
-        self.assertEqual(app._detail_center,(1000+9*DETAIL_STEP_PX,800))
+        self.assertEqual(app._detail_center,(1001,800))
         self.assertEqual(app.current.state,before)
         app._apply_native_preview=lambda:True
         app._end_detail_preview()

@@ -2,7 +2,7 @@
 
 [Downloads und SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.2) · [English](README.md) · [Änderungen](RELEASE_NOTES_1.2.md)
 
-**Version 1.2:** Optionaler verlustfreier TIFF-SBS-Export mit automatisch erhaltener Farbtiefe von 8 oder 16 Bit pro Kanal. **Z** halten zeigt die native 100-%-Ansicht; mit den Pfeiltasten wird sie schrittweise verschoben. Beim Loslassen erscheint wieder die Gesamtansicht. Vorschau und Export verwenden dieselbe Farbangleichung auf Basis des endgültigen Ausschnitts. Fehlgeschlagenes Speichern erhält die Änderungen und verhindert den Export mit alten Einstellungen.
+**Version 1.2:** Optionaler verlustfreier TIFF-SBS-Export mit automatisch erhaltener Farbtiefe von 8 oder 16 Bit pro Kanal. **Z** halten zeigt die native 100-%-Ansicht; mit den Pfeiltasten wird sie fein und beim Halten zunehmend schneller verschoben. Beim Loslassen erscheint wieder die Gesamtansicht. Vorschau und Export verwenden dieselbe Farbangleichung auf Basis des endgültigen Ausschnitts. Fehlgeschlagenes Speichern erhält die Änderungen und verhindert den Export mit alten Einstellungen.
 
 **Ausgabe und Vorschau:** „Graustufen-Anaglyphen“ und „Kreuzblick speichern“ stehen unter „Bild und Ausgabe“ und werden unabhängig von der Vorschau gespeichert. Kreuzblick wird farbig als R/L im Ordner `cross` als JPEG mit Qualität 90 und 4:4:4 exportiert. Mit **A** durchlaufen Farbig, Graustufen und Kreuzblick die Vorschau. **M** zeigt im Kreuzblick vorübergehend die zuletzt verwendete Anaglyphenansicht. Nach Beschnitt, Ausschnitt-Zoom oder Ausschnittverschiebung wird die Deviation automatisch neu gemessen; Justage und Scheinfensterrahmung bleiben erhalten. Während der Nachberechnung steht im Status „Berechne …“. Bei jedem Programmstart erscheint die farbige Anaglyphenansicht.
 
@@ -223,7 +223,7 @@ Soweit möglich kopiert StereoFine Metadaten mit dem gebündelten ExifTool. Prev
 - `A` – Farbig, Graustufen und Kreuzblick in der Vorschau durchschalten
 - `G` – Gitter durchschalten
 - `Shift+G` – Gitter aus
-- `Z` halten – native 100-%-Ansicht; `Z` + Pfeiltasten verschiebt sie in festen Schritten von 32 Pixeln mit normaler Tastenwiederholung
+- `Z` halten – native 100-%-Ansicht; `Z` + Pfeiltasten verschiebt sie bei kurzem Antippen fein und beim Halten flüssig mit Beschleunigung wie beim Messkreuz
 - `M` halten – Messkreuz anzeigen
 - `M` + Pfeiltasten – Messkreuz bewegen
 - `F11` – Vollbild

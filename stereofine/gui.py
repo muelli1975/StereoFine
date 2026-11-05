@@ -39,7 +39,9 @@ from .i18n import (
     orientation_label,
 )
 from .notifications import play_ready_sound
-from .native_preview import NativePreviewMixin
+from .native_preview import (NativePreviewMixin, native_key, pan_speed, MEASURE_REPEAT_MS,
+    MEASURE_HOLD_DELAY_MS, MEASURE_START_SPEED_PX_PER_SEC, MEASURE_MAX_SPEED_PX_PER_SEC,
+    MEASURE_ACCEL_TIME_SEC, MEASURE_MAX_DT_SEC)
 from .tooltip import attach_tooltip
 from .preview import PreviewImageCache, draw_grid_overlay, draw_measure_cross_overlay
 from .preview_render import PreviewBasePair, build_preview_base, render_preview_from_base
@@ -144,13 +146,6 @@ def _render_activity_spinner_frame(frame_index: int) -> Image.Image:
 PREVIEW_RENDER_MAX_WIDTH = 1600
 PREVIEW_RENDER_MAX_HEIGHT = 1000
 PREVIEW_RESIZE_DEBOUNCE_MS = 150
-
-MEASURE_REPEAT_MS = 16
-MEASURE_HOLD_DELAY_MS = 200
-MEASURE_START_SPEED_PX_PER_SEC = 320.0
-MEASURE_MAX_SPEED_PX_PER_SEC = 900.0
-MEASURE_ACCEL_TIME_SEC = 0.55
-MEASURE_MAX_DT_SEC = 0.050
 
 class StereoFineApp(NativePreviewMixin, ctk.CTk):
     """GUI shell over the GUI-independent processing core."""
@@ -1928,6 +1923,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self._update_preview_display()
 
     def _render_session_preview(self, session: BrowsedSource, *, start_image: bool = False) -> None:
+        if not start_image and session is self.current and self._apply_native_preview():
+            return
         base = self._ensure_preview_base(session, start_image=start_image)
         pair = render_preview_from_base(
             base,
@@ -2299,10 +2296,37 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
                         # enough feedback and does not add a Windows system chime.
                         self.start_button.configure(text=self._t("completed_short"))
                         self.after(1400, self._update_start_button_text)
-            # Reload the visible item so status and any fitted color parameters
-            # exactly match what the batch persisted.
+            # A single-image export does not change the source pixels. Adopt
+            # its saved state without replacing the session or its view caches.
+            if kind == "save" and self._adopt_saved_result(payload):
+                return
             if self.source_index is not None and self.sources:
                 self._load_source_index(self.source_index)
+
+    def _adopt_saved_result(self, payload: BatchRunResult) -> bool:
+        if self.current is None or payload.failed or len(payload.items) != 1:
+            return False
+        processed = payload.items[0].processed
+        if processed.source != self.current.source or processed.source_stamp != self.current.source_stamp:
+            return False
+        saved = load_sidecar(processed.source.sidecar_path, expected_source=processed.source_stamp)
+        if saved.status not in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
+            return False
+        previous_key = native_key(self.current)
+        previous_window = deepcopy(self.current.state.floating_window)
+        self.current.state = processed.state
+        self.current.sidecar = saved
+        self._state_dirty = False
+        self._state_dirty_can_create_sidecar = False
+        self._state_save_error = None
+        self._sync_vars_from_current()
+        self._render_status()
+        if native_key(self.current) != previous_key or self.current.state.floating_window != previous_window:
+            self._refresh_preview()
+        elif self.current.state.color.enabled and (self._native_cache is None
+                or self._native_cache[0] != native_key(self.current)):
+            self._request_native_preview()
+        return True
 
     def _finish_worker_cancelled(self) -> None:
         kind = self._finish_busy_common()
@@ -2664,9 +2688,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self._update_preview_display()
 
     def _measure_speed(self, held_seconds: float) -> float:
-        t = max(0.0, min(1.0, held_seconds / MEASURE_ACCEL_TIME_SEC))
-        t = t * t * (3.0 - 2.0 * t)
-        return MEASURE_START_SPEED_PX_PER_SEC + (MEASURE_MAX_SPEED_PX_PER_SEC - MEASURE_START_SPEED_PX_PER_SEC) * t
+        return pan_speed(held_seconds)
 
     def _measure_repeat_tick(self) -> None:
         self._measure_repeat_job = None

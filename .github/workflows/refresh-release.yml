@@ -1,4 +1,4 @@
-name: Release StereoFine 1.2 release
+name: Refresh StereoFine 1.2 release
 on:
   push:
     branches: [main]
@@ -53,8 +53,8 @@ jobs:
           checks['build_url'] = 'https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID']
           Path('release/BUILD_CHECKS.json').write_text(json.dumps(checks,indent=2)+'\n')
           PY
-      - name: Publish the new release after checking uploaded bytes
+      - name: Refresh the current release after checking uploaded bytes
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python scripts/publish_12.py
+        run: python scripts/publish_update.py --root release --config scripts/release_update_1.2.json
 

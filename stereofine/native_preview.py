@@ -8,6 +8,7 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import asdict
 import queue
+import time
 
 import customtkinter as ctk
 import numpy as np
@@ -16,11 +17,23 @@ from PIL import Image
 from .anaglyph import make_anaglyph
 from .color_profiles import transform_rgb
 from .inputs import master_to_uint8
+from .geometry import apply_floating_window_masks
 from .preview import draw_grid_overlay, draw_measure_cross_overlay
 from .render import _stable_digest, render_final_pair
 from .worker import WorkerManager, WorkerMessageKind
 
-DETAIL_STEP_PX = 32
+MEASURE_REPEAT_MS = 16
+MEASURE_HOLD_DELAY_MS = 200
+MEASURE_START_SPEED_PX_PER_SEC = 320.0
+MEASURE_MAX_SPEED_PX_PER_SEC = 900.0
+MEASURE_ACCEL_TIME_SEC = 0.55
+MEASURE_MAX_DT_SEC = 0.050
+
+
+def pan_speed(held_seconds):
+    t = max(0.0, min(1.0, held_seconds / MEASURE_ACCEL_TIME_SEC))
+    t = t * t * (3.0 - 2.0 * t)
+    return MEASURE_START_SPEED_PX_PER_SEC + (MEASURE_MAX_SPEED_PX_PER_SEC - MEASURE_START_SPEED_PX_PER_SEC) * t
 
 
 def native_key(session):
@@ -31,7 +44,6 @@ def native_key(session):
         'x': state.effective_offset_x_px, 'y': state.effective_offset_y_px,
         'framing': asdict(state.framing),
         'color': (state.color.enabled, state.color.strength),
-        'window': asdict(state.floating_window),
     }))
 
 
@@ -53,10 +65,15 @@ class NativePreviewMixin:
         self._detail_blocked_arrows = set()
         self._detail_release_id = None
         self._detail_arrow_releases = {}
+        self._detail_repeat_job = None
+        self._detail_repeat_direction = None
+        self._detail_hold_started_at = None
+        self._detail_last_tick_at = None
         self._native_worker = WorkerManager()
         self._native_job_id = None
         self._native_requested_key = None
         self._native_cache = None
+        self._native_fit_cache = None
         self._native_after_id = None
         self._native_poll_id = None
         self._native_failed_key = None
@@ -64,7 +81,7 @@ class NativePreviewMixin:
 
     def destroy(self):
         self._native_worker.cancel_all()
-        for timer in [self._native_after_id, self._native_poll_id, self._detail_release_id,
+        for timer in [self._native_after_id, self._native_poll_id, self._detail_release_id, self._detail_repeat_job,
                       *self._detail_arrow_releases.values()]:
             if timer is not None:
                 try:
@@ -100,7 +117,9 @@ class NativePreviewMixin:
         loaded, state = self.current.loaded_pair, deepcopy(self.current.state)
 
         def render(token, _progress):
-            left, right, _ = render_final_pair(loaded, state)
+            # Window masks are presentation only: keep their unmasked pixels
+            # reusable while the user adjusts an edge.
+            left, right, _ = render_final_pair(loaded, state, apply_floating_window=False)
             token.raise_if_cancelled()
             left = master_to_uint8(transform_rgb(left, loaded.icc_profile))
             right = master_to_uint8(transform_rgb(right, loaded.icc_profile))
@@ -153,11 +172,21 @@ class NativePreviewMixin:
             scale = min(1.0, 1600 / left.shape[1], 1000 / left.shape[0],
                         maxw / left.shape[1], maxh / left.shape[0])
             size = (max(1, round(left.shape[1] * scale)), max(1, round(left.shape[0] * scale)))
-            self._preview_left_current = np.asarray(Image.fromarray(left).resize(size, Image.Resampling.LANCZOS))
-            self._preview_right_current = np.asarray(Image.fromarray(right).resize(size, Image.Resampling.LANCZOS))
+            fit_key = (self._native_cache[0], size)
+            if self._native_fit_cache is None or self._native_fit_cache[0] != fit_key:
+                self._native_fit_cache = (fit_key, *[
+                    np.asarray(Image.fromarray(eye).resize(size, Image.Resampling.LANCZOS))
+                    for eye in (left, right)])
+            _, a, b = self._native_fit_cache
+            self._preview_left_current, self._preview_right_current = self._mask_preview_pair(a, b)
             self._preview_pair_shape = size
             self._build_preview_anaglyph()
         return True
+
+    def _mask_preview_pair(self, left, right, **kwargs):
+        fw = self.current.state.floating_window
+        return apply_floating_window_masks(left, right, fw.left_permille, fw.right_permille,
+                                           fw.top_permille, fw.bottom_permille, **kwargs)
 
     def _show_detail_preview(self):
         if (not self.detail_active or self._native_cache is None or self.current is None
@@ -170,6 +199,7 @@ class NativePreviewMixin:
         box, self._detail_center = detail_box(left.shape, (eye_width, maxh), self._detail_center)
         x, y, x1, y1 = box
         a, b = left[y:y1, x:x1], right[y:y1, x:x1]
+        a, b = self._mask_preview_pair(a, b, reference_size=(left.shape[1], left.shape[0]), origin=(x, y))
         if mode == 'Kreuzblick':
             eyes = [Image.fromarray(b), Image.fromarray(a)]
             if not self.measure_cross_active and self.grid_mode.get() != 'Aus':
@@ -218,6 +248,7 @@ class NativePreviewMixin:
 
     def _end_detail_preview(self):
         self._detail_release_id = None
+        self._stop_detail_repeat()
         if self.detail_active:
             self.detail_active = False
             self._detail_blocked_arrows.update(self._detail_arrows_down)
@@ -232,6 +263,8 @@ class NativePreviewMixin:
             self._detail_arrow_releases.pop(direction, None)
             self._detail_arrows_down.discard(direction)
             self._detail_blocked_arrows.discard(direction)
+            if self._detail_repeat_direction == direction:
+                self._stop_detail_repeat()
         pending = self._detail_arrow_releases.pop(direction, None)
         if pending is not None:
             self.after_cancel(pending)
@@ -243,10 +276,42 @@ class NativePreviewMixin:
             self.after_cancel(pending)
         if self.detail_active:
             self._detail_arrows_down.add(direction)
-            if self._native_cache is not None and self._detail_center is not None:
-                x, y = self._detail_center
-                dx, dy = {'left': (-1, 0), 'right': (1, 0), 'up': (0, -1), 'down': (0, 1)}[direction]
-                self._detail_center = (x + dx * DETAIL_STEP_PX, y + dy * DETAIL_STEP_PX)
-                self._show_detail_preview()
+            if self._detail_repeat_direction != direction:
+                self._stop_detail_repeat()
+                now = time.perf_counter()
+                self._detail_repeat_direction = direction
+                self._detail_hold_started_at = now
+                self._detail_last_tick_at = now
+                self._move_detail(direction, 1.)
+                self._detail_repeat_job = self.after(MEASURE_REPEAT_MS, self._detail_repeat_tick)
             return True
         return direction in self._detail_blocked_arrows
+
+    def _move_detail(self, direction, pixels):
+        if not self.detail_active or self._native_cache is None or self._detail_center is None:
+            return
+        x, y = self._detail_center
+        dx, dy = {'left': (-1, 0), 'right': (1, 0), 'up': (0, -1), 'down': (0, 1)}[direction]
+        self._detail_center = (x + dx * pixels, y + dy * pixels)
+        self._show_detail_preview()
+
+    def _stop_detail_repeat(self):
+        if self._detail_repeat_job is not None:
+            self.after_cancel(self._detail_repeat_job)
+        self._detail_repeat_job = None
+        self._detail_repeat_direction = None
+        self._detail_hold_started_at = None
+        self._detail_last_tick_at = None
+
+    def _detail_repeat_tick(self):
+        self._detail_repeat_job = None
+        if not self.detail_active or self._detail_repeat_direction is None:
+            return
+        now = time.perf_counter()
+        held = max(0., now - self._detail_hold_started_at)
+        delay = MEASURE_HOLD_DELAY_MS / 1000.
+        if held >= delay:
+            dt = max(.001, min(MEASURE_MAX_DT_SEC, now - self._detail_last_tick_at))
+            self._move_detail(self._detail_repeat_direction, pan_speed(held - delay) * dt)
+        self._detail_last_tick_at = now
+        self._detail_repeat_job = self.after(MEASURE_REPEAT_MS, self._detail_repeat_tick)
