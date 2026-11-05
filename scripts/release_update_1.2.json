@@ -6,16 +6,16 @@
   "release_id": 435146194,
   "notes_file": "RELEASE_NOTES_1.2.md",
   "assets": {
-    "BUILD_CHECKS.json": "e3c8afbb625419c75f9444d3f1da21ad8c76f375ddebfef5ee6ecebfcd076528",
-    "SHA256SUMS.txt": "1a94c6f7b8251040fe1dabb059169da0fb6d50572968e9d11e8463815d023e66",
-    "StereoFine_1.2_Linux_x64.tar.gz": "22587aae89c5b906d8249820a417df925696be1ac4acf5384c57341cb8568677",
-    "StereoFine_1.2_Linux_x64.tar.gz.sha256": "edcb6a1bb67a198a099f855c6ca6229b757c37d2b588eaac4beaa522c12dc999",
-    "StereoFine_1.2_macOS_AppleSilicon.zip": "acccd48a28258feff6c02da098f1cf0e5c7b90ba53e43d9383e82faddade7793",
-    "StereoFine_1.2_macOS_AppleSilicon.zip.sha256": "335502d7f9f75419602ed8ac0b989131b0ed0a37e3ffb231a653fa2249a72665",
-    "StereoFine_1.2_macOS_Intel.zip": "62e8735159f3b13d60f245597ce687e15eb6b9236dc305f2af26944dfc6ba900",
-    "StereoFine_1.2_macOS_Intel.zip.sha256": "e0aeb627967901ab564aa5776b334b2f04a93196433c079612da93206e38ff9c",
-    "StereoFine_1.2_Windows_x64.zip": "9e47ee9303ab16690055ea3235c4c5faad2723dc9e6123b0de084038b24fbf69",
-    "StereoFine_1.2_Windows_x64.zip.sha256": "e51650c55f1ef14e1d6c970b3ecd57ced59742f1337525baa0a4e745c77b0058"
+    "BUILD_CHECKS.json": "sha256:e3c8afbb625419c75f9444d3f1da21ad8c76f375ddebfef5ee6ecebfcd076528",
+    "SHA256SUMS.txt": "sha256:1a94c6f7b8251040fe1dabb059169da0fb6d50572968e9d11e8463815d023e66",
+    "StereoFine_1.2_Linux_x64.tar.gz": "sha256:22587aae89c5b906d8249820a417df925696be1ac4acf5384c57341cb8568677",
+    "StereoFine_1.2_Linux_x64.tar.gz.sha256": "sha256:edcb6a1bb67a198a099f855c6ca6229b757c37d2b588eaac4beaa522c12dc999",
+    "StereoFine_1.2_macOS_AppleSilicon.zip": "sha256:acccd48a28258feff6c02da098f1cf0e5c7b90ba53e43d9383e82faddade7793",
+    "StereoFine_1.2_macOS_AppleSilicon.zip.sha256": "sha256:335502d7f9f75419602ed8ac0b989131b0ed0a37e3ffb231a653fa2249a72665",
+    "StereoFine_1.2_macOS_Intel.zip": "sha256:62e8735159f3b13d60f245597ce687e15eb6b9236dc305f2af26944dfc6ba900",
+    "StereoFine_1.2_macOS_Intel.zip.sha256": "sha256:e0aeb627967901ab564aa5776b334b2f04a93196433c079612da93206e38ff9c",
+    "StereoFine_1.2_Windows_x64.zip": "sha256:9e47ee9303ab16690055ea3235c4c5faad2723dc9e6123b0de084038b24fbf69",
+    "StereoFine_1.2_Windows_x64.zip.sha256": "sha256:e51650c55f1ef14e1d6c970b3ecd57ced59742f1337525baa0a4e745c77b0058"
   },
   "replace": [
     "BUILD_CHECKS.json",
