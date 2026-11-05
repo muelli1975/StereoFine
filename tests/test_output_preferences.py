@@ -37,9 +37,11 @@ class OutputPreferencesTests(unittest.TestCase):
 
     def test_preset_labels_and_custom_text_roundtrip_in_both_languages(self):
         for language in ('de', 'en'):
-            for value in [suffix for suffix, _ in SBS_SUFFIXES]+['', '_meine Variante']:
+            self.assertEqual(suffix_labels(language), ['_s (m.objects)', '_cs (COSIMA)', '-lr (Bino)',
+                'Ohne Zusatz' if language == 'de' else 'No suffix'])
+            for value in [suffix for suffix, _ in SBS_SUFFIXES]+['', '_sbs', '_meine Variante']:
                 self.assertEqual(suffix_value(suffix_label(value, language), language), value)
-            self.assertIn('_cs (COSIMA)', suffix_labels(language))
+            self.assertEqual(suffix_label('_sbs', language), '_sbs')
             self.assertEqual(suffix_value('literal (custom)', language), 'literal (custom)')
 
     def test_suffixes_change_only_names_for_jpeg_and_full_depth_tiff(self):

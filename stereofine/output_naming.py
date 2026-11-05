@@ -5,7 +5,6 @@ import re
 
 
 SBS_SUFFIXES = (
-    ("_sbs", "StereoFine"),
     ("_s", "m.objects"),
     ("_cs", "COSIMA"),
     ("-lr", "Bino"),
