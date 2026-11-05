@@ -44,6 +44,10 @@ jobs:
         with:
           pattern: StereoFine-save-detail-*
           path: checks/save-detail
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: StereoFine-geometry-*
+          path: checks/geometry
       - name: Verify all archives and record checks
         run: |
           python scripts/release_checksums.py release

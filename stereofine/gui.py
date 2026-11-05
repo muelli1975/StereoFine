@@ -908,17 +908,23 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             muted: bool = False,
             bold: bool = False,
             height: int = 19,
+            two_lines: bool = False,
         ) -> None:
             label = ctk.CTkLabel(
                 self.status_frame,
                 text="",
                 text_color=TEXT_SECONDARY if muted else TEXT_PRIMARY,
                 font=self._font(12 if muted else 13, "bold" if bold else "normal"),
-                height=height,
+                height=38 if two_lines else height,
                 justify="left",
-                anchor="w",
+                anchor="nw" if two_lines else "w",
                 wraplength=246,
             )
+            if two_lines:
+                # CTkLabel's height is otherwise only a minimum: its inner Tk
+                # label can grow on wrapping or shrink to "Calculating ...".
+                # Reserve two full rows, including at fractional DPI scales.
+                label.grid_propagate(False)
             label.grid(row=row, column=0, sticky="ew", padx=(0, 8), pady=0)
             self._status_line_widgets[name] = label
 
@@ -933,17 +939,17 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         # change. The batch input row reserves two text lines for filename + n/N.
         add_label("input", 0, height=38)
         add_spacer(1)
-        add_label("analysis_model", 2)
+        add_label("analysis_model", 2, two_lines=True)
         add_label("vertical_error", 3)
         add_label("vertical_shift", 4)
         add_label("rotation", 5)
-        add_label("vergence", 6)
+        add_label("vergence", 6, two_lines=True)
         add_spacer(7)
         add_label("deviation", 8)
-        add_label("near_far", 9)
+        add_label("near_far", 9, two_lines=True)
         # Keep the same two-line warning on every platform, including while
         # empty, so showing it or changing language never moves controls.
-        add_label("warning", 10, muted=True, bold=True, height=32)
+        add_label("warning", 10, muted=True, bold=True, two_lines=True)
         warning = self._status_line_widgets["warning"]
         warning.grid_configure(columnspan=2)
         warning.configure(text_color=GOLD_LIGHT, wraplength=292)

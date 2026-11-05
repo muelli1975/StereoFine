@@ -9,6 +9,7 @@
 - Save cross-view JPEGs at quality 90 with 4:4:4 sampling.
 - Keep the master crop stable when toggling colour matching and recover pending previews after interrupted work.
 - Keep the preview steady when saving directly after a fresh alignment.
+- Keep status rows in place during aspect changes and deviation calculations.
 - Prevent held arrows from changing alignment after releasing the measurement or floating-window key.
 - Preserve fixed black/white curve endpoints, including when reusing existing saved curves.
 - Default new settings to Original aspect ratio and enabled symmetric colour matching, retaining saved choices.

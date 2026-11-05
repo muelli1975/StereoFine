@@ -92,6 +92,19 @@ jobs:
           path: build/gui-keyboard-filename-*.json
           if-no-files-found: error
 
+      - name: Fixed UI geometry throughout editing and calculation (Linux)
+        if: runner.os == 'Linux'
+        run: PYTHONPATH=. xvfb-run -a -s '-screen 0 4096x2400x24' python tests/gui_geometry_stability.py
+      - name: Fixed UI geometry throughout editing and calculation
+        if: runner.os != 'Linux'
+        run: python -m tests.gui_geometry_stability
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: StereoFine-geometry-${{ matrix.os }}
+          path: build/gui-geometry-stability-*.json
+          if-no-files-found: error
+
       - name: Actual save pixels, image rectangles and native pan performance (Linux)
         if: runner.os == 'Linux'
         run: PYTHONPATH=. xvfb-run -a -s '-screen 0 4096x2400x24' python tests/gui_save_detail.py

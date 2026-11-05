@@ -8,6 +8,7 @@
 
 - **Stable preview controls:** Colour matching toggles retain the same master crop. Held arrows remain protected after releasing M or a floating-window key; interrupted work resumes the latest preview. Fixed black/white curve anchors also apply to existing saved curves.
 - **Steady view after saving:** Saving directly after a fresh alignment retains the displayed preview without a temporary zoom change.
+- **Stable status layout:** Status rows retain their positions when switching aspect ratios or recalculating near and far points, including at enlarged display scales.
 - **Initial defaults:** Original aspect ratio and enabled symmetric colour matching for new settings. Existing preferences and saved image adjustments keep their chosen values.
 
 - **Output preferences:** Anaglyph saving can be switched off independently of the preview; its indented grayscale choice is retained. An editable SBS suffix list includes m.objects, COSIMA and Bino naming conventions. The standard `_sbs` suffix applies when the custom-suffix checkbox is off. Both preferences are remembered for single-image and batch exports.

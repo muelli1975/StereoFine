@@ -101,7 +101,7 @@ def main():
                     expected = expected.replace(' – ', ' –\n', 1)
                     assert warning.cget('text') == expected
                     assert warning.cget('text').count('\n') == 1
-                    assert warning.cget('height') == 32
+                    assert warning.cget('height') == 38
                     assert warning.cget('text_color') == gui.GOLD_LIGHT
                     assert warning.cget('font')[-1] == 'bold'
                     assert warning.grid_info()['columnspan'] == 2
@@ -113,7 +113,9 @@ def main():
                     assert app.traffic_label.grid_info()['column'] == 1
                     scroll_height = (app.sidebar_container.winfo_height()-app.sidebar_header.winfo_height()
                                      -app.sidebar_bottom.winfo_height())
-                    assert scroll_height > 100*widget_scale, (language, size, scroll_height)
+                    # At the minimum supported height, keep at least one whole
+                    # 42 px control plus its spacing visible in the scroll area.
+                    assert scroll_height > 50*widget_scale, (language, size, scroll_height)
                     assert app.help_footer_label.winfo_rooty()+app.help_footer_label.winfo_height() <= app.winfo_rooty()+app.winfo_height()
                     print(json.dumps(dict(language=language, size=size, scale=args.scale,
                         warning_size=[warning.winfo_width(), warning.winfo_height()],
@@ -133,10 +135,7 @@ def main():
                     app._render_status()
                     pump(app)
                     assert warning.cget('text') == ''
-                    # Hiding the separate traffic symbol can round its status
-                    # row by one pixel at fractional scaling; footer controls
-                    # and the reserved warning height must still stay fixed.
-                    assert geometry(app)[-3:] == before[-3:]
+                    assert geometry(app) == before
                     assert warning.winfo_height() == reserved_warning_height
                     state.disparity.stale = False
         finally:
