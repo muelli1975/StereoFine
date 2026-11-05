@@ -23,6 +23,13 @@ from tests.gui_cross_measurement import pump
 from tests.test_restart_alignment import RestartAlignmentTests
 
 
+def native_ready(app):
+    """Wait for both the pixels and the final viewport after a DPI resize."""
+    return (app._native_cache is not None and app._native_cache[0] == native_key(app.current)
+            and app._native_job_id is None and app._native_after_id is None
+            and app._resize_after_id is None and not app._native_views_need_resize())
+
+
 def final_correction_checks(app, checks, language):
     # Non-trivial geometry exposed the old colour-toggle crop change.
     app.current.state.alignment.valid = True
@@ -32,8 +39,7 @@ def final_correction_checks(app, checks, language):
         app.current.state.framing.crop_zoom_index = 1
         app.current.state.color.enabled = False
         app._sync_vars_from_current(); app._refresh_preview(rebuild_base=True)
-        pump(app, lambda: app._native_cache is not None and app._native_cache[0] == native_key(app.current)
-             and app._native_job_id is None and not app._native_views_need_resize())
+        pump(app, lambda: native_ready(app))
         geometry = native_geometry_key(app.current)
         for mode in ('Farbig', 'Graustufen', 'Kreuzblick'):
             app.preview_mode.set(mode); app._on_preview_mode_changed()
@@ -46,8 +52,7 @@ def final_correction_checks(app, checks, language):
                 np.testing.assert_array_equal(app._preview_left_current, masked[0])
                 assert native_geometry_key(app.current) == geometry
                 stable = app._preview_pil.copy()
-                pump(app, lambda: app._native_cache is not None and app._native_cache[0] == native_key(app.current)
-                     and app._native_job_id is None)
+                pump(app, lambda: native_ready(app))
                 assert app._preview_pair_shape == shape
                 np.testing.assert_array_equal(np.asarray(app._preview_pil), np.asarray(stable))
             np.testing.assert_array_equal(np.asarray(app._preview_pil), np.asarray(off))
@@ -109,15 +114,13 @@ def main():
                     assert app.settings.tiff_sbs
                     assert app.tiff_sbs_box.cget('text')==app._t('tiff_sbs')
                     app.preview_mode.set('Kreuzblick');app._on_preview_mode_changed()
-                    pump(app,lambda:app._native_cache is not None and
-                         app._native_cache[0]==native_key(app.current))
+                    pump(app,lambda:native_ready(app))
                     before=deepcopy(app.current.state)
                     for scale in (1.,1.25,1.5,2.):
                         ctk.set_widget_scaling(scale);ctk.set_window_scaling(scale)
                         app.geometry('1400x900');app.update()
                         app._on_detail_press()
-                        pump(app,lambda:app._native_cache is not None and
-                             app._native_cache[0]==native_key(app.current))
+                        pump(app,lambda:native_ready(app))
                         app._show_detail_preview()
                         image=app._preview_ctk_image.cget('light_image')
                         factor=app.preview_label._get_widget_scaling()
@@ -151,8 +154,7 @@ def main():
                     app.current.state.color.enabled=True
                     app.current.state.framing.aspect='1:1'
                     app._refresh_preview()
-                    pump(app,lambda:app._native_cache is not None and
-                         app._native_cache[0]==native_key(app.current))
+                    pump(app,lambda:native_ready(app))
                     expected=deepcopy(app.current.state)
                     render_final_pair(app.current.loaded_pair,expected)
                     assert app.current.state.color.parameters==expected.color.parameters
@@ -167,7 +169,9 @@ def main():
                         since=time.monotonic()
                         pump(app,lambda:time.monotonic()-since>.4)
                         np.testing.assert_array_equal(np.asarray(app._preview_pil),np.asarray(stable))
-                        assert app._native_cache is cached
+                        assert app._native_cache is cached, ('Unexpected render during mask-only edits',
+                            app._native_running_key, native_key(app.current), app._native_after_id,
+                            app._native_job_id, app._native_views[4], app._preview_bounds())
                     # The detail view has the same timed acceleration as M.
                     app._on_detail_press()
                     app._detail_center=(app._native_cache[1].shape[1]/2,app._native_cache[1].shape[0]/2)
@@ -246,7 +250,7 @@ def main():
                 app.current.state.color.enabled=True
                 app.sources,app.source_index=[source],0
                 app._sync_vars_from_current();app._refresh_control_states();app._refresh_preview()
-                pump(app,lambda:app._native_cache is not None and app._native_cache[0]==native_key(app.current))
+                pump(app,lambda:native_ready(app))
                 app._adjust_floating_edge('bottom',5-app.current.state.floating_window.bottom_permille)
                 app._detail_center=(179,117)
                 app._effective_output_folder=lambda _root:Path(td)/'output'
