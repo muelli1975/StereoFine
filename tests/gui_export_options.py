@@ -2,6 +2,7 @@
 from copy import deepcopy
 from pathlib import Path
 import time
+import sys
 from unittest.mock import patch
 
 import customtkinter as ctk
@@ -89,8 +90,12 @@ def check_export_options(app, checks, language):
 
     # No focus recovery in the test: the actual exit action must restore keys.
     assert_image_keys_work()
-    for sequence in ('<KP_Enter>', '<Escape>', '<Tab>', '<Shift-Tab>'):
+    # Win32 Tk maps both Enter keys to Return; KP_Enter has no virtual keycode
+    # there (tk/win/tkWinKey.c). Generate the platform's actual native symbol.
+    keypad_enter = '<Return>' if sys.platform == 'win32' else '<KP_Enter>'
+    for sequence in (keypad_enter, '<Escape>', '<Tab>', '<Shift-Tab>'):
         edit()
+        print(f'Suffix focus exit: {language} {sequence}', flush=True)
         entry.event_generate(sequence)
         assert_image_keys_work()
     edit('invalid?')
@@ -115,14 +120,14 @@ def check_export_options(app, checks, language):
         target.event_generate('<ButtonRelease-1>', x=5, y=5)
         assert_image_keys_work()
     edit()
-    app.save_anaglyph_box.invoke()
+    app.save_anaglyph_box.toggle()
     assert_image_keys_work()
-    app.save_anaglyph_box.invoke()
+    app.save_anaglyph_box.toggle()
     edit()
-    app.custom_sbs_suffix_box.invoke()
+    app.custom_sbs_suffix_box.toggle()
     assert app.sbs_suffix_menu.cget('state') == 'disabled'
     assert_image_keys_work()
-    app.custom_sbs_suffix_box.invoke()
+    app.custom_sbs_suffix_box.toggle()
     # A different option menu and a cancelled native-dialog action must also
     # relinquish the editor, before their command is executed.
     edit()
