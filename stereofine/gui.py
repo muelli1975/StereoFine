@@ -348,7 +348,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         button = ctk.CTkButton(
             parent,
             text=text,
-            command=command,
+            command=self._image_control_command(command),
             fg_color=SECONDARY_BG,
             hover_color=HOVER_BG,
             border_color=BORDER,
@@ -366,7 +366,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         button = ctk.CTkButton(
             parent,
             text=text,
-            command=command,
+            command=self._image_control_command(command),
             fg_color=SECONDARY_BG,
             hover_color=GOLD_LIGHT,
             border_color=GOLD_DARK,
@@ -384,7 +384,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             parent,
             text=text,
             variable=variable,
-            command=command,
+            command=self._image_control_command(command),
             fg_color=GOLD_DARK,
             hover_color=GOLD_LIGHT,
             border_color=BORDER,
@@ -403,7 +403,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             parent,
             values=values,
             variable=variable,
-            command=command,
+            command=self._image_control_command(command),
             fg_color=PANEL_BG,
             button_color=HOVER_BG,
             button_hover_color=BORDER,
@@ -622,6 +622,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self.sbs_suffix_menu.bind("<FocusIn>", lambda _e: self._reset_keyboard_modes(), add="+")
         self.sbs_suffix_menu.bind("<Return>", self._on_sbs_suffix_return, add="+")
         self.sbs_suffix_menu.bind("<KP_Enter>", self._on_sbs_suffix_return, add="+")
+        self.sbs_suffix_menu.bind("<Escape>", self._on_sbs_suffix_escape, add="+")
+        for sequence in ("<Tab>", "<Shift-Tab>", "<ISO_Left_Tab>"):
+            self.sbs_suffix_menu.bind(sequence, self._on_sbs_suffix_return, add="+")
 
         self.save_anaglyph_box = self._checkbox(
             self.sidebar, self._t("save_anaglyph"), self.save_anaglyph, self._on_export_options_changed,
@@ -675,7 +678,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
                 variable=self.preview_mode,
                 width=1,
                 value=value,
-                command=self._on_preview_mode_changed,
+                command=self._image_control_command(self._on_preview_mode_changed),
                 fg_color=GOLD_DARK,
                 hover_color=GOLD_LIGHT,
                 border_color=BORDER,
@@ -702,7 +705,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
                 text=text,
                 variable=self.grid_mode,
                 value=value,
-                command=self._on_grid_mode_changed,
+                command=self._image_control_command(self._on_grid_mode_changed),
                 fg_color=GOLD_DARK,
                 hover_color=GOLD_LIGHT,
                 border_color=BORDER,
@@ -1159,6 +1162,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             self._set_checkbox_enabled(self.gray_anaglyph_box, not busy and bool(self.save_anaglyph.get()))
         if hasattr(self, "sbs_suffix_menu"):
             enabled = not busy and bool(self.use_custom_sbs_suffix.get())
+            if not enabled:
+                self._release_sbs_suffix_focus()
             self.sbs_suffix_menu.configure(
                 state="normal" if enabled else "disabled",
                 text_color=TEXT_PRIMARY if enabled else TEXT_DISABLED,
@@ -1360,14 +1365,43 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         return True
 
     def _on_sbs_suffix_selected(self, _value=None) -> None:
-        self._commit_sbs_suffix(show_error=True)
+        if self._commit_sbs_suffix(show_error=True):
+            self.focus_set()
 
     def _on_sbs_suffix_edited(self, _event=None) -> None:
         self._commit_sbs_suffix()
 
     def _on_sbs_suffix_return(self, _event=None):
-        self._commit_sbs_suffix(show_error=True)
+        if self._commit_sbs_suffix(show_error=True):
+            self.focus_set()
         return "break"
+
+    def _on_sbs_suffix_escape(self, _event=None):
+        # Valid edits are saved as they are typed; discard only invalid text.
+        self._commit_sbs_suffix()
+        self.sbs_suffix_display.set(suffix_label(self.settings.sbs_suffix, self.settings.language))
+        self.focus_set()
+        return "break"
+
+    def _release_sbs_suffix_focus(self) -> None:
+        menu = getattr(self, "sbs_suffix_menu", None)
+        if menu is not None and self.focus_get() is menu._entry:
+            self.focus_set()
+
+    def _image_control_command(self, command):
+        if command is None:
+            return None
+        def dispatch(*args, **kwargs):
+            # Release before opening a dialog, so Tk cannot restore the editor
+            # as the dialog's previous focus when it closes.
+            self._release_sbs_suffix_focus()
+            return command(*args, **kwargs)
+        return dispatch
+
+    def _on_control_pointer(self, event) -> None:
+        menu = getattr(self, "sbs_suffix_menu", None)
+        if menu is not None and event.widget is not menu._entry:
+            self._release_sbs_suffix_focus()
 
     def _on_export_options_changed(self) -> None:
         self._commit_sbs_suffix()
@@ -2312,6 +2346,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             self._render_status()
             self._refresh_control_states()
             self._schedule_disparity_refresh()
+            self._release_sbs_suffix_focus()
             return
 
         if kind == "analysis" and isinstance(payload, ProcessedSource):
@@ -2447,7 +2482,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             # Let Tk's entry bindings edit text without also changing the image.
             widget = getattr(event, "widget", None)
             try:
-                if widget.winfo_class() in {"Entry", "TEntry", "TCombobox", "Text", "Spinbox", "TSpinbox"}:
+                if (widget.winfo_class() in {"Entry", "TEntry", "TCombobox", "Text", "Spinbox", "TSpinbox"}
+                        and widget.cget("state") != "disabled"):
                     return None
             except (AttributeError, tk.TclError):
                 pass
@@ -2455,6 +2491,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         return dispatch
 
     def _bind_shortcuts(self) -> None:
+        self.bind("<ButtonPress>", self._on_control_pointer, add="+")
+        self.bind("<MouseWheel>", self._on_control_pointer, add="+")
         self.bind("<FocusOut>", self._on_keyboard_focus_out, add="+")
         self.bind("<Unmap>", self._on_keyboard_unmap, add="+")
         bind_all = lambda sequence, callback: self.bind_all(sequence, self._shortcut_handler(callback))

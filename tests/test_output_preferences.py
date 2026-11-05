@@ -118,10 +118,57 @@ class OutputPreferencesTests(unittest.TestCase):
         calls = []
         guarded = app._shortcut_handler(lambda event: calls.append(event))
         for kind in ('Entry', 'TEntry', 'TCombobox', 'Text', 'Spinbox'):
-            self.assertIsNone(guarded(SimpleNamespace(widget=SimpleNamespace(winfo_class=lambda: kind))))
+            self.assertIsNone(guarded(SimpleNamespace(widget=SimpleNamespace(
+                winfo_class=lambda: kind, cget=lambda key: 'normal'))))
         self.assertFalse(calls)
-        guarded(SimpleNamespace(widget=SimpleNamespace(winfo_class=lambda: 'Label')))
+        guarded(SimpleNamespace(widget=SimpleNamespace(winfo_class=lambda: 'Entry',
+                                                      cget=lambda key: 'disabled')))
         self.assertEqual(len(calls), 1)
+        guarded(SimpleNamespace(widget=SimpleNamespace(winfo_class=lambda: 'Label')))
+        self.assertEqual(len(calls), 2)
+
+    def test_suffix_confirmation_and_selection_return_to_image_controls(self):
+        gui = _import_gui_without_customtkinter_runtime()
+        app = object.__new__(gui.StereoFineApp)
+        focus = []
+        app.focus_set = lambda: focus.append('image')
+        app._commit_sbs_suffix = lambda **kw: True
+        self.assertEqual(app._on_sbs_suffix_return(), 'break')
+        app._on_sbs_suffix_selected()
+        self.assertEqual(focus, ['image', 'image'])
+        app._commit_sbs_suffix = lambda **kw: False
+        app._on_sbs_suffix_return()
+        self.assertEqual(focus, ['image', 'image'])
+
+    def test_other_actions_release_editor_before_running_their_command(self):
+        gui = _import_gui_without_customtkinter_runtime()
+        app = object.__new__(gui.StereoFineApp)
+        entry, other = object(), object()
+        app.sbs_suffix_menu = SimpleNamespace(_entry=entry)
+        focused = [entry]
+        app.focus_get = lambda: focused[0]
+        app.focus_set = lambda: focused.__setitem__(0, app)
+        calls = []
+        command = app._image_control_command(lambda value: calls.append((focused[0], value)) or 42)
+        self.assertEqual(command('selection'), 42)
+        self.assertEqual(calls, [(app, 'selection')])
+        focused[0] = other
+        command('unchanged')
+        self.assertIs(focused[0], other)
+        self.assertIsNone(app._image_control_command(None))
+
+    def test_pointer_keeps_typing_only_inside_the_suffix_entry(self):
+        gui = _import_gui_without_customtkinter_runtime()
+        app = object.__new__(gui.StereoFineApp)
+        entry = object()
+        app.sbs_suffix_menu = SimpleNamespace(_entry=entry)
+        focused = [entry]
+        app.focus_get = lambda: focused[0]
+        app.focus_set = lambda: focused.__setitem__(0, app)
+        app._on_control_pointer(SimpleNamespace(widget=entry))
+        self.assertIs(focused[0], entry)
+        app._on_control_pointer(SimpleNamespace(widget=object()))
+        self.assertIs(focused[0], app)
 
     def test_partial_cache_status_does_not_expose_internal_version_mismatches(self):
         for language, expected in (('de', 'Einstellungen: Geladen'), ('en', 'Settings: Loaded')):

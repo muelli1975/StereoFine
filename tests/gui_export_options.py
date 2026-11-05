@@ -1,6 +1,8 @@
 """Native widget-state, text-entry and output-option integration checks."""
 from copy import deepcopy
 from pathlib import Path
+import time
+from unittest.mock import patch
 
 import customtkinter as ctk
 from PIL import ImageGrab
@@ -69,8 +71,78 @@ def check_export_options(app, checks, language):
     entry.event_generate('<KeyRelease-Return>')
     assert app.settings.sbs_suffix == '_mein_sbs'
     assert app.busy_state == 'idle'
-    app.focus_force()
-    app.update()
+    def assert_image_keys_work():
+        app.update()
+        focused = app.focus_get()
+        assert focused is not None and focused is not entry, str(focused)
+        before_x = app.current.state.manual.delta_x_px
+        focused.event_generate('<KeyPress-Right>')
+        focused.event_generate('<KeyRelease-Right>')
+        app.update()
+        assert app.current.state.manual.delta_x_px == before_x+1
+
+    def edit(text='_mein_sbs'):
+        entry.focus_force()
+        app.update()
+        app.sbs_suffix_display.set(text)
+        assert app.focus_get() is entry
+
+    # No focus recovery in the test: the actual exit action must restore keys.
+    assert_image_keys_work()
+    for sequence in ('<KP_Enter>', '<Escape>', '<Tab>', '<Shift-Tab>'):
+        edit()
+        entry.event_generate(sequence)
+        assert_image_keys_work()
+    edit('invalid?')
+    with patch('stereofine.gui.messagebox.showerror') as error:
+        entry.event_generate('<Return>')
+        app.update()
+        assert error.call_count == 1
+        assert app.focus_get() is entry
+        assert app.busy_state == 'idle'
+    entry.event_generate('<Escape>')
+    assert app.sbs_suffix_display.get() == '_mein_sbs'
+    assert_image_keys_work()
+    # Invoke the real menu entry callbacks, including the no-suffix option.
+    for index, expected in enumerate(('_s', '_cs', '-lr', '')):
+        edit()
+        app.sbs_suffix_menu._dropdown_menu.invoke(index)
+        assert app.settings.sbs_suffix == expected
+        assert_image_keys_work()
+    for target in (app.preview_label._label, app.preview_frame, app.output_path_label._label):
+        edit()
+        target.event_generate('<ButtonPress-1>', x=5, y=5)
+        target.event_generate('<ButtonRelease-1>', x=5, y=5)
+        assert_image_keys_work()
+    edit()
+    app.save_anaglyph_box.invoke()
+    assert_image_keys_work()
+    app.save_anaglyph_box.invoke()
+    edit()
+    app.custom_sbs_suffix_box.invoke()
+    assert app.sbs_suffix_menu.cget('state') == 'disabled'
+    assert_image_keys_work()
+    app.custom_sbs_suffix_box.invoke()
+    # A different option menu and a cancelled native-dialog action must also
+    # relinquish the editor, before their command is executed.
+    edit()
+    app.analysis_method_menu._dropdown_menu.invoke(0)
+    assert_image_keys_work()
+    edit()
+    with patch('stereofine.gui.filedialog.askdirectory', return_value=''):
+        app.choose_output_button.invoke()
+    assert_image_keys_work()
+    # Exercise the real source-loading worker, not a test-only session swap.
+    source = app.current.source
+    edit()
+    app._set_source_collection([source], 0, batch=False)
+    deadline = time.monotonic()+30
+    while app.busy_state != 'idle' and time.monotonic() < deadline:
+        app.update()
+        time.sleep(.01)
+    assert app.busy_state == 'idle'
+    assert app.current.source == source
+    assert_image_keys_work()
     for busy in ('save', 'batch', 'analysis', 'idle'):
         app.busy_state = busy
         app._refresh_control_states()
@@ -97,4 +169,7 @@ def check_export_options(app, checks, language):
     app._reset_keyboard_modes()
     checks.append(dict(language=language, optional_anaglyph_retains_grayscale=True,
                        custom_suffix_preserved=True, text_entry_never_edits_image=True,
+                       enter_escape_tab_restore_image_keys=True, suffix_selection_restores_image_keys=True,
+                       outside_clicks_and_other_actions_restore_image_keys=True,
+                       source_loading_restores_image_keys=True,
                        disabled_colors_match_shared_palette=True, output_options_dpi_checked=True))
