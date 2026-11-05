@@ -46,6 +46,7 @@ def _oriented_pair(loaded: LoadedStereoPair, state: PairState) -> tuple[np.ndarr
 
 def _color_basis(state: PairState, left: np.ndarray, right: np.ndarray) -> dict[str, Any]:
     return {
+        "sampling_version": 2,
         "input_transform": asdict(state.input_transform),
         "alignment_correction_sha256": _stable_digest(reproducible_alignment_correction(state.alignment.correction) or {}),
         "effective_offset_x_px": int(state.effective_offset_x_px),
@@ -140,3 +141,4 @@ def render_final_pair(
         color_refit=color_refit,
         color_applied=color_applied,
     )
+

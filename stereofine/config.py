@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 APP_NAME = "StereoFine"
-APP_VERSION = "1.1"
+APP_VERSION = "1.2"
 SIDECAR_SCHEMA_VERSION = 3
 
 # Pipeline versions are intentionally separate from the app version so a later
@@ -9,7 +9,7 @@ SIDECAR_SCHEMA_VERSION = 3
 INPUT_PIPELINE_VERSION = "sf-input-2"
 ALIGNMENT_PIPELINE_VERSION = "sf-align-5"
 DISPARITY_PIPELINE_VERSION = "sf-disparity-6"
-COLOR_PIPELINE_VERSION = "sf-color-1"
+COLOR_PIPELINE_VERSION = "sf-color-2"
 ANAGLYPH_PIPELINE_VERSION = "sf-anaglyph-1"
 
 # Validated project baselines from the previous StereoFine test rounds.
@@ -24,6 +24,7 @@ DEVIATION_GREEN_MAX_PERMILLE = 33.0
 DEVIATION_ORANGE_MAX_PERMILLE = 40.0
 
 SBS_JPEG_QUALITY = 95
+CROSS_JPEG_QUALITY = 90
 ANAGLYPH_JPEG_QUALITY = 90
 ANAGLYPH_TARGET_HEIGHT = 2160
 
@@ -70,3 +71,4 @@ GRID_DIVISIONS_BY_SPACING = {
 CROP_ZOOM_LEVELS = (1.00, 1.05, 1.10, 1.15, 1.25, 1.40, 1.60, 1.80, 2.00)
 
 ANALYSIS_REPORT_FILENAME = "stereofine_analysis.txt"
+

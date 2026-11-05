@@ -39,6 +39,7 @@ class LoadedStereoPair:
     right_source_height: int
     left_entity: int | None = None
     right_entity: int | None = None
+    icc_profile: bytes | None = None
 
 
 def is_image_file(path: Path) -> bool:
@@ -182,6 +183,17 @@ def load_master_image(path: Path) -> np.ndarray:
     return np.ascontiguousarray(rgb)
 
 
+def master_profile(path: Path) -> bytes | None:
+    # These readers have already normalized their pixels to sRGB.
+    if path.suffix.lower() in SUPPORTED_HEIF_EXTENSIONS | {'.webp', '.bmp'}:
+        return None
+    try:
+        with Image.open(path) as image:
+            return image.info.get('icc_profile') or None
+    except OSError as exc:
+        raise InputError(f'Farbprofil konnte nicht gelesen werden: {path}') from exc
+
+
 def master_to_uint8(image: np.ndarray) -> np.ndarray:
     """Create the explicit 8-bit proxy used by preview/feature/disparity code."""
     if image.dtype == np.uint8:
@@ -210,6 +222,10 @@ def load_pair(left_path: Path, right_path: Path) -> LoadedStereoPair:
     # Transactional load: do not publish either half until both are valid.
     left = load_master_image(left_path)
     right = load_master_image(right_path)
+    from .color_profiles import promote_pair, transform_rgb
+    left, right = promote_pair(left, right)
+    profile = master_profile(left_path)
+    right = transform_rgb(right, master_profile(right_path), profile)
     left_size = (left.shape[1], left.shape[0])
     right_size = (right.shape[1], right.shape[0])
     left, right = center_crop_to_common_size(left, right)
@@ -219,6 +235,7 @@ def load_pair(left_path: Path, right_path: Path) -> LoadedStereoPair:
         left_path=left_path,
         right_path=right_path,
         kind="pair",
+        icc_profile=profile,
         source_width=left.shape[1],
         source_height=left.shape[0],
         left_source_width=left_size[0],
@@ -244,7 +261,8 @@ def load_full_sbs(path: Path) -> LoadedStereoPair:
     left, right = center_crop_to_common_size(left, right)
     return LoadedStereoPair(
         left, right, path, path, "full_sbs", left.shape[1], left.shape[0],
-        left_size[0], left_size[1], right_size[0], right_size[1]
+        left_size[0], left_size[1], right_size[0], right_size[1],
+        icc_profile=master_profile(path),
     )
 
 
@@ -271,7 +289,8 @@ def load_mpo(path: Path) -> LoadedStereoPair:
     left, right = center_crop_to_common_size(left, right)
     return LoadedStereoPair(
         left, right, path, path, "mpo", left.shape[1], left.shape[0],
-        left_size[0], left_size[1], right_size[0], right_size[1]
+        left_size[0], left_size[1], right_size[0], right_size[1],
+        icc_profile=master_profile(path),
     )
 
 
@@ -399,3 +418,4 @@ def build_lr_dir_pair_sequence(root: Path) -> list[tuple[Path, Path]]:
         if right is not None:
             pairs.append((left, right))
     return pairs
+

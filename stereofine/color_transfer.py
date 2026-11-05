@@ -66,10 +66,8 @@ def _sample_rgb(image: np.ndarray, max_samples: int) -> np.ndarray:
     count = flat.shape[0]
     if count <= max_samples:
         return flat
-    # Deterministic stride sampling. No random state, no hidden non-reproducibility.
-    step = max(1, count // max_samples)
-    sampled = flat[::step]
-    return sampled[:max_samples]
+    # Cover the entire frame, including the final rows, at every sample budget.
+    return flat[np.linspace(0, count - 1, max_samples, dtype=np.intp)]
 
 
 def _strict_interp_knots(source: np.ndarray, target: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -248,3 +246,4 @@ def symmetric_color_match(
     )
     left_out, right_out = apply_symmetric_color_transfer(left, right, transfer, strength=strength)
     return left_out, right_out, transfer
+

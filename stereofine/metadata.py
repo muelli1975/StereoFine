@@ -27,7 +27,9 @@ def find_exiftool_path() -> Path | None:
     return Path(found) if found else None
 
 
-def copy_metadata_without_preview_or_orientation(src_path: Path | None, dst_path: Path) -> MetadataCopyResult:
+def copy_metadata_without_preview_or_orientation(src_path: Path | None, dst_path: Path, *,
+                                                preserve_output_profile: bool = False,
+                                                output_srgb: bool = False) -> MetadataCopyResult:
     """Copy useful metadata while excluding preview, Orientation and MPO/MPF container data."""
     if src_path is None or not src_path.is_file():
         return MetadataCopyResult(False, False, "Keine gültige Metadatenquelle.")
@@ -47,6 +49,12 @@ def copy_metadata_without_preview_or_orientation(src_path: Path | None, dst_path
         normalized_sdr = src_path.suffix.lower() in SUPPORTED_HEIF_EXTENSIONS | {'.webp', '.bmp'}
         color_arguments = (["--ICC_Profile", "-ICC_Profile=", "-EXIF:ColorSpace#=1",
                             "-InteropIndex#=R98"] if normalized_sdr else [])
+        if preserve_output_profile:
+            # Exclude the source ICC; keep the profile already embedded by the
+            # writer, including native-precision TIFF working-space samples.
+            color_arguments = ["--ICC_Profile", "--EXIF:ColorSpace", "--InteropIndex",
+                               "-EXIF:ColorSpace#=" + ('1' if output_srgb else '65535'),
+                               "-InteropIndex=" + ('R98' if output_srgb else '')]
         completed = subprocess.run(
             [
                 str(exiftool_path),
@@ -72,3 +80,4 @@ def copy_metadata_without_preview_or_orientation(src_path: Path | None, dst_path
         detail = (completed.stderr or completed.stdout or "ExifTool meldete einen Fehler.").strip()
         return MetadataCopyResult(True, False, detail)
     return MetadataCopyResult(True, True, (completed.stdout or "").strip())
+

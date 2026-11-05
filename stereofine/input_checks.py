@@ -89,6 +89,29 @@ def check_inputs(destination: Path, fixtures: Path) -> None:
             assert image.shape == (4032, 3024, 3)
             checks.append({'source': 'arrow.heic', 'oriented_shape': list(image.shape),
                            'pixel_sha256': hashlib.sha256(image.tobytes()).hexdigest()})
+        # Exercise the frozen writer and the bundled native colour library.
+        import tifffile
+        from PIL import ImageCms, JpegImagePlugin
+        from .color_profiles import transform_rgb
+        profile=ImageCms.ImageCmsProfile(ImageCms.createProfile('sRGB')).tobytes()
+        for dtype in (np.uint8,np.uint16):
+            maximum=np.iinfo(dtype).max
+            master=np.linspace(0,maximum,6000,dtype=dtype).reshape(40,50,3)
+            converted=transform_rgb(master,profile)
+            assert converted.dtype==dtype
+            if dtype==np.uint16:
+                assert len(np.unique(converted))>256
+            result=save_pair_outputs(master,master,root/'native-output',np.dtype(dtype).name,
+                                     tiff_sbs=True,icc_profile=profile,save_cross=True)
+            np.testing.assert_array_equal(tifffile.imread(result.sbs_path),
+                                          np.concatenate([master,master],axis=1))
+            with tifffile.TiffFile(result.sbs_path) as image:
+                assert image.pages[0].tags[34675].value==profile
+            with Image.open(result.cross_path) as image:
+                assert JpegImagePlugin.get_sampling(image)==0
+            checks.append(dict(native_tiff=True,bits=np.dtype(dtype).itemsize*8,
+                               icc_profile=True,native_cms=True,cross_jpeg=True))
     import sys
     assert 'pillow_heif' not in sys.modules
     destination.write_text(json.dumps({'ok': True, 'codec_isolated': True, 'checks': checks}, indent=2)+'\n', 'utf-8')
+

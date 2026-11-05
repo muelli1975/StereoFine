@@ -437,7 +437,8 @@ def process_source(
             state,
             max_width=max(1, int(options.preview_max_width)),
             max_height=max(1, int(options.preview_max_height)),
-            apply_color=True,
+            apply_color=False,
+            icc_profile=loaded.icc_profile,
         )
         preview = render_preview_from_base(
             base,
@@ -490,3 +491,4 @@ def process_batch_analysis(
             result.failed.append((source, str(exc)))
     token.raise_if_cancelled()
     return result
+

@@ -9,7 +9,6 @@ from .color_transfer import (
     COLOR_METHOD,
     SymmetricColorTransfer,
     apply_symmetric_color_transfer,
-    fit_symmetric_color_transfer,
 )
 from .config import CROP_ZOOM_LEVELS
 from .geometry import (
@@ -25,12 +24,10 @@ from .state import PairState
 
 @dataclass(frozen=True)
 class PreviewBasePair:
-    """Reduced reusable base for the interactive preview.
+    """Reduced oriented and aligned working-space images, before colour/crop.
 
-    Orientation, automatic geometry and (when enabled) the preview color
-    transfer are prepared once.  Manual nudges, crop/framing and floating-window
-    masks can then update without touching the expensive master-image path.
-    This is the responsiveness model used by the stable v41 preview.
+    Interactive geometry uses this cached base immediately. Native colour fits
+    are prepared separately from the final master crop and applied afterwards.
     """
 
     left: np.ndarray
@@ -38,6 +35,7 @@ class PreviewBasePair:
     scale: float
     original_aspect: float
     color_applied: bool = False
+    icc_profile: bytes | None = None
 
 
 @dataclass(frozen=True)
@@ -87,6 +85,7 @@ def build_preview_base_from_oriented_pair(
     max_width: int,
     max_height: int,
     apply_color: bool = True,
+    icc_profile: bytes | None = None,
 ) -> PreviewBasePair:
     """Build a reduced preview base from an already oriented/cropped pair.
 
@@ -102,26 +101,13 @@ def build_preview_base_from_oriented_pair(
         correction = scale_correction_for_preview(state.alignment.correction, scale)
         left, right = warp_pair_symmetric(left, right, correction)
 
-    color_applied = False
-    if apply_color and state.color.enabled:
-        transfer: SymmetricColorTransfer | None = None
-        if state.color.valid and state.color.method == COLOR_METHOD:
-            try:
-                transfer = SymmetricColorTransfer.from_dict(state.color.parameters)
-            except Exception:
-                transfer = None
-        if transfer is None:
-            # Preview-only fit: small, bounded and cached with this base.
-            transfer = fit_symmetric_color_transfer(left, right, max_samples=100_000)
-        left, right = apply_symmetric_color_transfer(left, right, transfer, strength=state.color.strength)
-        color_applied = True
-
     return PreviewBasePair(
         np.ascontiguousarray(left),
         np.ascontiguousarray(right),
         float(scale),
         float(original_aspect),
-        color_applied=color_applied,
+        color_applied=False,
+        icc_profile=icc_profile,
     )
 
 
@@ -133,23 +119,28 @@ def build_preview_base(
     max_height: int,
     apply_color: bool = True,
 ) -> PreviewBasePair:
-    """Build the reusable expensive half of the interactive preview.
+    """Prepare a reduced geometry base, optionally fitting native colour first.
 
-    The color transfer is intentionally applied to this reduced aligned base
-    once instead of being re-fitted/re-applied on every arrow-key nudge.  Final
-    export still uses :func:`render_final_pair` and therefore keeps the exact
-    full-resolution color basis.
+    GUI callers disable the synchronous fit and use their coalesced background
+    renderer. Other callers receive curves based on the same final master crop.
     """
 
+    if apply_color and state.color.enabled:
+        # Fit on the exact final master crop. GUI callers request an uncoloured
+        # base and prepare these same parameters on their background renderer.
+        from .render import render_final_pair
+        render_final_pair(loaded, state, apply_floating_window=False)
     left, right = _oriented_proxy_pair(loaded, state)
-    return build_preview_base_from_oriented_pair(
+    base = build_preview_base_from_oriented_pair(
         left,
         right,
         state,
         max_width=max_width,
         max_height=max_height,
-        apply_color=apply_color,
+        apply_color=False,
     )
+    from dataclasses import replace
+    return replace(base, icc_profile=loaded.icc_profile)
 
 
 def render_preview_from_base(
@@ -180,7 +171,7 @@ def render_preview_from_base(
         base.original_aspect,
     )
 
-    # Compatibility fallback for callers that built a base without color.
+    # Apply prepared final-crop curves; never refit from reduced preview pixels.
     if apply_color and state.color.enabled and not base.color_applied:
         transfer: SymmetricColorTransfer | None = None
         if state.color.valid and state.color.method == COLOR_METHOD:
@@ -188,9 +179,12 @@ def render_preview_from_base(
                 transfer = SymmetricColorTransfer.from_dict(state.color.parameters)
             except Exception:
                 transfer = None
-        if transfer is None:
-            transfer = fit_symmetric_color_transfer(left, right, max_samples=100_000)
-        left, right = apply_symmetric_color_transfer(left, right, transfer, strength=state.color.strength)
+        if transfer is not None:
+            left, right = apply_symmetric_color_transfer(left, right, transfer, strength=state.color.strength)
+
+    from .color_profiles import transform_rgb
+    left = transform_rgb(left, base.icc_profile)
+    right = transform_rgb(right, base.icc_profile)
 
     if apply_floating_window:
         fw = state.floating_window.normalize()
@@ -226,3 +220,4 @@ def render_preview_pair(
         apply_color=apply_color,
         apply_floating_window=apply_floating_window,
     )
+

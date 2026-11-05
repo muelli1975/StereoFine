@@ -12,6 +12,8 @@ StereoFine's own source code and original documentation are licensed under the M
 | darkdetect | 0.8.0 | CustomTkinter dependency | `licenses/darkdetect-0.8.0-LICENSE.txt` |
 | NumPy | 2.4.6 | Numerical processing | `licenses/NumPy-2.4.6-LICENSE.txt` |
 | OpenCV-Python | 4.13.0.92 | Feature matching, geometry, disparity and image I/O | `licenses/OpenCV-Python-4.13.0.92-LICENSE.txt` and `licenses/OpenCV-Python-4.13.0.92-THIRD-PARTY.txt` |
+| LittleCMS | 2.19.1 | Native RGB ICC transforms in 8/16 bits; core library only (MIT) | `licenses/LittleCMS.txt` |
+| tifffile | 2026.3.3 | Lossless TIFF output with native integer depth and ICC metadata (BSD-3-Clause) | `licenses/tifffile.txt` |
 | Pillow | 12.2.0 | MPO/JPEG handling and GUI image support | `licenses/Pillow-12.2.0-LICENSE.txt` |
 | ExifTool | 13.59 | Metadata copy | The official platform-appropriate distribution and its license/readme material are retained under `tools/` in binary packages |
 
@@ -32,3 +34,4 @@ SDR HEIC/HEIF is decoded by the separate replaceable `tools/heif/StereoFine-HEIF
 The pinned pillow-heif 1.8.1 wheel includes the BSD-3-Clause wrapper, libheif 1.23.6 and libde265 1.1.3 (LGPLv3), and x265 4.3 (GPLv2 or later). The combined helper is distributed under GPL-3.0-or-later, separately from the MIT application. The package retains component notices, complete pinned corresponding source archives, reader/packaging sources and `BUILD_SOURCES.json` / `BUILD_READER.json` under `tools/heif`. Its native libraries remain replaceable in `_internal`. See `native/heif/LICENSE.md` and `scripts/heif-sources.json`. No FFmpeg binary or converter is added.
 
 The tiny synthetic stereo fixtures come unchanged from pillow-heif v1.8.1 and retain their BSD notice under `tests/fixtures/heif`.
+

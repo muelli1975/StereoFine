@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2 – 2026-11-05
+
+- Add optional lossless TIFF SBS output with automatic 8/16-bit depth and working ICC profiles.
+- Add momentary native 100% inspection with Z and fixed-step arrow-key panning.
+- Use final-crop colour matching consistently in preview and output; sample the entire image.
+- Retain edits after sidecar write failures and block transitions that would read old settings.
+- Save cross-view JPEGs at quality 90 with 4:4:4 sampling.
+
+
 ## 1.1 — 2026-10-21 (updated 2026-11-01)
 
 - Clear transient held-key modes when the main window loses focus or is hidden, restoring manual arrow-key editing after a missed key release.
@@ -65,3 +74,4 @@ Highlights:
 - batch progress status now follows every processed source even when a lightweight preview frame is unavailable;
 - successful save/batch/analysis completion produces one `ready.wav` notification and no additional native Windows information-dialog chime;
 - analysis-only report reduced to a readable aligned quality table: traffic light, deviation, near/far point, vertical error, Vergence, rotation and uncertainty note.
+

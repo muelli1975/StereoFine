@@ -39,6 +39,8 @@ from .i18n import (
     orientation_label,
 )
 from .notifications import play_ready_sound
+from .native_preview import NativePreviewMixin
+from .tooltip import attach_tooltip
 from .preview import PreviewImageCache, draw_grid_overlay, draw_measure_cross_overlay
 from .preview_render import PreviewBasePair, build_preview_base, render_preview_from_base
 from .processing import ProcessedSource, ProcessingDefaults, ProcessingOptions, process_source
@@ -150,7 +152,7 @@ MEASURE_MAX_SPEED_PX_PER_SEC = 900.0
 MEASURE_ACCEL_TIME_SEC = 0.55
 MEASURE_MAX_DT_SEC = 0.050
 
-class StereoFineApp(ctk.CTk):
+class StereoFineApp(NativePreviewMixin, ctk.CTk):
     """GUI shell over the GUI-independent processing core."""
 
     def __init__(self) -> None:
@@ -161,6 +163,7 @@ class StereoFineApp(ctk.CTk):
 
         self.settings: AppSettings = load_settings()
         self.tr = Translator(self.settings.language)
+        self._init_native_preview()
         self.worker = WorkerManager()
         self.measurement_worker = WorkerManager()
         self._measurement_after_id = None
@@ -189,6 +192,7 @@ class StereoFineApp(ctk.CTk):
         self._batch_progress_source_name: str | None = None
         self._load_rollback_context: tuple[list[StereoSource], int | None, bool, str] | None = None
         self._save_after_id: str | None = None
+        self._state_save_error = None
         self._state_dirty = False
         self._state_dirty_can_create_sidecar = False
         self._resize_after_id: str | None = None
@@ -199,6 +203,7 @@ class StereoFineApp(ctk.CTk):
         self._last_anaglyph_preview_mode = "Farbig"
         self.gray_anaglyph = ctk.BooleanVar(value=self.settings.gray_anaglyph)
         self.save_cross = ctk.BooleanVar(value=self.settings.save_cross)
+        self.tiff_sbs = ctk.BooleanVar(value=self.settings.tiff_sbs)
         self.language_display = ctk.StringVar(value=language_label(self.settings.language))
         self.grid_mode = ctk.StringVar(value="Aus")
         self.grid_spacing = ctk.StringVar(value="50 Promille")
@@ -580,6 +585,12 @@ class StereoFineApp(ctk.CTk):
 
         self.color_match_box = self._checkbox(self.sidebar, self._t("color_match"), self.color_match_enabled, self._on_color_match_changed)
         self.color_match_box.grid(row=row, column=0, sticky="w", padx=20, pady=(0, 8)); row += 1
+
+        self.tiff_sbs_box = self._checkbox(
+            self.sidebar, self._t("tiff_sbs"), self.tiff_sbs, self._persist_settings,
+        )
+        self.tiff_sbs_box.grid(row=row, column=0, sticky="w", padx=20, pady=(0, 8)); row += 1
+        attach_tooltip(self.tiff_sbs_box, self._t("tiff_tooltip"))
 
         self.deviation_filename_box = self._checkbox(
             self.sidebar, self._t("deviation_filename"),
@@ -991,6 +1002,8 @@ class StereoFineApp(ctk.CTk):
             self.sidecar_status_label.configure(
                 text=sidecar_status_text(self.current.sidecar if self.current else None, self.settings.language)
             )
+        if self._state_save_error:
+            labels["warning"].configure(text=self._t("state_save_warning"))
         self._update_favorite_star()
 
     def _update_favorite_star(self, hover: bool = False) -> None:
@@ -1289,6 +1302,7 @@ class StereoFineApp(ctk.CTk):
         self.settings.append_deviation_to_filename = bool(self.append_deviation_to_filename.get())
         self.settings.gray_anaglyph = bool(self.gray_anaglyph.get())
         self.settings.save_cross = bool(self.save_cross.get())
+        self.settings.tiff_sbs = bool(self.tiff_sbs.get())
         # Output is intentionally fixed: SBS plus one anaglyph.
         self.settings.output_mode = "both"
         save_settings(self.settings)
@@ -1450,7 +1464,8 @@ class StereoFineApp(ctk.CTk):
                 )
             except Exception:
                 inherit_input_transform = self.current.source.input_root == sources[target_index].input_root
-            self._flush_state_save()
+            if not self._flush_state_save(explicit=True):
+                return
         self.sources = list(sources)
         self.source_index = target_index
         self.batch_mode = bool(batch)
@@ -1468,14 +1483,16 @@ class StereoFineApp(ctk.CTk):
     def previous_source(self, event=None):
         if self.busy_state != "idle" or self.source_index is None or self.source_index <= 0:
             return "break"
-        self._flush_state_save()
+        if not self._flush_state_save(explicit=True):
+            return "break"
         self._load_source_index(self.source_index - 1, inherit_input_transform=True)
         return "break"
 
     def next_source(self, event=None):
         if self.busy_state != "idle" or self.source_index is None or self.source_index >= len(self.sources) - 1:
             return "break"
-        self._flush_state_save()
+        if not self._flush_state_save(explicit=True):
+            return "break"
         self._load_source_index(self.source_index + 1, inherit_input_transform=True)
         return "break"
 
@@ -1575,7 +1592,7 @@ class StereoFineApp(ctk.CTk):
         else:
             self._save_after_id = self.after(220, self._flush_state_save)
 
-    def _flush_state_save(self) -> None:
+    def _flush_state_save(self, *, explicit: bool = False) -> bool:
         if self._save_after_id:
             try:
                 self.after_cancel(self._save_after_id)
@@ -1583,22 +1600,28 @@ class StereoFineApp(ctk.CTk):
                 pass
             self._save_after_id = None
         if self.current is None or not self._state_dirty:
-            return
-
-        has_reusable_sidecar = self.current.sidecar.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}
-        should_write = has_reusable_sidecar or self._state_dirty_can_create_sidecar
+            return True
+        reusable = self.current.sidecar.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}
         try:
-            if should_write:
+            if reusable or self._state_dirty_can_create_sidecar:
                 save_browsed_state(self.current)
-                self.current.sidecar = load_sidecar(self.current.source.sidecar_path, expected_source=self.current.source_stamp)
-                self._render_status()
-        except Exception:
-            # Debounced key edits must not interrupt the session with modal errors.
-            # A later explicit analysis/export will surface hard file errors.
-            pass
-        finally:
-            self._state_dirty = False
-            self._state_dirty_can_create_sidecar = False
+                updated = load_sidecar(self.current.source.sidecar_path, expected_source=self.current.source_stamp)
+                if updated.status not in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
+                    raise OSError(updated.message or "Saved settings could not be verified.")
+                self.current.sidecar = updated
+        except Exception as exc:
+            # Keep the current state dirty. Export/navigation/close must retry
+            # successfully before reading a sidecar or discarding this session.
+            self._state_save_error = str(exc)
+            self._render_status()
+            if explicit:
+                messagebox.showerror(APP_NAME, self._t("state_save_failed", text=str(exc)))
+            return False
+        self._state_save_error = None
+        self._state_dirty = False
+        self._state_dirty_can_create_sidecar = False
+        self._render_status()
+        return True
 
     def _on_input_transform_changed(self, _value=None) -> None:
         self.left_orientation_display.set(orientation_label(self.left_orientation.get(), self.settings.language))
@@ -1882,7 +1905,7 @@ class StereoFineApp(ctk.CTk):
                 session.state,
                 max_width=min(PREVIEW_RENDER_MAX_WIDTH, max(320, int(bound_w))),
                 max_height=min(PREVIEW_RENDER_MAX_HEIGHT, max(240, int(bound_h))),
-                apply_color=not start_image,
+                apply_color=False,
             )
             self._preview_base_session_id = session_id
         return self._preview_base
@@ -1916,6 +1939,8 @@ class StereoFineApp(ctk.CTk):
         self._preview_right_current = pair.right
         self._preview_pair_shape = (pair.left.shape[1], pair.left.shape[0])
         self._build_preview_anaglyph()
+        if not start_image and (session.state.color.enabled or self.detail_active):
+            self._request_native_preview()
 
     def _update_preview_display(self, *, resampling=Image.Resampling.LANCZOS) -> None:
         """Scale the already rendered anaglyph to the current window only.
@@ -1924,6 +1949,9 @@ class StereoFineApp(ctk.CTk):
         here.  This is the hot path used by window resizing, grid changes and
         the measurement cross.
         """
+        if self.detail_active:
+            self._show_detail_preview()
+            return
         if self._preview_pil is None:
             return
 
@@ -1961,8 +1989,9 @@ class StereoFineApp(ctk.CTk):
 
         border = preview_border_px(display_size[0])
         self.preview_label.grid_configure(padx=border, pady=border)
-        self._preview_ctk_image = ctk.CTkImage(light_image=image, dark_image=image, size=image.size)
-        self.preview_label.configure(text="", image=self._preview_ctk_image)
+        new_image = ctk.CTkImage(light_image=image, dark_image=image, size=image.size)
+        self.preview_label.configure(text="", image=new_image)
+        self._preview_ctk_image = new_image
 
     def _refresh_preview(self, *, rebuild_base: bool = False) -> None:
         if rebuild_base:
@@ -2031,6 +2060,7 @@ class StereoFineApp(ctk.CTk):
     def _start_worker(self, kind: str, button_text: str, function) -> None:
         if self.busy_state != "idle":
             return
+        self._end_detail_preview()
         self._cancel_disparity_refresh()
         self.busy_state = kind
         self.current_job_kind = kind
@@ -2047,7 +2077,8 @@ class StereoFineApp(ctk.CTk):
     def start_processing(self, event=None):
         if self.current is None or self.busy_state != "idle":
             return "break"
-        self._flush_state_save()
+        if not self._flush_state_save(explicit=True):
+            return "break"
         if self.batch_mode:
             self._start_batch_run()
         else:
@@ -2077,6 +2108,7 @@ class StereoFineApp(ctk.CTk):
             output_folder=output_folder,
             gray_anaglyph=bool(self.gray_anaglyph.get()),
             save_cross=bool(self.save_cross.get()),
+            tiff_sbs=bool(self.tiff_sbs.get()),
             preview_mode=self.preview_mode.get(),
             language=self.settings.language,
             append_deviation_to_filename=bool(self.append_deviation_to_filename.get()),
@@ -2091,7 +2123,8 @@ class StereoFineApp(ctk.CTk):
     def save_current_result(self, event=None):
         if self.current is None or self.batch_mode or self.busy_state != "idle":
             return "break"
-        self._flush_state_save()
+        if not self._flush_state_save(explicit=True):
+            return "break"
         output_folder = self._effective_output_folder(self.current.source.input_root)
         if output_folder is None:
             messagebox.showinfo(APP_NAME, self._t("select_output_folder"))
@@ -2101,6 +2134,7 @@ class StereoFineApp(ctk.CTk):
             output_folder=output_folder,
             gray_anaglyph=bool(self.gray_anaglyph.get()),
             save_cross=bool(self.save_cross.get()),
+            tiff_sbs=bool(self.tiff_sbs.get()),
             preview_mode=self.preview_mode.get(),
             language=self.settings.language,
             append_deviation_to_filename=bool(self.append_deviation_to_filename.get()),
@@ -2328,6 +2362,9 @@ class StereoFineApp(ctk.CTk):
         self.bind_all("<F1>", self._on_f1)
         self.bind_all("<KeyRelease-F1>", lambda e: self._release_shortcut_key("f1"))
 
+        for key in ("z", "Z"):
+            self.bind_all(f"<KeyPress-{key}>", self._on_detail_press)
+            self.bind_all(f"<KeyRelease-{key}>", self._on_detail_release)
         self.bind_all("<KeyPress-m>", self._on_measure_press)
         self.bind_all("<KeyPress-M>", self._on_measure_press)
         self.bind_all("<KeyRelease-m>", self._on_measure_release)
@@ -2375,6 +2412,9 @@ class StereoFineApp(ctk.CTk):
         if self._keyboard_focus_after_id is not None:
             self.after_cancel(self._keyboard_focus_after_id)
             self._keyboard_focus_after_id = None
+        self._end_detail_preview()
+        self._detail_arrows_down.clear()
+        self._detail_blocked_arrows.clear()
         self._floating_key_edge = None
         self._g_key_down = False
         self._shortcut_keys_down.clear()
@@ -2407,6 +2447,8 @@ class StereoFineApp(ctk.CTk):
         return 1
 
     def _on_arrow(self, direction: str, event=None):
+        if self._handle_detail_arrow(direction):
+            return "break"
         if self._handle_measure_arrow(direction):
             return "break"
         if self._floating_key_edge is not None:
@@ -2433,6 +2475,8 @@ class StereoFineApp(ctk.CTk):
         return "break"
 
     def _on_alt_arrow(self, direction: str, _event=None):
+        if self._handle_detail_arrow(direction):
+            return "break"
         if self.current is None or self.busy_state != "idle":
             return "break"
         if direction == "left":
@@ -2582,6 +2626,8 @@ class StereoFineApp(ctk.CTk):
         return "break"
 
     def _on_arrow_release(self, _event=None):
+        direction = getattr(_event, 'keysym', '').lower()
+        self._detail_arrow_release(direction)
         if self.measure_cross_active or self._measure_repeat_job is not None:
             self._stop_measure_repeat()
             return "break"
@@ -2847,9 +2893,11 @@ class StereoFineApp(ctk.CTk):
         if self.busy_state != "idle":
             if not messagebox.askyesno(APP_NAME, self._t("close_busy")):
                 return
+        if not self._flush_state_save(explicit=True):
+            return
         self._cancel_disparity_refresh()
         self.worker.cancel_all()
-        self._flush_state_save()
+        self._native_worker.cancel_all()
         self._persist_settings()
         self.destroy()
 
@@ -2857,4 +2905,5 @@ class StereoFineApp(ctk.CTk):
 def run() -> None:
     app = StereoFineApp()
     app.mainloop()
+
 
