@@ -137,7 +137,7 @@ def main():
         # Exercise real Save, including its worker and persisted colour state.
         process_source(source)
         with patch.object(gui,'load_settings',return_value=AppSettings()), patch.object(gui,'save_settings'), \
-                patch.object(gui,'play_ready_sound'):
+                patch.object(gui,'play_ready_sound'), patch.object(gui.messagebox,'showwarning'):
             app=gui.StereoFineApp()
             try:
                 app.current=browse_source(source)
@@ -158,6 +158,8 @@ def main():
                     assert app.current is session and app._native_cache is cache
                     assert app._detail_center==(179,117)
                     assert app.current.state.floating_window.bottom_permille==5
+                    extension='tif' if tiff else 'jpg'
+                    assert (Path(td)/'output'/'sbs'/f'{source.base_name}_sbs.{extension}').is_file()
                 checks.append(dict(real_jpeg_and_tiff_save=True,preview_pixels_unchanged=True,detail_position_preserved=True))
             finally:app.destroy()
         ctk.set_widget_scaling(1.);ctk.set_window_scaling(1.)
