@@ -2,7 +2,7 @@
 
 [Downloads and SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.1) · [Deutsch](README_DE.md) · [Changes](RELEASE_NOTES_1.1.md)
 
-**Output and preview:** Grayscale anaglyphs and Save cross-view are saved independently from the preview under Image and output. Cross-view exports the finished full-colour R/L pair in `cross`. **A** cycles Color, Grayscale and Cross-view previews; **M** temporarily uses the last anaglyph preview. Crop, crop zoom and crop movement automatically refresh deviation without changing alignment or stereo-window framing. The status shows “Calculating …” while this measurement is pending. Each launch starts with the Color anaglyph preview.
+**Output and preview:** Grayscale anaglyphs and Save cross-view are saved independently from the preview under Image and output. Cross-view exports the finished full-colour R/L pair in `cross` as JPEG quality 90 with 4:4:4 sampling. **A** cycles Color, Grayscale and Cross-view previews; **M** temporarily uses the last anaglyph preview. Crop, crop zoom and crop movement automatically refresh deviation without changing alignment or stereo-window framing. The status shows “Calculating …” while this measurement is pending. Each launch starts with the Color anaglyph preview.
 
 Version 1.1 improves automatic model selection, vertical edge correction and near/far measurement. It adds JPS/PNS, static WebP/BMP and supported SDR HEIC/HEIF input, including compatible stereo and Spatial Photo containers. Ambiguous depth measurements remain explicitly marked as uncertain. See [measurement validation](docs/OBSERVED_RANGE_1.1.md) and [input-format scope](docs/IMAGE_FORMATS_1.1.md).
 

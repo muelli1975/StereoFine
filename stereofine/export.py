@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image
 
 from .anaglyph import make_anaglyph
-from .config import ANAGLYPH_JPEG_QUALITY, ANAGLYPH_TARGET_HEIGHT, SBS_JPEG_QUALITY
+from .config import ANAGLYPH_JPEG_QUALITY, ANAGLYPH_TARGET_HEIGHT, CROSS_JPEG_QUALITY, SBS_JPEG_QUALITY
 from .metadata import MetadataCopyResult, copy_metadata_without_preview_or_orientation
 from .models import OutputMode
 
@@ -112,7 +112,7 @@ def save_pair_outputs(
 
     if save_cross:
         result.cross_path = folder / "cross" / f"{output_stem}_cross.jpg"
-        _save_rgb_jpeg(np.concatenate([right8, left8], axis=1), result.cross_path, quality=SBS_JPEG_QUALITY)
+        _save_rgb_jpeg(np.concatenate([right8, left8], axis=1), result.cross_path, quality=CROSS_JPEG_QUALITY)
         meta = copy_metadata_without_preview_or_orientation(metadata_source, result.cross_path)
         result.metadata_results.append(meta)
         if meta.attempted and not meta.success:
@@ -129,3 +129,4 @@ def save_pair_outputs(
             result.warnings.append(f"Metadaten Anaglyphe: {meta.message}")
 
     return result
+
