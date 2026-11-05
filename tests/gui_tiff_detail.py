@@ -102,11 +102,14 @@ def completed_analysis_preview_checks(app, checks, language):
                 app.current.state.framing.aspect = aspect
                 app.current.state.color.enabled = color
                 app._sync_vars_from_current()
+                app._schedule_state_save()
                 app.preview_mode.set(('Farbig', 'Graustufen', 'Kreuzblick')[index % 3])
                 frames.clear()
                 with patch.object(gui, 'play_ready_sound') as ready:
                     app.start_processing()
                     pump(app, lambda: app.busy_state == 'idle', timeout=45)
+                    assert app.current.state.framing.aspect == aspect
+                    assert app.current.state.color.enabled == color
                     assert frames, (language, aspect, color)
                     assert ready.call_count == 1
                     first = frames[0]
