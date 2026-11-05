@@ -50,7 +50,11 @@ endif()
     target = ROOT/'tools/lcms'
     target.mkdir(parents=True, exist_ok=True)
     shutil.copy2(matches[0], target/name)
-    shutil.copy2(source/'LICENSE', ROOT/'licenses/LittleCMS.txt')
+    # Verify the committed notice without rewriting a Windows CRLF checkout.
+    # A raw LF copy makes Git report a dirty tree even when normalized text is
+    # identical; release source snapshots deliberately reject dirty sources.
+    if (source/'LICENSE').read_text(encoding='utf-8') != (ROOT/'licenses/LittleCMS.txt').read_text(encoding='utf-8'):
+        raise RuntimeError('The bundled LittleCMS license does not match the pinned source.')
     print(f'Prepared LittleCMS {VERSION}: {target/name}')
 
 

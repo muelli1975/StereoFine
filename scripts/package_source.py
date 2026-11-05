@@ -89,7 +89,7 @@ def main(destination: Path) -> None:
             cwd=ROOT, text=True,
         )
         if dirty.strip():
-            raise RuntimeError("Release sources have local changes; commit them before packaging.")
+            raise RuntimeError("Release sources have local changes; commit them before packaging:\n" + dirty.strip())
     except (OSError, subprocess.CalledProcessError):
         # Rebuilding an unpacked source distribution without a Git repository.
         commit, files = unpacked_sources()
