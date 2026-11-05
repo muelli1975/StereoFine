@@ -61,7 +61,7 @@ class TiffDepthTests(unittest.TestCase):
             for dtype in (np.uint8, np.uint16):
                 left = np.random.default_rng(4).integers(0, np.iinfo(dtype).max+1, (40, 80, 3), dtype=dtype)
                 right = np.flip(left, axis=1).copy()
-                result = save_pair_outputs(left, right, root/str(dtype), 'photo', tiff_sbs=True,
+                result = save_pair_outputs(left, right, root/np.dtype(dtype).name, 'photo', tiff_sbs=True,
                                            icc_profile=profile, save_cross=True)
                 np.testing.assert_array_equal(tifffile.imread(result.sbs_path), np.concatenate([left,right], axis=1))
                 with tifffile.TiffFile(result.sbs_path) as image:

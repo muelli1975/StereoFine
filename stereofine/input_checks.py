@@ -101,7 +101,7 @@ def check_inputs(destination: Path, fixtures: Path) -> None:
             assert converted.dtype==dtype
             if dtype==np.uint16:
                 assert len(np.unique(converted))>256
-            result=save_pair_outputs(master,master,root/'native-output',str(dtype),
+            result=save_pair_outputs(master,master,root/'native-output',np.dtype(dtype).name,
                                      tiff_sbs=True,icc_profile=profile,save_cross=True)
             np.testing.assert_array_equal(tifffile.imread(result.sbs_path),
                                           np.concatenate([master,master],axis=1))

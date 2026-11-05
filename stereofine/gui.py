@@ -1986,8 +1986,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
 
         border = preview_border_px(display_size[0])
         self.preview_label.grid_configure(padx=border, pady=border)
-        self._preview_ctk_image = ctk.CTkImage(light_image=image, dark_image=image, size=image.size)
-        self.preview_label.configure(text="", image=self._preview_ctk_image)
+        new_image = ctk.CTkImage(light_image=image, dark_image=image, size=image.size)
+        self.preview_label.configure(text="", image=new_image)
+        self._preview_ctk_image = new_image
 
     def _refresh_preview(self, *, rebuild_base: bool = False) -> None:
         if rebuild_base:
@@ -2056,6 +2057,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
     def _start_worker(self, kind: str, button_text: str, function) -> None:
         if self.busy_state != "idle":
             return
+        self._end_detail_preview()
         self._cancel_disparity_refresh()
         self.busy_state = kind
         self.current_job_kind = kind

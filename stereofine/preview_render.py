@@ -9,7 +9,6 @@ from .color_transfer import (
     COLOR_METHOD,
     SymmetricColorTransfer,
     apply_symmetric_color_transfer,
-    fit_symmetric_color_transfer,
 )
 from .config import CROP_ZOOM_LEVELS
 from .geometry import (
@@ -25,12 +24,10 @@ from .state import PairState
 
 @dataclass(frozen=True)
 class PreviewBasePair:
-    """Reduced reusable base for the interactive preview.
+    """Reduced oriented and aligned working-space images, before colour/crop.
 
-    Orientation, automatic geometry and (when enabled) the preview color
-    transfer are prepared once.  Manual nudges, crop/framing and floating-window
-    masks can then update without touching the expensive master-image path.
-    This is the responsiveness model used by the stable v41 preview.
+    Interactive geometry uses this cached base immediately. Native colour fits
+    are prepared separately from the final master crop and applied afterwards.
     """
 
     left: np.ndarray
@@ -120,12 +117,10 @@ def build_preview_base(
     max_height: int,
     apply_color: bool = True,
 ) -> PreviewBasePair:
-    """Build the reusable expensive half of the interactive preview.
+    """Prepare a reduced geometry base, optionally fitting native colour first.
 
-    The color transfer is intentionally applied to this reduced aligned base
-    once instead of being re-fitted/re-applied on every arrow-key nudge.  Final
-    export still uses :func:`render_final_pair` and therefore keeps the exact
-    full-resolution color basis.
+    GUI callers disable the synchronous fit and use their coalesced background
+    renderer. Other callers receive curves based on the same final master crop.
     """
 
     if apply_color and state.color.enabled:
@@ -174,7 +169,7 @@ def render_preview_from_base(
         base.original_aspect,
     )
 
-    # Compatibility fallback for callers that built a base without color.
+    # Apply prepared final-crop curves; never refit from reduced preview pixels.
     if apply_color and state.color.enabled and not base.color_applied:
         transfer: SymmetricColorTransfer | None = None
         if state.color.valid and state.color.method == COLOR_METHOD:

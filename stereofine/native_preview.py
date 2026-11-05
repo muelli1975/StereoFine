@@ -62,6 +62,17 @@ class NativePreviewMixin:
         self._native_failed_key = None
         self._native_running_key = None
 
+    def destroy(self):
+        self._native_worker.cancel_all()
+        for timer in [self._native_after_id, self._native_poll_id, self._detail_release_id,
+                      *self._detail_arrow_releases.values()]:
+            if timer is not None:
+                try:
+                    self.after_cancel(timer)
+                except Exception:
+                    pass
+        super().destroy()
+
     def _request_native_preview(self, *, immediate=False):
         if self.current is None or self.busy_state != 'idle':
             return
@@ -180,8 +191,9 @@ class NativePreviewMixin:
         # Dividing here prevents a second enlargement at 125/150/200% DPI.
         scaling = self.preview_label._get_widget_scaling()
         logical_size = (image.width / scaling, image.height / scaling)
-        self._preview_ctk_image = ctk.CTkImage(light_image=image, dark_image=image, size=logical_size)
-        self.preview_label.configure(text='', image=self._preview_ctk_image)
+        new_image = ctk.CTkImage(light_image=image, dark_image=image, size=logical_size)
+        self.preview_label.configure(text='', image=new_image)
+        self._preview_ctk_image = new_image
 
     def _on_detail_press(self, _event=None):
         if self._detail_release_id is not None:
@@ -195,6 +207,7 @@ class NativePreviewMixin:
             self._request_native_preview(immediate=True)
             if self._native_cache is None or self._native_cache[0] != native_key(self.current):
                 self.preview_label.configure(text=self._t('detail_loading'), image=None)
+                self.preview_label._label.configure(image='')
         return 'break'
 
     def _on_detail_release(self, _event=None):
