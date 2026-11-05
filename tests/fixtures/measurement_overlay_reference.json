@@ -1,0 +1,146 @@
+[
+  {
+    "size": [
+      1000,
+      700
+    ],
+    "center": [
+      500,
+      350
+    ],
+    "reference_width": null,
+    "sha256": "44c0178358a9176d51114d2b36d4308c350a3104751a1f7eda003a5dda4720ef"
+  },
+  {
+    "size": [
+      1000,
+      700
+    ],
+    "center": [
+      0,
+      0
+    ],
+    "reference_width": null,
+    "sha256": "8b5d8cec1b16679c9315b6ca7f3c9d108749f6c9bb35039f07f51248b9a2a49c"
+  },
+  {
+    "size": [
+      1000,
+      700
+    ],
+    "center": [
+      999,
+      699
+    ],
+    "reference_width": null,
+    "sha256": "924519efd3915efc8775bb81dc95cff2b5bae8b5db05e0cd8d0715264ad90c1c"
+  },
+  {
+    "size": [
+      1000,
+      700
+    ],
+    "center": [
+      -100,
+      400
+    ],
+    "reference_width": null,
+    "sha256": "6d64872aed04c17b79250708acbb3a32511a46a8ef1f7c65a2a2c26329b2c8b9"
+  },
+  {
+    "size": [
+      1000,
+      700
+    ],
+    "center": [
+      1050,
+      -60
+    ],
+    "reference_width": null,
+    "sha256": "82250b2d04857b1b0dd9f4112b5ef256d5b881d28ebedb8a2a99055e7cdd3c21"
+  },
+  {
+    "size": [
+      1000,
+      700
+    ],
+    "center": [
+      500.4,
+      350.6
+    ],
+    "reference_width": 2160,
+    "sha256": "7b3dc76f4e250657702bf4fb2d80b208dfd3c5ce874f00d0e152783f0645a2e3"
+  },
+  {
+    "size": [
+      28,
+      13
+    ],
+    "center": [
+      0,
+      0
+    ],
+    "reference_width": null,
+    "sha256": "1a6e3c8c8f0c1674b99fb02af16205b35f2e48f85dc65caeee606187540c8125"
+  },
+  {
+    "size": [
+      28,
+      13
+    ],
+    "center": [
+      27,
+      12
+    ],
+    "reference_width": 500,
+    "sha256": "9baa5b298145086408a1bee60e7aae7828019d535f7539cb2bf77d2b7e2e4eac"
+  },
+  {
+    "size": [
+      1800,
+      1100
+    ],
+    "center": [
+      1698.5,
+      900.25
+    ],
+    "reference_width": 6000,
+    "sha256": "921695c41164ef4f09c3bfe8489f4e2990b78599eb0a197ccbc4d2fba0894ef0"
+  },
+  {
+    "size": [
+      512,
+      320
+    ],
+    "center": [
+      256,
+      160
+    ],
+    "reference_width": null,
+    "sha256": "d2f5cb681ed871c3ae5f6566395be07fa290208f264cbc9600bab73088f0249f"
+  },
+  {
+    "size": [
+      13,
+      29
+    ],
+    "center": [
+      8,
+      14
+    ],
+    "reference_width": 500,
+    "sha256": "ddd07d63717a19ce202c8caa7e9f855ef8f645f72d1fe2a6fa4c60674a3d8766"
+  },
+  {
+    "size": [
+      2,
+      2
+    ],
+    "center": [
+      0,
+      1
+    ],
+    "reference_width": null,
+    "sha256": "adefb5e687bec6544fab88b5919c38c37662b61673647a3311481f399ad8f751"
+  }
+]

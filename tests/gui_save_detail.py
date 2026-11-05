@@ -214,7 +214,8 @@ def pan_checks(app):
             result = dict(mode=mode, z_median_ms=z_median, m_median_ms=m_median,
                 z_p95_ms=sorted(durations)[int(len(durations)*.95)],
                 no_anaglyph_calculation_during_pan=not mixing_calls,
-                z_within_measurement_render_budget=z_median <= m_median*1.75+4)
+                z_within_measurement_render_budget=z_median <= m_median*1.75+4,
+                measurement_within_native_render_budget=m_median <= z_median*1.75+4)
             results.append(result)
             print(json.dumps(result), flush=True)
     finally:
@@ -264,6 +265,7 @@ def main():
     output.write_text(json.dumps(dict(checks=checks), indent=2)+'\n', encoding='utf-8')
     assert all(c['actual_pixels_and_image_rectangle_unchanged'] for l in checks for c in l['saves'])
     assert all(c['no_anaglyph_calculation_during_pan'] and c['z_within_measurement_render_budget']
+               and c['measurement_within_native_render_budget']
                for l in checks for c in l['pans'])
     print('Actual save frames and native pan performance passed', flush=True)
 

@@ -117,7 +117,7 @@ def draw_measure_cross_overlay(
         return img
     outer = max(major_radii)
 
-    base = np.asarray(img.convert("RGB"), dtype=np.uint8).copy()
+    base = img.copy() if img.mode == "RGB" else img.convert("RGB")
     overlay = np.zeros((height, width, 4), dtype=np.uint8)
 
     # Transparent, antialiased two-pass drawing: soft black shadow first, then a
@@ -220,10 +220,20 @@ def draw_measure_cross_overlay(
     text_layer(left_text, left_org, main, 0.42, 1)
     text_layer(right_text, right_org, main, 0.42, 1)
 
-    alpha = overlay[:, :, 3:4].astype(np.float32) / 255.0
-    color = overlay[:, :, :3].astype(np.float32)
-    out = color * alpha + base.astype(np.float32) * (1.0 - alpha)
-    return Image.fromarray(np.clip(out, 0, 255).astype(np.uint8), "RGB")
+    # The scale occupies only a small part of the preview. Composite that
+    # exact nontransparent rectangle instead of allocating and mixing several
+    # full-frame float arrays for every movement. Drawing and rounding stay
+    # identical, including antialiasing and clipped labels at image edges.
+    left, top, tile_width, tile_height = cv2.boundingRect(overlay[:, :, 3])
+    if tile_width and tile_height:
+        box = (left, top, left + tile_width, top + tile_height)
+        tile = overlay[top:top + tile_height, left:left + tile_width]
+        alpha = tile[:, :, 3:4].astype(np.float32) / 255.0
+        color = tile[:, :, :3].astype(np.float32)
+        background = np.asarray(base.crop(box), dtype=np.float32)
+        out = color * alpha + background * (1.0 - alpha)
+        base.paste(Image.fromarray(np.clip(out, 0, 255).astype(np.uint8), "RGB"), box)
+    return base
 
 
 
