@@ -105,13 +105,13 @@ class FoundationTests(unittest.TestCase):
     def test_settings_roundtrip(self):
         with tempfile.TemporaryDirectory() as td:
             path = Path(td) / "settings.json"
-            settings = AppSettings(custom_output_folder="D:/Stereo", output_mode="sbs")
+            settings = AppSettings.from_dict({'custom_output_folder': 'D:/Stereo', 'output_mode': 'sbs'})
             save_settings(settings, path)
             loaded = load_settings(path)
             self.assertEqual(loaded.custom_output_folder, "D:/Stereo")
-            # Short-lived development builds exposed this setting; 1.0 always
-            # writes the established SBS + anaglyph pair.
-            self.assertEqual(loaded.output_mode, "both")
+            # Ignore the obsolete development selector in old settings files.
+            self.assertFalse(hasattr(loaded, "output_mode"))
+            self.assertTrue(loaded.save_anaglyph)
             self.assertFalse(hasattr(loaded, "analysis_only"))
             self.assertFalse(hasattr(loaded, "favorites_only"))
 

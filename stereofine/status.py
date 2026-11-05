@@ -151,12 +151,8 @@ def sidecar_status_text(sidecar: SidecarLoadResult | None, language: str = "de")
         return tr.t("settings_none")
     if sidecar.status == SidecarStatus.MISSING:
         return tr.t("sidecar_new")
-    if sidecar.status == SidecarStatus.VALID:
-        if sidecar.pipeline_mismatches:
-            return tr.t("sidecar_partial")
+    if sidecar.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
         return tr.t("sidecar_loaded")
-    if sidecar.status == SidecarStatus.MIGRATED:
-        return tr.t("sidecar_legacy")
     if sidecar.status == SidecarStatus.STALE:
         return tr.t("sidecar_stale")
     return tr.t("sidecar_invalid")

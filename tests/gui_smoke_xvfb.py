@@ -30,7 +30,6 @@ def main() -> None:
     settings = AppSettings(
         language=test_language,
         use_input_output_subfolder=True,
-        output_mode="both",
         analysis_method="AKAZE",
         default_aspect="maximum",  # explicitly retained legacy preferences
         color_match_enabled=False,

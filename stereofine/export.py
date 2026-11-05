@@ -107,6 +107,7 @@ def save_pair_outputs(
     gray_anaglyph: bool = False,
     save_cross: bool = False,
     tiff_sbs: bool = False,
+    sbs_suffix: str = "_sbs",
     icc_profile: bytes | None = None,
     metadata_source: Path | None = None,
     filename_deviation_permille: float | None = None,
@@ -116,6 +117,8 @@ def save_pair_outputs(
     if output_mode not in {"both", "sbs", "anaglyph"}:
         raise ValueError(f"Unbekannter Ausgabemodus: {output_mode}")
 
+    from .output_naming import validate_sbs_suffix
+    sbs_suffix = validate_sbs_suffix(sbs_suffix)
     left, right = promote_pair(left, right)
     left8 = to_uint8_output(transform_rgb(left, icc_profile))
     right8 = to_uint8_output(transform_rgb(right, icc_profile))
@@ -124,7 +127,7 @@ def save_pair_outputs(
 
     if output_mode in {"both", "sbs"}:
         extension = 'tif' if tiff_sbs else 'jpg'
-        result.sbs_path = folder / "sbs" / f"{output_stem}_sbs.{extension}"
+        result.sbs_path = folder / "sbs" / f"{output_stem}{sbs_suffix}.{extension}"
         if tiff_sbs:
             _save_rgb_tiff(np.concatenate([left, right], axis=1), result.sbs_path, icc_profile)
         else:

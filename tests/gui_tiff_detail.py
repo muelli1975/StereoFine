@@ -21,6 +21,7 @@ from stereofine.processing import process_source
 from stereofine.settings import AppSettings
 from tests.gui_cross_measurement import pump
 from tests.test_restart_alignment import RestartAlignmentTests
+from tests.gui_export_options import check_export_options
 
 
 def native_ready(app):
@@ -237,6 +238,8 @@ def main():
                     app._close_shortcuts_help()
                     checks.append(dict(language=language,final_crop_color_consistent=True,tiff_option=True))
                     final_correction_checks(app, checks, language)
+                    pump(app, lambda: native_ready(app))
+                    check_export_options(app, checks, language)
                 finally:
                     app._native_worker.cancel_all()
                     app._cancel_disparity_refresh();app.destroy()
@@ -257,7 +260,14 @@ def main():
                 app._flush_state_save(explicit=True)
                 since=time.monotonic();pump(app,lambda:time.monotonic()-since>.4)
                 stable=app._preview_pil.copy();session=app.current;cache=app._native_cache
-                for tiff in (False,True):
+                for tiff, anaglyph, suffix in ((False, True, '_sbs'), (True, True, '_sbs'),
+                                               (False, False, '_cs'), (True, False, '_cs')):
+                    folder = Path(td)/('output' if anaglyph else 'optional-output')
+                    app._effective_output_folder=lambda _root, folder=folder:folder
+                    app.save_anaglyph.set(anaglyph)
+                    app.use_custom_sbs_suffix.set(not anaglyph)
+                    app.sbs_suffix_display.set(suffix)
+                    app._on_export_options_changed()
                     app.tiff_sbs.set(tiff);app.save_current_result()
                     pump(app,lambda:app.busy_state=='idle',timeout=45)
                     np.testing.assert_array_equal(np.asarray(app._preview_pil),np.asarray(stable))
@@ -265,7 +275,8 @@ def main():
                     assert app._detail_center==(179,117)
                     assert app.current.state.floating_window.bottom_permille==5
                     extension='tif' if tiff else 'jpg'
-                    assert (Path(td)/'output'/'sbs'/f'{source.base_name}_sbs.{extension}').is_file()
+                    assert (folder/'sbs'/f'{source.base_name}{suffix}.{extension}').is_file()
+                    assert (folder/'anaglyph').exists() == anaglyph
                 checks.append(dict(real_jpeg_and_tiff_save=True,preview_pixels_unchanged=True,detail_position_preserved=True))
             finally:app.destroy()
         ctk.set_widget_scaling(1.);ctk.set_window_scaling(1.)

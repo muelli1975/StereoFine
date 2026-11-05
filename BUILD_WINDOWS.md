@@ -69,7 +69,7 @@ After the script finishes, extract `release/StereoFine_1.1_Windows_x64.zip` into
 3. German and English GUI fit without clipping at the normal display scaling used on the machine.
 4. The two subtle separator lines around the scroll area are visible.
 5. One normal stereo pair or Full-SBS can be loaded and aligned.
-6. Saving always produces both an SBS JPEG and an anaglyph JPEG; the preview mode only selects color or grayscale anaglyph output.
+6. Saving writes an SBS JPEG or the selected lossless TIFF. The persistent anaglyph and cross-view export choices work independently of preview mode. A custom SBS suffix changes only the SBS filename.
 7. A normal successful save plays `ready.wav` without an additional Windows notification tone; cancel/error do not play `ready.wav`.
 8. ExifTool is found from the portable `tools/` folder and metadata copying does not show a warning.
 9. During loading, alignment, saving or batch work, the primary button becomes `Cancel`; cancelling returns the same button and the GUI to the correct idle state without changing the visible source unexpectedly.

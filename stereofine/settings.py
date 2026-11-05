@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Any
 
 from .config import ASPECT_RATIOS, normalize_aspect_code
-from .models import OutputMode
 from .resources import settings_path
+from .output_naming import validate_sbs_suffix
 
 SETTINGS_SCHEMA_VERSION = 1
 
@@ -21,7 +21,6 @@ class AppSettings:
     last_input_location: str = ""
     use_input_output_subfolder: bool = True
     custom_output_folder: str = ""
-    output_mode: OutputMode = "both"
     default_aspect: str = "original"
     analysis_method: str = "AKAZE"
     color_match_enabled: bool = True
@@ -29,15 +28,13 @@ class AppSettings:
     gray_anaglyph: bool = False
     save_cross: bool = False
     tiff_sbs: bool = False
+    save_anaglyph: bool = True
+    use_custom_sbs_suffix: bool = False
+    sbs_suffix: str = "_sbs"
 
     def normalize(self) -> "AppSettings":
         if self.language not in {"de", "en"}:
             self.language = "de"
-        # StereoFine always writes the established pair of outputs: SBS plus
-        # one anaglyph.  Keep this field only to tolerate settings.json files
-        # written by short-lived development builds that exposed an output
-        # selector; such values must never change 1.0 behaviour.
-        self.output_mode = "both"
         self.default_aspect = normalize_aspect_code(self.default_aspect)
         if self.default_aspect not in ASPECT_RATIOS:
             self.default_aspect = "original"
@@ -50,6 +47,12 @@ class AppSettings:
         self.gray_anaglyph = bool(self.gray_anaglyph)
         self.save_cross = bool(self.save_cross)
         self.tiff_sbs = bool(self.tiff_sbs)
+        self.save_anaglyph = bool(self.save_anaglyph)
+        self.use_custom_sbs_suffix = bool(self.use_custom_sbs_suffix)
+        try:
+            self.sbs_suffix = validate_sbs_suffix(self.sbs_suffix)
+        except ValueError:
+            self.sbs_suffix = "_sbs"
         return self
 
     @classmethod

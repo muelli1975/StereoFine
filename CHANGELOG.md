@@ -3,7 +3,7 @@
 ## 1.2 – 2026-11-05
 
 - Add optional lossless TIFF SBS output with automatic 8/16-bit depth and working ICC profiles.
-- Add momentary native 100% inspection with Z and fixed-step arrow-key panning.
+- Add momentary native 100% inspection with Z, fine arrow-key taps and smooth acceleration when held.
 - Use final-crop colour matching consistently in preview and output; sample the entire image.
 - Retain edits after sidecar write failures and block transitions that would read old settings.
 - Save cross-view JPEGs at quality 90 with 4:4:4 sampling.
@@ -11,6 +11,8 @@
 - Prevent held arrows from changing alignment after releasing the measurement or floating-window key.
 - Preserve fixed black/white curve endpoints, including when reusing existing saved curves.
 - Default new settings to Original aspect ratio and enabled symmetric colour matching, retaining saved choices.
+- Add remembered anaglyph saving and an editable Full-SBS suffix list with program-specific presets.
+- Keep loaded-settings status concise without exposing internal calculation-version differences.
 
 
 ## 1.1 — 2026-10-21 (updated 2026-11-01)

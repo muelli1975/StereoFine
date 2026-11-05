@@ -50,7 +50,7 @@ Die native Detailansicht wird mit 100 bis 200 % GUI-Skalierung geprüft. Die Zuo
 1. Über **Links/Rechts** ein Bild aus einem Stereo-Paar wählen oder über **Full-SBS/MPO** eine Stereo-Datei öffnen.
 2. **Justage starten**. StereoFine analysiert die Geometrie, bestimmt Nahpunkt, Fernpunkt und Gesamtdeviation und rahmt den erkannten Nahpunkt standardmäßig knapp hinter das Scheinfenster.
 3. Ergebnis in der Anaglyphenvorschau prüfen und bei Bedarf per Tastatur feinjustieren.
-4. **Speichern**. StereoFine schreibt ein SBS-JPEG oder bei aktivierter Option **SBS als TIFF (verlustfrei)** ein SBS-TIFF und dazu eine Anaglyphe. Die Checkbox „Graustufen-Anaglyphen“ bestimmt unabhängig von der Vorschau, ob die gespeicherte Anaglyphe farbig oder in Graustufen erzeugt wird.
+4. **Speichern**. StereoFine schreibt ein SBS-JPEG oder bei aktivierter Option **SBS als TIFF (verlustfrei)** ein SBS-TIFF. **Anaglyphen speichern** erzeugt zusätzlich eine Anaglyphe und ist standardmäßig eingeschaltet. Die eingerückte Checkbox **Graustufen-Anaglyphen** bestimmt deren Darstellung unabhängig von der Vorschau. Ihre Auswahl bleibt auch bei ausgeschaltetem Anaglyphenexport erhalten.
 
 Ein erneuter Klick auf **Justage starten** berechnet Geometrie und Nahpunktrahmung neu und setzt manuelle horizontale/vertikale Verschiebungen zurück. Ausschnitt, Seitenverhältnis und Ausschnittposition bleiben erhalten. Bei verfügbarer Messung wird der erkannte Nahpunkt mindestens 3‰ hinter das Scheinfenster gesetzt. Speichern und Stapelverarbeitung erhalten gespeicherte Feinjustagen.
 
@@ -167,10 +167,10 @@ Die gespeicherten `.sfin`-Zustände werden wiederverwendet. Nicht favorisierte B
 
 ## Ausgabe und Ordner
 
-Jeder Bildexport erzeugt immer beides:
+Der Bildexport erzeugt:
 
 - ein SBS-JPEG, Qualität 95, oder bei gewählter Option ein verlustfrei komprimiertes SBS-TIFF
-- eine Farb- oder Grauanaglyphe als JPEG, Qualität 90
+- eine Farb- oder Grauanaglyphe als JPEG, Qualität 90, wenn **Anaglyphen speichern** eingeschaltet ist
 
 TIFF erhält 8-Bit-Eingaben mit 8 Bit und 16-Bit-Eingaben mit 16 Bit pro Kanal. Gemischte Paare werden vor der Verarbeitung auf 16 Bit vereinheitlicht. TIFF behält das gemeinsame ICC-Arbeitsprofil; JPEG-Ausgaben und Vorschau verwenden sRGB. Unmarkiertes RGB wird als sRGB behandelt. Die TIFF-Einstellung wird gespeichert und gilt für Einzelbilder und Stapel. Bereits vorhandene Ausgaben eines anderen Formats bleiben erhalten. Kreuzblick bleibt JPEG mit Qualität 90 und 4:4:4.
 
@@ -179,6 +179,8 @@ Anaglyphen werden bei Bedarf auf maximal 2160 px Höhe verkleinert. Die Farbanag
 Standardmäßig legt StereoFine den Ordner `output` im Eingabeordner an. Alternativ kann ein eigener persistenter Ausgabeordner gewählt werden. Fertige Bilder und Analyseberichte werden vollständig temporär geschrieben und erst danach atomar an ihren endgültigen Namen gesetzt.
 
 Vorhandene Bildausgaben gleichen Namens werden bewusst ersetzt.
+
+**Eigene SBS-Endung** aktiviert eine frei editierbare Auswahlliste: `_sbs` (StereoFine), `_s` (m.objects), `_cs` (COSIMA), `-lr` (Bino), ohne Zusatz oder eigener Text. Die Auswahl ersetzt `_sbs` direkt vor `.jpg` beziehungsweise `.tif`; die Programmnamen erscheinen nur in der Liste. Eine Deviation steht davor, beispielsweise `bild_030_s.jpg`. Diese Einstellungen gelten für Einzelbilder und Stapel und werden gespeichert. Vorhandene Dateien werden beim Ändern der Ausgabeoptionen weder umbenannt noch gelöscht.
 
 **Deviation im Dateinamen** ergänzt auf Wunsch die gemessene Gesamtdeviation in
 ganzen Promille: beispielsweise `bild_057_sbs.jpg` und `bild_057_anaglyph.jpg`.

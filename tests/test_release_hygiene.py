@@ -84,12 +84,12 @@ class ReleaseHygieneTests(unittest.TestCase):
         self.assertIn("portable-tools/exiftool", workflow)
         self.assertIn("portable-tools/lib", workflow)
 
-    def test_public_gui_keeps_established_fixed_output(self):
+    def test_public_gui_keeps_sbs_with_independent_optional_outputs(self):
         gui_source = (ROOT / "stereofine" / "gui.py").read_text(encoding="utf-8")
         batch_source = (ROOT / "stereofine" / "batch.py").read_text(encoding="utf-8")
         self.assertNotIn("self.output_mode =", gui_source)
         self.assertNotIn("output_mode:", batch_source)
-        self.assertIn('output_mode="both"', batch_source)
+        self.assertIn('output_mode="both" if options.save_anaglyph else "sbs"', batch_source)
         for readme in ("README.md", "README_DE.md", "README_EN.md"):
             text = (ROOT / readme).read_text(encoding="utf-8")
             self.assertNotIn("selected output mode", text.lower(), readme)
@@ -98,7 +98,7 @@ class ReleaseHygieneTests(unittest.TestCase):
             self.assertNotIn("- SBS + Anaglyphe", text, readme)
         build_text = (ROOT / "BUILD_WINDOWS.md").read_text(encoding="utf-8").lower()
         self.assertNotIn("selected sbs/anaglyph", build_text)
-        self.assertIn("always produces both an sbs jpeg and an anaglyph jpeg", build_text)
+        self.assertIn("export choices work independently of preview mode", build_text)
 
     def test_gui_contains_recovered_responsiveness_and_scroll_contract(self):
         gui_source = (ROOT / "stereofine" / "gui.py").read_text(encoding="utf-8")
@@ -124,10 +124,10 @@ class ReleaseHygieneTests(unittest.TestCase):
     def test_f_shortcut_toggles_existing_favorite_action(self):
         gui_source = (ROOT / "stereofine" / "gui.py").read_text(encoding="utf-8")
         i18n_source = (ROOT / "stereofine" / "i18n.py").read_text(encoding="utf-8")
-        self.assertIn('self.bind_all("<f>", self._on_f)', gui_source)
-        self.assertIn('self.bind_all("<F>", self._on_f)', gui_source)
-        self.assertIn('self.bind_all("<KeyRelease-f>", lambda e: self._release_shortcut_key("f"))', gui_source)
-        self.assertIn('self.bind_all("<KeyRelease-F>", lambda e: self._release_shortcut_key("f"))', gui_source)
+        self.assertIn('bind_all("<f>", self._on_f)', gui_source)
+        self.assertIn('bind_all("<F>", self._on_f)', gui_source)
+        self.assertIn('bind_all("<KeyRelease-f>", lambda e: self._release_shortcut_key("f"))', gui_source)
+        self.assertIn('bind_all("<KeyRelease-F>", lambda e: self._release_shortcut_key("f"))', gui_source)
         self.assertIn('def _on_f(self, event=None):', gui_source)
         self.assertIn('_claim_shortcut_key("f", event)', gui_source)
         self.assertIn('return self._on_favorite_clicked(event)', gui_source)
@@ -150,7 +150,7 @@ class ReleaseHygieneTests(unittest.TestCase):
         self.assertIn('text=self._t("cancel")', gui_source)
         self.assertIn("_set_start_button_cancel", gui_source)
         self.assertIn("_shortcut_keys_down", gui_source)
-        self.assertIn('self.bind_all("<KeyRelease-F1>"', gui_source)
+        self.assertIn('bind_all("<KeyRelease-F1>"', gui_source)
         self.assertIn('_claim_shortcut_key("ctrl-r"', gui_source)
         self.assertIn("_render_activity_spinner_frame", gui_source)
         self.assertIn("_update_grid_control_state", gui_source)

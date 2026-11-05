@@ -48,7 +48,7 @@ The same source can also be packaged for macOS (Apple Silicon and Intel) and Lin
 1. Use **Left/Right** to select one image from a stereo pair, or **Full-SBS/MPO** to open a stereo file.
 2. Choose **Start alignment**. StereoFine analyzes the geometry, determines near point, far point and total deviation, and frames the detected near point slightly behind the stereo window by default.
 3. Check the result in the anaglyph preview and fine-tune it with the keyboard if required.
-4. Choose **Save**. StereoFine writes an SBS JPEG or, with **SBS as TIFF (lossless)** enabled, an SBS TIFF, plus one anaglyph. The Grayscale anaglyphs checkbox determines whether the saved anaglyph is color or grayscale, independently of the preview.
+4. Choose **Save**. StereoFine writes an SBS JPEG or, with **SBS as TIFF (lossless)** enabled, an SBS TIFF. **Save anaglyphs** additionally writes one anaglyph and is enabled by default. The indented **Grayscale anaglyphs** checkbox selects its appearance independently of the preview; its choice is retained while saving anaglyphs is off.
 
 Choosing **Start alignment** again recalculates geometry and near-point framing, clears manual horizontal/vertical nudges, and keeps the selected crop, aspect ratio and crop position. The detected near point is framed at least 3‰ behind the stereo window when a measurement is available. Saving and batch processing retain saved fine adjustments.
 
@@ -165,10 +165,10 @@ Saved `.sfin` states are reused. Non-favorites may still be analyzed, but produc
 
 ## Output and folders
 
-Every image export produces both:
+Image exports write:
 
 - an SBS JPEG, quality 95, or a losslessly compressed SBS TIFF when selected
-- one color or grayscale anaglyph JPEG, quality 90
+- one color or grayscale anaglyph JPEG, quality 90, when **Save anaglyphs** is enabled
 
 TIFF keeps 8-bit sources at 8 bits per channel and 16-bit sources at 16 bits. A mixed pair is promoted to 16 bits before processing. TIFF retains the common working ICC profile; JPEGs and the preview use sRGB. Untagged RGB is treated as sRGB. The TIFF setting is remembered and applies to single images and batches. Existing outputs of another format remain in place. Cross-view remains JPEG quality 90 with 4:4:4 sampling.
 
@@ -177,6 +177,8 @@ Anaglyphs are reduced to a maximum height of 2160 px when needed. Color anaglyph
 By default StereoFine creates an `output` folder inside the input folder. Alternatively, a persistent custom output folder can be selected. Finished images and analysis reports are first written completely to temporary files and only then atomically replaced at their final paths.
 
 Existing image outputs with the same name are deliberately replaced.
+
+**Custom SBS suffix** enables an editable list: `_sbs` (StereoFine), `_s` (m.objects), `_cs` (COSIMA), `-lr` (Bino), no suffix, or your own text. The choice replaces `_sbs` immediately before `.jpg` or `.tif`; program labels are shown only in the list. Deviation numbers precede the chosen suffix, for example `photo_030_s.jpg`. These preferences apply to single-image and batch exports and are remembered. Existing files are not renamed or deleted when export preferences change.
 
 **Deviation in filename** optionally adds the measured total deviation in whole
 permille: for example, `photo_057_sbs.jpg` and `photo_057_anaglyph.jpg`. Values are

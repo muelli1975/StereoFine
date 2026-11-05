@@ -10,6 +10,7 @@ from .anaglyph import make_anaglyph
 from .config import ANALYSIS_REPORT_FILENAME
 from .export import ExportResult, save_pair_outputs
 from .models import AnalysisRecord
+from .output_naming import validate_sbs_suffix
 from .processing import BatchProgress, ProcessedSource, ProcessingOptions, process_source
 from .render import render_final_pair
 from .reports import write_analysis_report
@@ -34,6 +35,8 @@ class BatchRunOptions:
     report_path: Path | None = None
     language: str = "de"
     append_deviation_to_filename: bool = False
+    save_anaglyph: bool = True
+    sbs_suffix: str = "_sbs"
 
 
 @dataclass
@@ -112,6 +115,8 @@ def run_batch(
     """
 
     source_list = list(sources)
+    if not options.analysis_only:
+        validate_sbs_suffix(options.sbs_suffix)
     validate_source_names(source_list, check_outputs=not options.analysis_only)
     total = len(source_list)
     result = BatchRunResult(language=options.language)
@@ -187,11 +192,11 @@ def run_batch(
                 right,
                 options.output_folder,
                 source.base_name,
-                # StereoFine 1.0 always writes both standard outputs.
-                output_mode="both",
+                output_mode="both" if options.save_anaglyph else "sbs",
                 gray_anaglyph=options.gray_anaglyph,
                 save_cross=options.save_cross,
                 tiff_sbs=options.tiff_sbs,
+                sbs_suffix=options.sbs_suffix,
                 icc_profile=processed.loaded_pair.icc_profile,
                 metadata_source=source.metadata_source,
                 filename_deviation_permille=(

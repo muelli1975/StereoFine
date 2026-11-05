@@ -9,4 +9,6 @@
 - **Stable preview controls:** Colour matching toggles retain the same master crop. Held arrows remain protected after releasing M or a floating-window key; interrupted work resumes the latest preview. Fixed black/white curve anchors also apply to existing saved curves.
 - **Initial defaults:** Original aspect ratio and enabled symmetric colour matching for new settings. Existing preferences and saved image adjustments keep their chosen values.
 
+- **Output preferences:** Anaglyph saving can be switched off independently of the preview; its indented grayscale choice is retained. An editable SBS suffix list includes StereoFine, m.objects, COSIMA and Bino naming conventions. Both preferences are remembered for single-image and batch exports.
+
 The compact keyboard workflow and existing stereo alignment and deviation methods are retained. See the English or German README for controls and platform requirements.

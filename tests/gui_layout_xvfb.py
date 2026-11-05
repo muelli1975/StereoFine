@@ -16,7 +16,6 @@ from stereofine.settings import AppSettings
 def main() -> None:
     settings = AppSettings(
         use_input_output_subfolder=True,
-        output_mode="both",
         analysis_method="AKAZE",
         color_match_enabled=False,
     )

@@ -39,6 +39,7 @@ from .i18n import (
     orientation_label,
 )
 from .notifications import play_ready_sound
+from .output_naming import suffix_label, suffix_labels, suffix_value, validate_sbs_suffix
 from .native_preview import (NativePreviewMixin, native_key, pan_speed, MEASURE_REPEAT_MS,
     MEASURE_HOLD_DELAY_MS, MEASURE_START_SPEED_PX_PER_SEC, MEASURE_MAX_SPEED_PX_PER_SEC,
     MEASURE_ACCEL_TIME_SEC, MEASURE_MAX_DT_SEC)
@@ -199,6 +200,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self.gray_anaglyph = ctk.BooleanVar(value=self.settings.gray_anaglyph)
         self.save_cross = ctk.BooleanVar(value=self.settings.save_cross)
         self.tiff_sbs = ctk.BooleanVar(value=self.settings.tiff_sbs)
+        self.save_anaglyph = ctk.BooleanVar(value=self.settings.save_anaglyph)
+        self.use_custom_sbs_suffix = ctk.BooleanVar(value=self.settings.use_custom_sbs_suffix)
+        self.sbs_suffix_display = ctk.StringVar(value=suffix_label(self.settings.sbs_suffix, self.settings.language))
         self.language_display = ctk.StringVar(value=language_label(self.settings.language))
         self.grid_mode = ctk.StringVar(value="Aus")
         self.grid_spacing = ctk.StringVar(value="50 Promille")
@@ -311,7 +315,11 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         code = language_code(label)
         if code == self.settings.language:
             return
+        if not self._commit_sbs_suffix(show_error=True):
+            self.language_display.set(language_label(self.settings.language))
+            return
         self.settings.language = code
+        self.sbs_suffix_display.set(suffix_label(self.settings.sbs_suffix, code))
         save_settings(self.settings)
         self._rebuild_for_language()
 
@@ -382,6 +390,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             border_color=BORDER,
             checkmark_color=TEXT_PRIMARY,
             text_color=TEXT_PRIMARY,
+            text_color_disabled=TEXT_DISABLED,
             corner_radius=4,
             font=self._font(13),
         )
@@ -593,10 +602,35 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         )
         self.deviation_filename_box.grid(row=row, column=0, sticky="w", padx=20, pady=(0, 8)); row += 1
 
+        self.custom_sbs_suffix_box = self._checkbox(
+            self.sidebar, self._t("custom_sbs_suffix"), self.use_custom_sbs_suffix, self._on_export_options_changed,
+        )
+        self.custom_sbs_suffix_box.grid(row=row, column=0, sticky="w", padx=20, pady=(0, 4)); row += 1
+        self.sbs_suffix_menu = ctk.CTkComboBox(
+            self.sidebar, variable=self.sbs_suffix_display,
+            values=suffix_labels(self.settings.language), command=self._on_sbs_suffix_selected,
+            fg_color=SECONDARY_BG, border_color=BORDER,
+            button_color=HOVER_BG, button_hover_color=BORDER,
+            dropdown_fg_color=SECONDARY_BG, dropdown_hover_color=HOVER_BG,
+            text_color=TEXT_PRIMARY, text_color_disabled=TEXT_DISABLED, dropdown_text_color=TEXT_PRIMARY,
+            corner_radius=CONTROL_RADIUS, font=self._font(13), dropdown_font=self._font(13),
+        )
+        self.sbs_suffix_menu.grid(row=row, column=0, sticky="ew", padx=(42, 20), pady=(0, 8)); row += 1
+        self._lock_widgets.append(self.sbs_suffix_menu)
+        self.sbs_suffix_menu.bind("<KeyRelease>", self._on_sbs_suffix_edited, add="+")
+        self.sbs_suffix_menu.bind("<FocusOut>", self._on_sbs_suffix_edited, add="+")
+        self.sbs_suffix_menu.bind("<FocusIn>", lambda _e: self._reset_keyboard_modes(), add="+")
+        self.sbs_suffix_menu.bind("<Return>", self._on_sbs_suffix_return, add="+")
+        self.sbs_suffix_menu.bind("<KP_Enter>", self._on_sbs_suffix_return, add="+")
+
+        self.save_anaglyph_box = self._checkbox(
+            self.sidebar, self._t("save_anaglyph"), self.save_anaglyph, self._on_export_options_changed,
+        )
+        self.save_anaglyph_box.grid(row=row, column=0, sticky="w", padx=20, pady=(0, 8)); row += 1
         self.gray_anaglyph_box = self._checkbox(
             self.sidebar, self._t("gray_anaglyph"), self.gray_anaglyph, self._persist_settings,
         )
-        self.gray_anaglyph_box.grid(row=row, column=0, sticky="w", padx=20, pady=(0, 8)); row += 1
+        self.gray_anaglyph_box.grid(row=row, column=0, sticky="w", padx=(42, 20), pady=(0, 8)); row += 1
         self.save_cross_box = self._checkbox(
             self.sidebar, self._t("save_cross"), self.save_cross, self._persist_settings,
         )
@@ -1121,6 +1155,15 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             except Exception:
                 pass
 
+        if hasattr(self, "save_anaglyph"):
+            self._set_checkbox_enabled(self.gray_anaglyph_box, not busy and bool(self.save_anaglyph.get()))
+        if hasattr(self, "sbs_suffix_menu"):
+            enabled = not busy and bool(self.use_custom_sbs_suffix.get())
+            self.sbs_suffix_menu.configure(
+                state="normal" if enabled else "disabled",
+                text_color=TEXT_PRIMARY if enabled else TEXT_DISABLED,
+            )
+
         custom_active = not self.use_input_subfolder.get()
         custom_color = TEXT_PRIMARY if (custom_active and not busy) else TEXT_DISABLED
         if hasattr(self, "custom_output_label"):
@@ -1298,9 +1341,41 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self.settings.gray_anaglyph = bool(self.gray_anaglyph.get())
         self.settings.save_cross = bool(self.save_cross.get())
         self.settings.tiff_sbs = bool(self.tiff_sbs.get())
-        # Output is intentionally fixed: SBS plus one anaglyph.
-        self.settings.output_mode = "both"
+        self.settings.save_anaglyph = bool(self.save_anaglyph.get())
+        self.settings.use_custom_sbs_suffix = bool(self.use_custom_sbs_suffix.get())
         save_settings(self.settings)
+
+    def _commit_sbs_suffix(self, *, show_error=False) -> bool:
+        value = suffix_value(self.sbs_suffix_display.get(), self.settings.language)
+        try:
+            validate_sbs_suffix(value)
+        except ValueError:
+            if show_error and self.use_custom_sbs_suffix.get():
+                messagebox.showerror(APP_NAME, self._t("invalid_sbs_suffix"))
+                self.sbs_suffix_menu.focus_set()
+            return not self.use_custom_sbs_suffix.get()
+        if value != self.settings.sbs_suffix:
+            self.settings.sbs_suffix = value
+            self._persist_settings()
+        return True
+
+    def _on_sbs_suffix_selected(self, _value=None) -> None:
+        self._commit_sbs_suffix(show_error=True)
+
+    def _on_sbs_suffix_edited(self, _event=None) -> None:
+        self._commit_sbs_suffix()
+
+    def _on_sbs_suffix_return(self, _event=None):
+        self._commit_sbs_suffix(show_error=True)
+        return "break"
+
+    def _on_export_options_changed(self) -> None:
+        self._commit_sbs_suffix()
+        self._persist_settings()
+        self._refresh_control_states()
+
+    def _effective_sbs_suffix(self) -> str:
+        return self.settings.sbs_suffix if self.use_custom_sbs_suffix.get() else "_sbs"
 
     def _effective_output_folder(self, root: Path | None = None) -> Path | None:
         if self.use_input_subfolder.get():
@@ -2096,6 +2171,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
     def _start_batch_run(self) -> None:
         if not self.sources:
             return
+        if not self.analysis_only.get() and not self._commit_sbs_suffix(show_error=True):
+            return
         self._batch_progress_index = None
         self._batch_progress_total = None
         self._batch_progress_source_name = None
@@ -2111,6 +2188,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             gray_anaglyph=bool(self.gray_anaglyph.get()),
             save_cross=bool(self.save_cross.get()),
             tiff_sbs=bool(self.tiff_sbs.get()),
+            save_anaglyph=bool(self.save_anaglyph.get()),
+            sbs_suffix=self._effective_sbs_suffix(),
             preview_mode=self.preview_mode.get(),
             language=self.settings.language,
             append_deviation_to_filename=bool(self.append_deviation_to_filename.get()),
@@ -2127,6 +2206,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             return "break"
         if not self._flush_state_save(explicit=True):
             return "break"
+        if not self._commit_sbs_suffix(show_error=True):
+            return "break"
         output_folder = self._effective_output_folder(self.current.source.input_root)
         if output_folder is None:
             messagebox.showinfo(APP_NAME, self._t("select_output_folder"))
@@ -2137,6 +2218,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             gray_anaglyph=bool(self.gray_anaglyph.get()),
             save_cross=bool(self.save_cross.get()),
             tiff_sbs=bool(self.tiff_sbs.get()),
+            save_anaglyph=bool(self.save_anaglyph.get()),
+            sbs_suffix=self._effective_sbs_suffix(),
             preview_mode=self.preview_mode.get(),
             language=self.settings.language,
             append_deviation_to_filename=bool(self.append_deviation_to_filename.get()),
@@ -2359,62 +2442,76 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
     # ------------------------------------------------------------------
     # Keyboard handling
     # ------------------------------------------------------------------
+    def _shortcut_handler(self, callback):
+        def dispatch(event):
+            # Let Tk's entry bindings edit text without also changing the image.
+            widget = getattr(event, "widget", None)
+            try:
+                if widget.winfo_class() in {"Entry", "TEntry", "TCombobox", "Text", "Spinbox", "TSpinbox"}:
+                    return None
+            except (AttributeError, tk.TclError):
+                pass
+            return callback(event)
+        return dispatch
+
     def _bind_shortcuts(self) -> None:
         self.bind("<FocusOut>", self._on_keyboard_focus_out, add="+")
         self.bind("<Unmap>", self._on_keyboard_unmap, add="+")
-        self.bind_all("<F11>", self._on_f11)
-        self.bind_all("<KeyRelease-F11>", lambda e: self._release_shortcut_key("f11"))
-        self.bind("<Escape>", self._on_escape)
-        self.bind("<Prior>", self.previous_source)
-        self.bind("<Next>", self.next_source)
-        self.bind_all("<space>", self.start_processing)
-        self.bind_all("<Return>", self.save_current_result)
-        self.bind_all("<KP_Enter>", self.save_current_result)
-        self.bind_all("<Control-r>", self._on_ctrl_r)
-        self.bind_all("<Control-R>", self._on_ctrl_r)
-        self.bind_all("<a>", self._on_a)
-        self.bind_all("<A>", self._on_a)
-        self.bind_all("<KeyRelease-a>", lambda e: self._release_shortcut_key("a"))
-        self.bind_all("<KeyRelease-A>", lambda e: self._release_shortcut_key("a"))
-        self.bind_all("<f>", self._on_f)
-        self.bind_all("<F>", self._on_f)
-        self.bind_all("<KeyRelease-f>", lambda e: self._release_shortcut_key("f"))
-        self.bind_all("<KeyRelease-F>", lambda e: self._release_shortcut_key("f"))
-        self.bind_all("<g>", self._on_g)
-        self.bind_all("<G>", self._on_g)
-        self.bind_all("<KeyRelease-g>", self._on_g_release)
-        self.bind_all("<KeyRelease-G>", self._on_g_release)
-        self.bind_all("<s>", self._on_s)
-        self.bind_all("<S>", self._on_s)
-        self.bind_all("<KeyRelease-s>", lambda e: self._release_shortcut_key("s"))
-        self.bind_all("<KeyRelease-S>", lambda e: self._release_shortcut_key("s"))
-        self.bind_all("<F1>", self._on_f1)
-        self.bind_all("<KeyRelease-F1>", lambda e: self._release_shortcut_key("f1"))
+        bind_all = lambda sequence, callback: self.bind_all(sequence, self._shortcut_handler(callback))
+        bind = lambda sequence, callback: self.bind(sequence, self._shortcut_handler(callback))
+        bind_all("<F11>", self._on_f11)
+        bind_all("<KeyRelease-F11>", lambda e: self._release_shortcut_key("f11"))
+        bind("<Escape>", self._on_escape)
+        bind("<Prior>", self.previous_source)
+        bind("<Next>", self.next_source)
+        bind_all("<space>", self.start_processing)
+        bind_all("<Return>", self.save_current_result)
+        bind_all("<KP_Enter>", self.save_current_result)
+        bind_all("<Control-r>", self._on_ctrl_r)
+        bind_all("<Control-R>", self._on_ctrl_r)
+        bind_all("<a>", self._on_a)
+        bind_all("<A>", self._on_a)
+        bind_all("<KeyRelease-a>", lambda e: self._release_shortcut_key("a"))
+        bind_all("<KeyRelease-A>", lambda e: self._release_shortcut_key("a"))
+        bind_all("<f>", self._on_f)
+        bind_all("<F>", self._on_f)
+        bind_all("<KeyRelease-f>", lambda e: self._release_shortcut_key("f"))
+        bind_all("<KeyRelease-F>", lambda e: self._release_shortcut_key("f"))
+        bind_all("<g>", self._on_g)
+        bind_all("<G>", self._on_g)
+        bind_all("<KeyRelease-g>", self._on_g_release)
+        bind_all("<KeyRelease-G>", self._on_g_release)
+        bind_all("<s>", self._on_s)
+        bind_all("<S>", self._on_s)
+        bind_all("<KeyRelease-s>", lambda e: self._release_shortcut_key("s"))
+        bind_all("<KeyRelease-S>", lambda e: self._release_shortcut_key("s"))
+        bind_all("<F1>", self._on_f1)
+        bind_all("<KeyRelease-F1>", lambda e: self._release_shortcut_key("f1"))
 
         for key in ("z", "Z"):
-            self.bind_all(f"<KeyPress-{key}>", self._on_detail_press)
-            self.bind_all(f"<KeyRelease-{key}>", self._on_detail_release)
-        self.bind_all("<KeyPress-m>", self._on_measure_press)
-        self.bind_all("<KeyPress-M>", self._on_measure_press)
-        self.bind_all("<KeyRelease-m>", self._on_measure_release)
-        self.bind_all("<KeyRelease-M>", self._on_measure_release)
+            bind_all(f"<KeyPress-{key}>", self._on_detail_press)
+            bind_all(f"<KeyRelease-{key}>", self._on_detail_release)
+        bind_all("<KeyPress-m>", self._on_measure_press)
+        bind_all("<KeyPress-M>", self._on_measure_press)
+        bind_all("<KeyRelease-m>", self._on_measure_release)
+        bind_all("<KeyRelease-M>", self._on_measure_release)
         for key in ("Left", "Right", "Up", "Down"):
-            self.bind_all(f"<KeyRelease-{key}>", self._on_arrow_release)
+            bind_all(f"<KeyRelease-{key}>", self._on_arrow_release)
 
-        self.bind_all("<Left>", lambda e: self._on_arrow("left", e))
-        self.bind_all("<Right>", lambda e: self._on_arrow("right", e))
-        self.bind_all("<Up>", lambda e: self._on_arrow("up", e))
-        self.bind_all("<Down>", lambda e: self._on_arrow("down", e))
-        self.bind_all("<Alt-Left>", lambda e: self._on_alt_arrow("left", e))
-        self.bind_all("<Alt-Right>", lambda e: self._on_alt_arrow("right", e))
-        self.bind_all("<Alt-Up>", lambda e: self._on_alt_arrow("up", e))
-        self.bind_all("<Alt-Down>", lambda e: self._on_alt_arrow("down", e))
+        bind_all("<Left>", lambda e: self._on_arrow("left", e))
+        bind_all("<Right>", lambda e: self._on_arrow("right", e))
+        bind_all("<Up>", lambda e: self._on_arrow("up", e))
+        bind_all("<Down>", lambda e: self._on_arrow("down", e))
+        bind_all("<Alt-Left>", lambda e: self._on_alt_arrow("left", e))
+        bind_all("<Alt-Right>", lambda e: self._on_alt_arrow("right", e))
+        bind_all("<Alt-Up>", lambda e: self._on_alt_arrow("up", e))
+        bind_all("<Alt-Down>", lambda e: self._on_alt_arrow("down", e))
 
         for edge, key in (("left", "l"), ("right", "r"), ("top", "t"), ("bottom", "b")):
-            self.bind_all(f"<KeyPress-{key}>", lambda e, edge=edge: self._set_floating_key(edge, e))
-            self.bind_all(f"<KeyPress-{key.upper()}>", lambda e, edge=edge: self._set_floating_key(edge, e))
-            self.bind_all(f"<KeyRelease-{key}>", lambda e, edge=edge: self._clear_floating_key(edge, e))
-            self.bind_all(f"<KeyRelease-{key.upper()}>", lambda e, edge=edge: self._clear_floating_key(edge, e))
+            bind_all(f"<KeyPress-{key}>", lambda e, edge=edge: self._set_floating_key(edge, e))
+            bind_all(f"<KeyPress-{key.upper()}>", lambda e, edge=edge: self._set_floating_key(edge, e))
+            bind_all(f"<KeyRelease-{key}>", lambda e, edge=edge: self._clear_floating_key(edge, e))
+            bind_all(f"<KeyRelease-{key.upper()}>", lambda e, edge=edge: self._clear_floating_key(edge, e))
 
     def _on_keyboard_focus_out(self, _event=None) -> None:
         # Focus events also occur between controls inside this window. Wait
@@ -2938,6 +3035,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         if self.busy_state != "idle":
             if not messagebox.askyesno(APP_NAME, self._t("close_busy")):
                 return
+        if not self._commit_sbs_suffix(show_error=True):
+            return
         if not self._flush_state_save(explicit=True):
             return
         self._cancel_disparity_refresh()
