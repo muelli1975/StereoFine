@@ -6,6 +6,7 @@ import sys
 from unittest.mock import patch
 
 import customtkinter as ctk
+import numpy as np
 from PIL import ImageGrab
 
 from stereofine.output_naming import suffix_labels
@@ -147,6 +148,12 @@ def check_export_options(app, checks, language):
         time.sleep(.01)
     assert app.busy_state == 'idle'
     assert app.current.source == source
+    first_loaded = np.asarray(app._preview_pil).copy()
+    deadline = time.monotonic()+.4
+    while time.monotonic() < deadline:
+        app.update()
+        np.testing.assert_array_equal(np.asarray(app._preview_pil), first_loaded)
+        time.sleep(.01)
     assert_image_keys_work()
     for busy in ('save', 'batch', 'analysis', 'idle'):
         app.busy_state = busy
@@ -177,4 +184,5 @@ def check_export_options(app, checks, language):
                        enter_escape_tab_restore_image_keys=True, suffix_selection_restores_image_keys=True,
                        outside_clicks_and_other_actions_restore_image_keys=True,
                        source_loading_restores_image_keys=True,
+                       first_loaded_frame_is_stable=True,
                        disabled_colors_match_shared_palette=True, output_options_dpi_checked=True))

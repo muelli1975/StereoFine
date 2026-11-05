@@ -88,6 +88,39 @@ def final_correction_checks(app, checks, language):
                        physical_release_restores_manual_editing=True,all_m_and_window_modes=True))
 
 
+def completed_analysis_preview_checks(app, checks, language):
+    frames = []
+    build = app._build_preview_anaglyph
+    def record():
+        build()
+        if app.busy_state == 'idle':
+            frames.append(np.asarray(app._preview_pil).copy())
+    app._build_preview_anaglyph = record
+    try:
+        for index, aspect in enumerate(('original', 'maximum', '1:1', '16:9')):
+            for color in (False, True):
+                app.current.state.framing.aspect = aspect
+                app.current.state.color.enabled = color
+                app._sync_vars_from_current()
+                app.preview_mode.set(('Farbig', 'Graustufen', 'Kreuzblick')[index % 3])
+                frames.clear()
+                with patch.object(gui, 'play_ready_sound') as ready:
+                    app.start_processing()
+                    pump(app, lambda: app.busy_state == 'idle', timeout=45)
+                    assert frames, (language, aspect, color)
+                    assert ready.call_count == 1
+                    first = frames[0]
+                    pump(app, lambda: native_ready(app))
+                    until = time.monotonic()+.4
+                    pump(app, lambda: time.monotonic() >= until)
+                    for frame in frames:
+                        np.testing.assert_array_equal(frame, first)
+                checks.append(dict(language=language, aspect=aspect, color=color,
+                    first_completed_analysis_frame_is_final=True, no_delayed_geometry_replacement=True))
+    finally:
+        app._build_preview_anaglyph = build
+
+
 def main():
     checks=[]
     with tempfile.TemporaryDirectory() as td:
@@ -240,6 +273,7 @@ def main():
                     final_correction_checks(app, checks, language)
                     pump(app, lambda: native_ready(app))
                     check_export_options(app, checks, language)
+                    completed_analysis_preview_checks(app, checks, language)
                 finally:
                     app._native_worker.cancel_all()
                     app._cancel_disparity_refresh();app.destroy()

@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import queue
 from copy import deepcopy
+from dataclasses import dataclass
 import re
 import sys
 import time
@@ -40,13 +41,13 @@ from .i18n import (
 )
 from .notifications import play_ready_sound
 from .output_naming import suffix_label, suffix_labels, suffix_value, validate_sbs_suffix
-from .native_preview import (NativePreviewMixin, native_key, pan_speed, MEASURE_REPEAT_MS,
+from .native_preview import (NativePreviewMixin, native_key, prepare_native_preview, pan_speed, MEASURE_REPEAT_MS,
     MEASURE_HOLD_DELAY_MS, MEASURE_START_SPEED_PX_PER_SEC, MEASURE_MAX_SPEED_PX_PER_SEC,
     MEASURE_ACCEL_TIME_SEC, MEASURE_MAX_DT_SEC)
 from .tooltip import attach_tooltip
 from .preview import PreviewImageCache, draw_grid_overlay, draw_measure_cross_overlay
 from .preview_render import PreviewBasePair, build_preview_base, render_preview_from_base
-from .processing import ProcessedSource, ProcessingDefaults, ProcessingOptions, process_source
+from .processing import ProcessingDefaults, ProcessingOptions, process_source
 from .resources import asset_path
 from .session import (
     BrowsedSource,
@@ -101,6 +102,12 @@ ACTIVITY_MIN_VISIBLE_MS = 200
 ACTIVITY_SPINNER_TRACK = (74, 62, 38)
 ACTIVITY_SPINNER_ARC = (198, 169, 94)
 ACTIVITY_SPINNER_BG = (24, 24, 24)
+
+
+@dataclass(frozen=True)
+class PreparedSessionPreview:
+    session: BrowsedSource
+    native_result: tuple
 
 
 def _render_activity_spinner_frame(frame_index: int) -> Image.Image:
@@ -1629,11 +1636,34 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         # orientation exactly as v41 did.  A target image's valid sidecar still
         # overrides these defaults.
         defaults = self._navigation_defaults() if inherit_input_transform else self._new_source_defaults()
+        bounds = self._preview_bounds()
 
-        def job(_token, _progress):
-            return browse_source(source, defaults)
+        def job(token, _progress):
+            session = browse_source(source, defaults)
+            return self._prepare_session_preview(session, bounds, token)
 
         self._start_worker("load", self._t("loading"), job)
+
+    @staticmethod
+    def _prepare_session_preview(session, bounds, token):
+        token.raise_if_cancelled()
+        native = prepare_native_preview(session.loaded_pair, deepcopy(session.state),
+                                        native_key(session), bounds, token)
+        return PreparedSessionPreview(session, native)
+
+    def _install_session_preview(self, prepared) -> None:
+        # Adopt one complete result. The first visible frame already has the
+        # master crop; no reduced proxy is replaced after the ready signal.
+        if self._native_after_id is not None:
+            self.after_cancel(self._native_after_id)
+            self._native_after_id = None
+        self._detail_session_id = id(prepared.session)
+        self._detail_center = None
+        self._native_cache = prepared.native_result[:3]
+        self._native_views = prepared.native_result[4]
+        self._native_fit_cache = None
+        self._native_failed_key = None
+        self._native_deferred = False
 
     def _restore_load_rollback(self) -> None:
         context = self._load_rollback_context
@@ -2195,9 +2225,17 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         else:
             source = self.current.source
             options = self._processing_options(keep_loaded_pair=True, restart_alignment=True)
+            bounds = self._preview_bounds()
+            missing_preview = self._t("internal_preview_error")
 
             def job(token, _progress):
-                return process_source(source, options, cancellation=token)
+                processed = process_source(source, options, cancellation=token)
+                if processed.loaded_pair is None:
+                    raise RuntimeError(missing_preview)
+                sidecar = load_sidecar(processed.source.sidecar_path, expected_source=processed.source_stamp)
+                session = BrowsedSource(processed.source, processed.loaded_pair,
+                                        processed.source_stamp, processed.state, sidecar)
+                return self._prepare_session_preview(session, bounds, token)
 
             self._start_worker("analysis", self._t("alignment_running"), job)
         return "break"
@@ -2336,8 +2374,12 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
 
     def _finish_worker_success(self, payload: Any) -> None:
         kind = self._finish_busy_common()
-        if kind == "load" and isinstance(payload, BrowsedSource):
-            self._load_rollback_context = None
+        if isinstance(payload, PreparedSessionPreview):
+            self._install_session_preview(payload)
+            payload = payload.session
+        if kind in {"load", "analysis"} and isinstance(payload, BrowsedSource):
+            if kind == "load":
+                self._load_rollback_context = None
             self.current = payload
             self._state_dirty = False
             self._state_dirty_can_create_sidecar = False
@@ -2345,26 +2387,11 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             self._refresh_preview()
             self._render_status()
             self._refresh_control_states()
-            self._schedule_disparity_refresh()
+            if kind == "load":
+                self._schedule_disparity_refresh()
+            else:
+                play_ready_sound(asset_path("ready.wav"))
             self._release_sbs_suffix_focus()
-            return
-
-        if kind == "analysis" and isinstance(payload, ProcessedSource):
-            if payload.loaded_pair is None:
-                messagebox.showerror(APP_NAME, self._t("internal_preview_error"))
-                return
-            sidecar = load_sidecar(payload.source.sidecar_path, expected_source=payload.source_stamp)
-            self.current = BrowsedSource(
-                payload.source,
-                payload.loaded_pair,
-                payload.source_stamp,
-                payload.state,
-                sidecar,
-            )
-            self._sync_vars_from_current()
-            self._refresh_preview()
-            self._render_status()
-            play_ready_sound(asset_path("ready.wav"))
             return
 
         if kind in {"batch", "save"} and isinstance(payload, BatchRunResult):
