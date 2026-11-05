@@ -14,13 +14,72 @@ from PIL import ImageGrab
 
 from stereofine import gui
 from stereofine.inputs import LoadedStereoPair
-from stereofine.native_preview import detail_box, native_key
+from stereofine.native_preview import detail_box, native_key, native_geometry_key
 from stereofine.render import render_final_pair
 from stereofine.session import browse_source
 from stereofine.processing import process_source
 from stereofine.settings import AppSettings
 from tests.gui_cross_measurement import pump
 from tests.test_restart_alignment import RestartAlignmentTests
+
+
+def final_correction_checks(app, checks, language):
+    # Non-trivial geometry exposed the old colour-toggle crop change.
+    app.current.state.alignment.valid = True
+    app.current.state.alignment.correction = {'rotation_deg': .6, 'scale': 1.002, 'vertical_shift_px': 2.4}
+    for aspect in ('original', 'maximum', '1:1', '16:9'):
+        app.current.state.framing.aspect = aspect
+        app.current.state.framing.crop_zoom_index = 1
+        app.current.state.color.enabled = False
+        app._sync_vars_from_current(); app._refresh_preview(rebuild_base=True)
+        pump(app, lambda: app._native_cache is not None and app._native_cache[0] == native_key(app.current)
+             and app._native_job_id is None and not app._native_views_need_resize())
+        geometry = native_geometry_key(app.current)
+        for mode in ('Farbig', 'Graustufen', 'Kreuzblick'):
+            app.preview_mode.set(mode); app._on_preview_mode_changed()
+            off = app._preview_pil.copy()
+            for enabled in (True, False):
+                app.color_match_enabled.set(enabled); app._on_color_match_changed()
+                shape = app._preview_pair_shape
+                expected = app._native_views[2][enabled]
+                masked = app._mask_preview_pair(*expected)
+                np.testing.assert_array_equal(app._preview_left_current, masked[0])
+                assert native_geometry_key(app.current) == geometry
+                stable = app._preview_pil.copy()
+                pump(app, lambda: app._native_cache is not None and app._native_cache[0] == native_key(app.current)
+                     and app._native_job_id is None)
+                assert app._preview_pair_shape == shape
+                np.testing.assert_array_equal(np.asarray(app._preview_pil), np.asarray(stable))
+            np.testing.assert_array_equal(np.asarray(app._preview_pil), np.asarray(off))
+        checks.append(dict(language=language,aspect=aspect,color_toggle_same_master_crop=True,
+                           all_preview_modes=True,no_delayed_color_toggle_jump=True))
+    # Let Tk process real scheduled release guards, including repeat pairs.
+    app.preview_mode.set('Farbig'); app._on_preview_mode_changed()
+    for mode in ('measure', 'left', 'right', 'top', 'bottom'):
+        for direction in ('left', 'right', 'up', 'down'):
+            if mode == 'measure':
+                app._on_measure_press()
+            else:
+                app._set_floating_key(mode)
+            app._on_arrow(direction)
+            before = deepcopy(app.current.state)
+            if mode == 'measure':
+                app._on_measure_release()
+            else:
+                app._clear_floating_key(mode)
+            app.update_idletasks()
+            for _ in range(5): app._on_arrow(direction)
+            assert app.current.state == before
+            app._on_arrow_release(SimpleNamespace(keysym=direction.title()))
+            app._on_arrow(direction)  # synthetic X11 release/press
+            assert app.current.state == before
+            app._on_arrow_release(SimpleNamespace(keysym=direction.title()))
+            app.update_idletasks()
+            app._on_arrow(direction)
+            assert app.current.state.manual != before.manual
+    app._reset_keyboard_modes()
+    checks.append(dict(language=language,held_arrows_remain_view_only=True,
+                       physical_release_restores_manual_editing=True,all_m_and_window_modes=True))
 
 
 def main():
@@ -50,6 +109,8 @@ def main():
                     assert app.settings.tiff_sbs
                     assert app.tiff_sbs_box.cget('text')==app._t('tiff_sbs')
                     app.preview_mode.set('Kreuzblick');app._on_preview_mode_changed()
+                    pump(app,lambda:app._native_cache is not None and
+                         app._native_cache[0]==native_key(app.current))
                     before=deepcopy(app.current.state)
                     for scale in (1.,1.25,1.5,2.):
                         ctk.set_widget_scaling(scale);ctk.set_window_scaling(scale)
@@ -171,6 +232,7 @@ def main():
                     except OSError: pass
                     app._close_shortcuts_help()
                     checks.append(dict(language=language,final_crop_color_consistent=True,tiff_option=True))
+                    final_correction_checks(app, checks, language)
                 finally:
                     app._native_worker.cancel_all()
                     app._cancel_disparity_refresh();app.destroy()

@@ -83,6 +83,11 @@ def _strict_interp_knots(source: np.ndarray, target: np.ndarray) -> tuple[np.nda
         sums[group] += float(target[idx])
         counts[group] += 1
     collapsed = (sums / np.maximum(1, counts)).astype(np.float32)
+    # Quantiles may coincide with an endpoint (e.g. clipped sky or deep
+    # shadows). Averaging their targets must not move the fixed range anchors.
+    # Apply this when reading curves too, so existing sidecars remain usable.
+    collapsed[unique == 0.0] = 0.0
+    collapsed[unique == 1.0] = 1.0
     return unique.astype(np.float32), collapsed
 
 

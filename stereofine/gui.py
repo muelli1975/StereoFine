@@ -1667,7 +1667,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self.current.state.color.enabled = bool(self.color_match_enabled.get())
         self.current.state.color.strength = 1.0
         self._schedule_state_save()
-        self._refresh_preview(rebuild_base=True)
+        self._refresh_preview()
 
     def _on_favorite_clicked(self, _event=None):
         if self.current is None or self.busy_state != "idle":
@@ -1924,6 +1924,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
 
     def _render_session_preview(self, session: BrowsedSource, *, start_image: bool = False) -> None:
         if not start_image and session is self.current and self._apply_native_preview():
+            if (self._native_cache is None or self._native_cache[0] != native_key(session)
+                    or self._native_views_need_resize()):
+                self._request_native_preview()
             return
         base = self._ensure_preview_base(session, start_image=start_image)
         pair = render_preview_from_base(
@@ -1936,7 +1939,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self._preview_right_current = pair.right
         self._preview_pair_shape = (pair.left.shape[1], pair.left.shape[0])
         self._build_preview_anaglyph()
-        if not start_image and (session.state.color.enabled or self.detail_active):
+        if not start_image:
             self._request_native_preview()
 
     def _update_preview_display(self, *, resampling=Image.Resampling.LANCZOS) -> None:
@@ -2321,10 +2324,10 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self._state_save_error = None
         self._sync_vars_from_current()
         self._render_status()
-        if native_key(self.current) != previous_key or self.current.state.floating_window != previous_window:
+        if (self._native_deferred or native_key(self.current) != previous_key
+                or self.current.state.floating_window != previous_window):
             self._refresh_preview()
-        elif self.current.state.color.enabled and (self._native_cache is None
-                or self._native_cache[0] != native_key(self.current)):
+        elif self._native_cache is None or self._native_cache[0] != native_key(self.current):
             self._request_native_preview()
         return True
 
@@ -2332,9 +2335,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         kind = self._finish_busy_common()
         if kind == "load":
             self._restore_load_rollback()
-        elif kind == "batch" and self.current is not None:
-            # Batch progress temporarily owns the preview. Restore the browsed
-            # image after cancellation so no stale progress frame remains.
+        elif kind in {"batch", "save", "analysis"} and self.current is not None:
+            # Resume a result completed during work, or request the latest
+            # state again if its render was interrupted by the busy period.
             self._refresh_preview()
             self._render_status()
         messagebox.showinfo(APP_NAME, self._t("processing_cancelled"))
@@ -2343,7 +2346,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         kind = self._finish_busy_common()
         if kind == "load":
             self._restore_load_rollback()
-        elif kind == "batch" and self.current is not None:
+        elif kind in {"batch", "save", "analysis"} and self.current is not None:
             self._refresh_preview()
             self._render_status()
         if isinstance(payload, dict):
@@ -2439,6 +2442,12 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             self.after_cancel(self._keyboard_focus_after_id)
             self._keyboard_focus_after_id = None
         self._end_detail_preview()
+        for timer in self._mode_release_ids.values():
+            self.after_cancel(timer)
+        self._mode_release_ids.clear()
+        for timer in self._detail_arrow_releases.values():
+            self.after_cancel(timer)
+        self._detail_arrow_releases.clear()
         self._detail_arrows_down.clear()
         self._detail_blocked_arrows.clear()
         self._floating_key_edge = None
@@ -2478,6 +2487,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         if self._handle_measure_arrow(direction):
             return "break"
         if self._floating_key_edge is not None:
+            self._detail_arrows_down.add(direction)
             if direction in {"left", "right"}:
                 self._adjust_floating_edge(self._floating_key_edge, 1 if direction == "right" else -1)
             return "break"
@@ -2593,6 +2603,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         return "break"
 
     def _set_floating_key(self, edge: str, event=None):
+        self._cancel_mode_release(edge)
         if self._is_ctrl(event):
             if edge == "right":
                 return self._on_ctrl_r(event)
@@ -2602,8 +2613,11 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         return "break"
 
     def _clear_floating_key(self, edge: str, _event=None):
-        if self._floating_key_edge == edge:
-            self._floating_key_edge = None
+        def released():
+            if self._floating_key_edge == edge:
+                self._floating_key_edge = None
+                self._block_mode_arrows()
+        self._release_key_mode(edge, released)
         if edge == "right":
             # R also carries Ctrl+R. The shared release event clears that
             # repeat guard so a later physical Ctrl+R press is accepted.
@@ -2631,6 +2645,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self.measure_cross_y = max(0.0, min(float(height - 1), float(self.measure_cross_y)))
 
     def _on_measure_press(self, _event=None):
+        self._cancel_mode_release("measure")
         if not self._measure_can_run():
             return "break"
         if not self.measure_cross_active:
@@ -2642,8 +2657,13 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         return "break"
 
     def _on_measure_release(self, _event=None):
+        self._release_key_mode("measure", self._end_measure_preview)
+        return "break"
+
+    def _end_measure_preview(self):
         if self.measure_cross_active:
             self.measure_cross_active = False
+            self._block_mode_arrows()
             self._stop_measure_repeat()
             if self.preview_mode.get() == "Kreuzblick":
                 self._build_preview_anaglyph()
@@ -2715,6 +2735,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
     def _handle_measure_arrow(self, direction: str) -> bool:
         if not self.measure_cross_active:
             return False
+        self._detail_arrows_down.add(direction)
         if self._measure_repeat_direction != direction:
             self._stop_measure_repeat()
             now = time.perf_counter()

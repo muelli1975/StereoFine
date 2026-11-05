@@ -6,4 +6,7 @@
 - **Reliable saved adjustments:** Failed sidecar writes keep edits in memory, show an error and prevent export or navigation from silently using older settings.
 - **Cross-view JPEG quality:** Cross-view exports use quality **90**, with **4:4:4** sampling. Anaglyphs remain JPEG quality 90 and ordinary SBS JPEGs remain quality 95.
 
+- **Stable preview controls:** Colour matching toggles retain the same master crop. Held arrows remain protected after releasing M or a floating-window key; interrupted work resumes the latest preview. Fixed black/white curve anchors also apply to existing saved curves.
+- **Initial defaults:** Original aspect ratio and enabled symmetric colour matching for new settings. Existing preferences and saved image adjustments keep their chosen values.
+
 The compact keyboard workflow and existing stereo alignment and deviation methods are retained. See the English or German README for controls and platform requirements.

@@ -22,9 +22,9 @@ class AppSettings:
     use_input_output_subfolder: bool = True
     custom_output_folder: str = ""
     output_mode: OutputMode = "both"
-    default_aspect: str = "maximum"
+    default_aspect: str = "original"
     analysis_method: str = "AKAZE"
-    color_match_enabled: bool = False
+    color_match_enabled: bool = True
     append_deviation_to_filename: bool = False
     gray_anaglyph: bool = False
     save_cross: bool = False
@@ -40,7 +40,7 @@ class AppSettings:
         self.output_mode = "both"
         self.default_aspect = normalize_aspect_code(self.default_aspect)
         if self.default_aspect not in ASPECT_RATIOS:
-            self.default_aspect = "maximum"
+            self.default_aspect = "original"
         self.analysis_method = str(self.analysis_method or "AKAZE").upper()
         if self.analysis_method not in {"AKAZE", "SIFT"}:
             self.analysis_method = "AKAZE"

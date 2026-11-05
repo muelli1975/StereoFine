@@ -125,7 +125,7 @@ Die Werte für links, rechts, oben und unten werden bildbezogen in der `.sfin`-D
 
 ## Symmetrische Farbangleichung
 
-Die Farbangleichung ist optional. Sie passt nicht ein Auge an das andere an, sondern führt beide Halbbilder über robuste Perzentilkurven auf einen gemeinsamen Zielzustand. Sie liegt vollständig außerhalb der Geometrie- und Deviation-Analyse.
+Neue Installationen starten mit dem Seitenverhältnis Original und eingeschalteter symmetrischer Farbangleichung. Gespeicherte Benutzereinstellungen und Bildjustagen behalten ihre gewählten Werte. Die Farbangleichung kann jederzeit ausgeschaltet werden. Sie passt nicht ein Auge an das andere an, sondern führt beide Halbbilder über robuste Perzentilkurven auf einen gemeinsamen Zielzustand. Sie liegt vollständig außerhalb der Geometrie- und Deviation-Analyse.
 
 Bereits farblich gut übereinstimmende Paare sollen dadurch praktisch unverändert bleiben. Die Funktion kann jederzeit ein- oder ausgeschaltet werden.
 

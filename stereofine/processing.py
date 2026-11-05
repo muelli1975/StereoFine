@@ -35,8 +35,8 @@ class ProcessingDefaults:
     left_mirror: bool = False
     right_mirror: bool = False
     swap_eyes: bool = False
-    aspect: str = "maximum"
-    color_enabled: bool = False
+    aspect: str = "original"
+    color_enabled: bool = True
 
 
 @dataclass(frozen=True)

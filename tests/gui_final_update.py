@@ -89,6 +89,7 @@ def main():
         report.update(display_size=size, cached_frame_median_ms=cached,
                       previous_frame_median_ms=uncached_ms)
         app._on_measure_release()
+        app.update_idletasks()
         assert app._preview_ctk_image.cget('light_image').tobytes() == source.resize(size, Image.Resampling.LANCZOS).tobytes()
 
         def f11():

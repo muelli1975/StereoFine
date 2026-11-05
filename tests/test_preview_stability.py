@@ -23,6 +23,7 @@ class PreviewStabilityTests(unittest.TestCase):
         app.busy_state = 'idle'
         app.after = lambda *args: 1
         app.after_cancel = lambda *args: None
+        app._preview_bounds = lambda: (300, 200)
         return app
 
     def test_failed_detail_render_retries_only_after_a_fresh_z_press(self):
@@ -53,7 +54,7 @@ class PreviewStabilityTests(unittest.TestCase):
             start.assert_called_once()
             a = np.zeros((10, 10, 3), np.uint8)
             app._native_worker.messages.put(WorkerMessage('retry', WorkerMessageKind.RESULT,
-                                            (key, a, a, app.current.state.color)))
+                                            (key, a, a, app.current.state.color, None)))
             app._poll_native_preview()
         self.assertIsNone(app._native_failed_key)
         self.assertEqual(app._native_cache[0], key)

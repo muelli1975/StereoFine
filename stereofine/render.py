@@ -60,6 +60,29 @@ def _color_basis(state: PairState, left: np.ndarray, right: np.ndarray) -> dict[
     }
 
 
+def match_final_pair_color(left: np.ndarray, right: np.ndarray, state: PairState):
+    """Apply the existing colour stage to an already prepared final crop."""
+    color_refit = False
+    basis = _color_basis(state, left, right)
+    transfer: SymmetricColorTransfer | None = None
+    if state.color.valid and state.color.method == COLOR_METHOD and state.color.basis == basis:
+        try:
+            transfer = SymmetricColorTransfer.from_dict(state.color.parameters)
+        except Exception:
+            transfer = None
+    if transfer is None:
+        transfer = fit_symmetric_color_transfer(left, right)
+        state.color.method = transfer.method
+        state.color.parameters = transfer.to_dict()
+        state.color.basis = basis
+        state.color.valid = True
+        color_refit = True
+    strength = max(0.0, min(1.0, float(state.color.strength)))
+    state.color.strength = strength
+    left, right = apply_symmetric_color_transfer(left, right, transfer, strength=strength)
+    return left, right, color_refit
+
+
 def render_final_pair(
     loaded: LoadedStereoPair,
     state: PairState,
@@ -105,23 +128,7 @@ def render_final_pair(
     color_refit = False
     color_applied = False
     if apply_color and state.color.enabled:
-        basis = _color_basis(state, left, right)
-        transfer: SymmetricColorTransfer | None = None
-        if state.color.valid and state.color.method == COLOR_METHOD and state.color.basis == basis:
-            try:
-                transfer = SymmetricColorTransfer.from_dict(state.color.parameters)
-            except Exception:
-                transfer = None
-        if transfer is None:
-            transfer = fit_symmetric_color_transfer(left, right)
-            state.color.method = transfer.method
-            state.color.parameters = transfer.to_dict()
-            state.color.basis = basis
-            state.color.valid = True
-            color_refit = True
-        strength = max(0.0, min(1.0, float(state.color.strength)))
-        state.color.strength = strength
-        left, right = apply_symmetric_color_transfer(left, right, transfer, strength=strength)
+        left, right, color_refit = match_final_pair_color(left, right, state)
         color_applied = True
 
     if apply_floating_window:

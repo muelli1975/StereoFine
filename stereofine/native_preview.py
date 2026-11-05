@@ -19,7 +19,7 @@ from .color_profiles import transform_rgb
 from .inputs import master_to_uint8
 from .geometry import apply_floating_window_masks
 from .preview import draw_grid_overlay, draw_measure_cross_overlay
-from .render import _stable_digest, render_final_pair
+from .render import _stable_digest, render_final_pair, match_final_pair_color
 from .worker import WorkerManager, WorkerMessageKind
 
 MEASURE_REPEAT_MS = 16
@@ -36,15 +36,49 @@ def pan_speed(held_seconds):
     return MEASURE_START_SPEED_PX_PER_SEC + (MEASURE_MAX_SPEED_PX_PER_SEC - MEASURE_START_SPEED_PX_PER_SEC) * t
 
 
-def native_key(session):
+def native_geometry_key(session):
     state = session.state
     return (id(session), _stable_digest({
         'input': asdict(state.input_transform),
         'correction': state.alignment.correction,
         'x': state.effective_offset_x_px, 'y': state.effective_offset_y_px,
         'framing': asdict(state.framing),
-        'color': (state.color.enabled, state.color.strength),
     }))
+
+
+def native_key(session):
+    return (native_geometry_key(session), session.state.color.enabled, session.state.color.strength)
+
+
+def fit_display_pair(left, right, bounds):
+    scale = min(1.0, 1600 / left.shape[1], 1000 / left.shape[0],
+                bounds[0] / left.shape[1], bounds[1] / left.shape[0])
+    size = (max(1, round(left.shape[1] * scale)), max(1, round(left.shape[0] * scale)))
+    return tuple(np.asarray(Image.fromarray(eye).resize(size, Image.Resampling.LANCZOS))
+                 for eye in (left, right))
+
+
+def prepare_native_preview(loaded, state, key, bounds, token):
+    """Prepare both fitted views from one master crop, retaining one native pair.
+
+    Only the small fitted variants are kept for instant colour toggles. Native
+    pixels and colour fitting retain the full working depth and ICC conversion.
+    """
+    left, right, _ = render_final_pair(loaded, state, apply_color=False, apply_floating_window=False)
+    token.raise_if_cancelled()
+    plain = tuple(master_to_uint8(transform_rgb(eye, loaded.icc_profile)) for eye in (left, right))
+    plain_fit = fit_display_pair(*plain, bounds)
+    native = plain if not state.color.enabled else None
+    del plain
+    left, right, _ = match_final_pair_color(left, right, state)
+    token.raise_if_cancelled()
+    matched = tuple(master_to_uint8(transform_rgb(eye, loaded.icc_profile)) for eye in (left, right))
+    matched_fit = fit_display_pair(*matched, bounds)
+    if state.color.enabled:
+        native = matched
+    token.raise_if_cancelled()
+    views = (key[0], state.color.strength, {False: plain_fit, True: matched_fit}, state.color, bounds)
+    return key, *native, state.color, views
 
 
 def detail_box(shape, bounds, center):
@@ -74,6 +108,9 @@ class NativePreviewMixin:
         self._native_requested_key = None
         self._native_cache = None
         self._native_fit_cache = None
+        self._native_views = None
+        self._native_deferred = False
+        self._mode_release_ids = {}
         self._native_after_id = None
         self._native_poll_id = None
         self._native_failed_key = None
@@ -82,7 +119,7 @@ class NativePreviewMixin:
     def destroy(self):
         self._native_worker.cancel_all()
         for timer in [self._native_after_id, self._native_poll_id, self._detail_release_id, self._detail_repeat_job,
-                      *self._detail_arrow_releases.values()]:
+                      *self._detail_arrow_releases.values(), *self._mode_release_ids.values()]:
             if timer is not None:
                 try:
                     self.after_cancel(timer)
@@ -98,7 +135,9 @@ class NativePreviewMixin:
             self._detail_session_id = id(self.current)
             self._detail_center = None
             self._native_cache = None
-        if self._native_cache is not None and self._native_cache[0] == key:
+            self._native_views = None
+        if (self._native_cache is not None and self._native_cache[0] == key
+                and not self._native_views_need_resize()):
             self._apply_native_preview()
             return
         self._native_requested_key = key
@@ -108,22 +147,16 @@ class NativePreviewMixin:
 
     def _start_native_preview(self):
         self._native_after_id = None
-        if (self.current is None or self.busy_state != 'idle' or self._native_job_id
-                or not (self.detail_active or self.current.state.color.enabled)):
+        if self.current is None or self.busy_state != 'idle' or self._native_job_id:
             return
         key = native_key(self.current)
         if key == self._native_failed_key:
             return
         loaded, state = self.current.loaded_pair, deepcopy(self.current.state)
+        bounds = self._preview_bounds()
 
         def render(token, _progress):
-            # Window masks are presentation only: keep their unmasked pixels
-            # reusable while the user adjusts an edge.
-            left, right, _ = render_final_pair(loaded, state, apply_floating_window=False)
-            token.raise_if_cancelled()
-            left = master_to_uint8(transform_rgb(left, loaded.icc_profile))
-            right = master_to_uint8(transform_rgb(right, loaded.icc_profile))
-            return key, left, right, state.color
+            return prepare_native_preview(loaded, state, key, bounds, token)
 
         self._native_running_key = key
         self._native_job_id = self._native_worker.start(render, name='StereoFine-native-preview').job_id
@@ -141,12 +174,14 @@ class NativePreviewMixin:
                     continue
                 self._native_job_id = None
                 if message.kind == WorkerMessageKind.RESULT:
-                    key, left, right, color = message.payload
-                    if self.current is not None and self.busy_state == 'idle' and key == native_key(self.current):
+                    key, left, right, color, views = message.payload
+                    if self.current is not None and key[0] == native_geometry_key(self.current):
                         self._native_cache = (key, left, right)
+                        self._native_views = views
                         self._native_failed_key = None
-                        self.current.state.color = color
-                        self._apply_native_preview()
+                        self._native_deferred = self.busy_state != 'idle'
+                        if not self._native_deferred:
+                            self._apply_native_preview()
                 elif message.kind == WorkerMessageKind.ERROR:
                     self._native_failed_key = self._native_running_key
                     if self.current is not None and self._native_running_key == native_key(self.current):
@@ -156,18 +191,44 @@ class NativePreviewMixin:
             pass
         if self._native_job_id:
             self._native_poll_id = self.after(30, self._poll_native_preview)
-        elif self.current is not None and (self.detail_active or self.current.state.color.enabled):
+        elif self.current is not None and self.busy_state == 'idle':
             key = native_key(self.current)
-            if self._native_cache is None or self._native_cache[0] != key:
+            if (not self._has_fitted_native_view() or self._native_views_need_resize()
+                    or self._native_cache is None or self._native_cache[0] != key):
                 self._start_native_preview()
 
+    def _has_fitted_native_view(self):
+        return (self.current is not None and self._native_views is not None
+                and self._native_views[:2] == (native_geometry_key(self.current), self.current.state.color.strength))
+
+    def _native_views_need_resize(self):
+        return self._has_fitted_native_view() and self._native_views[4] != self._preview_bounds()
+
     def _apply_native_preview(self):
-        if (self.current is None or self._native_cache is None
-                or self._native_cache[0] != native_key(self.current)):
+        if self.current is None:
             return False
+        fitted = self._has_fitted_native_view()
+        native = self._native_cache is not None and self._native_cache[0] == native_key(self.current)
+        if not fitted and not native:
+            return False
+        self._native_deferred = False
+        if fitted:
+            color = deepcopy(self._native_views[3])
+            color.enabled = self.current.state.color.enabled
+            color.strength = self.current.state.color.strength
+            self.current.state.color = color
         if self.detail_active:
+            if not native:
+                self._request_native_preview(immediate=True)
+                return True
             self._show_detail_preview()
         else:
+            if fitted and (not native or not self._native_views_need_resize()):
+                a, b = self._native_views[2][self.current.state.color.enabled]
+                self._preview_left_current, self._preview_right_current = self._mask_preview_pair(a, b)
+                self._preview_pair_shape = (a.shape[1], a.shape[0])
+                self._build_preview_anaglyph()
+                return True
             _, left, right = self._native_cache
             maxw, maxh = self._preview_bounds()
             scale = min(1.0, 1600 / left.shape[1], 1000 / left.shape[0],
@@ -183,6 +244,22 @@ class NativePreviewMixin:
             self._preview_pair_shape = size
             self._build_preview_anaglyph()
         return True
+
+    def _cancel_mode_release(self, mode):
+        pending = self._mode_release_ids.pop(mode, None)
+        if pending is not None:
+            self.after_cancel(pending)
+
+    def _block_mode_arrows(self):
+        self._detail_blocked_arrows.update(self._detail_arrows_down)
+        self._detail_arrows_down.clear()
+
+    def _release_key_mode(self, mode, callback):
+        self._cancel_mode_release(mode)
+        def released():
+            self._mode_release_ids.pop(mode, None)
+            callback()
+        self._mode_release_ids[mode] = self.after_idle(released)
 
     def _mask_preview_pair(self, left, right, **kwargs):
         fw = self.current.state.floating_window

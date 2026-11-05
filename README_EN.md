@@ -123,7 +123,7 @@ Left, right, top and bottom values are stored per image in the `.sfin` sidecar.
 
 ## Symmetric color matching
 
-Color matching is optional. It does not force one eye to match the other. Instead, robust percentile curves move both half-images toward a shared target state. It remains completely outside geometry and deviation analysis.
+New installations start with the Original aspect ratio and symmetric color matching enabled. Saved preferences and per-image adjustments retain their chosen values. Color matching can be switched off at any time. It does not force one eye to match the other. Instead, robust percentile curves move both half-images toward a shared target state. It remains completely outside geometry and deviation analysis.
 
 Pairs that already match well should remain practically unchanged. The function can be enabled or disabled at any time.
 
