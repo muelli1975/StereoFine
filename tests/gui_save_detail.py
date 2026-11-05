@@ -16,6 +16,8 @@ from PIL import Image, ImageTk
 from stereofine import gui
 from stereofine.session import browse_source
 from stereofine.settings import AppSettings
+from stereofine.native_preview import native_key
+from stereofine.state import reproducible_alignment_correction
 from stereofine.worker import JobCancelled
 from tests.gui_cross_measurement import pump
 from tests.gui_tiff_detail import native_ready
@@ -87,7 +89,13 @@ class ViewObserver:
         self.app._show_detail_preview = self.detail
 
 
-def save_case(app, root, name, timing, mode, tiff=False, detail=False):
+def save_case(app, root, name, timing, mode, tiff=False, detail=False, fresh=False):
+    if fresh:
+        app.start_processing()
+        pump(app, lambda: app.busy_state == 'idle', timeout=45)
+        correction = app.current.state.alignment.correction
+        assert correction != reproducible_alignment_correction(correction), \
+            'This check requires the diagnostics of a fresh in-memory analysis'
     pump(app, lambda: native_ready(app))
     app.preview_mode.set(mode)
     app._on_preview_mode_changed()
@@ -133,7 +141,10 @@ def save_case(app, root, name, timing, mode, tiff=False, detail=False):
             app.update_idletasks()
             app._flush_state_save(explicit=True)
             state = deepcopy(app.current.state)
-            with ViewObserver(app) as observer:
+            key_before = native_key(app.current)
+            with ViewObserver(app) as observer, \
+                    patch.object(app, '_ensure_preview_base', wraps=app._ensure_preview_base) as proxy, \
+                    patch.object(app._native_worker, 'start', wraps=app._native_worker.start) as rerender:
                 app.save_current_result()
                 assert app.busy_state == 'save'
                 if timing == 'cancel':
@@ -155,13 +166,22 @@ def save_case(app, root, name, timing, mode, tiff=False, detail=False):
             if timing not in ('cancel', 'error'):
                 extension = 'tif' if tiff else 'jpg'
                 assert (destination/'sbs'/f'{app.current.source.base_name}_sbs.{extension}').is_file()
-            assert app.current.state.alignment == state.alignment
+            assert reproducible_alignment_correction(app.current.state.alignment.correction) == \
+                reproducible_alignment_correction(state.alignment.correction)
+            if not fresh:
+                assert app.current.state.alignment == state.alignment
             assert app.current.state.framing == state.framing
             assert app.current.state.manual == state.manual
             assert app.current.state.floating_window == state.floating_window
             if detail:
                 assert app.detail_active
+            assert native_key(app.current) == key_before
+            if fresh:
+                assert proxy.call_count == rerender.call_count == 0, \
+                    (proxy.call_count, rerender.call_count)
             result = dict(case=name, timing=timing, mode=mode, tiff=tiff, detail=detail,
+                freshly_aligned_in_this_session=fresh, geometry_identity_unchanged=True,
+                proxy_fallbacks_during_save=proxy.call_count, new_native_jobs_during_save=rerender.call_count,
                 sampled_actual_tk_frames=observer.frames, geometry_samples=observer.samples,
                 changes=observer.changes[:20], actual_pixels_and_image_rectangle_unchanged=not observer.changes)
             print(json.dumps(result), flush=True)
@@ -256,6 +276,12 @@ def main():
                         ('save-in-native-detail', 'ready', 'Farbig', False, True)):
                         print(f'Save view check: {language} {case}', flush=True)
                         saves.append(save_case(app, root/language, case, timing, mode, tiff, detail))
+                    # The original save cases start from a compact .sfin state.
+                    # Exercise the distinct live-analysis -> export transition.
+                    for mode, tiff in (('Farbig', False), ('Graustufen', True), ('Kreuzblick', False)):
+                        name = 'fresh-analysis-'+mode
+                        print(f'Save view check: {language} {name}', flush=True)
+                        saves.append(save_case(app, root/language, name, 'ready', mode, tiff, fresh=True))
                     pans = pan_checks(app)
                     checks.append(dict(language=language, saves=saves, pans=pans))
                 finally:

@@ -20,6 +20,7 @@ from .inputs import master_to_uint8
 from .geometry import apply_floating_window_masks
 from .preview import draw_grid_overlay, draw_measure_cross_overlay
 from .render import _stable_digest, render_final_pair, match_final_pair_color
+from .state import reproducible_alignment_correction
 from .worker import WorkerManager, WorkerMessageKind
 
 MEASURE_REPEAT_MS = 16
@@ -40,7 +41,10 @@ def native_geometry_key(session):
     state = session.state
     return (id(session), _stable_digest({
         'input': asdict(state.input_transform),
-        'correction': state.alignment.correction,
+        # Fresh analysis also keeps diagnostics that .sfin deliberately drops.
+        # Cache identity must use the same reproducible geometry as the sidecar;
+        # otherwise adopting an unchanged export discards the fitted master view.
+        'correction': reproducible_alignment_correction(state.alignment.correction),
         'x': state.effective_offset_x_px, 'y': state.effective_offset_y_px,
         'framing': asdict(state.framing),
     }))
