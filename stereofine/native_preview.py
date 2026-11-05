@@ -58,7 +58,21 @@ def fit_display_pair(left, right, bounds):
                  for eye in (left, right))
 
 
-def prepare_native_preview(loaded, state, key, bounds, token):
+def detail_texture_key(key, window, mode):
+    return key, tuple(asdict(window).items()), mode
+
+
+def prepare_detail_texture(key, left, right, window, mode, token):
+    token.raise_if_cancelled()
+    a, b = apply_floating_window_masks(left, right, window.left_permille,
+        window.right_permille, window.top_permille, window.bottom_permille)
+    pixels = (np.concatenate([b, a], axis=1) if mode == 'Kreuzblick' else
+              make_anaglyph(a, b, gray=mode == 'Graustufen'))
+    token.raise_if_cancelled()
+    return detail_texture_key(key, window, mode), Image.fromarray(pixels)
+
+
+def prepare_native_preview(loaded, state, key, bounds, token, mode='Farbig'):
     """Prepare both fitted views from one master crop, retaining one native pair.
 
     Only the small fitted variants are kept for instant colour toggles. Native
@@ -77,7 +91,13 @@ def prepare_native_preview(loaded, state, key, bounds, token):
     if state.color.enabled:
         native = matched
     token.raise_if_cancelled()
-    views = (key[0], state.color.strength, {False: plain_fit, True: matched_fit}, state.color, bounds)
+    try:
+        texture = prepare_detail_texture(key, *native, state.floating_window, mode, token)
+    except MemoryError:
+        # This cache is an acceleration, not a requirement for displaying or
+        # exporting the native pair on machines with little free memory.
+        texture = None
+    views = (key[0], state.color.strength, {False: plain_fit, True: matched_fit}, state.color, bounds, texture)
     return key, *native, state.color, views
 
 
@@ -115,10 +135,20 @@ class NativePreviewMixin:
         self._native_poll_id = None
         self._native_failed_key = None
         self._native_running_key = None
+        self._held_preview_signature = None
+        self._detail_texture_cache = None
+        self._detail_texture_worker = WorkerManager()
+        self._detail_texture_job_id = None
+        self._detail_texture_after_id = None
+        self._detail_texture_poll_id = None
+        self._detail_texture_running_key = None
+        self._detail_texture_failed_key = None
 
     def destroy(self):
         self._native_worker.cancel_all()
+        self._detail_texture_worker.cancel_all()
         for timer in [self._native_after_id, self._native_poll_id, self._detail_release_id, self._detail_repeat_job,
+                      self._detail_texture_after_id, self._detail_texture_poll_id,
                       *self._detail_arrow_releases.values(), *self._mode_release_ids.values()]:
             if timer is not None:
                 try:
@@ -154,9 +184,10 @@ class NativePreviewMixin:
             return
         loaded, state = self.current.loaded_pair, deepcopy(self.current.state)
         bounds = self._preview_bounds()
+        mode = self._effective_preview_mode()
 
         def render(token, _progress):
-            return prepare_native_preview(loaded, state, key, bounds, token)
+            return prepare_native_preview(loaded, state, key, bounds, token, mode)
 
         self._native_running_key = key
         self._native_job_id = self._native_worker.start(render, name='StereoFine-native-preview').job_id
@@ -184,7 +215,8 @@ class NativePreviewMixin:
                             self._apply_native_preview()
                 elif message.kind == WorkerMessageKind.ERROR:
                     self._native_failed_key = self._native_running_key
-                    if self.current is not None and self._native_running_key == native_key(self.current):
+                    if (self.current is not None and self._native_running_key == native_key(self.current)
+                            and not self._preview_is_held()):
                         exc = message.payload['exception']
                         self.preview_label.configure(text=self._t('preview_error', text=str(exc)), image=None)
         except queue.Empty:
@@ -204,15 +236,37 @@ class NativePreviewMixin:
     def _native_views_need_resize(self):
         return self._has_fitted_native_view() and self._native_views[4] != self._preview_bounds()
 
+    def _preview_signature(self):
+        return (native_key(self.current), tuple(asdict(self.current.state.floating_window).items()),
+                self._preview_bounds(), self.detail_active,
+                self._detail_center if self.detail_active else None)
+
+    def _hold_current_preview(self):
+        if self.current is not None and getattr(self, '_preview_pil', None) is not None:
+            self._held_preview_signature = self._preview_signature()
+
+    def _preview_is_held(self):
+        if self._held_preview_signature is not None:
+            if self.current is not None and self._held_preview_signature == self._preview_signature():
+                return True
+            self._held_preview_signature = None
+        return False
+
     def _apply_native_preview(self):
         if self.current is None:
             return False
+        if self._preview_is_held():
+            return True
         fitted = self._has_fitted_native_view()
         native = self._native_cache is not None and self._native_cache[0] == native_key(self.current)
         if not fitted and not native:
             return False
         self._native_deferred = False
         if fitted:
+            if len(self._native_views) > 5:
+                texture = self._native_views[5]
+                if texture is not None and texture[0] == self._detail_texture_signature():
+                    self._detail_texture_cache = texture
             color = deepcopy(self._native_views[3])
             color.enabled = self.current.state.color.enabled
             color.strength = self.current.state.color.strength
@@ -266,6 +320,53 @@ class NativePreviewMixin:
         return apply_floating_window_masks(left, right, fw.left_permille, fw.right_permille,
                                            fw.top_permille, fw.bottom_permille, **kwargs)
 
+    def _detail_texture_signature(self):
+        return detail_texture_key(native_key(self.current), self.current.state.floating_window,
+                                  self._effective_preview_mode())
+
+    def _request_detail_texture(self):
+        if (self._detail_texture_after_id is None and self._detail_texture_job_id is None
+                and self._detail_texture_failed_key != self._detail_texture_signature()):
+            self._detail_texture_after_id = self.after(0, self._start_detail_texture)
+
+    def _start_detail_texture(self):
+        self._detail_texture_after_id = None
+        if (not self.detail_active or self.current is None or self._native_cache is None
+                or self._native_cache[0] != native_key(self.current) or self._detail_texture_job_id):
+            return
+        key, left, right = self._native_cache
+        window = deepcopy(self.current.state.floating_window)
+        mode = self._effective_preview_mode()
+        self._detail_texture_running_key = detail_texture_key(key, window, mode)
+        def render(token, _progress):
+            return prepare_detail_texture(key, left, right, window, mode, token)
+        self._detail_texture_job_id = self._detail_texture_worker.start(render,
+            name='StereoFine-detail-texture').job_id
+        self._detail_texture_poll_id = self.after(16, self._poll_detail_texture)
+
+    def _poll_detail_texture(self):
+        self._detail_texture_poll_id = None
+        try:
+            while True:
+                message = self._detail_texture_worker.messages.get_nowait()
+                if message.job_id != self._detail_texture_job_id or message.kind == WorkerMessageKind.STARTED:
+                    continue
+                self._detail_texture_job_id = None
+                if message.kind == WorkerMessageKind.RESULT and self.current is not None:
+                    if message.payload[0] == self._detail_texture_signature():
+                        self._detail_texture_cache = message.payload
+                        if self.detail_active:
+                            self._show_detail_preview()
+                elif message.kind == WorkerMessageKind.ERROR:
+                    self._detail_texture_failed_key = self._detail_texture_running_key
+        except queue.Empty:
+            pass
+        if self._detail_texture_job_id:
+            self._detail_texture_poll_id = self.after(16, self._poll_detail_texture)
+        elif self.detail_active and self.current is not None:
+            if self._detail_texture_cache is None or self._detail_texture_cache[0] != self._detail_texture_signature():
+                self._request_detail_texture()
+
     def _show_detail_preview(self, *, previous_center=None):
         if (not self.detail_active or self._native_cache is None or self.current is None
                 or self._native_cache[0] != native_key(self.current)):
@@ -281,16 +382,23 @@ class NativePreviewMixin:
         if previous_center is not None and box == detail_box(left.shape, (eye_width, maxh), previous_center)[0]:
             return
         x, y, x1, y1 = box
-        a, b = left[y:y1, x:x1], right[y:y1, x:x1]
-        a, b = self._mask_preview_pair(a, b, reference_size=(left.shape[1], left.shape[0]), origin=(x, y))
+        texture = self._detail_texture_cache
+        cached = texture is not None and texture[0] == self._detail_texture_signature()
+        if not cached:
+            self._request_detail_texture()
+            a, b = left[y:y1, x:x1], right[y:y1, x:x1]
+            a, b = self._mask_preview_pair(a, b, reference_size=(left.shape[1], left.shape[0]), origin=(x, y))
         if mode == 'Kreuzblick':
-            eyes = [Image.fromarray(b), Image.fromarray(a)]
+            eyes = ([texture[1].crop(box), texture[1].crop((x+left.shape[1], y, x1+left.shape[1], y1))]
+                    if cached else [Image.fromarray(b), Image.fromarray(a)])
             if not self.measure_cross_active and self.grid_mode.get() != 'Aus':
                 eyes = [draw_grid_overlay(eye, self.grid_spacing.get(), self.grid_mode.get(),
                                          reference_size=(left.shape[1], left.shape[0]), origin=(x, y)) for eye in eyes]
-            image = Image.fromarray(np.concatenate([np.asarray(eye) for eye in eyes], axis=1))
+            image = Image.new('RGB', (eyes[0].width*2, eyes[0].height))
+            image.paste(eyes[0], (0, 0)); image.paste(eyes[1], (eyes[0].width, 0))
         else:
-            image = Image.fromarray(make_anaglyph(a, b, gray=mode == 'Graustufen'))
+            image = (texture[1].crop(box) if cached else
+                     Image.fromarray(make_anaglyph(a, b, gray=mode == 'Graustufen')))
             if not self.measure_cross_active and self.grid_mode.get() != 'Aus':
                 image = draw_grid_overlay(image, self.grid_spacing.get(), self.grid_mode.get(),
                                           reference_size=(left.shape[1], left.shape[0]), origin=(x, y))
@@ -319,6 +427,7 @@ class NativePreviewMixin:
             # Retry only on a fresh physical Z press. Automatic polling and
             # key repeat must not loop on a failing render.
             self._native_failed_key = None
+            self._detail_texture_failed_key = None
             self._stop_measure_repeat()
             self._request_native_preview(immediate=True)
             if self._native_cache is None or self._native_cache[0] != native_key(self.current):

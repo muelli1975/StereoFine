@@ -1637,18 +1637,19 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         # overrides these defaults.
         defaults = self._navigation_defaults() if inherit_input_transform else self._new_source_defaults()
         bounds = self._preview_bounds()
+        mode = self._effective_preview_mode()
 
         def job(token, _progress):
             session = browse_source(source, defaults)
-            return self._prepare_session_preview(session, bounds, token)
+            return self._prepare_session_preview(session, bounds, token, mode)
 
         self._start_worker("load", self._t("loading"), job)
 
     @staticmethod
-    def _prepare_session_preview(session, bounds, token):
+    def _prepare_session_preview(session, bounds, token, mode='Farbig'):
         token.raise_if_cancelled()
         native = prepare_native_preview(session.loaded_pair, deepcopy(session.state),
-                                        native_key(session), bounds, token)
+                                        native_key(session), bounds, token, mode)
         return PreparedSessionPreview(session, native)
 
     def _install_session_preview(self, prepared) -> None:
@@ -1664,6 +1665,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self._native_fit_cache = None
         self._native_failed_key = None
         self._native_deferred = False
+        self._held_preview_signature = None
 
     def _restore_load_rollback(self) -> None:
         context = self._load_rollback_context
@@ -2201,7 +2203,13 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
     def _start_worker(self, kind: str, button_text: str, function) -> None:
         if self.busy_state != "idle":
             return
-        self._end_detail_preview()
+        if kind == "save":
+            self._hold_current_preview()
+            self._stop_detail_repeat()
+            self._stop_measure_repeat()
+        else:
+            self._held_preview_signature = None
+            self._end_detail_preview()
         self._cancel_disparity_refresh()
         self.busy_state = kind
         self.current_job_kind = kind
@@ -2226,6 +2234,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             source = self.current.source
             options = self._processing_options(keep_loaded_pair=True, restart_alignment=True)
             bounds = self._preview_bounds()
+            mode = self._effective_preview_mode()
             missing_preview = self._t("internal_preview_error")
 
             def job(token, _progress):
@@ -2235,7 +2244,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
                 sidecar = load_sidecar(processed.source.sidecar_path, expected_source=processed.source_stamp)
                 session = BrowsedSource(processed.source, processed.loaded_pair,
                                         processed.source_stamp, processed.state, sidecar)
-                return self._prepare_session_preview(session, bounds, token)
+                return self._prepare_session_preview(session, bounds, token, mode)
 
             self._start_worker("analysis", self._t("alignment_running"), job)
         return "break"
@@ -2446,7 +2455,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
                         self.after(1400, self._update_start_button_text)
             # A single-image export does not change the source pixels. Adopt
             # its saved state without replacing the session or its view caches.
-            if kind == "save" and self._adopt_saved_result(payload):
+            if kind == "save":
+                self._adopt_saved_result(payload)
                 return
             if self.source_index is not None and self.sources:
                 self._load_source_index(self.source_index)

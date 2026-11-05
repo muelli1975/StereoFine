@@ -92,6 +92,19 @@ jobs:
           path: build/gui-keyboard-filename-*.json
           if-no-files-found: error
 
+      - name: Actual save pixels, image rectangles and native pan performance (Linux)
+        if: runner.os == 'Linux'
+        run: PYTHONPATH=. xvfb-run -a -s '-screen 0 4096x2400x24' python tests/gui_save_detail.py
+      - name: Actual save pixels, image rectangles and native pan performance
+        if: runner.os != 'Linux'
+        run: python -m tests.gui_save_detail
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: StereoFine-save-detail-${{ matrix.os }}
+          path: build/gui-save-detail-*.json
+          if-no-files-found: error
+
       - name: Independent cross-view output, preview and crop refresh (Linux)
         if: runner.os == 'Linux'
         run: PYTHONPATH=. xvfb-run -a -s '-screen 0 1920x1080x24' python tests/gui_cross_measurement.py

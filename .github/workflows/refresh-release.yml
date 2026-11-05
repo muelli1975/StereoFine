@@ -40,6 +40,10 @@ jobs:
         with:
           pattern: StereoFine-tiff-detail-*
           path: checks/tiff-detail
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: StereoFine-save-detail-*
+          path: checks/save-detail
       - name: Verify all archives and record checks
         run: |
           python scripts/release_checksums.py release

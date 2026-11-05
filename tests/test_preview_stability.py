@@ -24,6 +24,8 @@ class PreviewStabilityTests(unittest.TestCase):
         app.after = lambda *args: 1
         app.after_cancel = lambda *args: None
         app._preview_bounds = lambda: (300, 200)
+        app.measure_cross_active = False
+        app.preview_mode = SimpleNamespace(get=lambda: 'Farbig')
         return app
 
     def test_failed_detail_render_retries_only_after_a_fresh_z_press(self):
