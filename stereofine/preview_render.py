@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 import numpy as np
 
@@ -19,7 +19,7 @@ from .geometry import (
     crop_shifted_pair_to_overlap,
 )
 from .inputs import LoadedStereoPair, master_to_uint8
-from .state import PairState
+from .state import PairState, reproducible_alignment_correction
 
 
 @dataclass(frozen=True)
@@ -171,10 +171,17 @@ def render_preview_from_base(
         base.original_aspect,
     )
 
-    # Apply prepared final-crop curves; never refit from reduced preview pixels.
+    # Keep the last prepared curves during crop/offset edits. Their final-crop
+    # validity still remains false, so the native renderer/export refits them.
+    # Never carry per-eye curves across an eye swap or changed registration.
     if apply_color and state.color.enabled and not base.color_applied:
         transfer: SymmetricColorTransfer | None = None
-        if state.color.valid and state.color.method == COLOR_METHOD:
+        from .render import _stable_digest
+        basis = state.color.basis or {}
+        compatible = (basis.get('input_transform') == asdict(state.input_transform)
+                      and basis.get('alignment_correction_sha256') == _stable_digest(
+                          reproducible_alignment_correction(state.alignment.correction) or {}))
+        if state.color.method == COLOR_METHOD and (state.color.valid or compatible):
             try:
                 transfer = SymmetricColorTransfer.from_dict(state.color.parameters)
             except Exception:

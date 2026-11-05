@@ -1,5 +1,6 @@
 """Observe actual Tk pixels and image rectangles throughout saves and held pans."""
 from copy import deepcopy
+from dataclasses import replace
 import hashlib
 import json
 from pathlib import Path
@@ -11,14 +12,17 @@ import time
 from unittest.mock import patch
 
 import customtkinter as ctk
+import numpy as np
 from PIL import Image, ImageTk
 
 from stereofine import gui
 from stereofine.session import browse_source
 from stereofine.settings import AppSettings
-from stereofine.native_preview import native_key
+from stereofine.native_preview import native_key, detail_box, fit_display_pair
+from stereofine.preview_render import render_preview_from_base
+from stereofine.render import render_final_pair
 from stereofine.state import reproducible_alignment_correction
-from stereofine.worker import JobCancelled
+from stereofine.worker import CancellationToken, JobCancelled
 from tests.gui_cross_measurement import pump
 from tests.gui_tiff_detail import native_ready
 from tests.test_restart_alignment import RestartAlignmentTests
@@ -244,6 +248,119 @@ def pan_checks(app):
     return results
 
 
+def interactive_colour_checks(app):
+    original = app.current
+    biased = np.clip(original.loaded_pair.right.astype(np.int32)+32, 0, 255).astype(np.uint8)
+    session = replace(original, loaded_pair=replace(original.loaded_pair, right=biased),
+                      state=deepcopy(original.state))
+    session.state.color.enabled = True
+    session.state.color.valid = False
+    app.current = session
+    prepared = app._prepare_session_preview(session, app._preview_bounds(), CancellationToken())
+    app._install_session_preview(prepared)
+    app._sync_vars_from_current()
+    app._refresh_preview()
+    gate = threading.Event()
+    start = app._native_worker.start
+    def delayed(function, **kwargs):
+        def work(token, progress):
+            while not gate.wait(.02):
+                token.raise_if_cancelled()
+            return function(token, progress)
+        return start(work, **kwargs)
+    edits = []
+    try:
+        with patch.object(app._native_worker, 'start', side_effect=delayed):
+            for name, edit in (
+                    ('crop', lambda: app._adjust_crop_zoom(-1 if session.state.framing.crop_zoom_index else 1)),
+                    ('horizontal', lambda: app._adjust_manual_offset(1, 0)),
+                    ('vertical', lambda: app._adjust_manual_offset(0, 1)),
+                    ('crop-again', lambda: app._adjust_crop_zoom(1))):
+                edit()
+                assert not session.state.color.valid
+                reference = deepcopy(session.state)
+                reference.color.valid = True
+                expected = render_preview_from_base(app._preview_base, reference)
+                raw = render_preview_from_base(app._preview_base, session.state, apply_color=False)
+                np.testing.assert_array_equal(app._preview_left_current, expected.left)
+                np.testing.assert_array_equal(app._preview_right_current, expected.right)
+                assert not np.array_equal(expected.left, raw.left)
+                edits.append(name)
+            gate.set()
+            pump(app, lambda: native_ready(app), timeout=45)
+            left, right, _ = render_final_pair(session.loaded_pair, deepcopy(session.state),
+                                               apply_floating_window=False)
+            expected = app._mask_preview_pair(*fit_display_pair(left, right, app._preview_bounds()))
+            np.testing.assert_array_equal(app._preview_left_current, expected[0])
+            np.testing.assert_array_equal(app._preview_right_current, expected[1])
+        return dict(edits=edits, matching_visible_before_native_result=True,
+                    completed_preview_matches_export=True)
+    finally:
+        gate.set()
+        app._cancel_disparity_refresh()
+        app.current = original
+        app._install_session_preview(app._prepare_session_preview(
+            original, app._preview_bounds(), CancellationToken()))
+        app._sync_vars_from_current()
+        app._refresh_preview()
+
+
+def fullscreen_detail_checks(app):
+    pump(app, lambda: native_ready(app))
+    app.preview_mode.set('Farbig')
+    app._on_preview_mode_changed()
+    app.focus_force()  # Activate once; no focus repair after any transition.
+    app.update()
+    gate = threading.Event()
+    start = app._native_worker.start
+    def delayed(function, **kwargs):
+        def work(token, progress):
+            while not gate.wait(.02):
+                token.raise_if_cancelled()
+            return function(token, progress)
+        return start(work, **kwargs)
+    checks = []
+    try:
+        with patch.object(app._native_worker, 'start', side_effect=delayed):
+            for route in ('button', 'f11', 'escape'):
+                for entering in (True, False):
+                    if entering or route == 'button':
+                        app.fullscreen_button.invoke()
+                    elif route == 'f11':
+                        app._release_shortcut_key('f11')
+                        app._on_f11()
+                    else:
+                        app._on_escape()
+                    native_wm = bool(app.attributes('-fullscreen'))
+                    if platform.system() == 'Linux' and entering and not native_wm:
+                        app.geometry('1720x1080')  # Xvfb has no fullscreen WM.
+                    elif platform.system() == 'Linux' and not entering:
+                        app.geometry('1400x900')
+                    until = time.monotonic()+(2. if platform.system() == 'Darwin' else .45)
+                    pump(app, lambda: time.monotonic() >= until)
+                    before = app._preview_ctk_image
+                    app.event_generate('<KeyPress-z>')
+                    app.update()
+                    assert app.detail_active, (route, entering, 'First Z was ignored')
+                    assert app._preview_ctk_image is not before, (route, entering, 'No detail frame')
+                    native = app._native_cache[1]
+                    bounds = app._preview_bounds()
+                    box, _ = detail_box(native.shape, bounds, app._detail_center)
+                    image = app._preview_ctk_image.cget('light_image')
+                    assert image.size == (box[2]-box[0], box[3]-box[1])
+                    app.event_generate('<KeyRelease-z>')
+                    app.update()
+                    assert not app.detail_active
+                    checks.append(dict(route=route, entering=entering, native_fullscreen=native_wm,
+                                       first_z_press_shows_native_pixels=True))
+        return checks
+    finally:
+        gate.set()
+        if app.fullscreen:
+            app.toggle_fullscreen()
+        pump(app, lambda: native_ready(app), timeout=45)
+
+
 def main():
     checks = []
     with tempfile.TemporaryDirectory() as directory:
@@ -282,8 +399,11 @@ def main():
                         name = 'fresh-analysis-'+mode
                         print(f'Save view check: {language} {name}', flush=True)
                         saves.append(save_case(app, root/language, name, 'ready', mode, tiff, fresh=True))
+                    colour = interactive_colour_checks(app)
+                    fullscreen = fullscreen_detail_checks(app)
                     pans = pan_checks(app)
-                    checks.append(dict(language=language, saves=saves, pans=pans))
+                    checks.append(dict(language=language, saves=saves, pans=pans,
+                                       interactive_colour=colour, fullscreen_detail=fullscreen))
                 finally:
                     app.destroy()
     Path('build').mkdir(exist_ok=True)

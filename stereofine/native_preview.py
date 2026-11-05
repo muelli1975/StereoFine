@@ -433,8 +433,12 @@ class NativePreviewMixin:
             self._native_failed_key = None
             self._detail_texture_failed_key = None
             self._stop_measure_repeat()
-            self._request_native_preview(immediate=True)
-            if self._native_cache is None or self._native_cache[0] != native_key(self.current):
+            if self._native_cache is not None and self._native_cache[0] == native_key(self.current):
+                # Inspection crops existing native pixels. A pending fitted
+                # viewport after fullscreen/resize is irrelevant to this view.
+                self._apply_native_preview()
+            else:
+                self._request_native_preview(immediate=True)
                 self.preview_label.configure(text=self._t('detail_loading'), image=None)
                 self.preview_label._label.configure(image='')
         return 'break'

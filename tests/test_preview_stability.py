@@ -15,6 +15,27 @@ from tests.test_foundation import _import_gui_without_customtkinter_runtime
 
 
 class PreviewStabilityTests(unittest.TestCase):
+    def test_first_z_press_uses_native_pixels_even_while_fullscreen_fit_is_pending(self):
+        app = self.app()
+        pixels = np.zeros((480, 720, 3), np.uint8)
+        key = native_key(app.current)
+        app._detail_session_id = id(app.current)
+        app._native_cache = (key, pixels, pixels)
+        app._native_views = (key[0], app.current.state.color.strength,
+                             {False: (pixels, pixels), True: (pixels, pixels)},
+                             deepcopy(app.current.state.color), (300, 200))
+        app._preview_bounds = lambda: (600, 400)
+        app._native_job_id = 'viewport-resize-in-progress'
+        draws = []
+        app._show_detail_preview = lambda: draws.append(app._native_cache)
+        app._stop_measure_repeat = lambda: None
+        self.assertTrue(app._native_views_need_resize())
+        app._on_detail_press()
+        self.assertTrue(app.detail_active)
+        self.assertEqual(draws, [app._native_cache])
+        self.assertEqual(app._native_job_id, 'viewport-resize-in-progress')
+        self.assertIsNone(app._native_after_id)
+
     def app(self):
         gui = _import_gui_without_customtkinter_runtime()
         app = object.__new__(gui.StereoFineApp)
