@@ -144,6 +144,7 @@ class NativePreviewMixin:
                     key, left, right, color = message.payload
                     if self.current is not None and self.busy_state == 'idle' and key == native_key(self.current):
                         self._native_cache = (key, left, right)
+                        self._native_failed_key = None
                         self.current.state.color = color
                         self._apply_native_preview()
                 elif message.kind == WorkerMessageKind.ERROR:
@@ -188,7 +189,7 @@ class NativePreviewMixin:
         return apply_floating_window_masks(left, right, fw.left_permille, fw.right_permille,
                                            fw.top_permille, fw.bottom_permille, **kwargs)
 
-    def _show_detail_preview(self):
+    def _show_detail_preview(self, *, previous_center=None):
         if (not self.detail_active or self._native_cache is None or self.current is None
                 or self._native_cache[0] != native_key(self.current)):
             return
@@ -197,6 +198,11 @@ class NativePreviewMixin:
         mode = self._effective_preview_mode()
         eye_width = maxw // 2 if mode == 'Kreuzblick' else maxw
         box, self._detail_center = detail_box(left.shape, (eye_width, maxh), self._detail_center)
+        # A pan at an image edge (or below one screen pixel) may leave the
+        # visible region unchanged. Explicit refreshes still redraw overlays,
+        # mode changes and resized views even at the same position.
+        if previous_center is not None and box == detail_box(left.shape, (eye_width, maxh), previous_center)[0]:
+            return
         x, y, x1, y1 = box
         a, b = left[y:y1, x:x1], right[y:y1, x:x1]
         a, b = self._mask_preview_pair(a, b, reference_size=(left.shape[1], left.shape[0]), origin=(x, y))
@@ -233,6 +239,9 @@ class NativePreviewMixin:
             return 'break'
         if not self.detail_active:
             self.detail_active = True
+            # Retry only on a fresh physical Z press. Automatic polling and
+            # key repeat must not loop on a failing render.
+            self._native_failed_key = None
             self._stop_measure_repeat()
             self._request_native_preview(immediate=True)
             if self._native_cache is None or self._native_cache[0] != native_key(self.current):
@@ -293,7 +302,7 @@ class NativePreviewMixin:
         x, y = self._detail_center
         dx, dy = {'left': (-1, 0), 'right': (1, 0), 'up': (0, -1), 'down': (0, 1)}[direction]
         self._detail_center = (x + dx * pixels, y + dy * pixels)
-        self._show_detail_preview()
+        self._show_detail_preview(previous_center=(x, y))
 
     def _stop_detail_repeat(self):
         if self._detail_repeat_job is not None:

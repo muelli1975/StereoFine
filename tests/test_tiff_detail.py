@@ -146,7 +146,7 @@ class DetailAndSaveTests(unittest.TestCase):
     def test_detail_pan_ignores_os_repeat_and_preserves_entire_edit_state(self):
         app=self.app();app.detail_active=True;app._detail_center=(1000,800)
         app._native_cache=(native_key(app.current), np.zeros((1,1,3),np.uint8), None)
-        app._show_detail_preview=lambda:None
+        app._show_detail_preview=lambda **kwargs:None
         before=deepcopy(app.current.state)
         app.after=lambda *args:1
         app.after_cancel=lambda *args:None

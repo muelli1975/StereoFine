@@ -10,6 +10,7 @@ import numpy as np
 from stereofine.geometry import apply_floating_window_masks
 from stereofine.native_preview import NativePreviewMixin, native_key, pan_speed
 from stereofine.state import PairState
+from stereofine.worker import WorkerMessage, WorkerMessageKind
 from tests.test_foundation import _import_gui_without_customtkinter_runtime
 
 
@@ -23,6 +24,64 @@ class PreviewStabilityTests(unittest.TestCase):
         app.after = lambda *args: 1
         app.after_cancel = lambda *args: None
         return app
+
+    def test_failed_detail_render_retries_only_after_a_fresh_z_press(self):
+        app = self.app()
+        app.current.loaded_pair = SimpleNamespace(icc_profile=None)
+        app._detail_session_id = id(app.current)
+        app.detail_active = True
+        key = native_key(app.current)
+        app._native_job_id = 'failed'
+        app._native_running_key = key
+        app._native_worker.messages.put(WorkerMessage('failed', WorkerMessageKind.ERROR,
+                                        {'exception': RuntimeError('transient render error')}))
+        app.preview_label = SimpleNamespace(configure=lambda **kwargs: None,
+                                _label=SimpleNamespace(configure=lambda **kwargs: None))
+        app._t = lambda key, **kwargs: key
+        app._stop_measure_repeat = lambda: None
+        app._apply_native_preview = lambda: True
+        with patch.object(app._native_worker, 'start', return_value=SimpleNamespace(job_id='retry')) as start:
+            app._poll_native_preview()
+            self.assertEqual(app._native_failed_key, key)
+            for _ in range(5):
+                app._on_detail_press()
+                app._start_native_preview()
+            start.assert_not_called()
+            app._end_detail_preview()
+            app._on_detail_press()
+            app._start_native_preview()
+            start.assert_called_once()
+            a = np.zeros((10, 10, 3), np.uint8)
+            app._native_worker.messages.put(WorkerMessage('retry', WorkerMessageKind.RESULT,
+                                            (key, a, a, app.current.state.color)))
+            app._poll_native_preview()
+        self.assertIsNone(app._native_failed_key)
+        self.assertEqual(app._native_cache[0], key)
+
+    def test_detail_edge_skips_redraw_but_moving_back_and_explicit_refresh_work(self):
+        app = self.app()
+        app.detail_active = True
+        a = np.zeros((400, 600, 3), np.uint8)
+        app._native_cache = (native_key(app.current), a, a)
+        app._preview_bounds = lambda: (200, 100)
+        app._effective_preview_mode = lambda: 'Farbig'
+        app.grid_mode = SimpleNamespace(get=lambda: 'Aus')
+        app.measure_cross_active = False
+        app.preview_label = SimpleNamespace(_get_widget_scaling=lambda: 1, configure=lambda **kwargs: None)
+        with patch('stereofine.native_preview.ctk.CTkImage', create=True) as images:
+            for direction, center in [('right', (500, 200)), ('left', (100, 200)),
+                                      ('up', (300, 50)), ('down', (300, 350))]:
+                app._detail_center = center
+                previous_count = images.call_count
+                for _ in range(10):
+                    app._move_detail(direction, 20.)
+                self.assertEqual(images.call_count, previous_count)
+                self.assertEqual(app._detail_center, center)
+                app._show_detail_preview()
+                self.assertEqual(images.call_count, previous_count + 1)
+                opposite = {'right': 'left', 'left': 'right', 'up': 'down', 'down': 'up'}[direction]
+                app._move_detail(opposite, 1.)
+                self.assertEqual(images.call_count, previous_count + 2)
 
     def test_native_window_crop_matches_full_export_mask(self):
         a = np.full((227, 401, 3), 233, np.uint8)
@@ -79,7 +138,7 @@ class PreviewStabilityTests(unittest.TestCase):
         app.detail_active = True
         app._detail_center = (1000., 800.)
         app._native_cache = (native_key(app.current), object(), object())
-        app._show_detail_preview = lambda: None
+        app._show_detail_preview = lambda **kwargs: None
         before = deepcopy(app.current.state)
         with patch('stereofine.native_preview.time.perf_counter', return_value=10.):
             for _ in range(12):

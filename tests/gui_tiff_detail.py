@@ -123,6 +123,46 @@ def main():
                     assert app._detail_center==stopped
                     app._end_detail_preview()
                     checks.append(dict(language=language,window_preview_stable=True,accelerated_pan=True,release_stops=True))
+                    # Recover from one actual worker failure without retrying
+                    # continuously while Z remains held.
+                    app.current.state.color.enabled=False
+                    app._native_cache=None
+                    calls=[]
+                    def fail_once(*args,**kwargs):
+                        calls.append(1)
+                        if len(calls)==1:
+                            raise RuntimeError('Simulated transient detail render error')
+                        return render_final_pair(*args,**kwargs)
+                    with patch('stereofine.native_preview.render_final_pair',side_effect=fail_once):
+                        app._on_detail_press()
+                        pump(app,lambda:app._native_failed_key==native_key(app.current))
+                        for _ in range(5):app._on_detail_press()
+                        since=time.monotonic();pump(app,lambda:time.monotonic()-since>.1)
+                        assert len(calls)==1
+                        app._end_detail_preview();app._on_detail_press()
+                        pump(app,lambda:app._native_cache is not None and app._native_cache[0]==native_key(app.current))
+                        assert len(calls)==2 and app._native_failed_key is None
+                    # Panning into an edge reuses the displayed image. Moving
+                    # away, changing modes or refreshing a grid still redraws.
+                    for mode in ('Farbig','Graustufen','Kreuzblick'):
+                        app.preview_mode.set(mode);app._on_preview_mode_changed()
+                        for direction in ('left','right','up','down'):
+                            app._move_detail(direction,1e6)
+                            image=app._preview_ctk_image;position=app._detail_center
+                            for _ in range(10):app._move_detail(direction,25)
+                            assert app._preview_ctk_image is image and app._detail_center==position
+                            reverse={'left':'right','right':'left','up':'down','down':'up'}[direction]
+                            app._move_detail(reverse,1)
+                            assert app._preview_ctk_image is not image
+                        image=app._preview_ctk_image
+                        app.grid_mode.set('Weiß');app._update_preview_display()
+                        assert app._preview_ctk_image is not image
+                        app.grid_mode.set('Aus')
+                    app._end_detail_preview()
+                    app.current.state.color.enabled=True;app._refresh_preview()
+                    pump(app,lambda:app._native_cache is not None and app._native_cache[0]==native_key(app.current))
+                    checks.append(dict(language=language,detail_error_retry=True,no_error_retry_loop=True,
+                                       edge_reuses_image=True,edge_reverse_moves=True,overlays_still_refresh=True))
                     app.show_shortcuts_help()
                     app.update()
                     screenshot=Path('build')/f'gui-tiff-detail-{platform.system()}-{language}.png'
