@@ -24,7 +24,7 @@ class OutputPreferencesTests(unittest.TestCase):
         old = AppSettings.from_dict({'language': 'en', 'gray_anaglyph': True, 'save_cross': True})
         self.assertTrue(old.save_anaglyph)
         self.assertFalse(old.use_custom_sbs_suffix)
-        self.assertEqual(old.sbs_suffix, '_sbs')
+        self.assertEqual(old.sbs_suffix, '_cs')
         self.assertTrue(old.gray_anaglyph and old.save_cross)
         old.save_anaglyph, old.use_custom_sbs_suffix, old.sbs_suffix = False, True, '_cs'
         with tempfile.TemporaryDirectory() as directory:
@@ -34,6 +34,16 @@ class OutputPreferencesTests(unittest.TestCase):
         self.assertFalse(restored.save_anaglyph)
         self.assertTrue(restored.use_custom_sbs_suffix and restored.gray_anaglyph)
         self.assertEqual(restored.sbs_suffix, '_cs')
+
+    def test_cosima_default_replaces_only_the_old_inactive_standard(self):
+        self.assertEqual(AppSettings().sbs_suffix, '_cs')
+        self.assertFalse(AppSettings().use_custom_sbs_suffix)
+        for enabled, suffix, expected in ((False, '_sbs', '_cs'), (True, '_sbs', '_sbs'),
+                (False, '_s', '_s'), (True, '-lr', '-lr'), (False, '', ''),
+                (False, '_my_stereo', '_my_stereo')):
+            settings = AppSettings.from_dict({'use_custom_sbs_suffix': enabled, 'sbs_suffix': suffix})
+            self.assertEqual(settings.sbs_suffix, expected)
+            self.assertEqual(settings.use_custom_sbs_suffix, enabled)
 
     def test_preset_labels_and_custom_text_roundtrip_in_both_languages(self):
         for language in ('de', 'en'):

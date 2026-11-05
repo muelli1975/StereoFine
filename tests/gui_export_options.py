@@ -19,6 +19,9 @@ def check_export_options(app, checks, language):
     assert left_padding(app.gray_anaglyph_box) > left_padding(app.save_anaglyph_box)
     assert app.sbs_suffix_menu.cget('values') == suffix_labels(language)
     assert '_cs (COSIMA)' in app.sbs_suffix_menu.cget('values')
+    assert app.sbs_suffix_display.get() == '_cs (COSIMA)'
+    assert '_sbs (StereoFine)' not in app.sbs_suffix_menu.cget('values')
+    assert app._effective_sbs_suffix() == '_sbs'
     app.gray_anaglyph.set(True)
     for save in (False, True):
         app.save_anaglyph.set(save)

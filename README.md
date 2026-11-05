@@ -178,7 +178,7 @@ By default StereoFine creates an `output` folder inside the input folder. Altern
 
 Existing image outputs with the same name are deliberately replaced.
 
-**Custom SBS suffix** enables an editable list: `_s` (m.objects), `_cs` (COSIMA), `-lr` (Bino), no suffix, or your own text. When the checkbox is off, the standard `_sbs` suffix is used. The choice replaces `_sbs` immediately before `.jpg` or `.tif`; program labels are shown only in the list. Deviation numbers precede the chosen suffix, for example `photo_030_s.jpg`. These preferences apply to single-image and batch exports and are remembered. Existing files are not renamed or deleted when export preferences change.
+**Custom SBS suffix** enables an editable list: `_s` (m.objects), `_cs` (COSIMA), `-lr` (Bino), no suffix, or your own text. The field defaults to COSIMA (`_cs`). When the checkbox is off, the standard `_sbs` suffix is used. The choice replaces `_sbs` immediately before `.jpg` or `.tif`; program labels are shown only in the list. Deviation numbers precede the chosen suffix, for example `photo_030_s.jpg`. These preferences apply to single-image and batch exports and are remembered. Existing files are not renamed or deleted when export preferences change.
 
 **Deviation in filename** optionally adds the measured total deviation in whole
 permille: for example, `photo_057_sbs.jpg` and `photo_057_anaglyph.jpg`. Values are

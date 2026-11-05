@@ -30,7 +30,7 @@ class AppSettings:
     tiff_sbs: bool = False
     save_anaglyph: bool = True
     use_custom_sbs_suffix: bool = False
-    sbs_suffix: str = "_sbs"
+    sbs_suffix: str = "_cs"
 
     def normalize(self) -> "AppSettings":
         if self.language not in {"de", "en"}:
@@ -52,7 +52,7 @@ class AppSettings:
         try:
             self.sbs_suffix = validate_sbs_suffix(self.sbs_suffix)
         except ValueError:
-            self.sbs_suffix = "_sbs"
+            self.sbs_suffix = "_cs"
         return self
 
     @classmethod
@@ -61,6 +61,10 @@ class AppSettings:
             field: data.get(field, getattr(cls(), field))
             for field in cls.__dataclass_fields__
         }
+        # Earlier builds kept the mandatory standard as the inactive custom
+        # default. Use COSIMA there; retain active or other custom choices.
+        if not values["use_custom_sbs_suffix"] and data.get("sbs_suffix") == "_sbs":
+            values["sbs_suffix"] = "_cs"
         # Preserve the export choice of old settings without restoring a preview.
         if "gray_anaglyph" not in data:
             values["gray_anaglyph"] = data.get("preview_mode") == "Graustufen"

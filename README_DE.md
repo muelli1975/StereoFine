@@ -180,7 +180,7 @@ Standardmäßig legt StereoFine den Ordner `output` im Eingabeordner an. Alterna
 
 Vorhandene Bildausgaben gleichen Namens werden bewusst ersetzt.
 
-**Eigene SBS-Endung** aktiviert eine frei editierbare Auswahlliste: `_s` (m.objects), `_cs` (COSIMA), `-lr` (Bino), ohne Zusatz oder eigener Text. Bei ausgeschalteter Checkbox gilt die Standardkennung `_sbs`. Die Auswahl ersetzt `_sbs` direkt vor `.jpg` beziehungsweise `.tif`; die Programmnamen erscheinen nur in der Liste. Eine Deviation steht davor, beispielsweise `bild_030_s.jpg`. Diese Einstellungen gelten für Einzelbilder und Stapel und werden gespeichert. Vorhandene Dateien werden beim Ändern der Ausgabeoptionen weder umbenannt noch gelöscht.
+**Eigene SBS-Endung** aktiviert eine frei editierbare Auswahlliste: `_s` (m.objects), `_cs` (COSIMA), `-lr` (Bino), ohne Zusatz oder eigener Text. Im Feld ist COSIMA (`_cs`) vorausgewählt. Bei ausgeschalteter Checkbox gilt die Standardkennung `_sbs`. Die Auswahl ersetzt `_sbs` direkt vor `.jpg` beziehungsweise `.tif`; die Programmnamen erscheinen nur in der Liste. Eine Deviation steht davor, beispielsweise `bild_030_s.jpg`. Diese Einstellungen gelten für Einzelbilder und Stapel und werden gespeichert. Vorhandene Dateien werden beim Ändern der Ausgabeoptionen weder umbenannt noch gelöscht.
 
 **Deviation im Dateinamen** ergänzt auf Wunsch die gemessene Gesamtdeviation in
 ganzen Promille: beispielsweise `bild_057_sbs.jpg` und `bild_057_anaglyph.jpg`.
