@@ -1,0 +1,116 @@
+name: Isolated LoMa and FlexGlue CPU comparison
+
+on:
+  push:
+    branches: [research/loma-flexglue-20261106]
+    paths:
+      - '.github/workflows/research-neural-20261106.yml'
+      - 'experiments/benchmark_neural_20261106.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    name: CPU ${{ matrix.method }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        method: [baseline, loma_b, flexglue, flexglue_refined]
+    env:
+      OMP_NUM_THREADS: '4'
+      MKL_NUM_THREADS: '4'
+      OPENBLAS_NUM_THREADS: '4'
+      TORCH_HOME: ${{ github.workspace }}/build/torch-cache
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - name: Install StereoFine research dependencies
+        run: |
+          python -m pip install -r requirements-lock.txt psutil==7.1.3
+          python -m compileall -q experiments/benchmark_neural_20261106.py
+      - name: Install CPU inference dependencies
+        if: matrix.method != 'baseline'
+        run: |
+          python -m pip install torch==2.9.1 torchvision==0.24.1 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install einops==0.8.1 tqdm==4.67.1 tyro matplotlib
+          mkdir -p vendor/loma vendor/flexglue
+          git -C vendor/loma init
+          git -C vendor/loma fetch --depth=1 https://github.com/davnords/LoMa.git 415caedde23a9ed479172ed174fe4ff7b4514d4b
+          git -C vendor/loma checkout --detach FETCH_HEAD
+          git -C vendor/flexglue init
+          git -C vendor/flexglue fetch --depth=1 https://github.com/cvg/FlexGlue.git c6cbc7a933bb70ab58608e8835d99b6cc4adca1a
+          git -C vendor/flexglue checkout --detach FETCH_HEAD
+          python -m pip install --no-deps -e vendor/loma -e vendor/flexglue
+      - name: Run real model inference and independent ground-truth checks
+        run: python experiments/benchmark_neural_20261106.py --method ${{ matrix.method }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: neural-20261106-${{ matrix.method }}
+          path: |
+            build/neural-20261106/*.json
+            build/neural-20261106/*.png
+            build/neural-20261106/*matches.npz
+          if-no-files-found: warn
+          retention-days: 30
+
+  summarize:
+    if: always()
+    needs: compare
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: neural-20261106-*
+          path: results
+      - name: Summarize measured results
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          reports = []
+          rows = ['# LoMa / FlexGlue CPU pilot', '',
+                  'Public Middlebury 2014 stereo images; 1600 px long side; independent GT points.',
+                  'Aligned controls and combined alternate-lighting/known-affine challenges.',
+                  'No private StereoFine test images were used. Each method ran on a separate runner.', '',
+                  '| Case | Method | Status | GT vertical P95 (px) | Worst cell P95 | Seconds | Peak RSS GiB |',
+                  '|---|---|---|---:|---:|---:|---:|']
+          for p in sorted(Path('results').rglob('*.json')):
+              if p.name == 'manifest.json':
+                  continue
+              report = json.loads(p.read_text())
+              reports.append(report)
+              if report.get('status') == 'error':
+                  rows += ['', '**Initialization failure for '+report['method']+':** '+report.get('error',''), '']
+              for r in report.get('cases', []):
+                  after = r.get('after', {})
+                  p95 = after.get('global_error', {}).get('p95')
+                  worst = after.get('worst_cell_p95')
+                  rows.append('| {} | {} | {} | {} | {} | {:.2f} | {:.3f} |'.format(
+                      r['name'], r['method'], r['status'],
+                      '-' if p95 is None else f'{p95:.4f}',
+                      '-' if worst is None else f'{worst:.4f}',
+                      r['total_seconds'], r['peak_rss_bytes']/2**30))
+          rows += ['', 'Times include matching and StereoFine fitting but exclude model loading/downloads.',
+                   'The score uses the actual correction point map; raster rendering was also exercised.',
+                   'No automatic selection, production integration, or general camera-rig superiority is claimed.']
+          Path('results/COMPARISON.json').write_text(json.dumps(reports, indent=2)+'\n')
+          text = '\n'.join(rows)+'\n'
+          Path('results/COMPARISON.md').write_text(text)
+          Path(os.environ['GITHUB_STEP_SUMMARY']).write_text(text)
+          print(text)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: neural-20261106-summary
+          path: |
+            results/COMPARISON.json
+            results/COMPARISON.md
+          if-no-files-found: error
