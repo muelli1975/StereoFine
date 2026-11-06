@@ -44,6 +44,22 @@ jobs:
         run: python -m pip install -r requirements-lock.txt -r requirements-heif.txt
       - name: Build pinned native colour management
         run: python scripts/prepare_lcms.py
+      - name: Compact status layout and exact native previews (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb
+          PYTHONPATH=. xvfb-run -a -s '-screen 0 4096x2400x24' python tests/gui_status_compact.py
+      - name: Compact status layout and exact native previews
+        if: runner.os != 'Linux'
+        run: python -m tests.gui_status_compact --emit-preview
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: StereoFine-status-layout-${{ matrix.os }}
+          path: build/gui-status-*
+          if-no-files-found: error
+
       - name: Application regression tests
         run: python -m unittest discover -s tests -p 'test_*.py'
       - name: Research safety and synthetic geometry tests

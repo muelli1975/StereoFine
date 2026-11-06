@@ -20,7 +20,10 @@ def rectangles(app):
     names = ('sidebar_container', 'sidebar_header', 'sidebar_bottom', 'status_frame',
              'preview_frame', 'traffic_label', 'start_button', 'save_button', 'help_footer_label')
     widgets = {name: getattr(app, name) for name in names}
-    widgets.update({'status:'+name: value for name, value in app._status_line_widgets.items()})
+    # Values have a fixed right edge. Their left edge follows the text width
+    # in the compact label/value rows; that is alignment, not panel movement.
+    # Observe the fixed row allocation instead of the text's changing extent.
+    widgets.update({'status:'+name: value.master for name, value in app._status_line_widgets.items()})
     result = {name: [w.winfo_rootx(), w.winfo_rooty(), w.winfo_width(), w.winfo_height()]
               for name, w in widgets.items()}
     # Scrollable content may move when a newly selected path wraps. The actual
@@ -35,7 +38,7 @@ def text_details(app):
                       requested_height=w.winfo_reqheight(),
                       text_fits=(w._label.winfo_reqheight() <= w.winfo_height()
                                  and w._label.winfo_reqwidth() <= w.winfo_width()))
-            for name, w in app._status_line_widgets.items()}
+            for name, w in {**app._status_line_widgets, **{'caption:'+k:v for k,v in app._status_caption_widgets.items()}}.items()}
 
 
 def observe(app, name, action, finished=None):

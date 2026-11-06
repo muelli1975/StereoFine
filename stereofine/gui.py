@@ -93,6 +93,8 @@ WINDOW_WIDTH = 1400
 WINDOW_HEIGHT = 850
 SIDEBAR_WIDTH = 340
 STATUS_SYMBOL_COLUMN_WIDTH = 36
+STATUS_ROW_HEIGHT = 18
+STATUS_WARNING_HEIGHT = 36
 ACTIVITY_SPINNER_SIZE = 36
 ACTIVITY_SPINNER_RENDER_SCALE = 5
 ACTIVITY_SPINNER_FRAME_COUNT = 60
@@ -758,9 +760,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             self.status_frame,
             text="●",
             width=STATUS_SYMBOL_COLUMN_WIDTH,
-            height=STATUS_SYMBOL_COLUMN_WIDTH,
+            height=STATUS_ROW_HEIGHT,
             text_color=TRAFFIC_GRAY,
-            font=self._font(26),
+            font=self._font(20),
             anchor="center",
         )
         self.traffic_label.grid_propagate(False)
@@ -902,62 +904,113 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
                 pass
 
         self._status_line_widgets = {}
+        self._status_caption_widgets = {}
 
-        def add_label(
-            name: str,
-            row: int,
-            *,
-            muted: bool = False,
-            bold: bool = False,
-            height: int = 19,
-            two_lines: bool = False,
-        ) -> None:
-            label = ctk.CTkLabel(
-                self.status_frame,
-                text="",
+        def add_label(name, row, *, height=STATUS_ROW_HEIGHT, muted=False,
+                      bold=False, symbol_slot=False, paired=False, two_lines=False):
+            # Only the input and deviation share their row with a symbol. Other
+            # rows use the complete sidebar width instead of a permanent gutter.
+            holder = ctk.CTkFrame(self.status_frame, height=height, fg_color="transparent")
+            holder.grid(row=row, column=0, columnspan=1 if symbol_slot else 2,
+                        sticky="ew", padx=(0, 8) if symbol_slot else 0)
+            holder.grid_propagate(False)
+            holder.grid_rowconfigure(0, weight=1)
+            holder.grid_columnconfigure(0, weight=1)
+            if paired:
+                caption = ctk.CTkLabel(holder, text="", height=height, width=1,
+                    text_color=TEXT_SECONDARY, font=self._font(13), anchor="w", justify="left")
+                caption.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
+                caption.grid_propagate(False)
+                self._status_caption_widgets[name] = caption
+                holder.grid_columnconfigure(1, weight=0)
+            label = ctk.CTkLabel(holder, text="", width=1, height=height,
                 text_color=TEXT_SECONDARY if muted else TEXT_PRIMARY,
                 font=self._font(12 if muted else 13, "bold" if bold else "normal"),
-                height=38 if two_lines else height,
-                justify="left",
-                anchor="nw" if two_lines else "w",
-                wraplength=246,
-            )
-            if name != "input":
-                # CTkLabel's height is otherwise only a minimum: its inner Tk
-                # label can grow on wrapping or shrink to "Calculating ...".
-                # Keep each allocated row size at fractional DPI scales too.
-                label.grid_propagate(False)
-            label.grid(row=row, column=0, sticky="ew", padx=(0, 8), pady=0)
+                justify="right" if paired else "left", anchor="e" if paired else "w",
+                wraplength=292 if two_lines else 0)
+            label.grid(row=0, column=1 if paired else 0, sticky="nsew")
+            label.grid_propagate(False)
+            if paired:
+                # Keep numeric values together and align their right edges.
+                # Column minima are updated from real scaled font metrics.
+                label._status_holder = holder
+                holder.bind("<Configure>", lambda _event, name=name: self._resize_status_pair(name), add="+")
             self._status_line_widgets[name] = label
+            if name == "input":
+                self._status_input_full_text = ""
+                holder.bind("<Configure>", lambda _event: self._fit_status_input(), add="+")
+                attach_tooltip(label, lambda: self._status_input_full_text)
 
-        def add_spacer(row: int, height: int = 4) -> None:
+        def add_spacer(row, height=4):
             spacer = ctk.CTkFrame(self.status_frame, height=height, fg_color="transparent")
-            # Never span the reserved symbol column; doing so caused the old
-            # spinner seam/clipping regression on Windows.
             spacer.grid(row=row, column=0, sticky="ew")
 
-        # Fixed rows deliberately avoid text wrapping/clipping and, more
-        # importantly, prevent the bottom controls from jumping while values
-        # change. The batch input row reserves two text lines for filename + n/N.
-        add_label("input", 0, height=38)
+        # Fixed allocations keep footer/buttons still while values, warnings,
+        # file names and calculation state change. Font sizes remain 13/12 px.
+        add_label("input", 0, height=36, symbol_slot=True, two_lines=True)
         add_spacer(1)
-        add_label("analysis_model", 2, two_lines=True)
-        add_label("vertical_error", 3)
-        add_label("vertical_shift", 4)
-        add_label("rotation", 5)
-        add_label("vergence", 6, two_lines=True)
+        add_label("analysis_model", 2, height=36, paired=True)
+        add_label("vertical_error", 3, paired=True)
+        add_label("vertical_shift", 4, paired=True)
+        add_label("rotation", 5, paired=True)
+        add_label("vergence", 6, paired=True)
         add_spacer(7)
-        add_label("deviation", 8)
-        add_label("near_far", 9, two_lines=True)
-        # Keep the same two-line warning on every platform, including while
-        # empty, so showing it or changing language never moves controls.
-        add_label("warning", 10, muted=True, bold=True, two_lines=True)
-        warning = self._status_line_widgets["warning"]
-        warning.grid_configure(columnspan=2)
-        warning.configure(text_color=GOLD_LIGHT, wraplength=292)
+        add_label("deviation", 8, bold=True, symbol_slot=True)
+        add_label("near_far", 9)
+        add_label("warning", 10, height=STATUS_WARNING_HEIGHT, muted=True, bold=True,
+                  two_lines=True)
+        self._status_line_widgets["warning"].configure(text_color=GOLD_LIGHT)
         add_spacer(11)
         add_label("floating_title", 12, bold=True)
-        add_label("floating_values", 13)
+        add_label("floating_values", 13, muted=True)
+
+    def _set_status_pair(self, name, caption, value):
+        label = self._status_line_widgets[name]
+        self._status_caption_widgets[name].configure(text=caption)
+        label.configure(text=value)
+        self._resize_status_pair(name)
+
+    def _resize_status_pair(self, name):
+        label = self._status_line_widgets[name]
+        value = label.cget("text")
+        # CTk widths are logical, Tk font measurements are physical pixels.
+        # A fixed holder prevents long values from changing the sidebar width.
+        lines = value.splitlines() or [""]
+        width = max(int(label._label.tk.call("font", "measure",
+                    label._label.cget("font"), line)) for line in lines)
+        label._status_holder.grid_columnconfigure(1,
+            minsize=width + round(2 * label._get_widget_scaling()))
+
+    def _fit_status_input(self):
+        """Keep arbitrary file names in two fixed lines, with a full tooltip."""
+        label = self._status_line_widgets["input"]
+        scale = label._get_widget_scaling()
+        width = max(1, label.winfo_width() - round(4 * scale))
+        if width < 20:
+            return
+        font = label._label.cget("font")
+        def measure(text):
+            return int(label._label.tk.call("font", "measure", font, text))
+        def prefix(text, available):
+            lo, hi = 0, len(text)
+            while lo < hi:
+                mid = (lo + hi + 1) // 2
+                if measure(text[:mid]) <= available:
+                    lo = mid
+                else:
+                    hi = mid - 1
+            return lo
+        lines = self._status_input_full_text.splitlines()
+        if not lines:
+            lines = [""]
+        if len(lines) == 1 and measure(lines[0]) > width:
+            cut = prefix(lines[0], width)
+            lines = [lines[0][:cut], lines[0][cut:]]
+        if len(lines) > 2:
+            lines = [lines[0], " ".join(lines[1:])]
+        visible = [line if measure(line) <= width else
+                   line[:prefix(line, max(0, width - measure("…")))] + "…" for line in lines]
+        label.configure(text="\n".join(visible), wraplength=0)
 
     def _render_status(self) -> None:
         """Update the fixed status area without destroying/recreating widgets."""
@@ -982,20 +1035,19 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         )
 
         input_value = input_section.rows[0].value if input_section.rows else "–"
-        labels["input"].configure(text=f"{input_section.name}: {input_value}")
+        self._status_input_full_text = f"{input_section.name}: {input_value}"
+        self._fit_status_input()
 
         if analysis and len(analysis.rows) >= 6:
-            labels["analysis_model"].configure(
-                text=f"{analysis.rows[0].label}: {analysis.rows[0].value} · "
-                     f"{analysis.rows[1].label}: {analysis.rows[1].value}"
-            )
-            labels["vertical_error"].configure(text=f"{analysis.rows[2].label}: {analysis.rows[2].value}")
-            labels["vertical_shift"].configure(text=f"{analysis.rows[3].label}: {analysis.rows[3].value}")
-            labels["rotation"].configure(text=f"{analysis.rows[4].label}: {analysis.rows[4].value}")
-            labels["vergence"].configure(text=f"{analysis.rows[5].label}: {analysis.rows[5].value}")
+            self._set_status_pair("analysis_model",
+                f"{analysis.rows[0].label}:\n{analysis.rows[1].label}:",
+                f"{analysis.rows[0].value}\n{analysis.rows[1].value}")
+            for name, item in zip(("vertical_error", "vertical_shift", "rotation", "vergence"),
+                                  analysis.rows[2:]):
+                self._set_status_pair(name, f"{item.label}:", item.value)
         else:
             for name in ("analysis_model", "vertical_error", "vertical_shift", "rotation", "vergence"):
-                labels[name].configure(text="")
+                self._set_status_pair(name, "", "")
 
         deviation_item = next((item for item in deviation.rows if item.role == "deviation"), None) if deviation else None
         if deviation_item is not None:

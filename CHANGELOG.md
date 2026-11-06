@@ -21,6 +21,7 @@
 - Commit single-image analysis only after its preview is ready; reject saving an externally changed source until it is reopened.
 - Share the master crop geometry with interactive previews and retain completed colour updates after saving.
 - Reuse native pixels on viewport changes and reduce colour-fit allocations without changing the fitted curves.
+- Make the status panel more compact with aligned values, fixed warning space and full-filename tooltips.
 
 
 ## 1.1 — 2026-10-21 (updated 2026-11-01)
