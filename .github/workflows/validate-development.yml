@@ -52,7 +52,7 @@ jobs:
           PYTHONPATH=. xvfb-run -a -s '-screen 0 4096x2400x24' python tests/gui_status_compact.py
       - name: Compact status layout and exact native previews
         if: runner.os != 'Linux'
-        run: python -m tests.gui_status_compact --emit-preview
+        run: python -m tests.gui_status_compact
       - uses: actions/upload-artifact@v4
         if: always()
         with:

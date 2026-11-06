@@ -128,7 +128,11 @@ def main():
                                     rect = (ctypes.c_long*4)()
                                     ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(rect))
                                     screen = ImageGrab.grab(window=hwnd)
-                                    ox, oy = rect[0], rect[1]
+                                    if screen.size == (app.winfo_width(), app.winfo_height()):
+                                        # Pillow's PrintWindow path returns client pixels.
+                                        ox, oy = app.winfo_rootx(), app.winfo_rooty()
+                                    else:
+                                        ox, oy = rect[0], rect[1]
                                 else:
                                     screen = ImageGrab.grab(xdisplay=os.environ.get('DISPLAY'))
                                     ox, oy = 0, 0
