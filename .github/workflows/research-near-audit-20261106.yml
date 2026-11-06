@@ -1,0 +1,26 @@
+name: Audit final-width near reserve without changing the product
+on:
+  push:
+    branches: [investigation/final-near-20261106]
+    paths:
+      - '.github/workflows/research-near-audit-20261106.yml'
+      - 'experiments/audit_final_near_20261106.py'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - run: python -m pip install -r requirements-lock.txt
+      - run: python experiments/audit_final_near_20261106.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: final-near-audit-20261106
+          path: build/final-near-audit-20261106.json
+          if-no-files-found: warn
