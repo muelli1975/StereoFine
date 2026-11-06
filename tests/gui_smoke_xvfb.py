@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import tempfile
 import time
+from unittest.mock import patch
 from pathlib import Path
 
 from PIL import Image, ImageChops, ImageEnhance, ImageGrab, ImageStat
@@ -124,15 +125,26 @@ def main() -> None:
             app._adjust_manual_offset(dx=15, dy=-7)
             app.current.state.favorite = True
             app.current.state.floating_window.left_permille = 5
-            app.start_processing()
-            pump(app, lambda: app.busy_state == 'idle' and app.current is not None)
+            from stereofine import processing
+            framing_checks = []
+            original_framing = processing.compute_auto_near_framing
+            def tracked_framing(**kwargs):
+                result = original_framing(**kwargs)
+                framing_checks.append(result)
+                return result
+            with patch.object(processing, 'compute_auto_near_framing', side_effect=tracked_framing):
+                app.start_processing()
+                pump(app, lambda: app.busy_state == 'idle' and app.current is not None)
             restarted = app.current.state
             assert (restarted.manual.delta_x_px, restarted.manual.delta_y_px) == (0, 0)
             assert (restarted.framing.crop_zoom_index, restarted.framing.pan_x_permille,
                     restarted.framing.pan_y_permille) == (1, 200, -100)
             assert restarted.framing.auto_near_back_permille == 3.0
             assert restarted.framing.auto_near_offset_x_px is not None
-            assert restarted.current_scene_positions_permille()[0] <= -3.0 + 1e-9
+            assert framing_checks and framing_checks[-1].near_after_permille <= -3.0 + 1e-9
+            assert restarted.auto_offset_x_px == framing_checks[-1].offset_x_px
+            assert restarted.disparity.basis['rendered_pair']
+            assert restarted.current_scene_positions_permille()[0] == restarted.disparity.high_edge_permille
             assert restarted.favorite and restarted.floating_window.left_permille == 5
 
             app._set_source_collection(sources, 0, batch=True)
