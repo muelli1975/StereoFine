@@ -959,7 +959,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         add_label("rotation", 5, paired=True)
         add_label("vergence", 6, paired=True)
         add_spacer(7)
-        add_label("deviation", 8, bold=True, symbol_slot=True)
+        add_label("deviation", 8, symbol_slot=True)
         add_label("near_far", 9)
         add_label("warning", 10, height=STATUS_WARNING_HEIGHT, muted=True, bold=True,
                   two_lines=True)
