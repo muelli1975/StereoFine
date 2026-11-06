@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import sys
 from typing import Iterable, Literal
 
 from .inputs import (
@@ -18,7 +19,7 @@ from .inputs import (
     load_pair,
     load_heif_stereo,
 )
-from .config import SUPPORTED_HEIF_EXTENSIONS
+from .config import SUPPORTED_HEIF_EXTENSIONS, SUPPORTED_STEREO_SINGLE_EXTENSIONS
 from .models import FileStamp, SourceStamp
 
 SourceMode = Literal["pair", "full_sbs", "mpo", "heif"]
@@ -130,13 +131,21 @@ class SourceDirectoryIndex:
 
     def __init__(self) -> None:
         self._folders = {}
+        # Windows may defer directory timestamp updates. Its normal
+        # case-insensitive filename lookup lets us check every supported
+        # alternative for this stem in bounded time, without rescanning N files.
+        self._probe_extensions = SUPPORTED_STEREO_SINGLE_EXTENSIONS if sys.platform == 'win32' else ()
+
+    @staticmethod
+    def _signature(folder):
+        stamp = folder.stat()
+        return stamp.st_mtime_ns, stamp.st_ctime_ns
 
     def validate(self, path: Path, is_supported) -> None:
         folder = path.parent
         if not folder.is_dir():
             return
-        stamp = folder.stat()
-        signature = (stamp.st_mtime_ns, stamp.st_ctime_ns)
+        signature = self._signature(folder)
         cached = self._folders.get(folder)
         if cached is None or cached[0] != signature:
             stems = {}
@@ -144,9 +153,15 @@ class SourceDirectoryIndex:
                 stems.setdefault(item.stem.casefold(), []).append(item)
             cached = (signature, stems)
             self._folders[folder] = cached
-        validate_unique_image_stems([
-            item for item in cached[1].get(path.stem.casefold(), ()) if is_supported(item)
-        ])
+        matches = [item for item in cached[1].get(path.stem.casefold(), ()) if is_supported(item)]
+        validate_unique_image_stems(matches)
+        known = {str(item).casefold() for item in matches}
+        for suffix in self._probe_extensions:
+            candidate = path.with_suffix(suffix)
+            if str(candidate).casefold() not in known and is_supported(candidate):
+                matches.append(candidate)
+                known.add(str(candidate).casefold())
+        validate_unique_image_stems(matches)
 
 
 def load_source(source: StereoSource, *, directory_index: SourceDirectoryIndex | None = None) -> LoadedStereoPair:

@@ -14,6 +14,7 @@ from stereofine import batch, native_preview
 from stereofine.batch import BatchRunOptions, run_batch
 from stereofine.color_transfer import fit_symmetric_color_transfer
 from stereofine.export import deviation_filename_suffix
+from stereofine.config import SUPPORTED_STEREO_SINGLE_EXTENSIONS
 from stereofine.inputs import InputError
 from stereofine.native_preview import native_key, prepare_native_preview, fit_display_pair
 from stereofine.output_paths import OutputPathGuard
@@ -400,3 +401,15 @@ class ReliabilityUpdateTests(unittest.TestCase):
             self.assertEqual(len(visits),20)
             Image.new('RGB',(24,8)).save(root/'00.png')
             with self.assertRaises(InputError): load_source(sources[0],directory_index=index)
+
+    def test_windows_stem_probes_detect_duplicates_with_unchanged_directory_timestamp(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory); path=root/'scene.jpg'
+            Image.new('RGB',(24,8)).save(path)
+            source=source_from_stereo_file(path,root)
+            index=SourceDirectoryIndex(); index._probe_extensions=SUPPORTED_STEREO_SINGLE_EXTENSIONS
+            signature=index._signature(root)
+            with patch.object(index,'_signature',return_value=signature):
+                load_source(source,directory_index=index)
+                Image.new('RGB',(24,8)).save(root/'scene.png')
+                with self.assertRaises(InputError): load_source(source,directory_index=index)
