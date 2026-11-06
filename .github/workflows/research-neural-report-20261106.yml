@@ -1,0 +1,60 @@
+name: Preserve public LoMa and FlexGlue comparison evidence
+
+on:
+  push:
+    branches: [research/loma-flexglue-20261106]
+    paths:
+      - '.github/workflows/research-neural-report-20261106.yml'
+      - 'experiments/summarize_neural_20261106.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  preserve:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/loma-flexglue-20261106
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - name: Wait for the specific authorized measurement run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+          url = 'https://api.github.com/repos/muelli1975/StereoFine/actions/runs/42215447087'
+          for _ in range(150):
+              req = urllib.request.Request(url, headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'], 'Accept':'application/vnd.github+json'})
+              with urllib.request.urlopen(req,timeout=60) as response:
+                  run = json.load(response)
+              assert run['head_sha'] == '320b7632249e080950cd824c466e13ce91557b37'
+              if run['status'] == 'completed':
+                  print('Measurement run completed:',run['conclusion'],flush=True)
+                  break
+              time.sleep(30)
+          else:
+              raise RuntimeError('Measurement run did not finish within the bounded wait')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: neural-20261106-summary
+          run-id: 42215447087
+          github-token: ${{ github.token }}
+          path: measured
+      - name: Save numeric evidence and tables
+        run: python experiments/summarize_neural_20261106.py measured --run 42215447087
+      - name: Commit reports only to the isolated research branch
+        run: |
+          test "${GITHUB_REF_NAME}" = 'research/loma-flexglue-20261106'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/NEURAL_20261106_RESULTS.json docs/NEURAL_20261106_RESULTS.md
+          git commit -m 'Record measured LoMa and FlexGlue public stereo CPU comparison'
+          git push origin HEAD:research/loma-flexglue-20261106
