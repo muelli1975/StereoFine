@@ -369,6 +369,22 @@ class ReliabilityUpdateTests(unittest.TestCase):
                                         CancellationToken(),preview_base=base)
         self.assertIsNot(changed[4][6],base)
 
+    def test_gui_rebuilds_working_image_after_adopting_different_registration(self):
+        app=test_preview_stability.PreviewStabilityTests().app(); app.current.loaded_pair=loaded_pair()
+        app.current.state.alignment.valid=True
+        app.current.state.alignment.correction=dict(rotation_deg=.6,scale=1.002,vertical_shift_px=2.4)
+        first=app._ensure_preview_base(app.current)
+        app.current.state.alignment.correction['rotation_deg']=2.4
+        second=app._ensure_preview_base(app.current)
+        self.assertIsNot(second,first)
+        reference=render_final_pair(app.current.loaded_pair,deepcopy(app.current.state),apply_color=False)
+        preview=render_preview_from_base(second,app.current.state,apply_color=False,bounds=app._preview_bounds())
+        expected=fit_display_pair(*reference[:2],app._preview_bounds())
+        self.assertEqual(preview.left.shape,expected[0].shape)
+        # Changing only transient analysis diagnostics never rebuilds the image.
+        app.current.state.alignment.correction['diagnostics']={'transient':True}
+        self.assertIs(app._ensure_preview_base(app.current),second)
+
     def test_job_directory_index_scans_once_and_detects_later_duplicate(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory)

@@ -46,7 +46,7 @@ from .native_preview import (NativePreviewMixin, native_key, prepare_native_prev
     MEASURE_ACCEL_TIME_SEC, MEASURE_MAX_DT_SEC)
 from .tooltip import attach_tooltip
 from .preview import PreviewImageCache, draw_grid_overlay, draw_measure_cross_overlay
-from .preview_render import PreviewBasePair, build_preview_base, render_preview_from_base
+from .preview_render import PreviewBasePair, build_preview_base, render_preview_from_base, preview_geometry_key
 from .processing import ProcessingDefaults, ProcessingOptions, process_source
 from .resources import asset_path
 from .session import (
@@ -2069,7 +2069,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
 
     def _ensure_preview_base(self, session: BrowsedSource, *, start_image: bool = False) -> PreviewBasePair:
         session_id = id(session)
-        if self._preview_base is None or self._preview_base_session_id != session_id:
+        if (self._preview_base is None or self._preview_base_session_id != session_id
+                or self._preview_base.source_token != id(session.loaded_pair)
+                or self._preview_base.geometry_key != preview_geometry_key(session.state)):
             bound_w, bound_h = self._preview_bounds()
             self._preview_base = build_preview_base(
                 session.loaded_pair,
