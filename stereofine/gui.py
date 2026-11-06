@@ -934,7 +934,6 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
                 caption.grid_propagate(False)
                 self._status_caption_widgets[name] = caption
                 caption._status_full_text = ""
-                attach_tooltip(caption, lambda caption=caption: caption._status_full_text)
                 holder.grid_columnconfigure(1, weight=0)
             label = ctk.CTkLabel(holder, text="", width=1, height=height,
                 text_color=TEXT_SECONDARY if muted else TEXT_PRIMARY,
@@ -952,7 +951,6 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             if name == "input":
                 self._status_input_full_text = ""
                 holder.bind("<Configure>", lambda _event: self._fit_status_input(), add="+")
-                attach_tooltip(label, lambda: self._status_input_full_text)
 
         def add_spacer(row, height=4):
             spacer = ctk.CTkFrame(self.status_frame, height=height, fg_color="transparent")
@@ -1000,14 +998,14 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         caption_width = max(int(caption._label.tk.call("font", "measure",
             caption._label.cget("font"), line)) for line in (text.splitlines() or [""]))
         # Older sidecars can show both V and H here. Keep both values visible;
-        # the parenthetical explanation remains available in the tooltip.
+        # shorten the parenthetical caption when the values need its space.
         if available > 0 and caption_width > available and " (" in text:
             text = text.split(" (", 1)[0] + ":"
         if caption.cget("text") != text:
             caption.configure(text=text)
 
     def _fit_status_input(self):
-        """Keep arbitrary file names in two fixed lines, with a full tooltip."""
+        """Keep arbitrary file names in two fixed lines."""
         label = self._status_line_widgets["input"]
         scale = label._get_widget_scaling()
         width = max(1, label.winfo_width() - round(4 * scale))

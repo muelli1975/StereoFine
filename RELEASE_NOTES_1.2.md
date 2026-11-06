@@ -2,7 +2,7 @@
 
 - **Final-width stereo-window reserve:** New automatic analyses apply the 3‰ back reserve to the final cropped half-image width, including the selected aspect ratio and crop zoom. Pixel rounding and the independent final measurement can yield near-point values other than −3‰. Existing saved framing and manual edits are retained.
 
-- **Compact status panel:** Aligned values, stable row positions and a fixed warning area keep the status readable at normal and enlarged display scales. Long input names have a full-filename tooltip.
+- **Compact status panel:** Aligned values, stable row positions and a fixed warning area keep the status readable at normal and enlarged display scales.
 - **Final-crop deviation:** After automatic stereo-window framing, deviation and confidence are measured on the finished selected crop. Earlier pre-framing measurements are refreshed while saved framing and manual edits are retained. Batch status now shows the measurements belonging to the current progress image.
 - **Safer processing:** Source files and distinct batch outputs are protected from filename collisions. A source changed since loading must be reopened before saving; cancelled or failed analysis does not replace saved adjustments.
 - **Smoother preview updates:** Preview and output share the same master crop. Completed colour updates survive saving, native pixels are reused after viewport changes, and colour fitting uses less temporary memory.
