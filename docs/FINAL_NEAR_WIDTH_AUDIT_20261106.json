@@ -1,0 +1,210 @@
+[
+  {
+    "kind": "geometry_only_known_edge",
+    "aspect": "original",
+    "near_px": 180,
+    "initial_selected_width": 6000,
+    "offset_px": 198,
+    "final_width": 5802,
+    "actual_reserve_permille": 3.1023784901758016,
+    "requested_reserve_permille": 3,
+    "final_width_solution": {
+      "offset_px": 198,
+      "final_width": 5802,
+      "reserve_permille": 3.1023784901758016
+    }
+  },
+  {
+    "kind": "geometry_only_known_edge",
+    "aspect": "original",
+    "near_px": 600,
+    "initial_selected_width": 6000,
+    "offset_px": 618,
+    "final_width": 5382,
+    "actual_reserve_permille": 3.3444816053511706,
+    "requested_reserve_permille": 3,
+    "final_width_solution": {
+      "offset_px": 617,
+      "final_width": 5383,
+      "reserve_permille": 3.1580902842281255
+    }
+  },
+  {
+    "kind": "geometry_only_known_edge",
+    "aspect": "original",
+    "near_px": 1200,
+    "initial_selected_width": 6000,
+    "offset_px": 1218,
+    "final_width": 4782,
+    "actual_reserve_permille": 3.764115432873275,
+    "requested_reserve_permille": 3,
+    "final_width_solution": {
+      "offset_px": 1215,
+      "final_width": 4785,
+      "reserve_permille": 3.134796238244514
+    }
+  },
+  {
+    "kind": "geometry_only_known_edge",
+    "aspect": "1:1",
+    "near_px": 180,
+    "initial_selected_width": 4000,
+    "offset_px": 192,
+    "final_width": 4000,
+    "actual_reserve_permille": 3,
+    "requested_reserve_permille": 3,
+    "final_width_solution": {
+      "offset_px": 192,
+      "final_width": 4000,
+      "reserve_permille": 3
+    }
+  },
+  {
+    "kind": "geometry_only_known_edge",
+    "aspect": "1:1",
+    "near_px": 600,
+    "initial_selected_width": 4000,
+    "offset_px": 612,
+    "final_width": 4000,
+    "actual_reserve_permille": 3,
+    "requested_reserve_permille": 3,
+    "final_width_solution": {
+      "offset_px": 612,
+      "final_width": 4000,
+      "reserve_permille": 3
+    }
+  },
+  {
+    "kind": "geometry_only_known_edge",
+    "aspect": "1:1",
+    "near_px": 1200,
+    "initial_selected_width": 4000,
+    "offset_px": 1212,
+    "final_width": 4000,
+    "actual_reserve_permille": 3,
+    "requested_reserve_permille": 3,
+    "final_width_solution": {
+      "offset_px": 1212,
+      "final_width": 4000,
+      "reserve_permille": 3
+    }
+  },
+  {
+    "kind": "geometry_only_known_edge",
+    "aspect": "16:9",
+    "near_px": 180,
+    "initial_selected_width": 6000,
+    "offset_px": 198,
+    "final_width": 5802,
+    "actual_reserve_permille": 3.1023784901758016,
+    "requested_reserve_permille": 3,
+    "final_width_solution": {
+      "offset_px": 198,
+      "final_width": 5802,
+      "reserve_permille": 3.1023784901758016
+    }
+  },
+  {
+    "kind": "geometry_only_known_edge",
+    "aspect": "16:9",
+    "near_px": 600,
+    "initial_selected_width": 6000,
+    "offset_px": 618,
+    "final_width": 5381,
+    "actual_reserve_permille": 3.345103140680171,
+    "requested_reserve_permille": 3,
+    "final_width_solution": {
+      "offset_px": 617,
+      "final_width": 5383,
+      "reserve_permille": 3.1580902842281255
+    }
+  },
+  {
+    "kind": "geometry_only_known_edge",
+    "aspect": "16:9",
+    "near_px": 1200,
+    "initial_selected_width": 6000,
+    "offset_px": 1218,
+    "final_width": 4782,
+    "actual_reserve_permille": 3.764115432873275,
+    "requested_reserve_permille": 3,
+    "final_width_solution": {
+      "offset_px": 1215,
+      "final_width": 4785,
+      "reserve_permille": 3.134796238244514
+    }
+  },
+  {
+    "kind": "actual_sgbm_plane",
+    "texture": "strong",
+    "aspect": "original",
+    "initial_width": 1200,
+    "final_width": 1172,
+    "initial_near": 20,
+    "previous_displayed_near": -3.333333333333332,
+    "final_measured_near": -3.4129691123962402,
+    "geometric_true_near": -3.4129692832764507,
+    "uncertain": true,
+    "reasons": [
+      "disparity_range_unreliable"
+    ],
+    "auto_offset_px": 28,
+    "display_equals_final_measurement": true
+  },
+  {
+    "kind": "actual_sgbm_plane",
+    "texture": "strong",
+    "aspect": "1:1",
+    "initial_width": 800,
+    "final_width": 800,
+    "initial_near": 30,
+    "previous_displayed_near": -3.75,
+    "final_measured_near": -3.75,
+    "geometric_true_near": -3.75,
+    "uncertain": true,
+    "reasons": [
+      "disparity_range_unreliable"
+    ],
+    "auto_offset_px": 27,
+    "display_equals_final_measurement": true
+  },
+  {
+    "kind": "actual_sgbm_plane",
+    "texture": "weak",
+    "aspect": "original",
+    "initial_width": 1200,
+    "final_width": 1172,
+    "initial_near": 20.052082061767578,
+    "previous_displayed_near": -3.281251271565754,
+    "final_measured_near": -3.3596415519714355,
+    "geometric_true_near": -3.4129692832764507,
+    "uncertain": true,
+    "reasons": [
+      "far_edge_unconfirmed",
+      "disparity_range_unreliable",
+      "near_edge_unconfirmed"
+    ],
+    "auto_offset_px": 28,
+    "display_equals_final_measurement": true
+  },
+  {
+    "kind": "actual_sgbm_plane",
+    "texture": "weak",
+    "aspect": "1:1",
+    "initial_width": 800,
+    "final_width": 800,
+    "initial_near": 30.078125,
+    "previous_displayed_near": -3.671875,
+    "final_measured_near": -3.671875,
+    "geometric_true_near": -3.75,
+    "uncertain": true,
+    "reasons": [
+      "far_edge_unconfirmed",
+      "high_edge_cluster_missing",
+      "disparity_range_unreliable",
+      "near_edge_unconfirmed"
+    ],
+    "auto_offset_px": 27,
+    "display_equals_final_measurement": true
+  }
+]
