@@ -131,6 +131,7 @@ class NativeNearConfirmationTests(unittest.TestCase):
         from stereofine.render import render_final_pair
         from stereofine.disparity import _rgb_to_luma_uint8
         from stereofine.near_point import verify_patch
+        from stereofine.processing import analyze_horizontal_disparity
         import json
         *_,native_left,native_right=self.scene()
         # Isolate a missing initial seed. Dense matching, extra patch searches,
@@ -143,14 +144,26 @@ class NativeNearConfirmationTests(unittest.TestCase):
             root=Path(directory);paths=[root/'scene_l.png',root/'scene_r.png']
             for path,pixels in zip(paths,(native_left,native_right)):cv2.imwrite(str(path),pixels)
             source=source_from_pair(*paths,root)
+            measurements=[]
+            def measured(*args):
+                result=analyze_horizontal_disparity(*args)
+                measurements.append(result)
+                return result
             with patch('stereofine.processing.DISPARITY_ANALYSIS_MAX_WIDTH',640), \
+                 patch('stereofine.processing.analyze_horizontal_disparity',side_effect=measured), \
                  patch('stereofine.near_point.confirm_near_edge',side_effect=missing_initial_seed) as initial:
                 first=process_source(source)
                 self.assertTrue(first.state.disparity.valid)
-                self.assertNotIn('near_edge_unconfirmed',first.state.disparity.uncertain_reasons)
-                self.assertIn('disparity_range_unreliable',first.state.disparity.uncertain_reasons)
-                near=first.state.disparity.diagnostics['near_confirmation']
+                self.assertEqual(len(measurements),2)
+                # The baseline's native evidence still determines framing.
+                # Displayed confidence belongs to the independently measured
+                # finished crop, even when this forced seed starvation cannot
+                # be recovered again after cropping.
+                self.assertNotIn('near_edge_unconfirmed',measurements[0]['uncertain_reasons'])
+                self.assertIn('disparity_range_unreliable',measurements[0]['uncertain_reasons'])
+                near=measurements[0]['near_confirmation']
                 self.assertTrue(near['recovery_validation']['accepted'])
+                self.assertEqual(first.state.disparity.uncertain_reasons,measurements[1]['uncertain_reasons'])
                 left,right,_=render_final_pair(load_source(source),first.state,apply_color=False)
                 offset=first.state.effective_offset_x_px
                 point=verify_patch(_rgb_to_luma_uint8(left),_rgb_to_luma_uint8(right),640-offset,360)
@@ -165,8 +178,10 @@ class NativeNearConfirmationTests(unittest.TestCase):
                 self.assertTrue(second.state.favorite)
                 self.assertEqual(second.state.manual.delta_x_px,7)
                 self.assertEqual(first.state.framing.auto_near_offset_x_px,second.state.framing.auto_near_offset_x_px)
-                # One reflected far audit and one near audit; cache adds none.
-                self.assertEqual(initial.call_count,2)
+                # Baseline and finished crop each audit far and near; cache
+                # adds no new matching or confirmation work.
+                self.assertEqual(initial.call_count,4)
+                self.assertEqual(len(measurements),2)
 
     def test_native_uint16_uses_full_range_proxy_without_clipping(self):
         from stereofine.near_point_recovery import native_patch_checks

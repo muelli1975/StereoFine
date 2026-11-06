@@ -559,10 +559,27 @@ def main() -> None:
             app.update_idletasks(); app.update()
             middle_status = app._input_status_text()
             assert "17/33" in middle_status and "bild017" in middle_status, middle_status
+            app._render_status()
+            assert app._status_line_widgets['warning'].cget('text') == ''
+            assert app._status_line_widgets['near_far'].cget('text') == ''
+            from copy import deepcopy
+            measured_state = deepcopy(app.current.state)
+            measured_state.disparity.valid = True
+            measured_state.disparity.stale = False
+            measured_state.disparity.uncertain = True
+            measured_state.disparity.uncertain_reasons = ['near_control_unconfirmed']
+            measured_state.disparity.total_permille = 21.
+            app._handle_progress(BatchProgress(17, 33, 'bild017', 'measured', state=measured_state))
+            app._render_status()
+            assert app._status_line_widgets['warning'].cget('text')
+            assert '21.00' in app._status_line_widgets['deviation'].cget('text')
             app._handle_progress(BatchProgress(33, 33, "bild033", "export"))
             app.update_idletasks(); app.update()
             final_status = app._input_status_text()
             assert "33/33" in final_status and "bild033" in final_status, final_status
+            app._render_status()
+            assert app._status_line_widgets['warning'].cget('text') == ''
+            assert app._status_line_widgets['near_far'].cget('text') == ''
             app.current_job_kind = None
             app.busy_state = "idle"
             app._batch_progress_index = None

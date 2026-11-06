@@ -195,6 +195,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self._batch_progress_index: int | None = None
         self._batch_progress_total: int | None = None
         self._batch_progress_source_name: str | None = None
+        self._batch_progress_state = None
         self._load_rollback_context: tuple[list[StereoSource], int | None, bool, str] | None = None
         self._save_after_id: str | None = None
         self._state_save_error = None
@@ -853,10 +854,18 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             return f"{self.current.source.display_name} · {self.source_index + 1}/{len(self.sources)}"
         return self.current.source.display_name
 
+    def _status_state(self):
+        if getattr(self, "current_job_kind", None) == "batch":
+            state = getattr(self, "_batch_progress_state", None)
+        else:
+            state = self.current.state if self.current is not None else None
+        if state is None:
+            from .state import PairState
+            return PairState()
+        return state
+
     def _traffic_color(self) -> str:
-        if self.current is None:
-            return TRAFFIC_GRAY
-        disparity = self.current.state.disparity
+        disparity = self._status_state().disparity
         if not disparity.valid or disparity.stale:
             return TRAFFIC_GRAY
         value = disparity.traffic
@@ -1045,11 +1054,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self._ensure_status_widgets()
         labels = self._status_line_widgets
 
-        if self.current is None:
-            from .state import PairState
-            state = PairState()
-        else:
-            state = self.current.state
+        state = self._status_state()
 
         input_section, analysis, deviation, floating = build_status_sections(
             state, input_text=self._input_status_text(), language=self.settings.language
@@ -1120,7 +1125,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             pass
         if hasattr(self, "sidecar_status_label"):
             self.sidecar_status_label.configure(
-                text=sidecar_status_text(self.current.sidecar if self.current else None, self.settings.language)
+                text=("" if self.current_job_kind == "batch" else
+                      sidecar_status_text(self.current.sidecar if self.current else None, self.settings.language))
             )
         if self._state_save_error:
             labels["warning"].configure(text=self._t("state_save_warning"))
@@ -1129,7 +1135,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
     def _update_favorite_star(self, hover: bool = False) -> None:
         if not hasattr(self, "favorite_label"):
             return
-        active = bool(self.current and self.current.state.favorite)
+        active = bool(self._status_state().favorite)
         can_toggle = bool(self.current and self.busy_state == "idle")
         color = GOLD_DARK if (active or (hover and can_toggle)) else TRAFFIC_GRAY
         if active and hover and can_toggle:
@@ -2367,6 +2373,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self._batch_progress_index = None
         self._batch_progress_total = None
         self._batch_progress_source_name = None
+        self._batch_progress_state = None
         output_folder = None if self.analysis_only.get() else self._effective_output_folder(self.sources[0].input_root)
         if not self.analysis_only.get() and output_folder is None:
             messagebox.showinfo(APP_NAME, self._t("select_output_folder"))
@@ -2461,6 +2468,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             self._batch_progress_index = int(payload.index)
             self._batch_progress_total = int(payload.total)
             self._batch_progress_source_name = str(getattr(payload, "source_name", "") or "")
+            self._batch_progress_state = getattr(payload, "state", None)
             self._schedule_status_refresh(1)
 
         preview_rgb = getattr(payload, "preview_rgb", None)
@@ -2488,6 +2496,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             self._batch_progress_index = None
             self._batch_progress_total = None
             self._batch_progress_source_name = None
+            self._batch_progress_state = None
         self._refresh_control_states()
         self._stop_activity()
         return kind

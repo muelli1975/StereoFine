@@ -79,6 +79,12 @@ def browse_source(source: StereoSource, defaults: ProcessingDefaults = Processin
             state.disparity.stale = True
             if "disparity" in sidecar.pipeline_mismatches:
                 state.framing.clear_auto_near(status="stale")
+        elif state.disparity.valid and not state.disparity.basis.get("rendered_pair"):
+            # Earlier releases stored the automatic pre-framing estimate. Keep
+            # the saved framing, but let the background worker measure the
+            # exact final crop before displaying its values and confidence.
+            state.disparity.invalidate()
+            state.disparity.status = "stale"
         if not sidecar.color_cache_valid:
             state.color.valid = False
         if {"input", "alignment"}.intersection(sidecar.pipeline_mismatches):

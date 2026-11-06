@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Callable, Iterable
@@ -144,6 +145,9 @@ def run_batch(
             processed = process_source(source, process_options, cancellation=cancellation,
                                        directory_index=directory_index)
             item = BatchRunItem(processed=processed)
+            if progress:
+                progress(BatchProgress(index, total, source.display_name, "measured",
+                                       state=deepcopy(processed.state)))
 
             # Analysis-only progress uses existing reduced analysis proxies.
             if progress and processed.preview_pair is not None:
@@ -158,6 +162,7 @@ def run_batch(
                             preview_rgb=(np.concatenate([preview_right, preview_left], axis=1)
                                          if options.preview_mode == "Kreuzblick" else
                                          make_anaglyph(preview_left, preview_right, gray=options.preview_mode == "Graustufen")),
+                            state=deepcopy(processed.state),
                         )
                     )
                 except Exception:
@@ -184,7 +189,8 @@ def run_batch(
                 raise RuntimeError("Interner Fehler: Masterbild für Ausgabe nicht verfügbar.")
 
             if progress:
-                progress(BatchProgress(index, total, source.display_name, "export"))
+                progress(BatchProgress(index, total, source.display_name, "export",
+                                       state=deepcopy(processed.state)))
             left, right, _render_info = render_final_pair(processed.loaded_pair, processed.state)
             if cancellation is not None:
                 cancellation.raise_if_cancelled()
@@ -193,7 +199,8 @@ def run_batch(
                 progress(BatchProgress(index, total, source.display_name, "preview",
                     preview_rgb=(np.concatenate([preview_right, preview_left], axis=1)
                                  if options.preview_mode == "Kreuzblick" else
-                                 make_anaglyph(preview_left, preview_right, gray=options.preview_mode == "Graustufen"))))
+                                 make_anaglyph(preview_left, preview_right, gray=options.preview_mode == "Graustufen")),
+                    state=deepcopy(processed.state)))
             item.export = save_pair_outputs(
                 left,
                 right,

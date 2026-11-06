@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import customtkinter as ctk
 from stereofine import gui
-from stereofine.processing import ProcessingOptions, process_source
+from stereofine.processing import BatchProgress, ProcessingOptions, process_source
 from stereofine.session import browse_source
 from stereofine.settings import AppSettings
 from tests.test_restart_alignment import RestartAlignmentTests
@@ -47,6 +47,21 @@ def main():
                 app._sync_vars_from_current()
                 app._refresh_preview()
                 app._refresh_control_states()
+                assert app.current.state.disparity.basis['rendered_pair']
+                # Browsing an older pre-framing sidecar must schedule the
+                # final-crop refresh through the actual load/worker handoff.
+                payload = json.loads(source.sidecar_path.read_text())
+                for key in ('rendered_pair', 'offset_x_px', 'offset_y_px'):
+                    payload['disparity']['basis'].pop(key, None)
+                source.sidecar_path.write_text(json.dumps(payload))
+                app._load_source_index(0)
+                pump(app, lambda: app.busy_state == 'idle')
+                preserved = deepcopy(app.current.state.framing)
+                pump(app, lambda: app.current.state.disparity.valid and not app.current.state.disparity.stale)
+                assert app.current.state.disparity.basis['rendered_pair']
+                assert app.current.state.framing == preserved
+                checks.append(dict(language=language, legacy_measurement_refreshed_on_browse=True,
+                                   initial_measurement_after_framing=True))
                 shape = app._preview_pair_shape
                 for expected in ('Graustufen','Kreuzblick','Farbig'):
                     app._on_a()
@@ -120,6 +135,23 @@ def main():
                                    calculating_hint=True, color_preview_on_restart=True,
                                    manual_nudge_without_measurement=True, crop_pan_small_steps=True,
                                    unavailable_axis_keeps_pan=True))
+                current_state = app.current.state
+                snapshot = deepcopy(current_state)
+                snapshot.disparity.total_permille = 21.
+                snapshot.disparity.uncertain = True
+                app.current_job_kind = 'batch'
+                app._handle_progress(BatchProgress(2, 7, 'B.jpg', 'measured', state=snapshot))
+                app._render_status()
+                assert '21.00' in app._status_line_widgets['deviation'].cget('text')
+                assert app._status_line_widgets['warning'].cget('text')
+                app._handle_progress(BatchProgress(3, 7, 'C.jpg', 'analysis'))
+                app._render_status()
+                assert app._status_line_widgets['warning'].cget('text') == ''
+                assert app._status_line_widgets['near_far'].cget('text') == ''
+                app.current_job_kind = None
+                assert app.current.state is current_state
+                app._render_status()
+                checks.append(dict(language=language, batch_status_matches_progress_image=True))
                 with patch('stereofine.processing.refresh_current_disparity', side_effect=RuntimeError('Test failure')):
                     app.current.state.invalidate_disparity_for_framing()
                     app._schedule_disparity_refresh()

@@ -114,6 +114,7 @@ class BatchProgress:
     source_name: str
     stage: str
     preview_rgb: np.ndarray | None = None
+    state: PairState | None = None
 
 
 @dataclass
@@ -377,8 +378,10 @@ def process_source(
         token.raise_if_cancelled()
         _store_alignment_result(state, result, alignment_basis)
 
-    disparity_basis = (current_disparity_basis(state) if alignment_from_cache and state.disparity.basis.get("rendered_pair")
-                       else _disparity_basis(state))
+    # Only a measurement of the finished crop can be reused as the displayed
+    # result. Legacy pre-framing measurements must be refreshed once, while
+    # retaining their saved automatic framing and all explicit user edits.
+    disparity_basis = current_disparity_basis(state)
     disparity_from_cache = _disparity_cache_usable(
         load_result,
         state,
@@ -417,23 +420,12 @@ def process_source(
             base_width = int(dleft.shape[1])
             result = analyze_horizontal_disparity(dleft, dright, DISPARITY_ANALYSIS_MAX_WIDTH)
         token.raise_if_cancelled()
-        _store_disparity_result(state, result, basis=disparity_basis, base_width_px=base_width)
-    elif state.framing.auto_near_offset_x_px is None and state.disparity.valid:
-        # Defensive recovery for early schema-3 drafts: cached raw disparity is
-        # enough to reconstruct the automatic 3‰ baseline without recomputing SGBM.
-        width = int(state.framing.auto_near_base_width_px or 0)
-        near = compute_auto_near_framing(
-            high_edge_permille=state.disparity.high_edge_permille,
-            base_width_px=width,
-            ready=state.disparity.valid,
-            uncertain=state.disparity.uncertain,
-                back_permille=state.framing.auto_near_back_permille,
-        )
-        state.framing.auto_near_offset_x_px = near.offset_x_px
-        state.framing.auto_near_shift_permille = near.shift_permille
-        state.framing.auto_near_base_width_px = near.base_width_px
-        state.framing.auto_near_status = near.status
-    
+        _store_disparity_result(state, result, basis=_disparity_basis(state), base_width_px=base_width)
+        # The baseline above places the stereo window. Its overlap can change
+        # both the content and the width of the selected aspect/crop. Measure
+        # that finished pair once, without feeding the result back into framing.
+        refresh_current_disparity(loaded, state, cancellation=token)
+
     preview_pair: tuple[np.ndarray, np.ndarray] | None = None
     if options.preview_max_width and options.preview_max_height:
         token.raise_if_cancelled()

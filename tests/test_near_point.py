@@ -78,7 +78,11 @@ class NearPointTests(unittest.TestCase):
             second = process_source(source)
             self.assertTrue(second.alignment_from_cache)
             self.assertTrue(second.disparity_from_cache)
-            self.assertGreater(second.state.disparity.high_edge_permille, 40)
+            # Cached endpoints now describe the final framed crop, rather than
+            # its raw pre-framing disparity. The small near object stays behind
+            # the window and the automatic placement survives unchanged.
+            self.assertLessEqual(second.state.current_scene_positions_permille()[0], -3.)
+            self.assertGreater(second.state.framing.auto_near_shift_permille, 40)
             self.assertEqual(first.state.framing.auto_near_offset_x_px, second.state.framing.auto_near_offset_x_px)
 
     def test_disparity_pipeline_change_discards_old_auto_shift_but_keeps_edits(self):
