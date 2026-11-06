@@ -93,7 +93,7 @@ WINDOW_WIDTH = 1400
 WINDOW_HEIGHT = 850
 SIDEBAR_WIDTH = 340
 STATUS_SYMBOL_COLUMN_WIDTH = 36
-STATUS_ROW_HEIGHT = 18
+STATUS_ROW_HEIGHT = 19
 STATUS_WARNING_HEIGHT = 36
 ACTIVITY_SPINNER_SIZE = 36
 ACTIVITY_SPINNER_RENDER_SCALE = 5
@@ -947,9 +947,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
 
         # Fixed allocations keep footer/buttons still while values, warnings,
         # file names and calculation state change. Font sizes remain 13/12 px.
-        add_label("input", 0, height=36, symbol_slot=True, two_lines=True)
+        add_label("input", 0, height=38, symbol_slot=True, two_lines=True)
         add_spacer(1)
-        add_label("analysis_model", 2, height=36, paired=True)
+        add_label("analysis_model", 2, height=38, paired=True)
         add_label("vertical_error", 3, paired=True)
         add_label("vertical_shift", 4, paired=True)
         add_label("rotation", 5, paired=True)
@@ -1005,7 +1005,12 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             lines = [""]
         if len(lines) == 1 and measure(lines[0]) > width:
             cut = prefix(lines[0], width)
-            lines = [lines[0][:cut], lines[0][cut:]]
+            # Prefer a natural filename boundary to leaving just an extension
+            # or a few letters alone on the second line.
+            boundaries = [i + 1 for i, ch in enumerate(lines[0][:cut]) if ch in "_ /\\-"]
+            natural = next((i for i in reversed(boundaries) if i >= cut // 2), None)
+            cut = natural or cut
+            lines = [lines[0][:cut].rstrip(), lines[0][cut:].lstrip()]
         if len(lines) > 2:
             lines = [lines[0], " ".join(lines[1:])]
         visible = [line if measure(line) <= width else
