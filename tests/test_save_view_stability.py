@@ -188,5 +188,8 @@ class SaveViewStabilityTests(unittest.TestCase):
         app.tr = SimpleNamespace(message=str)
         app.sources, app.source_index = [source], 0
         app._load_source_index = lambda *a, **kw: self.fail('A failed save must not reload the view')
+        refreshes = []
+        app._refresh_preview = lambda: refreshes.append(True)
         with patch('stereofine.gui.messagebox.showwarning'):
             app._finish_worker_success(payload)
+        self.assertEqual(refreshes, [True])

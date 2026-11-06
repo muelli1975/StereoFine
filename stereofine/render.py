@@ -114,7 +114,8 @@ def render_final_pair(
     if preview_bounds is not None:
         from .preview_render import build_aligned_preview_base
         preview_base = build_aligned_preview_base(left, right, original_aspect=input_aspect,
-            max_width=preview_bounds[0], max_height=preview_bounds[1], icc_profile=loaded.icc_profile)
+            max_width=preview_bounds[0], max_height=preview_bounds[1], icc_profile=loaded.icc_profile,
+            state=state, source_token=id(loaded))
 
     # Store the accepted value, so reversing from an overlap limit moves at once.
     dx, dy = clamp_pair_offset(left, right, state.effective_offset_x_px, state.effective_offset_y_px)

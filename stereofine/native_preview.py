@@ -76,14 +76,21 @@ def prepare_detail_texture(key, left, right, window, mode, token):
     return detail_texture_key(key, window, mode), Image.fromarray(pixels)
 
 
-def prepare_native_preview(loaded, state, key, bounds, token, mode='Farbig'):
+def prepare_native_preview(loaded, state, key, bounds, token, mode='Farbig', *, preview_base=None):
     """Prepare both fitted views from one master crop, retaining one native pair.
 
     Only the small fitted variants are kept for instant colour toggles. Native
     pixels and colour fitting retain the full working depth and ICC conversion.
     """
+    from .preview_render import preview_geometry_key
+    if (preview_base is not None and (preview_base.source_token != id(loaded)
+            or preview_base.geometry_key != preview_geometry_key(state))):
+        preview_base = None
+    working_bounds = (min(1600, max(320, bounds[0])), min(1000, max(240, bounds[1])))
     left, right, info = render_final_pair(loaded, state, apply_color=False, apply_floating_window=False,
-                                         preview_bounds=(1600, 1000))
+                                         preview_bounds=working_bounds if preview_base is None else None)
+    if preview_base is None:
+        preview_base = info.preview_base
     token.raise_if_cancelled()
     plain = tuple(master_to_uint8(transform_rgb(eye, loaded.icc_profile)) for eye in (left, right))
     plain_fit = fit_display_pair(*plain, bounds)
@@ -99,7 +106,7 @@ def prepare_native_preview(loaded, state, key, bounds, token, mode='Farbig'):
     # Publish the fitted result first. The separate detail worker warms its
     # texture afterwards; normal editing never waits for a full-size anaglyph.
     views = (key[0], state.color.strength, {False: plain_fit, True: matched_fit}, state.color,
-             bounds, None, info.preview_base)
+             bounds, None, preview_base)
     return key, *native, state.color, views
 
 
@@ -198,8 +205,10 @@ class NativePreviewMixin:
                          bounds, None, base)
                 return *cached, state.color, views
         else:
+            base = (self._preview_base if getattr(self, '_preview_base_session_id', None) == id(self.current)
+                    else None)
             def render(token, _progress):
-                return prepare_native_preview(loaded, state, key, bounds, token, mode)
+                return prepare_native_preview(loaded, state, key, bounds, token, mode, preview_base=base)
 
         self._native_running_key = key
         self._native_job_id = self._native_worker.start(render, name='StereoFine-native-preview').job_id

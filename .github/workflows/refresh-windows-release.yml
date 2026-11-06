@@ -1,4 +1,4 @@
-name: Update StereoFine Windows release
+name: Archived StereoFine 1.1 Windows updater (publication disabled)
 on:
   push:
     branches: [main]
@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   checked-windows:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'Publish StereoFine Windows')
+    if: ${{ false }} # The current 1.2 updater checks and publishes all four platforms.
     uses: ./.github/workflows/validate-development.yml
     with:
       candidate: true

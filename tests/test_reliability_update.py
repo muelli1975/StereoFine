@@ -253,6 +253,22 @@ class ReliabilityUpdateTests(unittest.TestCase):
             app=app_for(browse_source(source)); app._flush_state_save()
             self.assertFalse(source.sidecar_path.exists())
 
+    def test_failed_export_adopts_matching_view_completed_during_save(self):
+        with tempfile.TemporaryDirectory() as directory:
+            session=colored_source(Path(directory)); app=app_for(session)
+            session.state.framing.crop_zoom_index=2; session.state.invalidate_disparity_for_framing()
+            result=prepare_native_preview(session.loaded_pair,deepcopy(session.state),native_key(session),
+                                          app._preview_bounds(),CancellationToken())
+            app.busy_state='save'; app._native_job_id='pending'
+            app._native_worker.messages.put(WorkerMessage('pending',WorkerMessageKind.RESULT,result))
+            app._poll_native_preview(); self.assertTrue(app._native_deferred)
+            app.busy_state='idle'; app._finish_busy_common=lambda:'save'
+            app._t=lambda key,**kw:key; app.tr=SimpleNamespace(message=str)
+            failed=batch.BatchRunResult(failed=[(session.source,'denied')])
+            with patch('stereofine.gui.messagebox.showwarning'): app._finish_worker_success(failed)
+            self.assertFalse(app._native_deferred)
+            np.testing.assert_array_equal(app._preview_left_current,result[4][2][True][0])
+
     def test_first_reverse_step_at_offset_boundary_moves_and_state_matches_render(self):
         session=SimpleNamespace(state=PairState(),loaded_pair=loaded_pair(),
                                 sidecar=SidecarLoadResult(SidecarStatus.MISSING))
@@ -268,10 +284,12 @@ class ReliabilityUpdateTests(unittest.TestCase):
 
     def test_function_keys_work_in_suffix_editor_without_interfering_with_typing(self):
         app=test_preview_stability.PreviewStabilityTests().app(); calls=[]
+        released=[]; app._release_sbs_suffix_focus=lambda:released.append(True)
         editor=SimpleNamespace(winfo_class=lambda:'Entry',cget=lambda key:'normal')
         handler=app._shortcut_handler(lambda event:calls.append(event.keysym))
         for key in ('F1','F11','a','Left'): handler(SimpleNamespace(widget=editor,keysym=key))
         self.assertEqual(calls,['F1','F11'])
+        self.assertEqual(len(released),2)
 
     def test_settings_write_failure_keeps_checkbox_and_image_in_sync(self):
         app=test_preview_stability.PreviewStabilityTests().app(); app.settings=AppSettings()
@@ -335,6 +353,21 @@ class ReliabilityUpdateTests(unittest.TestCase):
         self.assertEqual(results[0][4][4],(600,400))
         for actual,wanted in zip(results[0][4][2][app.current.state.color.enabled],fit_display_pair(*result[1:3],(600,400))):
             np.testing.assert_array_equal(actual,wanted)
+
+    def test_interactive_native_refresh_reuses_only_matching_aligned_proxy(self):
+        loaded=loaded_pair(); state=PairState(); session=SimpleNamespace(state=state)
+        initial=prepare_native_preview(loaded,deepcopy(state),native_key(session),(320,230),CancellationToken())
+        base=initial[4][6]
+        state.manual.delta_x_px=3; state.framing.crop_zoom_index=2
+        with patch('stereofine.preview_render.build_aligned_preview_base',
+                   side_effect=AssertionError('Unchanged registration rebuilt the working proxy')):
+            result=prepare_native_preview(loaded,deepcopy(state),native_key(session),(320,230),
+                                           CancellationToken(),preview_base=base)
+        self.assertIs(result[4][6],base)
+        state.alignment.correction={'rotation_deg':.5,'scale':1.,'vertical_shift_px':0.}
+        changed=prepare_native_preview(loaded,deepcopy(state),native_key(session),(320,230),
+                                        CancellationToken(),preview_base=base)
+        self.assertIsNot(changed[4][6],base)
 
     def test_job_directory_index_scans_once_and_detects_later_duplicate(self):
         with tempfile.TemporaryDirectory() as directory:

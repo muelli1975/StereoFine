@@ -61,6 +61,36 @@ def main():
             app.focus_force()
             pump(app)
 
+            # Global function keys must still work from the actual suffix
+            # editor, and each action must release that editor's keyboard focus.
+            app.use_custom_sbs_suffix.set(True)
+            app._refresh_control_states()
+            suffix_editor = app.sbs_suffix_menu._entry
+            suffix_editor.focus_force()
+            pump(app)
+            assert app.focus_get() is suffix_editor
+            suffix_editor.event_generate('<KeyPress-F1>')
+            pump(app)
+            assert app._shortcut_help_window is not None and app._shortcut_help_window.winfo_exists()
+            assert app.focus_get() is not suffix_editor
+            suffix_editor.event_generate('<KeyRelease-F1>')
+            app._close_shortcuts_help()
+            app.focus_force()
+            pump(app)
+            suffix_editor.focus_force()
+            pump(app)
+            previous_fullscreen = app.fullscreen
+            suffix_editor.event_generate('<KeyPress-F11>')
+            pump(app, 2 if sys.platform == 'darwin' else .5)
+            assert app.fullscreen != previous_fullscreen
+            assert app.focus_get() is not suffix_editor
+            suffix_editor.event_generate('<KeyRelease-F11>')
+            app.toggle_fullscreen()
+            pump(app, 2 if sys.platform == 'darwin' else .5)
+            app.use_custom_sbs_suffix.set(False)
+            app._refresh_control_states()
+            app.focus_force()
+
             # Reproduce a held L/R/T/B key whose release occurs in another window.
             other = tk.Toplevel(app)
             other.geometry('160x80+30+30')
@@ -126,6 +156,7 @@ def main():
                     assert box.cget('state') == 'normal'
                     layouts.append(dict(language=language, requested_size=size, checkbox_width=box.winfo_width()))
             report = dict(ok=True, platform=sys.platform, focus_loss_recovery=True,
+                          function_keys_work_from_suffix_editor=True, function_keys_release_suffix_focus=True,
                           internal_focus_preserves_keys=True, real_arrow_steps=[1, 5, 10],
                           cross_repeat_cancelled=True, filename_option_persisted=True, layouts=layouts)
             target = Path('build/gui-keyboard-filename-'+sys.platform+'.json')

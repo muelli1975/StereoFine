@@ -17,6 +17,10 @@
 - Default new settings to Original aspect ratio and enabled symmetric colour matching, retaining saved choices.
 - Add remembered anaglyph saving and an editable Full-SBS suffix list with program-specific presets.
 - Keep loaded-settings status concise without exposing internal calculation-version differences.
+- Protect source files and distinct batch outputs from filename collisions while retaining replacement of existing exports.
+- Commit single-image analysis only after its preview is ready; reject saving an externally changed source until it is reopened.
+- Share the master crop geometry with interactive previews and retain completed colour updates after saving.
+- Reuse native pixels on viewport changes and reduce colour-fit allocations without changing the fitted curves.
 
 
 ## 1.1 — 2026-10-21 (updated 2026-11-01)

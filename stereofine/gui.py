@@ -2506,7 +2506,11 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             # A single-image export does not change the source pixels. Adopt
             # its saved state without replacing the session or its view caches.
             if kind == "save":
-                self._adopt_saved_result(payload)
+                if not self._adopt_saved_result(payload):
+                    # Per-image export failures are returned as a batch result,
+                    # not a worker exception. Resume a view finished during the
+                    # failed save just as the worker-error path does.
+                    self._refresh_preview()
                 return
             if self.source_index is not None and self.sources:
                 self._load_source_index(self.source_index)
@@ -2575,6 +2579,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
                     return None
             except (AttributeError, tk.TclError):
                 pass
+            if getattr(event, 'keysym', '') in {'F1', 'F11'}:
+                self._release_sbs_suffix_focus()
             return callback(event)
         return dispatch
 

@@ -13,8 +13,6 @@ from .color_transfer import (
 from .config import CROP_ZOOM_LEVELS
 from .geometry import (
     apply_floating_window_masks,
-    apply_orientation,
-    center_crop_to_common_size,
     crop_pair_to_aspect_and_framing,
     crop_shifted_pair_to_overlap,
     clamp_offset_for_size,
@@ -40,6 +38,8 @@ class PreviewBasePair:
     icc_profile: bytes | None = None
     master_shape: tuple[int, int] | None = None
     display_bounds: tuple[int, int] | None = None
+    geometry_key: str | None = None
+    source_token: int | None = None
 
 
 @dataclass(frozen=True)
@@ -69,16 +69,6 @@ def scale_correction_for_preview(correction: dict | None, scale: float) -> dict 
         payload["max_abs_correction_px"] = float(payload.get("max_abs_correction_px", 0.0) or 0.0) * scale
         scaled["y_residual_apply"] = payload
     return scaled
-
-
-def _oriented_proxy_pair(loaded: LoadedStereoPair, state: PairState) -> tuple[np.ndarray, np.ndarray]:
-    t = state.input_transform
-    left = apply_orientation(master_to_uint8(loaded.left), t.left_orientation, t.left_mirror)
-    right = apply_orientation(master_to_uint8(loaded.right), t.right_orientation, t.right_mirror)
-    if t.swap_eyes:
-        left, right = right, left
-    left, right, _changed = center_crop_to_common_size(left, right)
-    return np.ascontiguousarray(left), np.ascontiguousarray(right)
 
 
 def build_preview_base_from_oriented_pair(
@@ -135,15 +125,23 @@ def build_preview_base(
     return info.preview_base
 
 
+def preview_geometry_key(state):
+    from .render import _stable_digest
+    return _stable_digest((asdict(state.input_transform),
+                           reproducible_alignment_correction(state.alignment.correction)))
+
+
 def build_aligned_preview_base(left, right, *, original_aspect, max_width, max_height,
-                               icc_profile=None):
+                               icc_profile=None, state=None, source_token=None):
     """Reduce the actual aligned master once; retain its exact coordinate grid."""
     master_shape = left.shape[:2]
     a, b, scale = resize_pair_for_preview(master_to_uint8(left), master_to_uint8(right),
                                          max_width, max_height)
     return PreviewBasePair(np.ascontiguousarray(a), np.ascontiguousarray(b), float(scale),
                            original_aspect, icc_profile=icc_profile,
-                           master_shape=master_shape, display_bounds=(max_width, max_height))
+                           master_shape=master_shape, display_bounds=(max_width, max_height),
+                           geometry_key=preview_geometry_key(state) if state is not None else None,
+                           source_token=source_token)
 
 
 def _master_crop_preview(base, state, bounds):
