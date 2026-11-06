@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import queue
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import re
 import sys
 import time
@@ -27,7 +27,7 @@ from .config import (
     SUPPORTED_IMAGE_EXTENSIONS,
     SUPPORTED_STEREO_SINGLE_EXTENSIONS,
 )
-from .geometry import crop_shifted_pair_to_overlap, framing_crop_geometry
+from .geometry import crop_shifted_pair_to_overlap, framing_crop_geometry, clamp_offset_for_size
 from .i18n import (
     Translator,
     aspect_code,
@@ -1363,7 +1363,16 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self.settings.tiff_sbs = bool(self.tiff_sbs.get())
         self.settings.save_anaglyph = bool(self.save_anaglyph.get())
         self.settings.use_custom_sbs_suffix = bool(self.use_custom_sbs_suffix.get())
-        save_settings(self.settings)
+        try:
+            save_settings(self.settings)
+        except (OSError, ValueError) as exc:
+            # A preference write must not interrupt the current image callback
+            # halfway through and leave its checkbox ahead of the actual state.
+            if getattr(self, '_settings_save_error', None) != str(exc):
+                self._settings_save_error = str(exc)
+                messagebox.showerror(APP_NAME, self._t('settings_save_failed', text=str(exc)))
+            return
+        self._settings_save_error = None
 
     def _commit_sbs_suffix(self, *, show_error=False) -> bool:
         value = suffix_value(self.sbs_suffix_display.get(), self.settings.language)
@@ -1658,6 +1667,14 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         token.raise_if_cancelled()
         native = prepare_native_preview(session.loaded_pair, deepcopy(session.state),
                                         native_key(session), bounds, token, mode)
+        base = native[4][6]
+        h, w = base.master_shape
+        dx, dy = clamp_offset_for_size(w, h, session.state.effective_offset_x_px,
+                                      session.state.effective_offset_y_px)
+        session.state.manual.delta_x_px = dx - session.state.auto_offset_x_px
+        session.state.manual.delta_y_px = dy
+        key = native_key(session)
+        native = (key, *native[1:4], (key[0], *native[4][1:]))
         return PreparedSessionPreview(session, native)
 
     def _install_session_preview(self, prepared) -> None:
@@ -1673,7 +1690,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self._native_fit_cache = None
         self._native_failed_key = None
         self._native_deferred = False
-        self._held_preview_signature = None
+        if len(self._native_views) > 6:
+            self._preview_base = self._native_views[6]
+            self._preview_base_session_id = id(prepared.session)
 
     def _restore_load_rollback(self) -> None:
         context = self._load_rollback_context
@@ -1787,6 +1806,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         state.input_transform.swap_eyes = bool(self.swap_eyes.get())
         if changed:
             state.invalidate_for_input_transform()
+        else:
+            return
         self._schedule_state_save(create_if_missing=False)
         self._refresh_preview(rebuild_base=True)
         self._render_status()
@@ -1841,6 +1862,12 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         state = self.current.state
         state.manual.delta_x_px += int(dx)
         state.manual.delta_y_px += int(dy)
+        base = self._ensure_preview_base(self.current)
+        if base.master_shape is not None:
+            h, w = base.master_shape
+            x, y = clamp_offset_for_size(w, h, state.effective_offset_x_px, state.effective_offset_y_px)
+            state.manual.delta_x_px = x - state.auto_offset_x_px
+            state.manual.delta_y_px = y
         state.color.valid = False
         self._schedule_state_save()
         self._refresh_preview()
@@ -2083,6 +2110,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             session.state,
             apply_color=not start_image,
             apply_floating_window=not start_image,
+            bounds=self._preview_bounds(),
         )
         self._preview_left_current = pair.left
         self._preview_right_current = pair.right
@@ -2212,11 +2240,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         if self.busy_state != "idle":
             return
         if kind == "save":
-            self._hold_current_preview()
             self._stop_detail_repeat()
             self._stop_measure_repeat()
         else:
-            self._held_preview_signature = None
             self._end_detail_preview()
         self._cancel_disparity_refresh()
         self.busy_state = kind
@@ -2240,7 +2266,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             self._start_batch_run()
         else:
             source = self.current.source
-            options = self._processing_options(keep_loaded_pair=True, restart_alignment=True)
+            options = replace(self._processing_options(keep_loaded_pair=True, restart_alignment=True),
+                              save_sidecar=False)
             bounds = self._preview_bounds()
             mode = self._effective_preview_mode()
             missing_preview = self._t("internal_preview_error")
@@ -2302,7 +2329,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             messagebox.showinfo(APP_NAME, self._t("select_output_folder"))
             return "break"
         options = BatchRunOptions(
-            processing=self._processing_options(keep_loaded_pair=False),
+            processing=replace(self._processing_options(keep_loaded_pair=False),
+                               expected_source_stamp=self.current.source_stamp),
             output_folder=output_folder,
             gray_anaglyph=bool(self.gray_anaglyph.get()),
             save_cross=bool(self.save_cross.get()),
@@ -2391,6 +2419,20 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
 
     def _finish_worker_success(self, payload: Any) -> None:
         kind = self._finish_busy_common()
+        if kind == 'analysis' and isinstance(payload, PreparedSessionPreview):
+            # The worker result is only provisional until analysis AND its view
+            # are ready. A late cancellation must leave the old .sfin untouched.
+            try:
+                color = deepcopy(payload.native_result[3])
+                color.enabled = payload.session.state.color.enabled
+                payload.session.state.color = color
+                save_browsed_state(payload.session)
+                payload.session.sidecar = load_sidecar(payload.session.source.sidecar_path,
+                                                       expected_source=payload.session.source_stamp)
+            except Exception as exc:
+                messagebox.showerror(APP_NAME, self._t('state_save_failed', text=str(exc)))
+                self._refresh_preview()
+                return
         if isinstance(payload, PreparedSessionPreview):
             self._install_session_preview(payload)
             payload = payload.session
@@ -2527,7 +2569,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             # Let Tk's entry bindings edit text without also changing the image.
             widget = getattr(event, "widget", None)
             try:
-                if (widget.winfo_class() in {"Entry", "TEntry", "TCombobox", "Text", "Spinbox", "TSpinbox"}
+                if (getattr(event, 'keysym', '') not in {'F1', 'F11'}
+                        and widget.winfo_class() in {"Entry", "TEntry", "TCombobox", "Text", "Spinbox", "TSpinbox"}
                         and widget.cget("state") != "disabled"):
                     return None
             except (AttributeError, tk.TclError):
@@ -3120,8 +3163,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
                 return
         if not self._commit_sbs_suffix(show_error=True):
             return
-        if not self._flush_state_save(explicit=True):
-            return
+        if not self._flush_state_save():
+            if not messagebox.askyesno(APP_NAME, self._t('close_unsaved', text=self._state_save_error)):
+                return
         self._cancel_disparity_refresh()
         self.worker.cancel_all()
         self._native_worker.cancel_all()

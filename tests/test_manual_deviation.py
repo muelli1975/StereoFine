@@ -43,6 +43,7 @@ class ManualDeviationTests(unittest.TestCase):
         app._refresh_preview = lambda: None
         app._schedule_status_refresh = lambda: None
         app._render_status = lambda: None
+        app._ensure_preview_base = lambda session: types.SimpleNamespace(master_shape=(1000, 1000))
         return app
 
     def test_horizontal_and_vertical_nudges_retain_measurement_and_warning(self):

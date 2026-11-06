@@ -8,7 +8,7 @@ import numpy as np
 
 from stereofine.anaglyph import make_anaglyph
 from stereofine.geometry import apply_floating_window_masks
-from stereofine.native_preview import detail_box, native_key, prepare_native_preview
+from stereofine.native_preview import detail_box, native_key, prepare_native_preview, prepare_detail_texture
 from stereofine.worker import CancellationToken
 from tests import test_preview_stability
 from tests.test_final_corrections import loaded_pair
@@ -25,7 +25,7 @@ class DetailTextureTests(unittest.TestCase):
                 result = prepare_native_preview(app.current.loaded_pair, deepcopy(app.current.state),
                     native_key(app.current), (320, 230), CancellationToken(), mode)
                 _, left, right, _, views = result
-                texture = views[5][1]
+                texture = prepare_detail_texture(result[0], left, right, fw, mode, CancellationToken())[1]
                 for x, y in ((0, 0), (500, 350), (200, 100)):
                     w, h = 100, 80
                     a, b = apply_floating_window_masks(left[y:y+h, x:x+w], right[y:y+h, x:x+w],
@@ -44,7 +44,9 @@ class DetailTextureTests(unittest.TestCase):
         app.current.loaded_pair = loaded_pair()
         result = prepare_native_preview(app.current.loaded_pair, deepcopy(app.current.state),
             native_key(app.current), (320, 230), CancellationToken())
-        app._native_cache, app._detail_texture_cache = result[:3], result[4][5]
+        app._native_cache = result[:3]
+        app._detail_texture_cache = prepare_detail_texture(result[0], *result[1:3],
+            app.current.state.floating_window, 'Farbig', CancellationToken())
         app.detail_active = True
         app._detail_center = (300, 220)
         app._preview_bounds = lambda: (320, 230)
@@ -62,10 +64,11 @@ class DetailTextureTests(unittest.TestCase):
         expected = make_anaglyph(left[y:y1, x:x1], right[y:y1, x:x1])
         np.testing.assert_array_equal(actual, expected)
 
-    def test_optional_texture_allocation_failure_keeps_the_native_pair(self):
+    def test_normal_preview_does_not_wait_for_optional_detail_texture(self):
         app = test_preview_stability.PreviewStabilityTests().app()
         loaded = loaded_pair()
-        with patch('stereofine.native_preview.prepare_detail_texture', side_effect=MemoryError):
+        with patch('stereofine.native_preview.prepare_detail_texture',
+                   side_effect=AssertionError('Normal preview must be published first')):
             result = prepare_native_preview(loaded, deepcopy(app.current.state), native_key(app.current),
                                             (320, 230), CancellationToken())
         self.assertEqual(result[1].shape, loaded.left.shape)

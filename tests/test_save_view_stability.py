@@ -90,7 +90,6 @@ class SaveViewStabilityTests(unittest.TestCase):
             app._render_session_preview(session)
             before_key = native_key(session)
             before = frames[-1]
-            app._hold_current_preview()
             save_browsed_state(session)
             payload = run_batch([source], BatchRunOptions(output_folder=root/'output'))
             self.assertFalse(payload.failed)
@@ -113,9 +112,8 @@ class SaveViewStabilityTests(unittest.TestCase):
                     np.testing.assert_array_equal(actual, expected)
             self.assertEqual(after_key, before_key)
             self.assertEqual(requests, [])
-            self.assertTrue(app._preview_is_held())
 
-    def test_save_keeps_the_visible_proxy_when_native_result_arrives_during_export(self):
+    def test_save_preserves_image_rectangle_when_native_result_arrives_during_export(self):
         app = test_preview_stability.PreviewStabilityTests().app()
         app.current.loaded_pair = loaded_pair()
         app.current.source = SimpleNamespace(sidecar_path='photo.sfin')
@@ -149,9 +147,10 @@ class SaveViewStabilityTests(unittest.TestCase):
         with patch('stereofine.gui.load_sidecar', return_value=SimpleNamespace(status='valid')):
             self.assertTrue(app._adopt_saved_result(payload))
         for frame in frames:
-            np.testing.assert_array_equal(frame, before)
+            self.assertEqual(frame.shape, before.shape)
+        np.testing.assert_array_equal(frames[-1], result[4][2][False][0])
 
-    def test_an_explicit_window_edit_after_save_updates_the_held_view(self):
+    def test_an_explicit_window_edit_after_save_updates_the_view(self):
         app = test_preview_stability.PreviewStabilityTests().app()
         app.current.loaded_pair = loaded_pair()
         result = prepare_native_preview(app.current.loaded_pair, deepcopy(app.current.state),
@@ -161,10 +160,8 @@ class SaveViewStabilityTests(unittest.TestCase):
         app._apply_native_preview()
         app._preview_pil = Image.fromarray(app._preview_left_current)
         before = app._preview_left_current.copy()
-        app._hold_current_preview()
         app.current.state.floating_window.bottom_permille = 5
         app._render_session_preview(app.current)
-        self.assertFalse(app._preview_is_held())
         expected = apply_floating_window_masks(*result[4][2][app.current.state.color.enabled], 0, 0, 0, 5)
         np.testing.assert_array_equal(app._preview_left_current, expected[0])
         self.assertFalse(np.array_equal(app._preview_left_current, before))

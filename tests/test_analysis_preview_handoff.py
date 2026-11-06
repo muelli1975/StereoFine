@@ -49,6 +49,7 @@ class AnalysisPreviewHandoffTests(unittest.TestCase):
                     app.start_processing()
                     gui_module = app.start_processing.__globals__['__name__']
                     with patch(gui_module+'.process_source', return_value=processed), \
+                            patch(gui_module+'.save_browsed_state'), \
                             patch(gui_module+'.load_sidecar', return_value=SimpleNamespace(status=SidecarStatus.VALID)), \
                             patch(gui_module+'.play_ready_sound'):
                         payload = jobs[0](CancellationToken(), lambda event: None)

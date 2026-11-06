@@ -183,11 +183,27 @@ def save_case(app, root, name, timing, mode, tiff=False, detail=False, fresh=Fal
             if fresh:
                 assert proxy.call_count == rerender.call_count == 0, \
                     (proxy.call_count, rerender.call_count)
+            # A pending frame may improve its pixels/colours, but must never
+            # change placement. A settled save must retain the pixels as well.
+            rectangle_stable = not any(c['kind'] == 'image-rectangle' for c in observer.changes)
+            settled_stable = timing != 'ready' or not observer.changes
+            if not detail:
+                pump(app, lambda: native_ready(app), timeout=45)
+                left, right, _ = render_final_pair(app.current.loaded_pair, deepcopy(app.current.state),
+                                                   apply_floating_window=False)
+                expected = app._mask_preview_pair(*fit_display_pair(left, right, app._preview_bounds()))
+                mode_now = app._effective_preview_mode()
+                expected_view = (np.concatenate([expected[1], expected[0]], axis=1)
+                                 if mode_now == 'Kreuzblick' else
+                                 gui.make_anaglyph(*expected, gray=mode_now == 'Graustufen'))
+                np.testing.assert_array_equal(np.asarray(app._preview_pil), expected_view)
             result = dict(case=name, timing=timing, mode=mode, tiff=tiff, detail=detail,
                 freshly_aligned_in_this_session=fresh, geometry_identity_unchanged=True,
                 proxy_fallbacks_during_save=proxy.call_count, new_native_jobs_during_save=rerender.call_count,
                 sampled_actual_tk_frames=observer.frames, geometry_samples=observer.samples,
-                changes=observer.changes[:20], actual_pixels_and_image_rectangle_unchanged=not observer.changes)
+                changes=observer.changes[:20], actual_pixels_and_image_rectangle_unchanged=not observer.changes,
+                image_rectangle_unchanged=rectangle_stable, settled_pixels_unchanged=settled_stable,
+                final_colour_matches_master=True)
             print(json.dumps(result), flush=True)
             return result
         finally:
@@ -280,8 +296,9 @@ def interactive_colour_checks(app):
                 assert not session.state.color.valid
                 reference = deepcopy(session.state)
                 reference.color.valid = True
-                expected = render_preview_from_base(app._preview_base, reference)
-                raw = render_preview_from_base(app._preview_base, session.state, apply_color=False)
+                expected = render_preview_from_base(app._preview_base, reference, bounds=app._preview_bounds())
+                raw = render_preview_from_base(app._preview_base, session.state, apply_color=False,
+                                               bounds=app._preview_bounds())
                 np.testing.assert_array_equal(app._preview_left_current, expected.left)
                 np.testing.assert_array_equal(app._preview_right_current, expected.right)
                 assert not np.array_equal(expected.left, raw.left)
@@ -369,6 +386,11 @@ def main():
         for path in (source.left_path, source.right_path):
             with Image.open(path) as image:
                 enlarged = image.resize((2160, 1440), Image.Resampling.BICUBIC)
+            if path == source.right_path:
+                biased = np.asarray(enlarged).copy()
+                biased[:, biased.shape[1]//2:] = np.clip(
+                    biased[:, biased.shape[1]//2:].astype(np.int16)+45, 0, 255)
+                enlarged = Image.fromarray(biased)
             enlarged.save(path)
         gui.process_source(source)
         for language in ('de', 'en'):
@@ -409,7 +431,8 @@ def main():
     Path('build').mkdir(exist_ok=True)
     output = Path('build')/f'gui-save-detail-{platform.system()}.json'
     output.write_text(json.dumps(dict(checks=checks), indent=2)+'\n', encoding='utf-8')
-    assert all(c['actual_pixels_and_image_rectangle_unchanged'] for l in checks for c in l['saves'])
+    assert all(c['image_rectangle_unchanged'] and c['settled_pixels_unchanged']
+               and c['final_colour_matches_master'] for l in checks for c in l['saves'])
     assert all(c['no_anaglyph_calculation_during_pan'] and c['z_within_measurement_render_budget']
                and c['measurement_within_native_render_budget']
                for l in checks for c in l['pans'])

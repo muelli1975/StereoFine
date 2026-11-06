@@ -11,11 +11,12 @@ from .config import ANALYSIS_REPORT_FILENAME
 from .export import ExportResult, save_pair_outputs
 from .models import AnalysisRecord
 from .output_naming import validate_sbs_suffix
+from .output_paths import OutputPathGuard
 from .processing import BatchProgress, ProcessedSource, ProcessingOptions, process_source
 from .render import render_final_pair
 from .reports import write_analysis_report
 from .sidecar import save_sidecar, source_stamp_to_dict
-from .sources import StereoSource, validate_source_names
+from .sources import StereoSource, SourceDirectoryIndex, validate_source_names
 from .worker import CancellationToken, JobCancelled
 
 BATCH_PREVIEW_MAX_WIDTH = 960
@@ -121,6 +122,8 @@ def run_batch(
     total = len(source_list)
     result = BatchRunResult(language=options.language)
     records: list[AnalysisRecord] = []
+    path_guard = OutputPathGuard(path for source in source_list for path in (source.left_path, source.right_path))
+    directory_index = SourceDirectoryIndex()
 
     # Build the batch preview from the already existing analysis proxies.
     # Normal image export retains only the current master pair and drops
@@ -138,8 +141,8 @@ def run_batch(
         if progress:
             progress(BatchProgress(index, total, source.display_name, "analysis"))
         try:
-            processed = process_source(source, process_options, cancellation=cancellation)
-            records.append(processed.analysis_record)
+            processed = process_source(source, process_options, cancellation=cancellation,
+                                       directory_index=directory_index)
             item = BatchRunItem(processed=processed)
 
             # Analysis-only progress uses existing reduced analysis proxies.
@@ -163,11 +166,13 @@ def run_batch(
             processed.preview_pair = None
 
             if options.analysis_only:
+                records.append(processed.analysis_record)
                 item.export_skipped_reason = "analysis_only"
                 result.items.append(item)
                 continue
 
             if options.favorites_only and not processed.state.favorite:
+                records.append(processed.analysis_record)
                 item.export_skipped_reason = "not_favorite"
                 processed.loaded_pair = None
                 result.items.append(item)
@@ -181,6 +186,8 @@ def run_batch(
             if progress:
                 progress(BatchProgress(index, total, source.display_name, "export"))
             left, right, _render_info = render_final_pair(processed.loaded_pair, processed.state)
+            if cancellation is not None:
+                cancellation.raise_if_cancelled()
             if progress:
                 preview_left, preview_right = _export_preview(left, right, processed.loaded_pair.icc_profile)
                 progress(BatchProgress(index, total, source.display_name, "preview",
@@ -205,6 +212,9 @@ def run_batch(
                     and processed.state.disparity.valid
                     and not processed.state.disparity.stale else None
                 ),
+                path_guard=path_guard,
+                output_owner=source,
+                cancellation=cancellation,
             )
 
             # Rendering may fit/update the symmetric color-transfer parameters.
@@ -216,6 +226,7 @@ def run_batch(
                 )
             processed.loaded_pair = None
             result.items.append(item)
+            records.append(processed.analysis_record)
         except JobCancelled:
             # Cancellation is a job state, never a per-image processing error.
             raise

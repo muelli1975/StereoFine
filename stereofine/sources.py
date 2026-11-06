@@ -125,16 +125,37 @@ def build_source_stamp(source: StereoSource, loaded: LoadedStereoPair) -> Source
     )
 
 
-def load_source(source: StereoSource) -> LoadedStereoPair:
+class SourceDirectoryIndex:
+    """Job-local stem index; rebuild when directory entries change."""
+
+    def __init__(self) -> None:
+        self._folders = {}
+
+    def validate(self, path: Path, is_supported) -> None:
+        folder = path.parent
+        if not folder.is_dir():
+            return
+        stamp = folder.stat()
+        signature = (stamp.st_mtime_ns, stamp.st_ctime_ns)
+        cached = self._folders.get(folder)
+        if cached is None or cached[0] != signature:
+            stems = {}
+            for item in folder.iterdir():
+                stems.setdefault(item.stem.casefold(), []).append(item)
+            cached = (signature, stems)
+            self._folders[folder] = cached
+        validate_unique_image_stems([
+            item for item in cached[1].get(path.stem.casefold(), ()) if is_supported(item)
+        ])
+
+
+def load_source(source: StereoSource, *, directory_index: SourceDirectoryIndex | None = None) -> LoadedStereoPair:
     """Load a discovered StereoSource transactionally into master arrays."""
     # Also cover single-file/API entry points and files added after discovery.
+    index = directory_index or SourceDirectoryIndex()
     for path in dict.fromkeys((source.left_path, source.right_path)):
         is_supported = is_image_file if source.kind == "pair" else is_stereo_single_file
-        if path.parent.is_dir():
-            validate_unique_image_stems([
-                item for item in path.parent.iterdir()
-                if item.stem.casefold() == path.stem.casefold() and is_supported(item)
-            ])
+        index.validate(path, is_supported)
     if source.kind == "pair":
         return load_pair(source.left_path, source.right_path)
     if source.kind == "mpo":

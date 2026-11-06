@@ -82,7 +82,8 @@ def prepare_native_preview(loaded, state, key, bounds, token, mode='Farbig'):
     Only the small fitted variants are kept for instant colour toggles. Native
     pixels and colour fitting retain the full working depth and ICC conversion.
     """
-    left, right, _ = render_final_pair(loaded, state, apply_color=False, apply_floating_window=False)
+    left, right, info = render_final_pair(loaded, state, apply_color=False, apply_floating_window=False,
+                                         preview_bounds=(1600, 1000))
     token.raise_if_cancelled()
     plain = tuple(master_to_uint8(transform_rgb(eye, loaded.icc_profile)) for eye in (left, right))
     plain_fit = fit_display_pair(*plain, bounds)
@@ -95,13 +96,10 @@ def prepare_native_preview(loaded, state, key, bounds, token, mode='Farbig'):
     if state.color.enabled:
         native = matched
     token.raise_if_cancelled()
-    try:
-        texture = prepare_detail_texture(key, *native, state.floating_window, mode, token)
-    except MemoryError:
-        # This cache is an acceleration, not a requirement for displaying or
-        # exporting the native pair on machines with little free memory.
-        texture = None
-    views = (key[0], state.color.strength, {False: plain_fit, True: matched_fit}, state.color, bounds, texture)
+    # Publish the fitted result first. The separate detail worker warms its
+    # texture afterwards; normal editing never waits for a full-size anaglyph.
+    views = (key[0], state.color.strength, {False: plain_fit, True: matched_fit}, state.color,
+             bounds, None, info.preview_base)
     return key, *native, state.color, views
 
 
@@ -139,7 +137,6 @@ class NativePreviewMixin:
         self._native_poll_id = None
         self._native_failed_key = None
         self._native_running_key = None
-        self._held_preview_signature = None
         self._detail_texture_cache = None
         self._detail_texture_worker = WorkerManager()
         self._detail_texture_job_id = None
@@ -189,9 +186,20 @@ class NativePreviewMixin:
         loaded, state = self.current.loaded_pair, deepcopy(self.current.state)
         bounds = self._preview_bounds()
         mode = self._effective_preview_mode()
-
-        def render(token, _progress):
-            return prepare_native_preview(loaded, state, key, bounds, token, mode)
+        cached = self._native_cache
+        old_views = self._native_views
+        if cached is not None and cached[0] == key:
+            def render(token, _progress):
+                token.raise_if_cancelled()
+                fitted = fit_display_pair(*cached[1:], bounds)
+                token.raise_if_cancelled()
+                base = old_views[6] if old_views is not None and len(old_views) > 6 else None
+                views = (key[0], state.color.strength, {state.color.enabled: fitted}, state.color,
+                         bounds, None, base)
+                return *cached, state.color, views
+        else:
+            def render(token, _progress):
+                return prepare_native_preview(loaded, state, key, bounds, token, mode)
 
         self._native_running_key = key
         self._native_job_id = self._native_worker.start(render, name='StereoFine-native-preview').job_id
@@ -219,8 +227,7 @@ class NativePreviewMixin:
                             self._apply_native_preview()
                 elif message.kind == WorkerMessageKind.ERROR:
                     self._native_failed_key = self._native_running_key
-                    if (self.current is not None and self._native_running_key == native_key(self.current)
-                            and not self._preview_is_held()):
+                    if self.current is not None and self._native_running_key == native_key(self.current):
                         exc = message.payload['exception']
                         self.preview_label.configure(text=self._t('preview_error', text=str(exc)), image=None)
         except queue.Empty:
@@ -235,32 +242,15 @@ class NativePreviewMixin:
 
     def _has_fitted_native_view(self):
         return (self.current is not None and self._native_views is not None
-                and self._native_views[:2] == (native_geometry_key(self.current), self.current.state.color.strength))
+                and self._native_views[:2] == (native_geometry_key(self.current), self.current.state.color.strength)
+                and self.current.state.color.enabled in self._native_views[2])
 
     def _native_views_need_resize(self):
         return self._has_fitted_native_view() and self._native_views[4] != self._preview_bounds()
 
-    def _preview_signature(self):
-        return (native_key(self.current), tuple(asdict(self.current.state.floating_window).items()),
-                self._preview_bounds(), self.detail_active,
-                self._detail_center if self.detail_active else None)
-
-    def _hold_current_preview(self):
-        if self.current is not None and getattr(self, '_preview_pil', None) is not None:
-            self._held_preview_signature = self._preview_signature()
-
-    def _preview_is_held(self):
-        if self._held_preview_signature is not None:
-            if self.current is not None and self._held_preview_signature == self._preview_signature():
-                return True
-            self._held_preview_signature = None
-        return False
-
     def _apply_native_preview(self):
         if self.current is None:
             return False
-        if self._preview_is_held():
-            return True
         fitted = self._has_fitted_native_view()
         native = self._native_cache is not None and self._native_cache[0] == native_key(self.current)
         if not fitted and not native:
@@ -274,7 +264,15 @@ class NativePreviewMixin:
             color = deepcopy(self._native_views[3])
             color.enabled = self.current.state.color.enabled
             color.strength = self.current.state.color.strength
+            changed = color != self.current.state.color
             self.current.state.color = color
+            if changed and getattr(self.current, 'sidecar', None) is not None:
+                from .sidecar import SidecarStatus
+                if self.current.sidecar.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
+                    self._schedule_state_save(create_if_missing=False)
+            if len(self._native_views) > 6 and self._native_views[6] is not None:
+                self._preview_base = self._native_views[6]
+                self._preview_base_session_id = id(self.current)
         if self.detail_active:
             if not native:
                 self._request_native_preview(immediate=True)
@@ -286,6 +284,8 @@ class NativePreviewMixin:
                 self._preview_left_current, self._preview_right_current = self._mask_preview_pair(a, b)
                 self._preview_pair_shape = (a.shape[1], a.shape[0])
                 self._build_preview_anaglyph()
+                if native:
+                    self._request_detail_texture()
                 return True
             _, left, right = self._native_cache
             maxw, maxh = self._preview_bounds()
@@ -301,6 +301,7 @@ class NativePreviewMixin:
             self._preview_left_current, self._preview_right_current = self._mask_preview_pair(a, b)
             self._preview_pair_shape = size
             self._build_preview_anaglyph()
+            self._request_detail_texture()
         return True
 
     def _cancel_mode_release(self, mode):
@@ -329,13 +330,15 @@ class NativePreviewMixin:
                                   self._effective_preview_mode())
 
     def _request_detail_texture(self):
+        if self._detail_texture_cache is not None and self._detail_texture_cache[0] == self._detail_texture_signature():
+            return
         if (self._detail_texture_after_id is None and self._detail_texture_job_id is None
                 and self._detail_texture_failed_key != self._detail_texture_signature()):
             self._detail_texture_after_id = self.after(0, self._start_detail_texture)
 
     def _start_detail_texture(self):
         self._detail_texture_after_id = None
-        if (not self.detail_active or self.current is None or self._native_cache is None
+        if (self.current is None or self.busy_state != 'idle' or self._native_cache is None
                 or self._native_cache[0] != native_key(self.current) or self._detail_texture_job_id):
             return
         key, left, right = self._native_cache
