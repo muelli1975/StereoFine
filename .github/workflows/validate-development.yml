@@ -179,7 +179,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          curl.exe -fL 'https://sourceforge.net/projects/exiftool/files/exiftool-13.59_64.zip/download' -o exiftool.zip
+          curl.exe -fL --retry 3 --retry-all-errors --retry-delay 2 'https://sourceforge.net/projects/exiftool/files/exiftool-13.59_64.zip/download' -o exiftool.zip
           Expand-Archive exiftool.zip -DestinationPath exiftool-download
           $pkg = Get-ChildItem exiftool-download -Directory | Select-Object -First 1
           New-Item -ItemType Directory -Force tools | Out-Null
@@ -191,7 +191,7 @@ jobs:
       - name: Prepare official ExifTool for Unix
         if: runner.os != 'Windows'
         run: |
-          curl -fL 'https://sourceforge.net/projects/exiftool/files/Image-ExifTool-13.59.tar.gz/download' -o exiftool.tar.gz
+          curl -fL --retry 3 --retry-all-errors --retry-delay 2 'https://sourceforge.net/projects/exiftool/files/Image-ExifTool-13.59.tar.gz/download' -o exiftool.tar.gz
           tar -xzf exiftool.tar.gz
           mkdir -p tools/lib
           cp Image-ExifTool-13.59/exiftool tools/exiftool

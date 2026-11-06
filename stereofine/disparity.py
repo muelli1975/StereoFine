@@ -466,22 +466,27 @@ def render_pair_for_disparity_analysis_from_arrays(
     crop_pan_x_permille: int = 0,
     crop_pan_y_permille: int = 0,
     input_aspect_ratio: float | None = None,
-) -> tuple[np.ndarray | None, np.ndarray | None]:
+    return_aligned_shape: bool = False,
+) -> (tuple[np.ndarray | None, np.ndarray | None] |
+      tuple[np.ndarray | None, np.ndarray | None, tuple[int, int] | None]):
     """Render the corrected pair for dense Nah/Fern analysis.
 
     This mirrors the GUI single-image disparity path, but is deliberately
     standalone so batch workers can compute JSON-only Nah/Fern results without
     touching Tk widgets.  Floating-window masks are not applied here because
     near/far analysis must inspect the corrected image content before masking.
+    The optional aligned shape lets automatic framing solve its final-width
+    reserve without another full image warp.
     """
     if left is None or right is None:
-        return None, None
+        return (None, None, None) if return_aligned_shape else (None, None)
 
     if correction is not None:
         left, right = _warp_pair_symmetric_simple(left, right, correction)
     else:
         left, right, _changed = center_crop_to_common_size(left, right)
 
+    aligned_shape = left.shape[:2]
     left, right, _changed = crop_shifted_pair_to_overlap(
         left,
         right,
@@ -502,5 +507,5 @@ def render_pair_for_disparity_analysis_from_arrays(
         int(crop_pan_y_permille),
         float(input_aspect_ratio),
     )
-    return left, right
+    return (left, right, aligned_shape) if return_aligned_shape else (left, right)
 

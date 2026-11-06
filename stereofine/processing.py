@@ -15,7 +15,7 @@ from .disparity import (
     json_safe_disparity_summary,
     render_pair_for_disparity_analysis_from_arrays,
 )
-from .framing import compute_auto_near_framing
+from .framing import AutoNearGeometry, compute_auto_near_framing
 from .geometry import apply_orientation, center_crop_to_common_size
 from .inputs import LoadedStereoPair, master_to_uint8
 from .models import AnalysisRecord, SourceStamp
@@ -213,6 +213,7 @@ def _store_disparity_result(
     basis: dict[str, Any],
     base_width_px: int,
     update_framing: bool = True,
+    framing_geometry: AutoNearGeometry | None = None,
 ) -> None:
     summary = json_safe_disparity_summary(result)
     ready = bool(result.get("ready"))
@@ -250,6 +251,7 @@ def _store_disparity_result(
         ready=ready,
         uncertain=state.disparity.uncertain,
         back_permille=state.framing.auto_near_back_permille,
+        geometry=framing_geometry,
     )
     state.framing.auto_near_offset_x_px = near.offset_x_px
     state.framing.auto_near_shift_permille = near.shift_permille
@@ -399,7 +401,7 @@ def process_source(
         zoom_index = max(0, min(len(CROP_ZOOM_LEVELS) - 1, int(state.framing.crop_zoom_index)))
         state.framing.crop_zoom_index = zoom_index
         input_aspect = left_proxy.shape[1] / max(1, left_proxy.shape[0])
-        dleft, dright = render_pair_for_disparity_analysis_from_arrays(
+        dleft, dright, aligned_shape = render_pair_for_disparity_analysis_from_arrays(
             left_proxy,
             right_proxy,
             state.alignment.correction,
@@ -412,6 +414,7 @@ def process_source(
             crop_pan_x_permille=state.framing.pan_x_permille,
             crop_pan_y_permille=state.framing.pan_y_permille,
             input_aspect_ratio=input_aspect,
+            return_aligned_shape=True,
         )
         if dleft is None or dright is None:
             result = {"ready": False, "status": "error", "message": "Kein vollständiges Bildpaar für Deviation-Analyse."}
@@ -420,7 +423,11 @@ def process_source(
             base_width = int(dleft.shape[1])
             result = analyze_horizontal_disparity(dleft, dright, DISPARITY_ANALYSIS_MAX_WIDTH)
         token.raise_if_cancelled()
-        _store_disparity_result(state, result, basis=_disparity_basis(state), base_width_px=base_width)
+        geometry = (AutoNearGeometry(aligned_shape, state.framing.aspect,
+                                    CROP_ZOOM_LEVELS[zoom_index], input_aspect)
+                    if aligned_shape is not None else None)
+        _store_disparity_result(state, result, basis=_disparity_basis(state),
+                                base_width_px=base_width, framing_geometry=geometry)
         # The baseline above places the stereo window. Its overlap can change
         # both the content and the width of the selected aspect/crop. Measure
         # that finished pair once, without feeding the result back into framing.

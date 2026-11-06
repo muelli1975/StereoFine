@@ -2,6 +2,8 @@
 
 ## 1.2 – 2026-11-05 (updated 2026-11-06)
 
+- Base the automatic 3-permille stereo-window reserve on the final half-image width after overlap and the selected aspect/crop zoom, using the smallest sufficient whole-pixel shift. Retain independent displayed measurements and existing saved framing.
+
 - Add optional lossless TIFF SBS output with automatic 8/16-bit depth and working ICC profiles.
 - Add momentary native 100% inspection with Z, fine arrow-key taps and smooth acceleration when held.
 - Use final-crop colour matching consistently in preview and output; sample the entire image.
