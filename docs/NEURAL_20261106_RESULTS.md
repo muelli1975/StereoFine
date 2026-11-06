@@ -19,6 +19,8 @@ P95 is the absolute vertical error below which 95% of the independent control po
 | Playroom_aligned | 0.1304 | 0.0930 | 0.1964 | 0.1361 | not measured |
 | Playroom_light_affine | 0.9737 | 0.2678 | 0.3720 | 0.3514 | not measured |
 
+The optional official FlexGlue refinement job reached its 75-minute CPU job limit without completing a case. It is recorded as not measured; this supplies no accuracy comparison for refinement. [Job log](https://github.com/muelli1975/StereoFine/actions/runs/42215447087/job/127884182410).
+
 ## Regional differences versus SIFT
 
 These are exact signed differences in P95, not an admission rule. Positive values mean more vertical error than SIFT. Only regions with at least 20 GT points in both methods are compared.
