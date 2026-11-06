@@ -2,6 +2,8 @@
 
 ## 1.2 – 2026-11-05 (updated 2026-11-06)
 
+- Base the automatic 3-permille stereo-window reserve on the final half-image width after overlap and the selected aspect/crop zoom, using the smallest sufficient whole-pixel shift. Retain independent displayed measurements and existing saved framing.
+
 - Add optional lossless TIFF SBS output with automatic 8/16-bit depth and working ICC profiles.
 - Add momentary native 100% inspection with Z, fine arrow-key taps and smooth acceleration when held.
 - Use final-crop colour matching consistently in preview and output; sample the entire image.
@@ -21,7 +23,7 @@
 - Commit single-image analysis only after its preview is ready; reject saving an externally changed source until it is reopened.
 - Share the master crop geometry with interactive previews and retain completed colour updates after saving.
 - Reuse native pixels on viewport changes and reduce colour-fit allocations without changing the fitted curves.
-- Make the status panel more compact with aligned values, fixed warning space and full-filename tooltips.
+- Make the status panel more compact with aligned values, fixed warning space.
 - Measure deviation and confidence on the final selected crop after automatic stereo-window framing; refresh older pre-framing measurements without replacing saved edits.
 - Show per-image batch measurements and clear the previous image's values while the next image is being analyzed.
 
