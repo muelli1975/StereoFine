@@ -318,11 +318,12 @@ class PairState:
         self.framing.pan_x_permille = 0
         self.framing.pan_y_permille = 0
         self.floating_window.reset()
-        # Raw disparity may only be revalidated when the reset truly returns to
+        # Final-crop disparity may only be revalidated when the reset returns to
         # the exact framing basis on which it was measured.  In particular,
         # Ctrl+R deliberately keeps the selected output aspect; therefore a
         # disparity made stale by an aspect change must stay stale until the
-        # shared processing core recomputes it.
+        # shared processing core recomputes it. Legacy raw measurements always
+        # need one refresh after automatic framing, even at matching crop values.
         basis = self.disparity.basis or {}
         framing_matches_basis = bool(basis) and (
             basis.get("aspect") == self.framing.aspect
@@ -335,6 +336,7 @@ class PairState:
             self.disparity.status = "stale"
         if (
             framing_matches_basis
+            and basis.get("rendered_pair")
             and self.disparity.low_edge_permille is not None
             and self.disparity.high_edge_permille is not None
             and self.disparity.total_permille is not None

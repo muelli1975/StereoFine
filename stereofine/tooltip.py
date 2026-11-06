@@ -23,7 +23,7 @@ def attach_tooltip(widget, text):
         window = tk.Toplevel(widget)
         window.withdraw()
         window.overrideredirect(True)
-        tk.Label(window, text=text, wraplength=350, justify='left', padx=10, pady=8,
+        tk.Label(window, text=text() if callable(text) else text, wraplength=350, justify='left', padx=10, pady=8,
                  bg=PANEL_BG, fg=TEXT_PRIMARY).pack()
         x = min(widget.winfo_rootx(), widget.winfo_screenwidth() - 380)
         y = widget.winfo_rooty() + widget.winfo_height() + 6

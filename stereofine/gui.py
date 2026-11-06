@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import queue
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import re
 import sys
 import time
@@ -27,7 +27,7 @@ from .config import (
     SUPPORTED_IMAGE_EXTENSIONS,
     SUPPORTED_STEREO_SINGLE_EXTENSIONS,
 )
-from .geometry import crop_shifted_pair_to_overlap, framing_crop_geometry
+from .geometry import crop_shifted_pair_to_overlap, framing_crop_geometry, clamp_offset_for_size
 from .i18n import (
     Translator,
     aspect_code,
@@ -46,7 +46,7 @@ from .native_preview import (NativePreviewMixin, native_key, prepare_native_prev
     MEASURE_ACCEL_TIME_SEC, MEASURE_MAX_DT_SEC)
 from .tooltip import attach_tooltip
 from .preview import PreviewImageCache, draw_grid_overlay, draw_measure_cross_overlay
-from .preview_render import PreviewBasePair, build_preview_base, render_preview_from_base
+from .preview_render import PreviewBasePair, build_preview_base, render_preview_from_base, preview_geometry_key
 from .processing import ProcessingDefaults, ProcessingOptions, process_source
 from .resources import asset_path
 from .session import (
@@ -93,6 +93,8 @@ WINDOW_WIDTH = 1400
 WINDOW_HEIGHT = 850
 SIDEBAR_WIDTH = 340
 STATUS_SYMBOL_COLUMN_WIDTH = 36
+STATUS_ROW_HEIGHT = 19
+STATUS_WARNING_HEIGHT = 36
 ACTIVITY_SPINNER_SIZE = 36
 ACTIVITY_SPINNER_RENDER_SCALE = 5
 ACTIVITY_SPINNER_FRAME_COUNT = 60
@@ -193,6 +195,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self._batch_progress_index: int | None = None
         self._batch_progress_total: int | None = None
         self._batch_progress_source_name: str | None = None
+        self._batch_progress_state = None
         self._load_rollback_context: tuple[list[StereoSource], int | None, bool, str] | None = None
         self._save_after_id: str | None = None
         self._state_save_error = None
@@ -757,10 +760,10 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self.traffic_label = ctk.CTkLabel(
             self.status_frame,
             text="●",
-            width=STATUS_SYMBOL_COLUMN_WIDTH,
-            height=STATUS_SYMBOL_COLUMN_WIDTH,
+            width=16,
+            height=STATUS_ROW_HEIGHT,
             text_color=TRAFFIC_GRAY,
-            font=self._font(26),
+            font=self._font(20),
             anchor="center",
         )
         self.traffic_label.grid_propagate(False)
@@ -851,10 +854,18 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             return f"{self.current.source.display_name} · {self.source_index + 1}/{len(self.sources)}"
         return self.current.source.display_name
 
+    def _status_state(self):
+        if getattr(self, "current_job_kind", None) == "batch":
+            state = getattr(self, "_batch_progress_state", None)
+        else:
+            state = self.current.state if self.current is not None else None
+        if state is None:
+            from .state import PairState
+            return PairState()
+        return state
+
     def _traffic_color(self) -> str:
-        if self.current is None:
-            return TRAFFIC_GRAY
-        disparity = self.current.state.disparity
+        disparity = self._status_state().disparity
         if not disparity.valid or disparity.stale:
             return TRAFFIC_GRAY
         value = disparity.traffic
@@ -902,62 +913,134 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
                 pass
 
         self._status_line_widgets = {}
+        self._status_caption_widgets = {}
 
-        def add_label(
-            name: str,
-            row: int,
-            *,
-            muted: bool = False,
-            bold: bool = False,
-            height: int = 19,
-            two_lines: bool = False,
-        ) -> None:
-            label = ctk.CTkLabel(
-                self.status_frame,
-                text="",
+        def add_label(name, row, *, height=STATUS_ROW_HEIGHT, muted=False,
+                      bold=False, symbol_slot=False, paired=False, two_lines=False):
+            # Only the input and deviation share their row with a symbol. Other
+            # rows use the complete sidebar width instead of a permanent gutter.
+            holder = ctk.CTkFrame(self.status_frame, height=height, fg_color="transparent")
+            holder.grid(row=row, column=0,
+                        columnspan=1 if symbol_slot and name != "deviation" else 2,
+                        sticky="ew", padx=(0, 18) if name == "deviation" else
+                        ((0, 8) if symbol_slot else 0))
+            holder.grid_propagate(False)
+            holder.grid_rowconfigure(0, weight=1)
+            holder.grid_columnconfigure(0, weight=1)
+            if paired:
+                caption = ctk.CTkLabel(holder, text="", height=height, width=1,
+                    text_color=TEXT_SECONDARY, font=self._font(13), anchor="w", justify="left")
+                caption.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
+                caption.grid_propagate(False)
+                self._status_caption_widgets[name] = caption
+                caption._status_full_text = ""
+                attach_tooltip(caption, lambda caption=caption: caption._status_full_text)
+                holder.grid_columnconfigure(1, weight=0)
+            label = ctk.CTkLabel(holder, text="", width=1, height=height,
                 text_color=TEXT_SECONDARY if muted else TEXT_PRIMARY,
                 font=self._font(12 if muted else 13, "bold" if bold else "normal"),
-                height=38 if two_lines else height,
-                justify="left",
-                anchor="nw" if two_lines else "w",
-                wraplength=246,
-            )
-            if name != "input":
-                # CTkLabel's height is otherwise only a minimum: its inner Tk
-                # label can grow on wrapping or shrink to "Calculating ...".
-                # Keep each allocated row size at fractional DPI scales too.
-                label.grid_propagate(False)
-            label.grid(row=row, column=0, sticky="ew", padx=(0, 8), pady=0)
+                justify="right" if paired else "left", anchor="e" if paired else "w",
+                wraplength=292 if two_lines else 0)
+            label.grid(row=0, column=1 if paired else 0, sticky="nsew")
+            label.grid_propagate(False)
+            if paired:
+                # Keep numeric values together and align their right edges.
+                # Column minima are updated from real scaled font metrics.
+                label._status_holder = holder
+                holder.bind("<Configure>", lambda _event, name=name: self._resize_status_pair(name), add="+")
             self._status_line_widgets[name] = label
+            if name == "input":
+                self._status_input_full_text = ""
+                holder.bind("<Configure>", lambda _event: self._fit_status_input(), add="+")
+                attach_tooltip(label, lambda: self._status_input_full_text)
 
-        def add_spacer(row: int, height: int = 4) -> None:
+        def add_spacer(row, height=4):
             spacer = ctk.CTkFrame(self.status_frame, height=height, fg_color="transparent")
-            # Never span the reserved symbol column; doing so caused the old
-            # spinner seam/clipping regression on Windows.
             spacer.grid(row=row, column=0, sticky="ew")
 
-        # Fixed rows deliberately avoid text wrapping/clipping and, more
-        # importantly, prevent the bottom controls from jumping while values
-        # change. The batch input row reserves two text lines for filename + n/N.
-        add_label("input", 0, height=38)
+        # Fixed allocations keep footer/buttons still while values, warnings,
+        # file names and calculation state change. Font sizes remain 13/12 px.
+        add_label("input", 0, height=38, symbol_slot=True, two_lines=True)
         add_spacer(1)
-        add_label("analysis_model", 2, two_lines=True)
-        add_label("vertical_error", 3)
-        add_label("vertical_shift", 4)
-        add_label("rotation", 5)
-        add_label("vergence", 6, two_lines=True)
+        add_label("analysis_model", 2, height=38, paired=True)
+        add_label("vertical_error", 3, paired=True)
+        add_label("vertical_shift", 4, paired=True)
+        add_label("rotation", 5, paired=True)
+        add_label("vergence", 6, paired=True)
         add_spacer(7)
-        add_label("deviation", 8)
-        add_label("near_far", 9, two_lines=True)
-        # Keep the same two-line warning on every platform, including while
-        # empty, so showing it or changing language never moves controls.
-        add_label("warning", 10, muted=True, bold=True, two_lines=True)
-        warning = self._status_line_widgets["warning"]
-        warning.grid_configure(columnspan=2)
-        warning.configure(text_color=GOLD_LIGHT, wraplength=292)
+        add_label("deviation", 8, symbol_slot=True)
+        add_label("near_far", 9)
+        add_label("warning", 10, height=STATUS_WARNING_HEIGHT, muted=True, bold=True,
+                  two_lines=True)
+        self._status_line_widgets["warning"].configure(text_color=GOLD_LIGHT)
         add_spacer(11)
         add_label("floating_title", 12, bold=True)
-        add_label("floating_values", 13)
+        add_label("floating_values", 13, muted=True)
+
+    def _set_status_pair(self, name, caption, value):
+        label = self._status_line_widgets[name]
+        self._status_caption_widgets[name]._status_full_text = caption
+        self._status_caption_widgets[name].configure(text=caption)
+        label.configure(text=value)
+        self._resize_status_pair(name)
+
+    def _resize_status_pair(self, name):
+        label = self._status_line_widgets[name]
+        value = label.cget("text")
+        # CTk widths are logical, Tk font measurements are physical pixels.
+        # A fixed holder prevents long values from changing the sidebar width.
+        lines = value.splitlines() or [""]
+        width = max(int(label._label.tk.call("font", "measure",
+                    label._label.cget("font"), line)) for line in lines)
+        scale = label._get_widget_scaling()
+        label._status_holder.grid_columnconfigure(1, minsize=width + round(2 * scale))
+        caption = self._status_caption_widgets[name]
+        text = caption._status_full_text
+        available = label._status_holder.winfo_width() - width - round(10 * scale)
+        caption_width = max(int(caption._label.tk.call("font", "measure",
+            caption._label.cget("font"), line)) for line in (text.splitlines() or [""]))
+        # Older sidecars can show both V and H here. Keep both values visible;
+        # the parenthetical explanation remains available in the tooltip.
+        if available > 0 and caption_width > available and " (" in text:
+            text = text.split(" (", 1)[0] + ":"
+        if caption.cget("text") != text:
+            caption.configure(text=text)
+
+    def _fit_status_input(self):
+        """Keep arbitrary file names in two fixed lines, with a full tooltip."""
+        label = self._status_line_widgets["input"]
+        scale = label._get_widget_scaling()
+        width = max(1, label.winfo_width() - round(4 * scale))
+        if width < 20:
+            return
+        font = label._label.cget("font")
+        def measure(text):
+            return int(label._label.tk.call("font", "measure", font, text))
+        def prefix(text, available):
+            lo, hi = 0, len(text)
+            while lo < hi:
+                mid = (lo + hi + 1) // 2
+                if measure(text[:mid]) <= available:
+                    lo = mid
+                else:
+                    hi = mid - 1
+            return lo
+        lines = self._status_input_full_text.splitlines()
+        if not lines:
+            lines = [""]
+        if len(lines) == 1 and measure(lines[0]) > width:
+            cut = prefix(lines[0], width)
+            # Prefer a natural filename boundary to leaving just an extension
+            # or a few letters alone on the second line.
+            boundaries = [i + 1 for i, ch in enumerate(lines[0][:cut]) if ch in "_ /\\-"]
+            natural = next((i for i in reversed(boundaries) if i >= cut // 2), None)
+            cut = natural or cut
+            lines = [lines[0][:cut].rstrip(), lines[0][cut:].lstrip()]
+        if len(lines) > 2:
+            lines = [lines[0], " ".join(lines[1:])]
+        visible = [line if measure(line) <= width else
+                   line[:prefix(line, max(0, width - measure("…")))] + "…" for line in lines]
+        label.configure(text="\n".join(visible), wraplength=0)
 
     def _render_status(self) -> None:
         """Update the fixed status area without destroying/recreating widgets."""
@@ -971,31 +1054,26 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self._ensure_status_widgets()
         labels = self._status_line_widgets
 
-        if self.current is None:
-            from .state import PairState
-            state = PairState()
-        else:
-            state = self.current.state
+        state = self._status_state()
 
         input_section, analysis, deviation, floating = build_status_sections(
             state, input_text=self._input_status_text(), language=self.settings.language
         )
 
         input_value = input_section.rows[0].value if input_section.rows else "–"
-        labels["input"].configure(text=f"{input_section.name}: {input_value}")
+        self._status_input_full_text = f"{input_section.name}: {input_value}"
+        self._fit_status_input()
 
         if analysis and len(analysis.rows) >= 6:
-            labels["analysis_model"].configure(
-                text=f"{analysis.rows[0].label}: {analysis.rows[0].value} · "
-                     f"{analysis.rows[1].label}: {analysis.rows[1].value}"
-            )
-            labels["vertical_error"].configure(text=f"{analysis.rows[2].label}: {analysis.rows[2].value}")
-            labels["vertical_shift"].configure(text=f"{analysis.rows[3].label}: {analysis.rows[3].value}")
-            labels["rotation"].configure(text=f"{analysis.rows[4].label}: {analysis.rows[4].value}")
-            labels["vergence"].configure(text=f"{analysis.rows[5].label}: {analysis.rows[5].value}")
+            self._set_status_pair("analysis_model",
+                f"{analysis.rows[0].label}:\n{analysis.rows[1].label}:",
+                f"{analysis.rows[0].value}\n{analysis.rows[1].value}")
+            for name, item in zip(("vertical_error", "vertical_shift", "rotation", "vergence"),
+                                  analysis.rows[2:]):
+                self._set_status_pair(name, f"{item.label}:", item.value)
         else:
             for name in ("analysis_model", "vertical_error", "vertical_shift", "rotation", "vergence"):
-                labels[name].configure(text="")
+                self._set_status_pair(name, "", "")
 
         deviation_item = next((item for item in deviation.rows if item.role == "deviation"), None) if deviation else None
         if deviation_item is not None:
@@ -1047,7 +1125,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             pass
         if hasattr(self, "sidecar_status_label"):
             self.sidecar_status_label.configure(
-                text=sidecar_status_text(self.current.sidecar if self.current else None, self.settings.language)
+                text=("" if self.current_job_kind == "batch" else
+                      sidecar_status_text(self.current.sidecar if self.current else None, self.settings.language))
             )
         if self._state_save_error:
             labels["warning"].configure(text=self._t("state_save_warning"))
@@ -1056,7 +1135,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
     def _update_favorite_star(self, hover: bool = False) -> None:
         if not hasattr(self, "favorite_label"):
             return
-        active = bool(self.current and self.current.state.favorite)
+        active = bool(self._status_state().favorite)
         can_toggle = bool(self.current and self.busy_state == "idle")
         color = GOLD_DARK if (active or (hover and can_toggle)) else TRAFFIC_GRAY
         if active and hover and can_toggle:
@@ -1363,7 +1442,16 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self.settings.tiff_sbs = bool(self.tiff_sbs.get())
         self.settings.save_anaglyph = bool(self.save_anaglyph.get())
         self.settings.use_custom_sbs_suffix = bool(self.use_custom_sbs_suffix.get())
-        save_settings(self.settings)
+        try:
+            save_settings(self.settings)
+        except (OSError, ValueError) as exc:
+            # A preference write must not interrupt the current image callback
+            # halfway through and leave its checkbox ahead of the actual state.
+            if getattr(self, '_settings_save_error', None) != str(exc):
+                self._settings_save_error = str(exc)
+                messagebox.showerror(APP_NAME, self._t('settings_save_failed', text=str(exc)))
+            return
+        self._settings_save_error = None
 
     def _commit_sbs_suffix(self, *, show_error=False) -> bool:
         value = suffix_value(self.sbs_suffix_display.get(), self.settings.language)
@@ -1658,6 +1746,14 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         token.raise_if_cancelled()
         native = prepare_native_preview(session.loaded_pair, deepcopy(session.state),
                                         native_key(session), bounds, token, mode)
+        base = native[4][6]
+        h, w = base.master_shape
+        dx, dy = clamp_offset_for_size(w, h, session.state.effective_offset_x_px,
+                                      session.state.effective_offset_y_px)
+        session.state.manual.delta_x_px = dx - session.state.auto_offset_x_px
+        session.state.manual.delta_y_px = dy
+        key = native_key(session)
+        native = (key, *native[1:4], (key[0], *native[4][1:]))
         return PreparedSessionPreview(session, native)
 
     def _install_session_preview(self, prepared) -> None:
@@ -1673,7 +1769,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self._native_fit_cache = None
         self._native_failed_key = None
         self._native_deferred = False
-        self._held_preview_signature = None
+        if len(self._native_views) > 6:
+            self._preview_base = self._native_views[6]
+            self._preview_base_session_id = id(prepared.session)
 
     def _restore_load_rollback(self) -> None:
         context = self._load_rollback_context
@@ -1787,6 +1885,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         state.input_transform.swap_eyes = bool(self.swap_eyes.get())
         if changed:
             state.invalidate_for_input_transform()
+        else:
+            return
         self._schedule_state_save(create_if_missing=False)
         self._refresh_preview(rebuild_base=True)
         self._render_status()
@@ -1841,6 +1941,12 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         state = self.current.state
         state.manual.delta_x_px += int(dx)
         state.manual.delta_y_px += int(dy)
+        base = self._ensure_preview_base(self.current)
+        if base.master_shape is not None:
+            h, w = base.master_shape
+            x, y = clamp_offset_for_size(w, h, state.effective_offset_x_px, state.effective_offset_y_px)
+            state.manual.delta_x_px = x - state.auto_offset_x_px
+            state.manual.delta_y_px = y
         state.color.valid = False
         self._schedule_state_save()
         self._refresh_preview()
@@ -2042,7 +2148,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
 
     def _ensure_preview_base(self, session: BrowsedSource, *, start_image: bool = False) -> PreviewBasePair:
         session_id = id(session)
-        if self._preview_base is None or self._preview_base_session_id != session_id:
+        if (self._preview_base is None or self._preview_base_session_id != session_id
+                or self._preview_base.source_token != id(session.loaded_pair)
+                or self._preview_base.geometry_key != preview_geometry_key(session.state)):
             bound_w, bound_h = self._preview_bounds()
             self._preview_base = build_preview_base(
                 session.loaded_pair,
@@ -2083,6 +2191,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             session.state,
             apply_color=not start_image,
             apply_floating_window=not start_image,
+            bounds=self._preview_bounds(),
         )
         self._preview_left_current = pair.left
         self._preview_right_current = pair.right
@@ -2212,11 +2321,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         if self.busy_state != "idle":
             return
         if kind == "save":
-            self._hold_current_preview()
             self._stop_detail_repeat()
             self._stop_measure_repeat()
         else:
-            self._held_preview_signature = None
             self._end_detail_preview()
         self._cancel_disparity_refresh()
         self.busy_state = kind
@@ -2240,7 +2347,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             self._start_batch_run()
         else:
             source = self.current.source
-            options = self._processing_options(keep_loaded_pair=True, restart_alignment=True)
+            options = replace(self._processing_options(keep_loaded_pair=True, restart_alignment=True),
+                              save_sidecar=False)
             bounds = self._preview_bounds()
             mode = self._effective_preview_mode()
             missing_preview = self._t("internal_preview_error")
@@ -2265,6 +2373,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self._batch_progress_index = None
         self._batch_progress_total = None
         self._batch_progress_source_name = None
+        self._batch_progress_state = None
         output_folder = None if self.analysis_only.get() else self._effective_output_folder(self.sources[0].input_root)
         if not self.analysis_only.get() and output_folder is None:
             messagebox.showinfo(APP_NAME, self._t("select_output_folder"))
@@ -2302,7 +2411,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             messagebox.showinfo(APP_NAME, self._t("select_output_folder"))
             return "break"
         options = BatchRunOptions(
-            processing=self._processing_options(keep_loaded_pair=False),
+            processing=replace(self._processing_options(keep_loaded_pair=False),
+                               expected_source_stamp=self.current.source_stamp),
             output_folder=output_folder,
             gray_anaglyph=bool(self.gray_anaglyph.get()),
             save_cross=bool(self.save_cross.get()),
@@ -2358,6 +2468,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             self._batch_progress_index = int(payload.index)
             self._batch_progress_total = int(payload.total)
             self._batch_progress_source_name = str(getattr(payload, "source_name", "") or "")
+            self._batch_progress_state = getattr(payload, "state", None)
             self._schedule_status_refresh(1)
 
         preview_rgb = getattr(payload, "preview_rgb", None)
@@ -2385,12 +2496,27 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             self._batch_progress_index = None
             self._batch_progress_total = None
             self._batch_progress_source_name = None
+            self._batch_progress_state = None
         self._refresh_control_states()
         self._stop_activity()
         return kind
 
     def _finish_worker_success(self, payload: Any) -> None:
         kind = self._finish_busy_common()
+        if kind == 'analysis' and isinstance(payload, PreparedSessionPreview):
+            # The worker result is only provisional until analysis AND its view
+            # are ready. A late cancellation must leave the old .sfin untouched.
+            try:
+                color = deepcopy(payload.native_result[3])
+                color.enabled = payload.session.state.color.enabled
+                payload.session.state.color = color
+                save_browsed_state(payload.session)
+                payload.session.sidecar = load_sidecar(payload.session.source.sidecar_path,
+                                                       expected_source=payload.session.source_stamp)
+            except Exception as exc:
+                messagebox.showerror(APP_NAME, self._t('state_save_failed', text=str(exc)))
+                self._refresh_preview()
+                return
         if isinstance(payload, PreparedSessionPreview):
             self._install_session_preview(payload)
             payload = payload.session
@@ -2464,7 +2590,11 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             # A single-image export does not change the source pixels. Adopt
             # its saved state without replacing the session or its view caches.
             if kind == "save":
-                self._adopt_saved_result(payload)
+                if not self._adopt_saved_result(payload):
+                    # Per-image export failures are returned as a batch result,
+                    # not a worker exception. Resume a view finished during the
+                    # failed save just as the worker-error path does.
+                    self._refresh_preview()
                 return
             if self.source_index is not None and self.sources:
                 self._load_source_index(self.source_index)
@@ -2527,11 +2657,14 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             # Let Tk's entry bindings edit text without also changing the image.
             widget = getattr(event, "widget", None)
             try:
-                if (widget.winfo_class() in {"Entry", "TEntry", "TCombobox", "Text", "Spinbox", "TSpinbox"}
+                if (getattr(event, 'keysym', '') not in {'F1', 'F11'}
+                        and widget.winfo_class() in {"Entry", "TEntry", "TCombobox", "Text", "Spinbox", "TSpinbox"}
                         and widget.cget("state") != "disabled"):
                     return None
             except (AttributeError, tk.TclError):
                 pass
+            if getattr(event, 'keysym', '') in {'F1', 'F11'}:
+                self._release_sbs_suffix_focus()
             return callback(event)
         return dispatch
 
@@ -3120,8 +3253,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
                 return
         if not self._commit_sbs_suffix(show_error=True):
             return
-        if not self._flush_state_save(explicit=True):
-            return
+        if not self._flush_state_save():
+            if not messagebox.askyesno(APP_NAME, self._t('close_unsaved', text=self._state_save_error)):
+                return
         self._cancel_disparity_refresh()
         self.worker.cancel_all()
         self._native_worker.cancel_all()

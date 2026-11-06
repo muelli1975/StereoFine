@@ -16,6 +16,7 @@ from .geometry import (
     center_crop_to_common_size,
     crop_pair_to_aspect_and_framing,
     crop_shifted_pair_to_overlap,
+    clamp_pair_offset,
 )
 from .inputs import LoadedStereoPair
 from .state import PairState, reproducible_alignment_correction
@@ -27,6 +28,8 @@ class RenderInfo:
     effective_offset_y_px: int
     color_refit: bool
     color_applied: bool
+    preview_base: Any = None
+    aligned_shape: tuple[int, int] | None = None
 
 
 def _stable_digest(value: Any) -> str:
@@ -89,6 +92,7 @@ def render_final_pair(
     *,
     apply_color: bool = True,
     apply_floating_window: bool = True,
+    preview_bounds: tuple[int, int] | None = None,
 ) -> tuple[np.ndarray, np.ndarray, RenderInfo]:
     """Render the current reproducible StereoFine pair from master data.
 
@@ -105,6 +109,18 @@ def render_final_pair(
     # disparity analysis, before alignment/overlap remove any border pixels.
     input_aspect = left.shape[1] / max(1, left.shape[0])
     left, right = warp_pair_symmetric(left, right, state.alignment.correction)
+    aligned_shape = left.shape[:2]
+    preview_base = None
+    if preview_bounds is not None:
+        from .preview_render import build_aligned_preview_base
+        preview_base = build_aligned_preview_base(left, right, original_aspect=input_aspect,
+            max_width=preview_bounds[0], max_height=preview_bounds[1], icc_profile=loaded.icc_profile,
+            state=state, source_token=id(loaded))
+
+    # Store the accepted value, so reversing from an overlap limit moves at once.
+    dx, dy = clamp_pair_offset(left, right, state.effective_offset_x_px, state.effective_offset_y_px)
+    state.manual.delta_x_px = dx - state.auto_offset_x_px
+    state.manual.delta_y_px = dy
 
     left, right, _changed = crop_shifted_pair_to_overlap(
         left,
@@ -147,5 +163,7 @@ def render_final_pair(
         effective_offset_y_px=int(state.effective_offset_y_px),
         color_refit=color_refit,
         color_applied=color_applied,
+        preview_base=preview_base,
+        aligned_shape=aligned_shape,
     )
 

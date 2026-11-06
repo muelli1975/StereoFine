@@ -111,6 +111,9 @@ def save_pair_outputs(
     icc_profile: bytes | None = None,
     metadata_source: Path | None = None,
     filename_deviation_permille: float | None = None,
+    path_guard=None,
+    output_owner=None,
+    cancellation=None,
 ) -> ExportResult:
     if left.shape != right.shape:
         raise ValueError(f"Halbbilder haben unterschiedliche Größen: {left.shape} != {right.shape}")
@@ -119,15 +122,28 @@ def save_pair_outputs(
 
     from .output_naming import validate_sbs_suffix
     sbs_suffix = validate_sbs_suffix(sbs_suffix)
-    left, right = promote_pair(left, right)
-    left8 = to_uint8_output(transform_rgb(left, icc_profile))
-    right8 = to_uint8_output(transform_rgb(right, icc_profile))
     result = ExportResult()
     output_stem = base_name + deviation_filename_suffix(filename_deviation_permille)
-
     if output_mode in {"both", "sbs"}:
         extension = 'tif' if tiff_sbs else 'jpg'
         result.sbs_path = folder / "sbs" / f"{output_stem}{sbs_suffix}.{extension}"
+    if save_cross:
+        result.cross_path = folder / "cross" / f"{output_stem}_cross.jpg"
+    if output_mode in {"both", "anaglyph"}:
+        result.anaglyph_path = folder / "anaglyph" / f"{output_stem}_anaglyph.jpg"
+    if path_guard is not None:
+        path_guard.claim((result.sbs_path, result.cross_path, result.anaglyph_path), output_owner)
+
+    def check_cancelled():
+        if cancellation is not None:
+            cancellation.raise_if_cancelled()
+
+    check_cancelled()
+    left, right = promote_pair(left, right)
+    left8 = to_uint8_output(transform_rgb(left, icc_profile))
+    right8 = to_uint8_output(transform_rgb(right, icc_profile))
+    if output_mode in {"both", "sbs"}:
+        check_cancelled()
         if tiff_sbs:
             _save_rgb_tiff(np.concatenate([left, right], axis=1), result.sbs_path, icc_profile)
         else:
@@ -140,7 +156,7 @@ def save_pair_outputs(
             result.warnings.append(f"Metadaten SBS: {meta.message}")
 
     if save_cross:
-        result.cross_path = folder / "cross" / f"{output_stem}_cross.jpg"
+        check_cancelled()
         _save_rgb_jpeg(np.concatenate([right8, left8], axis=1), result.cross_path, quality=CROSS_JPEG_QUALITY)
         meta = copy_metadata_without_preview_or_orientation(metadata_source, result.cross_path,
                                                                preserve_output_profile=True, output_srgb=True)
@@ -149,9 +165,10 @@ def save_pair_outputs(
             result.warnings.append(f"Metadaten Kreuzblick: {meta.message}")
 
     if output_mode in {"both", "anaglyph"}:
+        check_cancelled()
         anaglyph = make_anaglyph(left8, right8, gray=gray_anaglyph)
         anaglyph = resize_array_to_height(anaglyph, ANAGLYPH_TARGET_HEIGHT)
-        result.anaglyph_path = folder / "anaglyph" / f"{output_stem}_anaglyph.jpg"
+        check_cancelled()
         _save_rgb_jpeg(anaglyph, result.anaglyph_path, quality=ANAGLYPH_JPEG_QUALITY)
         meta = copy_metadata_without_preview_or_orientation(metadata_source, result.anaglyph_path,
                                                                preserve_output_profile=True, output_srgb=True)

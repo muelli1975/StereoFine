@@ -101,10 +101,10 @@ def main():
                     expected = expected.replace(' – ', ' –\n', 1)
                     assert warning.cget('text') == expected
                     assert warning.cget('text').count('\n') == 1
-                    assert warning.cget('height') == 38
+                    assert warning.cget('height') == gui.STATUS_WARNING_HEIGHT
                     assert warning.cget('text_color') == gui.GOLD_LIGHT
                     assert warning.cget('font')[-1] == 'bold'
-                    assert warning.grid_info()['columnspan'] == 2
+                    assert warning.master.grid_info()['columnspan'] == 2
                     inner = warning._label
                     assert inner.winfo_reqwidth() <= warning.winfo_width(), (language, size, 'width')
                     assert inner.winfo_reqheight() <= warning.winfo_height(), (language, size, 'height')

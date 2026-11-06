@@ -1,9 +1,9 @@
-name: Prepare StereoFine 1.1 candidates (no publication)
+name: Prepare StereoFine 1.2 candidates (no publication)
 
 on:
   workflow_dispatch:
   push:
-    branches: [release/1.1, release/1.1-update, release/1.1-keyboard-filename, release/1.1-filename-number]
+    branches: ['maintenance/**']
     paths:
       - '.github/workflows/prepare-release.yml'
       - '.github/workflows/validate-development.yml'
@@ -34,7 +34,7 @@ jobs:
           python-version: '3.12.10'
       - uses: actions/download-artifact@v4
         with:
-          pattern: StereoFine-1.1-candidate-*
+          pattern: StereoFine-1.2-candidate-*
           path: release
           merge-multiple: true
       - name: Verify complete candidate set and write checksums
@@ -43,7 +43,7 @@ jobs:
           python scripts/verify_release_packages.py release > release/ARCHIVE_CHECKS.jsonl
       - uses: actions/upload-artifact@v4
         with:
-          name: StereoFine-1.1-candidate-checksums
+          name: StereoFine-1.2-candidate-checksums
           path: |
             release/SHA256SUMS.txt
             release/ARCHIVE_CHECKS.jsonl

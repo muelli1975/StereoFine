@@ -43,6 +43,7 @@ class KeyboardFocusTests(unittest.TestCase):
         app._schedule_state_save = lambda: None
         app._schedule_status_refresh = lambda: None
         app._schedule_disparity_refresh = lambda: None
+        app._ensure_preview_base = lambda session: types.SimpleNamespace(master_shape=(1000, 1000))
         app.preview_mode = types.SimpleNamespace(get=lambda: 'Farbig')
         self.focus = None
         app.focus_get = lambda: self.focus
@@ -146,7 +147,8 @@ class DeviationFilenameTests(unittest.TestCase):
             self.assertEqual(restored.language, 'en')
 
     def test_batch_and_single_save_forward_only_current_valid_measurements(self):
-        source = types.SimpleNamespace(base_name='photo', display_name='photo', metadata_source=None)
+        source = types.SimpleNamespace(base_name='photo', display_name='photo', metadata_source=None,
+                                       left_path=Path('source_l.jpg'), right_path=Path('source_r.jpg'))
         image = np.zeros((8, 12, 3), np.uint8)
         with tempfile.TemporaryDirectory() as temporary:
             for enabled, valid, stale, uncertain, expected in [

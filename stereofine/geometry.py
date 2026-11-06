@@ -180,8 +180,13 @@ def clamp_pair_offset(
     value while retaining the impossible value in state. 1.0 keeps state and
     rendered geometry identical instead.
     """
-    canvas_w = min(left.shape[1], right.shape[1])
-    canvas_h = min(left.shape[0], right.shape[0])
+    return clamp_offset_for_size(min(left.shape[1], right.shape[1]),
+                                 min(left.shape[0], right.shape[0]), offset_x, offset_y,
+                                 min_overlap_px=min_overlap_px)
+
+
+def clamp_offset_for_size(canvas_w, canvas_h, offset_x, offset_y, *, min_overlap_px=2):
+    """The same overlap limits for master state and reduced preview geometry."""
     min_overlap_px = max(2, int(min_overlap_px))
     max_abs_x = max(0, canvas_w - min_overlap_px)
     max_abs_y = max(0, canvas_h - min_overlap_px)
@@ -285,6 +290,17 @@ def crop_pair_to_aspect_and_framing(
     if h <= 2 or w <= 2:
         return left, right, False
 
+    x0, y0, x1, y1 = framing_crop_box(w, h, aspect_name, zoom_level,
+                                    pan_x_permille, pan_y_permille, original_aspect)
+    changed = (x1 - x0 != w or y1 - y0 != h)
+    return left[y0:y1, x0:x1], right[y0:y1, x0:x1], changed
+
+
+def framing_crop_box(w, h, aspect_name, zoom_level, pan_x_permille, pan_y_permille,
+                     original_aspect=None):
+    """Authoritative integer master rectangle, shared with interactive preview."""
+    if h <= 2 or w <= 2:
+        return 0, 0, w, h
     crop_w, crop_h, max_shift_x, max_shift_y = framing_crop_geometry(
         w,
         h,
@@ -305,6 +321,5 @@ def crop_pair_to_aspect_and_framing(
     x1 = x0 + crop_w
     y1 = y0 + crop_h
 
-    changed = (crop_w != w or crop_h != h)
-    return left[y0:y1, x0:x1], right[y0:y1, x0:x1], changed
+    return x0, y0, x1, y1
 

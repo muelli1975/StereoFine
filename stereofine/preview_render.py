@@ -13,10 +13,10 @@ from .color_transfer import (
 from .config import CROP_ZOOM_LEVELS
 from .geometry import (
     apply_floating_window_masks,
-    apply_orientation,
-    center_crop_to_common_size,
     crop_pair_to_aspect_and_framing,
     crop_shifted_pair_to_overlap,
+    clamp_offset_for_size,
+    framing_crop_box,
 )
 from .inputs import LoadedStereoPair, master_to_uint8
 from .state import PairState, reproducible_alignment_correction
@@ -36,6 +36,10 @@ class PreviewBasePair:
     original_aspect: float
     color_applied: bool = False
     icc_profile: bytes | None = None
+    master_shape: tuple[int, int] | None = None
+    display_bounds: tuple[int, int] | None = None
+    geometry_key: str | None = None
+    source_token: int | None = None
 
 
 @dataclass(frozen=True)
@@ -65,16 +69,6 @@ def scale_correction_for_preview(correction: dict | None, scale: float) -> dict 
         payload["max_abs_correction_px"] = float(payload.get("max_abs_correction_px", 0.0) or 0.0) * scale
         scaled["y_residual_apply"] = payload
     return scaled
-
-
-def _oriented_proxy_pair(loaded: LoadedStereoPair, state: PairState) -> tuple[np.ndarray, np.ndarray]:
-    t = state.input_transform
-    left = apply_orientation(master_to_uint8(loaded.left), t.left_orientation, t.left_mirror)
-    right = apply_orientation(master_to_uint8(loaded.right), t.right_orientation, t.right_mirror)
-    if t.swap_eyes:
-        left, right = right, left
-    left, right, _changed = center_crop_to_common_size(left, right)
-    return np.ascontiguousarray(left), np.ascontiguousarray(right)
 
 
 def build_preview_base_from_oriented_pair(
@@ -125,22 +119,58 @@ def build_preview_base(
     renderer. Other callers receive curves based on the same final master crop.
     """
 
-    if apply_color and state.color.enabled:
-        # Fit on the exact final master crop. GUI callers request an uncoloured
-        # base and prepare these same parameters on their background renderer.
-        from .render import render_final_pair
-        render_final_pair(loaded, state, apply_floating_window=False)
-    left, right = _oriented_proxy_pair(loaded, state)
-    base = build_preview_base_from_oriented_pair(
-        left,
-        right,
-        state,
-        max_width=max_width,
-        max_height=max_height,
-        apply_color=False,
-    )
-    from dataclasses import replace
-    return replace(base, icc_profile=loaded.icc_profile)
+    from .render import render_final_pair
+    _left, _right, info = render_final_pair(loaded, state, apply_color=apply_color,
+        apply_floating_window=False, preview_bounds=(max_width, max_height))
+    return info.preview_base
+
+
+def preview_geometry_key(state):
+    from .render import _stable_digest
+    return _stable_digest((asdict(state.input_transform),
+                           reproducible_alignment_correction(state.alignment.correction)))
+
+
+def build_aligned_preview_base(left, right, *, original_aspect, max_width, max_height,
+                               icc_profile=None, state=None, source_token=None):
+    """Reduce the actual aligned master once; retain its exact coordinate grid."""
+    master_shape = left.shape[:2]
+    a, b, scale = resize_pair_for_preview(master_to_uint8(left), master_to_uint8(right),
+                                         max_width, max_height)
+    return PreviewBasePair(np.ascontiguousarray(a), np.ascontiguousarray(b), float(scale),
+                           original_aspect, icc_profile=icc_profile,
+                           master_shape=master_shape, display_bounds=(max_width, max_height),
+                           geometry_key=preview_geometry_key(state) if state is not None else None,
+                           source_token=source_token)
+
+
+def _master_crop_preview(base, state, bounds):
+    """Sample both eyes from one shared master crop, without proxy rounding."""
+    import cv2
+    h, w = base.master_shape
+    dx, dy = clamp_offset_for_size(w, h, state.effective_offset_x_px, state.effective_offset_y_px)
+    state.manual.delta_x_px = dx - state.auto_offset_x_px
+    state.manual.delta_y_px = dy
+    zoom_index = max(0, min(len(CROP_ZOOM_LEVELS) - 1, int(state.framing.crop_zoom_index)))
+    box = framing_crop_box(w - abs(dx), h - abs(dy), state.framing.aspect,
+                          CROP_ZOOM_LEVELS[zoom_index], state.framing.pan_x_permille,
+                          state.framing.pan_y_permille, base.original_aspect)
+    x0, y0, x1, y1 = box
+    cw, ch = x1 - x0, y1 - y0
+    bw, bh = bounds or base.display_bounds
+    fit = min(1.0, 1600 / cw, 1000 / ch, bw / cw, bh / ch)
+    ow, oh = max(1, round(cw * fit)), max(1, round(ch * fit))
+
+    def sample(image, ox, oy):
+        # OpenCV and Pillow resize both address pixel centres. Convert master
+        # edge coordinates to proxy pixel centres before a single remap.
+        sx, sy = image.shape[1] / w, image.shape[0] / h
+        xs = ((x0 + ox + (np.arange(ow) + .5) * cw / ow) * sx - .5).astype(np.float32)
+        ys = ((y0 + oy + (np.arange(oh) + .5) * ch / oh) * sy - .5).astype(np.float32)
+        mx, my = np.meshgrid(xs, ys)
+        return cv2.remap(image, mx, my, interpolation=cv2.INTER_LANCZOS4,
+                         borderMode=cv2.BORDER_REPLICATE)
+    return sample(base.left, max(0, dx), max(0, dy)), sample(base.right, max(0, -dx), max(0, -dy))
 
 
 def render_preview_from_base(
@@ -149,6 +179,7 @@ def render_preview_from_base(
     *,
     apply_color: bool = True,
     apply_floating_window: bool = True,
+    bounds: tuple[int, int] | None = None,
 ) -> PreviewPair:
     """Apply the inexpensive interactive layers to a cached preview base."""
 
@@ -156,20 +187,18 @@ def render_preview_from_base(
     right = base.right
     scale = base.scale
 
-    offset_x = int(round(state.effective_offset_x_px * scale))
-    offset_y = int(round(state.effective_offset_y_px * scale))
-    left, right, _changed = crop_shifted_pair_to_overlap(left, right, offset_x, offset_y)
-
-    zoom_index = max(0, min(len(CROP_ZOOM_LEVELS) - 1, int(state.framing.crop_zoom_index)))
-    left, right, _changed = crop_pair_to_aspect_and_framing(
-        left,
-        right,
-        state.framing.aspect,
-        CROP_ZOOM_LEVELS[zoom_index],
-        int(state.framing.pan_x_permille),
-        int(state.framing.pan_y_permille),
-        base.original_aspect,
-    )
+    if base.master_shape is not None:
+        left, right = _master_crop_preview(base, state, bounds)
+    else:
+        # Existing analysis-only proxies and API-created bases have no native
+        # grid; keep their established lightweight progress rendering.
+        offset_x = int(round(state.effective_offset_x_px * scale))
+        offset_y = int(round(state.effective_offset_y_px * scale))
+        left, right, _changed = crop_shifted_pair_to_overlap(left, right, offset_x, offset_y)
+        zoom_index = max(0, min(len(CROP_ZOOM_LEVELS) - 1, int(state.framing.crop_zoom_index)))
+        left, right, _changed = crop_pair_to_aspect_and_framing(left, right, state.framing.aspect,
+            CROP_ZOOM_LEVELS[zoom_index], int(state.framing.pan_x_permille),
+            int(state.framing.pan_y_permille), base.original_aspect)
 
     # Keep the last prepared curves during crop/offset edits. Their final-crop
     # validity still remains false, so the native renderer/export refits them.

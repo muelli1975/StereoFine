@@ -98,6 +98,8 @@ Geometry analysis uses a maximum width of 3000 px. All selected geometric correc
 
 After geometric correction, StereoFine runs a separate semi-dense horizontal disparity analysis at up to 1500 px width. The baseline uses robust P1/P99 limits and additional checks for uncertainty. Eligible uncertain far estimates receive native endpoint confirmation at both 1500 and 1000 px. A smaller observed span retains an uncertainty warning because scene completeness is unproven. See [the admission rule and validation](docs/OBSERVED_RANGE_1.1.md).
 
+Automatic stereo-window framing is followed by a measurement of the finished selected crop. The displayed deviation and confidence refer to that crop. Earlier saved pre-framing measurements are refreshed without changing saved framing or fine adjustments. Manual alignment nudges retain the measured span and translate its endpoints; aspect, crop zoom and crop movement trigger a new measurement.
+
 The width limits apply per eye. Additional point checks compare local 17x17 brightness windows in the analysis image; native near-point recovery and conditional two-ended confirmation use 41x41 windows at original spatial resolution. These are measurement neighbourhoods, not independently warped image tiles or export crops. The [measurement-window guide](docs/MEASUREMENT_WINDOWS_1.1.md) explains these checks and separates them from the larger-window research pilot.
 
 The traffic light is practical guidance:

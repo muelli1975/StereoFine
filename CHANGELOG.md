@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.2 – 2026-11-05
+## 1.2 – 2026-11-05 (updated 2026-11-06)
 
 - Add optional lossless TIFF SBS output with automatic 8/16-bit depth and working ICC profiles.
 - Add momentary native 100% inspection with Z, fine arrow-key taps and smooth acceleration when held.
@@ -17,6 +17,13 @@
 - Default new settings to Original aspect ratio and enabled symmetric colour matching, retaining saved choices.
 - Add remembered anaglyph saving and an editable Full-SBS suffix list with program-specific presets.
 - Keep loaded-settings status concise without exposing internal calculation-version differences.
+- Protect source files and distinct batch outputs from filename collisions while retaining replacement of existing exports.
+- Commit single-image analysis only after its preview is ready; reject saving an externally changed source until it is reopened.
+- Share the master crop geometry with interactive previews and retain completed colour updates after saving.
+- Reuse native pixels on viewport changes and reduce colour-fit allocations without changing the fitted curves.
+- Make the status panel more compact with aligned values, fixed warning space and full-filename tooltips.
+- Measure deviation and confidence on the final selected crop after automatic stereo-window framing; refresh older pre-framing measurements without replacing saved edits.
+- Show per-image batch measurements and clear the previous image's values while the next image is being analyzed.
 
 
 ## 1.1 — 2026-10-21 (updated 2026-11-01)

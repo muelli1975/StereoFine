@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import tempfile
 import time
+from unittest.mock import patch
 from pathlib import Path
 
 from PIL import Image, ImageChops, ImageEnhance, ImageGrab, ImageStat
@@ -124,15 +125,26 @@ def main() -> None:
             app._adjust_manual_offset(dx=15, dy=-7)
             app.current.state.favorite = True
             app.current.state.floating_window.left_permille = 5
-            app.start_processing()
-            pump(app, lambda: app.busy_state == 'idle' and app.current is not None)
+            from stereofine import processing
+            framing_checks = []
+            original_framing = processing.compute_auto_near_framing
+            def tracked_framing(**kwargs):
+                result = original_framing(**kwargs)
+                framing_checks.append(result)
+                return result
+            with patch.object(processing, 'compute_auto_near_framing', side_effect=tracked_framing):
+                app.start_processing()
+                pump(app, lambda: app.busy_state == 'idle' and app.current is not None)
             restarted = app.current.state
             assert (restarted.manual.delta_x_px, restarted.manual.delta_y_px) == (0, 0)
             assert (restarted.framing.crop_zoom_index, restarted.framing.pan_x_permille,
                     restarted.framing.pan_y_permille) == (1, 200, -100)
             assert restarted.framing.auto_near_back_permille == 3.0
             assert restarted.framing.auto_near_offset_x_px is not None
-            assert restarted.current_scene_positions_permille()[0] <= -3.0 + 1e-9
+            assert framing_checks and framing_checks[-1].near_after_permille <= -3.0 + 1e-9
+            assert restarted.auto_offset_x_px == framing_checks[-1].offset_x_px
+            assert restarted.disparity.basis['rendered_pair']
+            assert restarted.current_scene_positions_permille()[0] == restarted.disparity.high_edge_permille
             assert restarted.favorite and restarted.floating_window.left_permille == 5
 
             app._set_source_collection(sources, 0, batch=True)
@@ -559,10 +571,28 @@ def main() -> None:
             app.update_idletasks(); app.update()
             middle_status = app._input_status_text()
             assert "17/33" in middle_status and "bild017" in middle_status, middle_status
+            app._render_status()
+            assert app._status_line_widgets['warning'].cget('text') == ''
+            empty_endpoints = f"{app._t('status_near')}: – · {app._t('status_far')}: –"
+            assert app._status_line_widgets['near_far'].cget('text') == empty_endpoints
+            from copy import deepcopy
+            measured_state = deepcopy(app.current.state)
+            measured_state.disparity.valid = True
+            measured_state.disparity.stale = False
+            measured_state.disparity.uncertain = True
+            measured_state.disparity.uncertain_reasons = ['near_control_unconfirmed']
+            measured_state.disparity.total_permille = 21.
+            app._handle_progress(BatchProgress(17, 33, 'bild017', 'measured', state=measured_state))
+            app._render_status()
+            assert app._status_line_widgets['warning'].cget('text')
+            assert '21.00' in app._status_line_widgets['deviation'].cget('text')
             app._handle_progress(BatchProgress(33, 33, "bild033", "export"))
             app.update_idletasks(); app.update()
             final_status = app._input_status_text()
             assert "33/33" in final_status and "bild033" in final_status, final_status
+            app._render_status()
+            assert app._status_line_widgets['warning'].cget('text') == ''
+            assert app._status_line_widgets['near_far'].cget('text') == empty_endpoints
             app.current_job_kind = None
             app.busy_state = "idle"
             app._batch_progress_index = None

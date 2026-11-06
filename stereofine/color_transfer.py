@@ -147,8 +147,11 @@ def fit_symmetric_color_transfer(
     if np.any(p <= 0.0) or np.any(p >= 100.0) or np.any(np.diff(p) <= 0.0):
         raise ValueError("Perzentile müssen strikt steigend zwischen 0 und 100 liegen.")
 
-    left_sample = _sample_rgb(_normalized_float(left), max_samples)
-    right_sample = _sample_rgb(_normalized_float(right), max_samples)
+    # Select the same deterministic pixels before allocating float images.
+    # Normalisation is pointwise, so both the samples and fitted curves stay
+    # identical while the temporary allocation is bounded by the sample budget.
+    left_sample = _normalized_float(_sample_rgb(left, max_samples))
+    right_sample = _normalized_float(_sample_rgb(right, max_samples))
 
     left_curves: list[tuple[float, ...]] = []
     right_curves: list[tuple[float, ...]] = []

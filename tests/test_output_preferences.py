@@ -89,7 +89,8 @@ class OutputPreferencesTests(unittest.TestCase):
         self.assertEqual(validate_sbs_suffix(''), '')
 
     def test_batch_skip_anaglyph_still_writes_sbs_and_cross_and_keeps_preview(self):
-        source = SimpleNamespace(base_name='photo', display_name='photo', metadata_source=None)
+        source = SimpleNamespace(base_name='photo', display_name='photo', metadata_source=None,
+                                 left_path=Path('source_l.jpg'), right_path=Path('source_r.jpg'))
         image = np.full((12, 18, 3), 120, np.uint8)
         for enabled in (False, True):
             with tempfile.TemporaryDirectory() as directory:
