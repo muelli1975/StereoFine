@@ -922,6 +922,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
                 caption.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
                 caption.grid_propagate(False)
                 self._status_caption_widgets[name] = caption
+                caption._status_full_text = ""
+                attach_tooltip(caption, lambda caption=caption: caption._status_full_text)
                 holder.grid_columnconfigure(1, weight=0)
             label = ctk.CTkLabel(holder, text="", width=1, height=height,
                 text_color=TEXT_SECONDARY if muted else TEXT_PRIMARY,
@@ -966,6 +968,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
 
     def _set_status_pair(self, name, caption, value):
         label = self._status_line_widgets[name]
+        self._status_caption_widgets[name]._status_full_text = caption
         self._status_caption_widgets[name].configure(text=caption)
         label.configure(text=value)
         self._resize_status_pair(name)
@@ -978,8 +981,19 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         lines = value.splitlines() or [""]
         width = max(int(label._label.tk.call("font", "measure",
                     label._label.cget("font"), line)) for line in lines)
-        label._status_holder.grid_columnconfigure(1,
-            minsize=width + round(2 * label._get_widget_scaling()))
+        scale = label._get_widget_scaling()
+        label._status_holder.grid_columnconfigure(1, minsize=width + round(2 * scale))
+        caption = self._status_caption_widgets[name]
+        text = caption._status_full_text
+        available = label._status_holder.winfo_width() - width - round(10 * scale)
+        caption_width = max(int(caption._label.tk.call("font", "measure",
+            caption._label.cget("font"), line)) for line in (text.splitlines() or [""]))
+        # Older sidecars can show both V and H here. Keep both values visible;
+        # the parenthetical explanation remains available in the tooltip.
+        if available > 0 and caption_width > available and " (" in text:
+            text = text.split(" (", 1)[0] + ":"
+        if caption.cget("text") != text:
+            caption.configure(text=text)
 
     def _fit_status_input(self):
         """Keep arbitrary file names in two fixed lines, with a full tooltip."""

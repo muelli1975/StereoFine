@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+from copy import deepcopy
 import json
 import os
 from pathlib import Path
@@ -40,6 +41,7 @@ def main():
         state.alignment.vertical_error_mean_px = .182
         state.alignment.correction = dict(vertical_shift_px=-2.4, rotation_deg=.0625,
             trapez_apply=dict(enabled=True, max_relative_y_correction_px_fullres=2.4))
+        base_correction = deepcopy(state.alignment.correction)
         state.disparity.valid = True
         state.disparity.stale = False
         state.disparity.total_permille = 30.
@@ -82,7 +84,11 @@ def main():
                             if name in app._status_caption_widgets:
                                 right_edges.append(value.winfo_rootx()+value.winfo_width())
                         assert max(right_edges)-min(right_edges) <= 1, right_edges
-                        for case in ('normal', 'warning', 'calculating', 'write-error', 'long-input'):
+                        for case in ('normal', 'warning', 'calculating', 'write-error', 'long-input', 'legacy-vergence'):
+                            state.alignment.correction = deepcopy(base_correction)
+                            if case == 'legacy-vergence':
+                                state.alignment.correction = dict(vergence_ready=True,
+                                    vergence_v_px=123.4, vergence_h_px=-234.5)
                             state.disparity.uncertain = case == 'warning'
                             app._measurement_job_id = 'fixture' if case == 'calculating' else None
                             app._state_save_error = 'fixture' if case == 'write-error' else None
@@ -132,7 +138,7 @@ def main():
                                 screen.crop(box).save(image_path)
                                 if args.emit_preview:
                                     print('STATUS_IMAGE '+image_path.name+' '+base64.b64encode(image_path.read_bytes()).decode(), flush=True)
-                        print(json.dumps(dict(language=language, scale=scale, cases=5, text_fits=True,
+                        print(json.dumps(dict(language=language, scale=scale, cases=6, text_fits=True,
                             status_logical_height=status_height, scroll_height=scroll)), flush=True)
                     app._measurement_job_id = None
                     app._state_save_error = None
