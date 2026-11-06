@@ -84,8 +84,10 @@ def main():
                             if name in app._status_caption_widgets:
                                 right_edges.append(value.winfo_rootx()+value.winfo_width())
                         assert max(right_edges)-min(right_edges) <= 1, right_edges
-                        for case in ('normal', 'warning', 'calculating', 'write-error', 'long-input', 'legacy-vergence'):
+                        for case in ('normal', 'warning', 'calculating', 'write-error', 'long-input', 'legacy-vergence', 'wide-deviation'):
                             state.alignment.correction = deepcopy(base_correction)
+                            state.disparity.total_permille = 123.45 if case == 'wide-deviation' else 30.
+                            state.disparity.traffic = 'gray' if case == 'wide-deviation' else 'green'
                             if case == 'legacy-vergence':
                                 state.alignment.correction = dict(vergence_ready=True,
                                     vergence_v_px=123.4, vergence_h_px=-234.5)
@@ -142,7 +144,7 @@ def main():
                                 screen.crop(box).save(image_path)
                                 if args.emit_preview:
                                     print('STATUS_IMAGE '+image_path.name+' '+base64.b64encode(image_path.read_bytes()).decode(), flush=True)
-                        print(json.dumps(dict(language=language, scale=scale, cases=6, text_fits=True,
+                        print(json.dumps(dict(language=language, scale=scale, cases=7, text_fits=True,
                             status_logical_height=status_height, scroll_height=scroll)), flush=True)
                     app._measurement_job_id = None
                     app._state_save_error = None

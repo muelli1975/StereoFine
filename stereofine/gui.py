@@ -759,7 +759,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self.traffic_label = ctk.CTkLabel(
             self.status_frame,
             text="●",
-            width=STATUS_SYMBOL_COLUMN_WIDTH,
+            width=16,
             height=STATUS_ROW_HEIGHT,
             text_color=TRAFFIC_GRAY,
             font=self._font(20),
@@ -911,8 +911,10 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             # Only the input and deviation share their row with a symbol. Other
             # rows use the complete sidebar width instead of a permanent gutter.
             holder = ctk.CTkFrame(self.status_frame, height=height, fg_color="transparent")
-            holder.grid(row=row, column=0, columnspan=1 if symbol_slot else 2,
-                        sticky="ew", padx=(0, 8) if symbol_slot else 0)
+            holder.grid(row=row, column=0,
+                        columnspan=1 if symbol_slot and name != "deviation" else 2,
+                        sticky="ew", padx=(0, 18) if name == "deviation" else
+                        ((0, 8) if symbol_slot else 0))
             holder.grid_propagate(False)
             holder.grid_rowconfigure(0, weight=1)
             holder.grid_columnconfigure(0, weight=1)
