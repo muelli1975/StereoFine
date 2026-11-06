@@ -573,7 +573,8 @@ def main() -> None:
             assert "17/33" in middle_status and "bild017" in middle_status, middle_status
             app._render_status()
             assert app._status_line_widgets['warning'].cget('text') == ''
-            assert app._status_line_widgets['near_far'].cget('text') == ''
+            empty_endpoints = f"{app._t('status_near')}: – · {app._t('status_far')}: –"
+            assert app._status_line_widgets['near_far'].cget('text') == empty_endpoints
             from copy import deepcopy
             measured_state = deepcopy(app.current.state)
             measured_state.disparity.valid = True
@@ -591,7 +592,7 @@ def main() -> None:
             assert "33/33" in final_status and "bild033" in final_status, final_status
             app._render_status()
             assert app._status_line_widgets['warning'].cget('text') == ''
-            assert app._status_line_widgets['near_far'].cget('text') == ''
+            assert app._status_line_widgets['near_far'].cget('text') == empty_endpoints
             app.current_job_kind = None
             app.busy_state = "idle"
             app._batch_progress_index = None

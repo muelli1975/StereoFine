@@ -147,7 +147,8 @@ def main():
                 app._handle_progress(BatchProgress(3, 7, 'C.jpg', 'analysis'))
                 app._render_status()
                 assert app._status_line_widgets['warning'].cget('text') == ''
-                assert app._status_line_widgets['near_far'].cget('text') == ''
+                empty_endpoints = f"{app._t('status_near')}: – · {app._t('status_far')}: –"
+                assert app._status_line_widgets['near_far'].cget('text') == empty_endpoints
                 app.current_job_kind = None
                 assert app.current.state is current_state
                 app._render_status()
