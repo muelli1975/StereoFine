@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import queue
 from copy import deepcopy
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
 import re
 import sys
 import time
@@ -51,7 +51,7 @@ from .native_preview import (NativePreviewMixin, native_key, prepare_native_prev
 from .tooltip import attach_tooltip
 from .preview import PreviewImageCache, draw_grid_overlay, draw_measure_cross_overlay
 from .preview_render import PreviewBasePair, build_preview_base, render_preview_from_base, preview_geometry_key
-from .preferences import save_series_input, with_series_input
+from .preferences import save_series_input, series_input_path, with_series_input
 from .processing import ProcessingDefaults, ProcessingOptions, process_source
 from .resources import asset_path
 from .session import (
@@ -196,6 +196,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.sources: list[StereoSource] = []
         self.source_index: int | None = None
         self.batch_mode = False
+        self._session_series_input: tuple[StereoSource, InputTransformState] | None = None
         # Transient batch-preview identity.  The browsed source/index remains
         # untouched during a worker run so navigation can be restored cleanly;
         # these fields describe the lightweight image that is actually shown.
@@ -1419,6 +1420,14 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             look_path=look.path, look_strength=look.strength,
         )
 
+    def _source_defaults(self, source: StereoSource) -> ProcessingDefaults:
+        defaults = self._new_source_defaults()
+        if self._session_series_input is not None:
+            anchor, transform = self._session_series_input
+            if anchor.input_root == source.input_root:
+                return replace(defaults, **asdict(transform))
+        return defaults
+
     def _processing_options(
         self,
         *,
@@ -1426,7 +1435,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         use_batch_defaults: bool = False,
         restart_alignment: bool = False,
     ) -> ProcessingOptions:
-        defaults = self._new_source_defaults() if use_batch_defaults else self._processing_defaults()
+        defaults = self._source_defaults(self.current.source) if use_batch_defaults else self._processing_defaults()
         return ProcessingOptions(
             analysis_method=self.analysis_method.get(),
             save_sidecar=True,
@@ -1732,7 +1741,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.measure_cross_y = None
         self._stop_measure_repeat()
 
-        defaults = self._new_source_defaults()
+        defaults = self._source_defaults(source)
         bounds = self._preview_bounds()
         mode = self._effective_preview_mode()
 
@@ -1884,6 +1893,10 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         )
         if transform == state.input_transform:
             return
+        source = self.current.source
+        first_or_anchor = self._session_series_input is None or self._session_series_input[0] == source
+        if first_or_anchor and not series_input_path(source).is_file():
+            self._session_series_input = source, deepcopy(transform)
         self._set_image_input_transform(transform, override=True)
 
     def _save_series_input(self) -> None:
@@ -1894,6 +1907,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         except OSError as exc:
             messagebox.showerror(APP_NAME, self._t('state_save_failed', text=str(exc)))
             return
+        self._session_series_input = None
         self._folder_feedback = self._t('series_input_saved')
         self._render_status()
 
@@ -1901,7 +1915,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         if self.current is None or self.busy_state != 'idle' or not self.current.state.input_override:
             return
         try:
-            defaults = with_series_input(ProcessingDefaults(), self.current.source)
+            defaults = with_series_input(self._source_defaults(self.current.source), self.current.source)
         except (OSError, ValueError) as exc:
             messagebox.showerror(APP_NAME, self._t('state_save_failed', text=str(exc)))
             return
@@ -2588,6 +2602,9 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         if kind in {"load", "analysis"} and isinstance(payload, BrowsedSource):
             if kind == "load":
                 self._load_rollback_context = None
+                if (self._session_series_input is not None
+                        and self._session_series_input[0].input_root != payload.source.input_root):
+                    self._session_series_input = None
             self.current = payload
             self._state_dirty = False
             self._state_dirty_can_create_sidecar = False

@@ -252,6 +252,8 @@ Hover over a look to preview it, click to apply it, or press Esc to keep the pre
 
 Under **Alignment**, **Save as series orientation** stores the current image's rotation, mirroring and eye order as the folder default in `_stereofine/series.json`. An image with its own orientation keeps it. **Use series orientation** clears that image's override.
 
+Until a folder default is saved, the first manual orientation in the current session is used when browsing or batch processing images in that folder that have no orientation of their own.
+
 View zoom only changes the preview. Crop zoom determines the exported image area. N/F labels use the same values and formatting as the status display. The markers show the corresponding image evidence, with a question mark when its location is uncertain. View and measurement annotations stay in the preview.
 
 Look sources and terms: [CREDITS](assets/luts/CREDITS.md).

@@ -153,7 +153,7 @@ def main() -> None:
             assert app.current is not None
             assert app.current.source.base_name == "scene01"
 
-            # Only the edited image owns an orientation until explicitly saved for the series.
+            # An orientation edit seeds this session without creating a folder setting.
             assert not app.current.source.sidecar_path.exists()
             series_path = app.current.source.sidecar_path.with_name('series.json')
             assert not series_path.exists()
@@ -167,8 +167,8 @@ def main() -> None:
 
             app._set_source_collection(sources, 1, batch=True)
             pump(app, lambda: app.busy_state == "idle" and app.current is not None and app.source_index == 1)
-            assert app.left_orientation.get() == app.right_orientation.get() == "0"
-            assert not app.left_mirror.get() and not app.swap_eyes.get()
+            assert app.left_orientation.get() == app.right_orientation.get() == "180"
+            assert app.left_mirror.get() and app.swap_eyes.get()
             assert not app.current.source.sidecar_path.exists()
 
             # Page navigation restores the first image's explicit orientation.
@@ -179,10 +179,10 @@ def main() -> None:
             assert app.left_mirror.get() is True
             assert app.swap_eyes.get() is True
 
-            # Batch defaults stay independent of the current image's overrides.
+            # Batch uses the session orientation and the program's other defaults.
             batch_defaults = app._processing_options(use_batch_defaults=True).defaults
-            assert batch_defaults.left_orientation == batch_defaults.right_orientation == "0"
-            assert not batch_defaults.left_mirror and not batch_defaults.swap_eyes
+            assert batch_defaults.left_orientation == batch_defaults.right_orientation == "180"
+            assert batch_defaults.left_mirror and batch_defaults.swap_eyes
             assert batch_defaults.aspect == app.settings.default_aspect
             assert batch_defaults.color_enabled == app.settings.color_match_enabled
 

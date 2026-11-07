@@ -253,16 +253,19 @@ def main():
             pump(app, lambda: app.busy_state == 'idle' and app.current.source == source)
             series_path = source.sidecar_path.with_name('series.json')
             assert not series_path.exists()
-            assert app.save_series_input_button.cget('state') == 'normal'
-            app.save_series_input_button.invoke()
-            assert app._folder_feedback == app._t('series_input_saved')
-            assert json.loads(series_path.read_text('utf-8'))['input_state']['left_orientation'] == '180'
+            app.show_folder_settings()
+            dialog = app._folder_dialog
+            dialog.selection['look'].set(True)
+            dialog._changed()
+            dialog.start()
+            pump(app, lambda: app.busy_state == 'idle' and app._folder_dialog is None)
+            assert not series_path.exists()
             assert json.loads(other.sidecar_path.read_text('utf-8')) == saved_other
             app.next_source()
             pump(app, lambda: app.busy_state == 'idle' and app.current.source == other)
             assert app.left_orientation.get() == app.right_orientation.get() == '180'
             assert app.current.state.look.preset_id == 'matrix'
-            batch_options = ProcessingOptions(save_sidecar=False)
+            batch_options = ProcessingOptions(defaults=app._source_defaults(other), save_sidecar=False)
             inherited = process_source(other, batch_options).state.input_transform
             assert inherited.left_orientation == inherited.right_orientation == '180'
 
@@ -283,6 +286,13 @@ def main():
             assert app._flush_state_save()
             assert json.loads(other.sidecar_path.read_text('utf-8'))['input_override'] is False
             assert app.series_input_button.cget('state') == 'disabled'
+            assert not series_path.exists()
+            assert app.save_series_input_button.cget('state') == 'normal'
+            app.save_series_input_button.invoke()
+            assert app._folder_feedback == app._t('series_input_saved')
+            assert json.loads(series_path.read_text('utf-8'))['input_state']['left_orientation'] == '180'
+            persisted = process_source(third, ProcessingOptions(save_sidecar=False)).state.input_transform
+            assert persisted.left_orientation == persisted.right_orientation == '180'
             assert not messages,messages
             assert not errors,errors
             report=dict(loading=True,look_strength_sidecar=True,zoom_preserves_crop=True,

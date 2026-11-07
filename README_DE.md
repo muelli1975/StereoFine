@@ -255,6 +255,8 @@ Beim Überfahren eines Looks erscheint die Vorschau. Ein Klick übernimmt den Lo
 
 Unter **Ausrichtung** legt **Als Serienausrichtung speichern** Drehung, Spiegelung und L/R-Tausch des aktuellen Bildes als Ordnervorgabe in `_stereofine/series.json` ab. Ein Bild mit eigener Ausrichtung behält seine Einstellung. **Serienausrichtung verwenden** hebt die Bildausnahme auf.
 
+Solange es keine gespeicherte Ordnervorgabe gibt, gilt die erste manuell eingestellte Ausrichtung beim Blättern und in der Stapelverarbeitung dieser Sitzung für Bilder ohne eigene Ausrichtung.
+
 Der Ansichtszoom verändert ausschließlich die Vorschau. Der Beschnittzoom bestimmt den ausgegebenen Bildausschnitt. Bei N/F stehen dieselben Werte wie im Status. Die Kreuze markieren die zugehörigen Bildstellen. Ein Fragezeichen kennzeichnet eine unsichere Punktposition. Ansichts- und Messmarkierungen bleiben in der Vorschau.
 
 Quellen und Lizenzen der Looks: [CREDITS](assets/luts/CREDITS.md).
