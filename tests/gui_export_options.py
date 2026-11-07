@@ -44,18 +44,22 @@ def check_export_options(app, checks, language):
     app._on_export_options_changed()
     assert app._effective_sbs_suffix() == '_sbs'
     assert app.settings.sbs_suffix == '_cs'
-    assert app.sbs_suffix_menu.cget('state') == 'disabled'
+    assert app.sbs_suffix_menu.cget('state') == 'normal'
+    assert app.sbs_suffix_menu.cget('text_color') == TEXT_DISABLED
     assert app.sbs_suffix_menu.cget('text_color_disabled') == TEXT_DISABLED
     assert app.sbs_suffix_menu.cget('fg_color') == SECONDARY_BG
     assert app.sbs_suffix_menu.cget('border_color') == BORDER
     assert app.sbs_suffix_menu.cget('button_color') == HOVER_BG
-    app.use_custom_sbs_suffix.set(True)
-    app._on_export_options_changed()
+    entry = app.sbs_suffix_menu._entry
+    entry.event_generate('<ButtonPress-1>', x=5, y=5)
+    entry.event_generate('<ButtonRelease-1>', x=5, y=5)
+    assert app.use_custom_sbs_suffix.get()
+    assert app._effective_sbs_suffix() == '_cs'
+    assert app.sbs_suffix_menu.cget('text_color') == TEXT_PRIMARY
     # Native Entry bindings must edit text before the application's shortcuts.
     before = deepcopy(app.current.state)
     mode = app.preview_mode.get()
     app.sbs_suffix_display.set('')
-    entry = app.sbs_suffix_menu._entry
     entry.focus_force()
     app.update()
     for key in ('a', 'f', 'g', 's', 'z', 'm', 'l', 'r', 't', 'b', 'space'):
@@ -126,7 +130,9 @@ def check_export_options(app, checks, language):
     app.save_anaglyph_box.toggle()
     edit()
     app.custom_sbs_suffix_box.toggle()
-    assert app.sbs_suffix_menu.cget('state') == 'disabled'
+    assert not app.use_custom_sbs_suffix.get()
+    assert app._effective_sbs_suffix() == '_sbs'
+    assert app.sbs_suffix_menu.cget('text_color') == TEXT_DISABLED
     assert_image_keys_work()
     app.custom_sbs_suffix_box.toggle()
     # A different option menu and a cancelled native-dialog action must also
