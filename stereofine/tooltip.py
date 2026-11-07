@@ -4,7 +4,7 @@ import tkinter as tk
 from .theme import PANEL_BG, TEXT_PRIMARY
 
 
-def attach_tooltip(widget, text):
+def attach_tooltip(widget, text, *, enabled=lambda: True):
     pending = None
     window = None
 
@@ -20,6 +20,8 @@ def attach_tooltip(widget, text):
     def show():
         nonlocal pending, window
         pending = None
+        if not widget.winfo_exists() or not enabled():
+            return
         window = tk.Toplevel(widget)
         window.withdraw()
         window.overrideredirect(True)
@@ -38,3 +40,4 @@ def attach_tooltip(widget, text):
     widget.bind('<Enter>', enter, add='+')
     for event in ('<Leave>', '<ButtonPress>', '<Unmap>', '<Destroy>'):
         widget.bind(event, hide, add='+')
+    return hide

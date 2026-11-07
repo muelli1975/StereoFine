@@ -78,7 +78,7 @@ class WorkerManager:
             try:
                 result = function(token, progress)
                 if token.cancelled:
-                    self.messages.put(WorkerMessage(job_id, WorkerMessageKind.CANCELLED))
+                    self.messages.put(WorkerMessage(job_id, WorkerMessageKind.CANCELLED, result))
                 else:
                     self.messages.put(WorkerMessage(job_id, WorkerMessageKind.RESULT, result))
             except JobCancelled:

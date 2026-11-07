@@ -6,6 +6,7 @@ from typing import Literal
 from .i18n import Translator
 from .sidecar import SidecarLoadResult, SidecarStatus
 from .state import PairState
+from .numbers import format_number, endpoint_values
 
 StatusRole = Literal["normal", "deviation", "warning"]
 
@@ -58,7 +59,7 @@ def _vergence_text(state: PairState, tr: Translator) -> str:
     if bool(trapez.get("enabled", False)):
         applied = trapez.get("max_relative_y_correction_px_fullres")
         if applied is not None:
-            return _fmt_sig(applied, " px")
+            return format_number(applied, ' px', language=tr.language, significant=4)
 
     # Older first-order sidecars may genuinely apply V/H. Preserve their exact
     # semantics when that model is the active correction.
@@ -66,7 +67,8 @@ def _vergence_text(state: PairState, tr: Translator) -> str:
         v = correction.get("vergence_v_px")
         h = correction.get("vergence_h_px")
         if v is not None or h is not None:
-            return f"V {_fmt_sig(v, ' px')} · H {_fmt_sig(h, ' px')}"
+            return ('V '+format_number(v, ' px', language=tr.language, significant=4)
+                    +' · H '+format_number(h, ' px', language=tr.language, significant=4))
 
     # Transitional sidecars from earlier 1.0 candidates may contain only the
     # diagnostic V/H summary. It is preferable to show that measured summary
@@ -74,7 +76,8 @@ def _vergence_text(state: PairState, tr: Translator) -> str:
     v = correction.get("vergence_v_candidate_px")
     h = correction.get("vergence_h_candidate_px")
     if v is not None or h is not None:
-        return f"V {_fmt_sig(v, ' px')} · H {_fmt_sig(h, ' px')}"
+        return ('V '+format_number(v, ' px', language=tr.language, significant=4)
+                +' · H '+format_number(h, ' px', language=tr.language, significant=4))
 
     return tr.t("status_active")
 
@@ -95,6 +98,9 @@ def build_status_sections(
     language: str = "de",
 ) -> tuple[StatusSection, ...]:
     tr = Translator(language)
+    def fmt(value, suffix='', decimals=2):
+        return format_number(value, suffix, decimals, language=language)
+    endpoints = endpoint_values(state, language)
     correction = state.alignment.correction or {}
     near, far = state.current_scene_positions_permille()
     total = state.disparity.total_permille if state.disparity.valid and not state.disparity.stale else None
@@ -115,9 +121,9 @@ def build_status_sections(
             (
                 StatusRow(tr.t("status_analysis"), _analysis_status(state, tr)),
                 StatusRow(tr.t("status_model"), state.alignment.model or "–"),
-                StatusRow(tr.t("status_vertical_error"), _fmt(state.alignment.vertical_error_mean_px, " px", 3)),
-                StatusRow(tr.t("status_vertical_shift"), _fmt(correction.get("vertical_shift_px"), " px", 3)),
-                StatusRow(tr.t("status_rotation"), _fmt(correction.get("rotation_deg"), "°", 4)),
+                StatusRow(tr.t("status_vertical_error"), fmt(state.alignment.vertical_error_mean_px, " px", 3)),
+                StatusRow(tr.t("status_vertical_shift"), fmt(correction.get("vertical_shift_px"), " px", 3)),
+                StatusRow(tr.t("status_rotation"), fmt(correction.get("rotation_deg"), "°", 4)),
                 StatusRow(tr.t("status_vergence"), _vergence_text(state, tr)),
             ),
         ),
@@ -126,11 +132,11 @@ def build_status_sections(
             (
                 StatusRow(
                     tr.t("status_total_deviation"),
-                    f"{_fmt(total, '‰')} · {_traffic_label(state.disparity.traffic, tr) if total is not None else '–'}",
+                    f"{fmt(total, '‰')} · {_traffic_label(state.disparity.traffic, tr) if total is not None else '-'}",
                     "deviation",
                 ),
-                StatusRow(tr.t("status_near"), _fmt(near if total is not None else None, "‰")),
-                StatusRow(tr.t("status_far"), _fmt(far if total is not None else None, "‰")),
+                StatusRow(tr.t("status_near"), endpoints['near']),
+                StatusRow(tr.t("status_far"), endpoints['far']),
                 *(() if not warning else (StatusRow("", warning, "warning"),)),
             ),
         ),

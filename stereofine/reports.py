@@ -9,14 +9,11 @@ from typing import Iterable
 from .config import APP_NAME, APP_VERSION
 from .i18n import Translator
 from .models import AnalysisRecord
+from .numbers import format_number
 
 
-def _fmt(value: float | int | None, decimals: int = 2, suffix: str = "") -> str:
-    if value is None:
-        return "–"
-    if isinstance(value, int):
-        return f"{value}{suffix}"
-    return f"{float(value):.{decimals}f}{suffix}"
+def _fmt(value: float | int | None, decimals: int = 2, suffix: str = "", *, language='en') -> str:
+    return format_number(value, suffix, decimals, language=language)
 
 
 def _report_traffic(value: str, tr: Translator) -> str:
@@ -35,12 +32,12 @@ def _report_traffic(value: str, tr: Translator) -> str:
     return tr.t(key) if key else (value or "–")
 
 
-def _report_vergence(record: AnalysisRecord) -> str:
+def _report_vergence(record: AnalysisRecord, language='en') -> str:
     if record.vergence_applied_px is not None:
-        return _fmt(record.vergence_applied_px, 3, " px")
+        return _fmt(record.vergence_applied_px, 3, " px", language=language)
     if record.vergence_v_px is not None or record.vergence_h_px is not None:
-        v = _fmt(record.vergence_v_px, 3, " px")
-        h = _fmt(record.vergence_h_px, 3, " px")
+        v = _fmt(record.vergence_v_px, 3, " px", language=language)
+        h = _fmt(record.vergence_h_px, 3, " px", language=language)
         return f"V {v} · H {h}"
     return "–"
 
@@ -95,12 +92,12 @@ def write_analysis_report(
             [
                 r.source_name,
                 _report_traffic(r.traffic, tr),
-                _fmt(r.total_permille, 2, "‰"),
-                _fmt(r.near_permille, 2, "‰"),
-                _fmt(r.far_permille, 2, "‰"),
-                _fmt(r.vertical_error_mean_px, 3, " px"),
-                _report_vergence(r),
-                _fmt(r.rotation_deg, 4, "°"),
+                _fmt(r.total_permille, 2, "‰", language=language),
+                _fmt(r.near_permille, 2, "‰", language=language),
+                _fmt(r.far_permille, 2, "‰", language=language),
+                _fmt(r.vertical_error_mean_px, 3, " px", language=language),
+                _report_vergence(r, language),
+                _fmt(r.rotation_deg, 4, "°", language=language),
                 _report_note(r, tr),
             ]
         )

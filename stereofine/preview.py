@@ -7,7 +7,7 @@ from .config import GRID_DIVISIONS_BY_SPACING
 
 MEASURE_CROSS_STEPS_PERMILLE = (10, 20, 30, 40, 50)
 MEASURE_CROSS_MINOR_STEPS_PERMILLE = (5, 15, 25, 35, 45)
-MEASURE_CROSS_SHADOW_RGBA = (0, 0, 0, 105)
+MEASURE_CROSS_SHADOW_RGBA = (0, 0, 0, 190)
 
 
 class PreviewImageCache:
@@ -45,7 +45,7 @@ def grid_divisions_for_spacing(spacing: int | str) -> int | None:
     return None
 
 def draw_grid_overlay(img: Image.Image, spacing_permille: int | str, color_name: str, *,
-                      reference_size: tuple[int, int] | None = None, origin=(0, 0)) -> Image.Image:
+                      reference_size: tuple[int, int] | None = None, origin=(0, 0), scale=1.) -> Image.Image:
     w, h = img.size
     color = (255, 255, 255, 120) if color_name == "Weiß" else (0, 0, 0, 120)
 
@@ -71,9 +71,10 @@ def draw_grid_overlay(img: Image.Image, spacing_permille: int | str, color_name:
             draw.line((0, y_line, w, y_line), fill=color, width=1)
 
     ref_w, ref_h = reference_size or (w, h)
+    sx, sy = scale if isinstance(scale, tuple) else (scale, scale)
     for index in range(1, divisions):
-        draw_vertical_if_inner(ref_w * index / float(divisions) - origin[0])
-        draw_horizontal_if_inner(ref_h * index / float(divisions) - origin[1])
+        draw_vertical_if_inner((ref_w * index / float(divisions) - origin[0])*sx)
+        draw_horizontal_if_inner((ref_h * index / float(divisions) - origin[1])*sy)
 
     return Image.alpha_composite(out, overlay).convert("RGB")
 
@@ -121,14 +122,9 @@ def draw_measure_cross_overlay(
     overlay = np.zeros((height, width, 4), dtype=np.uint8)
 
     # Transparent, antialiased two-pass drawing: soft black shadow first, then a
-    # thin light measurement scale.  This mimics the global grid's transparency
-    # idea, but stays a little less intrusive around the actual measuring point.
+    # thin light measurement scale, using the same palette as the N/F markers.
     shadow = MEASURE_CROSS_SHADOW_RGBA
-    major_shadow = MEASURE_CROSS_SHADOW_RGBA
-    minor_shadow = MEASURE_CROSS_SHADOW_RGBA
-    main = (245, 245, 245, 132)
-    main_soft = (245, 245, 245, 96)
-    minor_soft = main
+    main = (255, 255, 255, 215)
 
     def clamp_point(px: int | float, py: int | float) -> tuple[int, int]:
         return (
@@ -171,20 +167,20 @@ def draw_measure_cross_overlay(
     for radius in minor_radii:
         for sign in (-1, 1):
             xx = x + sign * radius
-            line_layer((xx, y - 3), (xx, y + 3), minor_shadow, 1)
+            line_layer((xx, y - 3), (xx, y + 3), shadow, 1)
         yy_top = y - radius
         yy_bottom = y + radius
-        line_layer((x - 3, yy_top), (x + 3, yy_top), minor_shadow, 1)
-        line_layer((x - 3, yy_bottom), (x + 3, yy_bottom), minor_shadow, 1)
+        line_layer((x - 3, yy_top), (x + 3, yy_top), shadow, 1)
+        line_layer((x - 3, yy_bottom), (x + 3, yy_bottom), shadow, 1)
 
     for radius in major_radii:
         for sign in (-1, 1):
             xx = x + sign * radius
-            line_layer((xx, y - 6), (xx, y + 6), major_shadow, 2)
+            line_layer((xx, y - 6), (xx, y + 6), shadow, 2)
         yy_top = y - radius
         yy_bottom = y + radius
-        line_layer((x - 6, yy_top), (x + 6, yy_top), major_shadow, 2)
-        line_layer((x - 6, yy_bottom), (x + 6, yy_bottom), major_shadow, 2)
+        line_layer((x - 6, yy_top), (x + 6, yy_top), shadow, 2)
+        line_layer((x - 6, yy_bottom), (x + 6, yy_bottom), shadow, 2)
 
     # Main pass.
     line_layer((x0, y0), (x1, y1), main, 1)
@@ -193,11 +189,11 @@ def draw_measure_cross_overlay(
     for radius in minor_radii:
         for sign in (-1, 1):
             xx = x + sign * radius
-            line_layer((xx, y - 3), (xx, y + 3), minor_soft, 1)
+            line_layer((xx, y - 3), (xx, y + 3), main, 1)
         yy_top = y - radius
         yy_bottom = y + radius
-        line_layer((x - 3, yy_top), (x + 3, yy_top), minor_soft, 1)
-        line_layer((x - 3, yy_bottom), (x + 3, yy_bottom), minor_soft, 1)
+        line_layer((x - 3, yy_top), (x + 3, yy_top), main, 1)
+        line_layer((x - 3, yy_bottom), (x + 3, yy_bottom), main, 1)
 
     for radius in major_radii:
         for sign in (-1, 1):
@@ -215,10 +211,11 @@ def draw_measure_cross_overlay(
     right_text = outer_label
     left_org = (x - outer - 36, y + 5)
     right_org = (x + outer + 8, y + 5)
-    text_layer(left_text, (left_org[0] + 1, left_org[1] + 1), shadow, 0.42, 2)
-    text_layer(right_text, (right_org[0] + 1, right_org[1] + 1), shadow, 0.42, 2)
-    text_layer(left_text, left_org, main, 0.42, 1)
-    text_layer(right_text, right_org, main, 0.42, 1)
+    text_shadow = (0, 0, 0, 195)
+    text_layer(left_text, (left_org[0] + 1, left_org[1] + 1), text_shadow, 0.42, 2)
+    text_layer(right_text, (right_org[0] + 1, right_org[1] + 1), text_shadow, 0.42, 2)
+    text_layer(left_text, left_org, (255, 255, 255, 225), 0.42, 1)
+    text_layer(right_text, right_org, (255, 255, 255, 225), 0.42, 1)
 
     # The scale occupies only a small part of the preview. Composite that
     # exact nontransparent rectangle instead of allocating and mixing several

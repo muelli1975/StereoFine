@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping
 
+from .controls_help import HELP_TEXT_DE, HELP_TEXT_EN
+
 Language = str
 
 TEXTS: dict[str, dict[str, str]] = {
@@ -64,7 +66,22 @@ TEXTS: dict[str, dict[str, str]] = {
         "cancel": "Abbrechen",
         "cancelling": "Abbruch läuft…",
         "save": "Speichern",
-        "help_footer": "F1 · Tastaturhilfe",
+        "help_footer": "F1 · Bedienhilfe",
+        "look_apply": "LUT anwenden",
+        "look_strength": "Stärke: {value} %",
+        "look_group_film": "Farbfilm & Sofortbild",
+        "look_group_monochrome": "Schwarzweiß & Sepia",
+        "look_group_cinema": "Kino",
+        "look_group_mood": "Licht & Stimmung",
+        "look_import": "LUT importieren (.cube, .png)",
+        "look_load_failed": "Die LUT konnte nicht geladen werden:\n\n{text}",
+        "program_defaults": "Standardeinstellungen",
+        "show_deviation_points": "Nah-/Fernpunkte anzeigen",
+        "deviation_meter": "Disparitätsmesser",
+        "measure_choose_start": "Startpunkt wählen",
+        "measure_choose_end": "Endpunkt wählen",
+        "view_zoom": "Ansicht: {value} %",
+        "view_fitted": "Ansicht: Eingepasst",
         "output_folder_dialog": "Eigenen Ausgabeordner auswählen",
         "single_pair_dialog": "Linkes oder rechtes Bild auswählen",
         "single_stereo_dialog": "Full-SBS/MPO-Datei auswählen",
@@ -86,39 +103,11 @@ TEXTS: dict[str, dict[str, str]] = {
         "processing_cancelled": "Verarbeitung abgebrochen.",
         "processing_failed": "Verarbeitung fehlgeschlagen:\n\n{text}",
         "close_busy": "Eine Verarbeitung läuft noch. Wirklich beenden?",
-        "help_title": "StereoFine – Tastaturhilfe",
-        "help_heading": "Tastaturhilfe",
-        "help_key_column": "Taste",
+        "help_title": "StereoFine – Bedienhilfe",
+        "help_heading": "Bedienhilfe",
+        "help_key_column": "Eingabe",
         "help_action_column": "Funktion",
-        "help_text": (
-            "Navigation\n"
-            "  Page Up / Page Down     Vorheriges / nächstes Bild\n"
-            "  Leertaste               Justage bzw. Stapel starten\n"
-            "  Enter                   Aktuelles Bild speichern\n"
-            "  F                       Favorit setzen/entfernen\n\n"
-            "Manuelle Justage\n"
-            "  ← / →                   Horizontal verschieben\n"
-            "  ↑ / ↓                   Vertikal verschieben\n"
-            "  Shift + Pfeiltaste      5 px\n"
-            "  Strg + Pfeiltaste       10 px\n"
-            "  Strg + R                 Manuelle Bearbeitung zurücksetzen\n\n"
-            "Ausschnitt\n"
-            "  Alt + Pfeiltaste        Ausschnitt verschieben\n"
-            "  Strg + Shift + ↑/↓      Zoom\n\n"
-            "Schwebendes Scheinfenster\n"
-            "  S                        Links/Rechts gekoppelt/separat\n"
-            "  L/R/T/B halten + ←/→    Gewählte Kante -/+ 1‰\n\n"
-            "Vorschau\n"
-            "  A                        Farbig/Graustufen/Kreuzblick\n"
-            "  G                        Gitter durchschalten\n"
-            "  Shift + G                Gitter aus\n"
-            "  Z halten + Pfeiltasten   100 % ansehen / verschieben\n"
-            "  M halten                 Messkreuz anzeigen\n"
-            "  M + Pfeiltasten          Messkreuz bewegen\n"
-            "  F11                      Vollbild\n"
-            "  F1                       Diese Hilfe\n"
-            "  Esc                      Vollbild/Hilfe schließen"
-        ),
+        "help_text": HELP_TEXT_DE,
         "status_ready": "Bereit",
         "status_analysis": "Analyse",
         "status_deviation_open": "Deviation offen",
@@ -230,7 +219,22 @@ TEXTS: dict[str, dict[str, str]] = {
         "cancel": "Cancel",
         "cancelling": "Cancelling…",
         "save": "Save",
-        "help_footer": "F1 · Keyboard help",
+        "help_footer": "F1 · Controls",
+        "look_apply": "Apply LUT",
+        "look_strength": "Strength: {value} %",
+        "look_group_film": "Color & Instant Film",
+        "look_group_monochrome": "Monochrome & Sepia",
+        "look_group_cinema": "Cinema",
+        "look_group_mood": "Light & Mood",
+        "look_import": "Import LUT (.cube, .png)",
+        "look_load_failed": "The LUT could not be loaded:\n\n{text}",
+        "program_defaults": "Restore defaults",
+        "show_deviation_points": "Show near/far points",
+        "deviation_meter": "Disparity meter",
+        "measure_choose_start": "Choose start point",
+        "measure_choose_end": "Choose end point",
+        "view_zoom": "View: {value} %",
+        "view_fitted": "View: Fitted",
         "output_folder_dialog": "Choose custom output folder",
         "single_pair_dialog": "Choose left or right image",
         "single_stereo_dialog": "Choose Full-SBS/MPO file",
@@ -252,39 +256,11 @@ TEXTS: dict[str, dict[str, str]] = {
         "processing_cancelled": "Processing cancelled.",
         "processing_failed": "Processing failed:\n\n{text}",
         "close_busy": "Processing is still running. Quit anyway?",
-        "help_title": "StereoFine – Keyboard help",
-        "help_heading": "Keyboard help",
-        "help_key_column": "Key",
+        "help_title": "StereoFine – Controls",
+        "help_heading": "Controls",
+        "help_key_column": "Input",
         "help_action_column": "Action",
-        "help_text": (
-            "Navigation\n"
-            "  Page Up / Page Down     Previous / next image\n"
-            "  Space                   Start alignment or batch\n"
-            "  Enter                   Save current image\n"
-            "  F                       Toggle favorite\n\n"
-            "Manual alignment\n"
-            "  ← / →                   Shift horizontally\n"
-            "  ↑ / ↓                   Shift vertically\n"
-            "  Shift + Arrow           5 px\n"
-            "  Ctrl + Arrow            10 px\n"
-            "  Ctrl + R                Reset manual editing\n\n"
-            "Crop\n"
-            "  Alt + Arrow             Move crop\n"
-            "  Ctrl + Shift + ↑/↓      Zoom\n\n"
-            "Floating Window\n"
-            "  S                        Left/Right linked/separate\n"
-            "  Hold L/R/T/B + ←/→      Selected edge -/+ 1‰\n\n"
-            "Preview\n"
-            "  A                        Color/Grayscale/Cross-view\n"
-            "  G                        Cycle grid\n"
-            "  Shift + G                Grid off\n"
-            "  Hold Z + arrow keys      100% view / pan\n"
-            "  Hold M                   Show measurement cross\n"
-            "  M + Arrow keys           Move measurement cross\n"
-            "  F11                      Fullscreen\n"
-            "  F1                       This help\n"
-            "  Esc                      Close fullscreen/help"
-        ),
+        "help_text": HELP_TEXT_EN,
         "status_ready": "Ready",
         "status_analysis": "Analysis",
         "status_deviation_open": "Deviation pending",
@@ -568,3 +544,31 @@ def grid_spacing_code(label: str) -> str:
         "Rule of thirds": "Drittel-Raster",
     }.get(label, label)
 
+
+
+TEXTS['de'].update({
+    'look_tooltip': 'Mit LUTs lassen sich Kamerasimulationen und Filmlooks anwenden. Sie verändern Farben, Helligkeit und Kontrast; die Wirkung lässt sich über die Stärke dosieren. Zum Beurteilen der Farben die Kreuzblick-Vorschau verwenden, da Anaglyphen die Farbwiedergabe verändern.',
+    'folder_apply': 'Für Ordner übernehmen…',
+    'folder_commit': 'Übernehmen',
+    'folder_count': '{count} erkannte Stereobilder',
+    'folder_on': 'Ein', 'folder_off': 'Aus',
+    'folder_scope': 'Nur die markierten Einstellungen werden gespeichert. Bilder werden dabei nicht neu justiert oder exportiert.',
+    'folder_progress': 'Einstellungen übernehmen: {index} von {total} Bildern',
+    'folder_done': 'Ordner: {updated} geändert · {unchanged} unverändert · {failed} Fehler',
+    'folder_cancelled': 'Abgebrochen.',
+    'folder_error_log': 'Fehlerdetails: logs/stereofine.log',
+    'folder_no_images': 'Keine passenden Stereobilder im aktuellen Ordner gefunden.',
+})
+TEXTS['en'].update({
+    'look_tooltip': 'LUTs apply camera simulations and film looks. They change colour, brightness and contrast; adjust their effect with Strength. Use the cross-view preview to judge colours, as anaglyphs alter colour reproduction.',
+    'folder_apply': 'Apply to folder…',
+    'folder_commit': 'Apply',
+    'folder_count': '{count} recognised stereo images',
+    'folder_on': 'On', 'folder_off': 'Off',
+    'folder_scope': 'Only checked settings will be saved. Images are not realigned or exported.',
+    'folder_progress': 'Applying settings: {index} of {total} images',
+    'folder_done': 'Folder: {updated} updated · {unchanged} unchanged · {failed} errors',
+    'folder_cancelled': 'Cancelled.',
+    'folder_error_log': 'Error details: logs/stereofine.log',
+    'folder_no_images': 'No matching stereo images found in the current folder.',
+})

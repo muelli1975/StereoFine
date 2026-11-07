@@ -1,8 +1,10 @@
-# StereoFine 1.2
+# StereoFine 1.3
 
-[Downloads und SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.2) · [English](README.md) · [Änderungen](RELEASE_NOTES_1.2.md)
+[Downloads und SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.3) · [English](README.md) · [Änderungen](RELEASE_NOTES_1.3.md)
 
-**Version 1.2:** Optionaler verlustfreier TIFF-SBS-Export mit automatisch erhaltener Farbtiefe von 8 oder 16 Bit pro Kanal. **Z** halten zeigt die native 100-%-Ansicht; mit den Pfeiltasten wird sie fein und beim Halten zunehmend schneller verschoben. Beim Loslassen erscheint wieder die Gesamtansicht. Vorschau und Export verwenden dieselbe Farbangleichung auf Basis des endgültigen Ausschnitts. Fehlgeschlagenes Speichern erhält die Änderungen und verhindert den Export mit alten Einstellungen.
+**Version 1.3:** Ansichtszoom per Maus und Tastatur, Nah-/Fernpunkte, ein Disparitätsmesser mit zwei Klicks, 25 LUT-Looks in vier Gruppen und Import eigener .cube-/HaldCLUT-.png-Dateien mit Stärke-Regler.
+
+**Version 1.2:** Optionaler verlustfreier TIFF-SBS-Export mit automatisch erhaltener Farbtiefe von 8 oder 16 Bit pro Kanal. **Z** halten zeigt die native 100-%-Ansicht; mit den Pfeiltasten wird sie fein und beim Halten zunehmend schneller verschoben. Beim Loslassen erscheint wieder die vorherige Ansicht. Vorschau und Export verwenden dieselbe Farbangleichung auf Basis des endgültigen Ausschnitts. Fehlgeschlagenes Speichern erhält die Änderungen und verhindert den Export mit alten Einstellungen.
 
 **Ausgabe und Vorschau:** „Graustufen-Anaglyphen“ und „Kreuzblick speichern“ stehen unter „Bild und Ausgabe“ und werden unabhängig von der Vorschau gespeichert. Kreuzblick wird farbig als R/L im Ordner `cross` als JPEG mit Qualität 90 und 4:4:4 exportiert. Mit **A** durchlaufen Farbig, Graustufen und Kreuzblick die Vorschau. **M** zeigt im Kreuzblick vorübergehend die zuletzt verwendete Anaglyphenansicht. Nach Beschnitt, Ausschnitt-Zoom oder Ausschnittverschiebung wird die Deviation automatisch neu gemessen; Justage und Scheinfensterrahmung bleiben erhalten. Während der Nachberechnung steht im Status „Berechne …“. Bei jedem Programmstart erscheint die farbige Anaglyphenansicht.
 
@@ -20,16 +22,16 @@ StereoFine arbeitet vollständig lokal: kein Konto, keine Cloud, kein Tracking u
 
 | Plattform | Archiv |
 | --- | --- |
-| Windows x64 | [StereoFine_1.2_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_Windows_x64.zip) |
-| Linux x64 | [StereoFine_1.2_Linux_x64.tar.gz](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_Linux_x64.tar.gz) |
-| macOS Apple Silicon | [StereoFine_1.2_macOS_AppleSilicon.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_macOS_AppleSilicon.zip) |
-| macOS Intel | [StereoFine_1.2_macOS_Intel.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_macOS_Intel.zip) |
+| Windows x64 | [StereoFine_1.3_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_Windows_x64.zip) |
+| Linux x64 | [StereoFine_1.3_Linux_x64.tar.gz](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_Linux_x64.tar.gz) |
+| macOS Apple Silicon | [StereoFine_1.3_macOS_AppleSilicon.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_macOS_AppleSilicon.zip) |
+| macOS Intel | [StereoFine_1.3_macOS_Intel.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_macOS_Intel.zip) |
 
-[SHA-256-Prüfsummen](https://github.com/muelli1975/StereoFine/releases/download/v1.2/SHA256SUMS.txt). Vor dem Start das gesamte Archiv entpacken. Unter macOS `StereoFine.app`, unter Linux `StereoFine` starten.
+[SHA-256-Prüfsummen](https://github.com/muelli1975/StereoFine/releases/download/v1.3/SHA256SUMS.txt). Vor dem Start das gesamte Archiv entpacken. Unter macOS `StereoFine.app`, unter Linux `StereoFine` starten.
 
 Das Windows-Paket ist portabel:
 
-1. [StereoFine_1.2_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_Windows_x64.zip) herunterladen und das Archiv vollständig in einen normalen beschreibbaren Ordner entpacken.
+1. [StereoFine_1.3_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_Windows_x64.zip) herunterladen und das Archiv vollständig in einen normalen beschreibbaren Ordner entpacken.
 2. Den entpackten Ordner `StereoFine` öffnen und `StereoFine.exe` starten.
 3. Den Programmordner zusammenlassen; `tools`, `_internal` und die übrigen mitgelieferten Dateien gehören zur Anwendung.
 
@@ -198,7 +200,7 @@ Programm und im Analysebericht gekennzeichnet.
 
 Soweit möglich kopiert StereoFine Metadaten mit dem gebündelten ExifTool. Preview-, Orientation- und MPF/MPO-Containerdaten werden nicht in normale SBS-/Anaglyph-JPEGs übernommen. Scheitert nur die Metadatenkopie, bleibt ein erfolgreich geschriebenes Bild gültig und StereoFine zeigt einen Hinweis.
 
-## Tastatur
+## Bedienhilfe
 
 ### Navigation
 
@@ -217,7 +219,7 @@ Soweit möglich kopiert StereoFine Metadaten mit dem gebündelten ExifTool. Prev
 ### Ausschnitt
 
 - `Alt` + Pfeiltaste – Ausschnitt verschieben
-- `Strg+Shift+↑/↓` – Zoom
+- `Strg+Shift+↑/↓` – Beschnittzoom
 
 ### Schwebendes Scheinfenster
 
@@ -233,12 +235,35 @@ Soweit möglich kopiert StereoFine Metadaten mit dem gebündelten ExifTool. Prev
 - `M` halten – Messkreuz anzeigen
 - `M` + Pfeiltasten – Messkreuz bewegen
 - `F11` – Vollbild
-- `F1` – Tastaturhilfe
-- `Esc` – Vollbild/Hilfe schließen
+- `D` – Nah-/Fernpunkte ein-/ausblenden (auch unter Vorschau)
+- `Strg` + Mausrad – Ansichtszoom um den Mauszeiger
+- `Strg+Plus/Minus` – Ansichtszoom über die Tastatur
+- Mitteltaste + Ziehen – vergrößerte Ansicht verschieben
+- `Strg+0` oder Doppelklick auf die vergrößerte Ansicht - Ansicht einpassen
+- Rechtsklick - Kontextmenü mit Disparitätsmesser, nur in Anaglyphenansichten
+- Zwei Linksklicks im Messmodus – Start und Ende festlegen
+- `F1` – Bedienhilfe
+- `Esc` - zuerst Menü, Hilfe oder Messmodus schließen, danach Ansicht einpassen, danach Vollbild verlassen
+
+## LUT-Looks
+
+Unter der symmetrischen Farbangleichung aktiviert **LUT anwenden** den gewählten Look. Der Stärke-Regler reicht von 0 bis 100 %. **Import (.cube, .png)** lädt eine eigene 3D-Cube-Datei oder quadratische HaldCLUT-PNG mit 8/16 Bit. Auswahl, Stärke und eigener Dateipfad werden in der bildbezogenen `.sfin` gespeichert; eigene LUT-Dateien müssen an diesem Pfad verfügbar bleiben. Beide Halbbilder erhalten denselben Look. Die Farbverarbeitung erfolgt vor Scheinfenstermasken und Anaglyphenbildung.
+
+Beim Überfahren eines Looks erscheint die Vorschau. Ein Klick übernimmt den Look, Esc behält die vorherige Auswahl bei. Zum Beurteilen der Farben eignet sich der Kreuzblick. Ein Klick auf das LUT-Feld oder das Feld für die eigene SBS-Endung aktiviert die zugehörige Option.
+
+**Für Ordner übernehmen…** zeigt den Eingabeordner und die Anzahl erkannter Stereobilder. Seitenverhältnis, LUT samt Stärke und symmetrische Farbangleichung lassen sich unabhängig auswählen. StereoFine schreibt die gewählten Einstellungen in die Bilddateien mit Endung `.sfin`. Der Dialog zeigt den Fortschritt. Bei Abbruch bleiben bereits gespeicherte Änderungen erhalten. Gespeicherte Bildwerte haben Vorrang vor den Programmvorgaben. Fehlende Einstellungen folgen den aktuellen Vorgaben.
+
+Der Ansichtszoom verändert ausschließlich die Vorschau. Der Beschnittzoom bestimmt den ausgegebenen Bildausschnitt. Bei N/F stehen dieselben Werte wie im Status. Die Kreuze markieren die zugehörigen Bildstellen. Ein Fragezeichen kennzeichnet eine unsichere Punktposition. Ansichts- und Messmarkierungen bleiben in der Vorschau.
+
+Quellen und Lizenzen der Looks: [CREDITS](assets/luts/CREDITS.md).
 
 ## Einstellungen und Sprache
 
+**Standardeinstellungen** unter den Vorschauoptionen setzt die Programmeinstellungen zurück. Sprache, gewählter Ausgabeordner samt Ausgabemodus und Dialogpfade bleiben erhalten. Manuelle Bildkorrekturen werden mit `Strg+R` zurückgesetzt.
+
 Globale Präferenzen werden in `settings.json` direkt bei der portablen Anwendung gespeichert. Bildbezogene Einstellungen gehören ausschließlich in `.sfin`.
+
+Diagnosemeldungen stehen in `logs/stereofine.log`. StereoFine hält zwei ältere Kopien mit höchstens 2 MiB je Datei vor. Eigene Diagnoselogs, die älter als 30 Tage sind, werden beim Start entfernt.
 
 **Nur Analyse** und **Nur Favoriten ausgeben** sind Job-Modi und werden nicht als Dauerzustand gespeichert.
 

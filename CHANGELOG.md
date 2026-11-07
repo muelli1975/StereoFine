@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3 - Unreleased
+
+- Add independent mouse/keyboard view zoom and middle-button panning.
+- Add optional near/far point overlays and an anaglyph-only two-click disparity meter.
+- Add 25 built-in Cube looks in four groups, custom Cube/HaldCLUT import, and 0-100% strength, retained per image.
+- Preview a LUT on hover and optionally apply aspect, LUT and colour matching to a folder.
+- Add Restore defaults while retaining the output destination and language.
+- Fit a magnified view by double-clicking and expand the bilingual Controls guide.
+- Rotate local diagnostic logs and match displayed near/far values to the status display.
+
 ## 1.2 – 2026-11-05 (updated 2026-11-06)
 
 - Base the automatic 3-permille stereo-window reserve on the final half-image width after overlap and the selected aspect/crop zoom, using the smallest sufficient whole-pixel shift. Retain independent displayed measurements and existing saved framing.

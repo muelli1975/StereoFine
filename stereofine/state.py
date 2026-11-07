@@ -3,7 +3,12 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-from .config import AUTO_NEAR_WINDOW_BACK_PERMILLE, normalize_aspect_code, normalize_orientation_code
+from .config import (
+    AUTO_NEAR_WINDOW_BACK_PERMILLE,
+    DEFAULT_LOOK_PRESET_ID,
+    normalize_aspect_code,
+    normalize_orientation_code,
+)
 from .sidecar import SidecarDocument
 from .framing import framed_edges_permille
 
@@ -126,6 +131,7 @@ class DisparityState:
     stale: bool = False
     reference_width_px: int | None = None
     diagnostics: dict[str, Any] = field(default_factory=dict)
+    endpoints: dict[str, Any] = field(default_factory=dict)
 
     def invalidate(self) -> None:
         self.stale = True
@@ -140,6 +146,23 @@ class ColorState:
     parameters: dict[str, Any] = field(default_factory=dict)
     basis: dict[str, Any] = field(default_factory=dict)
     valid: bool = False
+
+
+@dataclass
+class LookState:
+    enabled: bool = False
+    preset_id: str = DEFAULT_LOOK_PRESET_ID
+    path: str = ""
+    strength: float = 1.0
+
+    def normalize(self):
+        import math
+        self.enabled = bool(self.enabled)
+        self.preset_id = str(self.preset_id or DEFAULT_LOOK_PRESET_ID)
+        self.path = str(self.path or "")
+        value = float(self.strength)
+        self.strength = max(0., min(1., value)) if math.isfinite(value) else 1.
+        return self
 
 
 
@@ -239,7 +262,9 @@ class PairState:
     floating_window: FloatingWindowState = field(default_factory=FloatingWindowState)
     disparity: DisparityState = field(default_factory=DisparityState)
     color: ColorState = field(default_factory=ColorState)
+    look: LookState = field(default_factory=LookState)
     warnings: list[str] = field(default_factory=list)
+    preference_fields: list[str] | None = None
 
     @property
     def auto_offset_x_px(self) -> int:
@@ -389,9 +414,11 @@ class PairState:
             "reference_width_px": self.disparity.reference_width_px,
             "valid": bool(self.disparity.valid),
             "stale": bool(self.disparity.stale),
+            "endpoints": dict(self.disparity.endpoints),
         }
 
         return SidecarDocument(
+            preference_fields=self.preference_fields,
             source=source,
             favorite=bool(self.favorite),
             input_state=asdict(self.input_transform),
@@ -401,6 +428,7 @@ class PairState:
             floating_window=asdict(self.floating_window.normalize()),
             disparity=disparity,
             color=asdict(self.color),
+            look=asdict(self.look.normalize()),
         )
 
     @classmethod
@@ -433,6 +461,8 @@ class PairState:
             floating_window=filtered(FloatingWindowState, document.floating_window),
             disparity=filtered(DisparityState, document.disparity),
             color=filtered(ColorState, document.color),
+            look=filtered(LookState, document.look).normalize(),
         )
         state.floating_window.normalize()
+        state.preference_fields = document.preference_fields
         return state

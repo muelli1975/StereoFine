@@ -9,18 +9,29 @@ $BuildDir = Join-Path $Root "build"
 $DistRoot = Join-Path $Root "dist"
 $Dist = Join-Path $DistRoot "StereoFine"
 $ReleaseDir = Join-Path $Root "release"
-$ZipPath = Join-Path $ReleaseDir "StereoFine_1.2_Windows_x64.zip"
+$ZipPath = Join-Path $ReleaseDir "StereoFine_1.3_Windows_x64.zip"
 $SourceOut = Join-Path $Dist "Source"
 $SourceSnapshot = Join-Path $Venv "StereoFine-Source"
 
-Write-Host "StereoFine 1.2 - clean Windows release build"
+Write-Host "StereoFine 1.3 - clean Windows release build"
 Write-Host "Source:" $Root
 
-# Always build the public release from a clean Python environment and clean
-# PyInstaller output. The source tree itself remains untouched.
-foreach ($Path in @($Venv, $BuildDir, $DistRoot, $ReleaseDir)) {
-    if (Test-Path $Path) {
-        Remove-Item -Recurse -Force $Path
+# Keep unrelated builds, input archives and historical releases.
+$ResolvedRoot = (Resolve-Path -LiteralPath $Root).Path.TrimEnd('\')
+foreach ($Path in @($Venv, (Join-Path $BuildDir 'StereoFine'), $Dist)) {
+    if (Test-Path -LiteralPath $Path) {
+        $Target = (Resolve-Path -LiteralPath $Path).Path
+        if (-not $Target.StartsWith($ResolvedRoot + '\', [StringComparison]::OrdinalIgnoreCase)) {
+            throw "Cleanup path is outside the StereoFine checkout: $Target"
+        }
+        $Item = Get-Item -LiteralPath $Target
+        while ($null -ne $Item -and $Item.FullName -ne $ResolvedRoot) {
+            if ($Item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+                throw "Cleanup path contains a reparse point: $($Item.FullName)"
+            }
+            $Item = $Item.Parent
+        }
+        Remove-Item -Recurse -Force -LiteralPath $Target
     }
 }
 
@@ -34,7 +45,7 @@ if (Get-Command py -ErrorAction SilentlyContinue) {
 }
 if (-not $BootstrapPython) {
     $PythonCommand = Get-Command python -ErrorAction Stop
-    & $PythonCommand.Source -c "import sys; assert sys.version_info[:3] == (3, 12, 10), f'StereoFine 1.2 requires Python 3.12.10, got {sys.version}'"
+    & $PythonCommand.Source -c "import sys; assert sys.version_info[:3] == (3, 12, 10), f'StereoFine 1.3 requires Python 3.12.10, got {sys.version}'"
     $BootstrapPython = @($PythonCommand.Source)
 }
 
@@ -46,7 +57,7 @@ else {
 }
 $Python = Join-Path $Venv "Scripts\python.exe"
 
-& $Python -c "import sys; assert sys.version_info[:3] == (3, 12, 10), f'StereoFine 1.2 requires Python 3.12.10 for the reference build, got {sys.version}'; assert sys.maxsize > 2**32, '64-bit Python required'; print(sys.version)"
+& $Python -c "import sys; assert sys.version_info[:3] == (3, 12, 10), f'StereoFine 1.3 requires Python 3.12.10 for the reference build, got {sys.version}'; assert sys.maxsize > 2**32, '64-bit Python required'; print(sys.version)"
 & $Python -m pip install --upgrade pip
 & $Python -m pip install -r requirements-build.txt
 
@@ -165,7 +176,7 @@ $PillowVersion = (& $Python -c "import PIL; print(PIL.__version__)").Trim()
 
 $BuildInfoPath = Join-Path $Dist "BUILD_INFO.txt"
 $BuildLines = @(
-    "StereoFine 1.2",
+    "StereoFine 1.3",
     "Built: $((Get-Date).ToString('yyyy-MM-dd HH:mm:ss K'))",
     "Platform: Windows x64",
     "Python: $PythonVersion",
@@ -185,7 +196,7 @@ if (Test-Path $ZipPath) {
 Compress-Archive -Path $Dist -DestinationPath $ZipPath -CompressionLevel Optimal
 
 $Hash = (Get-FileHash -Algorithm SHA256 $ZipPath).Hash.ToLowerInvariant()
-"$Hash  StereoFine_1.2_Windows_x64.zip" | Set-Content -Encoding ASCII (Join-Path $ReleaseDir "SHA256SUMS.txt")
+"$Hash  StereoFine_1.3_Windows_x64.zip" | Set-Content -Encoding ASCII (Join-Path $ReleaseDir "SHA256SUMS.txt")
 
 Write-Host ""
 Write-Host "Release build created successfully."

@@ -7,6 +7,7 @@ from dataclasses import dataclass, replace
 import re
 import sys
 import time
+import traceback
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox
@@ -27,6 +28,7 @@ from .config import (
     SUPPORTED_IMAGE_EXTENSIONS,
     SUPPORTED_STEREO_SINGLE_EXTENSIONS,
 )
+from .diagnostics import configure_logging, log_failure
 from .geometry import crop_shifted_pair_to_overlap, framing_crop_geometry, clamp_offset_for_size
 from .i18n import (
     Translator,
@@ -40,6 +42,8 @@ from .i18n import (
     orientation_label,
 )
 from .notifications import play_ready_sound
+from .look_controls import LookControlsMixin
+from .view_controls import ViewControlsMixin
 from .output_naming import suffix_label, suffix_labels, suffix_value, validate_sbs_suffix
 from .native_preview import (NativePreviewMixin, native_key, prepare_native_preview, pan_speed, MEASURE_REPEAT_MS,
     MEASURE_HOLD_DELAY_MS, MEASURE_START_SPEED_PX_PER_SEC, MEASURE_MAX_SPEED_PX_PER_SEC,
@@ -157,7 +161,7 @@ PREVIEW_RENDER_MAX_WIDTH = 1600
 PREVIEW_RENDER_MAX_HEIGHT = 1000
 PREVIEW_RESIZE_DEBOUNCE_MS = 150
 
-class StereoFineApp(NativePreviewMixin, ctk.CTk):
+class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ctk.CTk):
     """GUI shell over the GUI-independent processing core."""
 
     def __init__(self) -> None:
@@ -165,6 +169,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         # No CustomTkinter color theme is used as a design source. Every visible
         # color below is explicitly defined by the shared Stereo-Tool standard.
         super().__init__()
+        configure_logging()
 
         self.settings: AppSettings = load_settings()
         self.tr = Translator(self.settings.language)
@@ -234,6 +239,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self.analysis_only = ctk.BooleanVar(value=False)
         self.favorites_only = ctk.BooleanVar(value=False)
         self.float_lr_symmetric = ctk.BooleanVar(value=False)
+        self._init_look_controls()
+        self._init_view_controls()
 
         self.measure_cross_active = False
         self.measure_cross_x: float | None = None
@@ -299,6 +306,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
     def _rebuild_for_language(self) -> None:
         if self.busy_state != "idle":
             return
+        self._cancel_look_hover(refresh=False)
         self._close_shortcuts_help()
         self.tr = Translator(self.settings.language)
         self._sync_localized_display_vars()
@@ -408,8 +416,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self._checkbox_widgets.append(box)
         return box
 
-    def _option_menu(self, parent, *, values: list[str], variable, command=None):
-        menu = ctk.CTkOptionMenu(
+    def _option_menu(self, parent, *, values: list[str], variable, command=None,
+                     menu_class=None, **options):
+        menu = (menu_class or ctk.CTkOptionMenu)(
             parent,
             values=values,
             variable=variable,
@@ -424,6 +433,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             corner_radius=CONTROL_RADIUS,
             font=self._font(13),
             dropdown_font=self._font(13),
+            **options,
         )
         self._lock_widgets.append(menu)
         return menu
@@ -511,6 +521,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self._build_sidebar_header()
         self._build_sidebar_controls()
         self._build_sidebar_bottom()
+        self._bind_view_controls()
 
     def _build_sidebar_header(self) -> None:
         ctk.CTkLabel(
@@ -599,6 +610,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
 
         self.color_match_box = self._checkbox(self.sidebar, self._t("color_match"), self.color_match_enabled, self._on_color_match_changed)
         self.color_match_box.grid(row=row, column=0, sticky="w", padx=20, pady=(0, 8)); row += 1
+        row = self._build_look_controls(self.sidebar, row)
 
         self.tiff_sbs_box = self._checkbox(
             self.sidebar, self._t("tiff_sbs"), self.tiff_sbs, self._persist_settings,
@@ -627,6 +639,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         )
         self.sbs_suffix_menu.grid(row=row, column=0, sticky="ew", padx=(42, 20), pady=(0, 8)); row += 1
         self._lock_widgets.append(self.sbs_suffix_menu)
+        self.sbs_suffix_menu.bind("<ButtonPress-1>", self._activate_sbs_suffix, add="+")
+        for tag in ("right_parts", "dropdown_arrow"):
+            self.sbs_suffix_menu._canvas.tag_bind(tag, "<Button-1>", self._on_sbs_suffix_dropdown)
         self.sbs_suffix_menu.bind("<KeyRelease>", self._on_sbs_suffix_edited, add="+")
         self.sbs_suffix_menu.bind("<FocusOut>", self._on_sbs_suffix_edited, add="+")
         self.sbs_suffix_menu.bind("<FocusIn>", lambda _e: self._reset_keyboard_modes(), add="+")
@@ -699,6 +714,10 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             self._lock_widgets.append(radio)
             self._radio_widgets.append(radio)
 
+        self.deviation_points_box = self._checkbox(self.sidebar, self._t('show_deviation_points'),
+            self.show_deviation_points, self._on_deviation_option_changed)
+        self.deviation_points_box.grid(row=row,column=0,sticky='w',padx=20,pady=(0,8)); row += 1
+
         ctk.CTkLabel(self.sidebar, text=self._t("grid"), text_color=TEXT_PRIMARY, font=self._font(13), anchor="w").grid(
             row=row, column=0, sticky="ew", padx=20, pady=(2, 4)
         ); row += 1
@@ -736,6 +755,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         )
         self.grid_spacing_menu.grid(row=row, column=0, sticky="ew", padx=20, pady=(0, 16)); row += 1
         self._update_grid_control_state()
+        self.defaults_button = self._secondary_button(self.sidebar, self._t('program_defaults'),
+                                                       self.restore_program_defaults)
+        self.defaults_button.grid(row=row,column=0,sticky='ew',padx=20,pady=(0,16))
 
     def _build_sidebar_bottom(self) -> None:
         self.status_separator = self._separator(self.sidebar_bottom, 0)
@@ -1123,8 +1145,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             pass
         if hasattr(self, "sidecar_status_label"):
             self.sidecar_status_label.configure(
-                text=("" if self.current_job_kind == "batch" else
-                      sidecar_status_text(self.current.sidecar if self.current else None, self.settings.language))
+                text=(getattr(self, '_folder_feedback', '') or ("" if self.current_job_kind == "batch" else
+                      sidecar_status_text(self.current.sidecar if self.current else None, self.settings.language)))
             )
         if self._state_save_error:
             labels["warning"].configure(text=self._t("state_save_warning"))
@@ -1257,7 +1279,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             if not enabled:
                 self._release_sbs_suffix_focus()
             self.sbs_suffix_menu.configure(
-                state="normal" if enabled else "disabled",
+                state="disabled" if busy else "normal",
                 text_color=TEXT_PRIMARY if enabled else TEXT_DISABLED,
             )
 
@@ -1284,6 +1306,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
 
         self._update_grid_control_state()
         self._update_favorite_star()
+        self._refresh_look_controls()
 
     def _update_start_button_text(self) -> None:
         if self.busy_state != "idle":
@@ -1367,6 +1390,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         return ProcessingDefaults(
             aspect=self.settings.default_aspect,
             color_enabled=bool(self.settings.color_match_enabled),
+            look_enabled=self.settings.look_enabled, look_preset_id=self.settings.look_preset_id,
+            look_path=self.settings.look_path, look_strength=self.settings.look_strength,
         )
 
     def _navigation_defaults(self) -> ProcessingDefaults:
@@ -1390,6 +1415,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             swap_eyes=bool(transform.swap_eyes),
             aspect=self.settings.default_aspect,
             color_enabled=bool(self.settings.color_match_enabled),
+            look_enabled=self.settings.look_enabled, look_preset_id=self.settings.look_preset_id,
+            look_path=self.settings.look_path, look_strength=self.settings.look_strength,
         )
 
     def _batch_defaults(self) -> ProcessingDefaults:
@@ -1403,6 +1430,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         return self._navigation_defaults()
 
     def _processing_defaults(self) -> ProcessingDefaults:
+        look = self._current_look_option()
         return ProcessingDefaults(
             left_orientation=self.left_orientation.get(),
             right_orientation=self.right_orientation.get(),
@@ -1411,6 +1439,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             swap_eyes=bool(self.swap_eyes.get()),
             aspect=self.output_aspect.get(),
             color_enabled=bool(self.color_match_enabled.get()),
+            look_enabled=look.enabled, look_preset_id=look.preset_id,
+            look_path=look.path, look_strength=look.strength,
         )
 
     def _processing_options(
@@ -1431,8 +1461,6 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
 
     def _persist_settings(self) -> None:
         self.settings.analysis_method = self.analysis_method.get()
-        self.settings.color_match_enabled = bool(self.color_match_enabled.get())
-        self.settings.default_aspect = self.output_aspect.get()
         self.settings.use_input_output_subfolder = bool(self.use_input_subfolder.get())
         self.settings.append_deviation_to_filename = bool(self.append_deviation_to_filename.get())
         self.settings.gray_anaglyph = bool(self.gray_anaglyph.get())
@@ -1440,6 +1468,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self.settings.tiff_sbs = bool(self.tiff_sbs.get())
         self.settings.save_anaglyph = bool(self.save_anaglyph.get())
         self.settings.use_custom_sbs_suffix = bool(self.use_custom_sbs_suffix.get())
+        option = getattr(self, 'show_deviation_points', None)
+        if option is not None:
+            self.settings.show_deviation_points = bool(option.get())
         try:
             save_settings(self.settings)
         except (OSError, ValueError) as exc:
@@ -1447,9 +1478,20 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             # halfway through and leave its checkbox ahead of the actual state.
             if getattr(self, '_settings_save_error', None) != str(exc):
                 self._settings_save_error = str(exc)
+                log_failure("Save program settings", exc)
                 messagebox.showerror(APP_NAME, self._t('settings_save_failed', text=str(exc)))
             return
         self._settings_save_error = None
+
+    def _activate_sbs_suffix(self, _event=None):
+        if self.busy_state == "idle" and not self.use_custom_sbs_suffix.get():
+            self.use_custom_sbs_suffix.set(True)
+            self._on_export_options_changed()
+
+    def _on_sbs_suffix_dropdown(self, event):
+        if self.busy_state == "idle":
+            self._activate_sbs_suffix()
+            self.sbs_suffix_menu._clicked(event)
 
     def _commit_sbs_suffix(self, *, show_error=False) -> bool:
         value = suffix_value(self.sbs_suffix_display.get(), self.settings.language)
@@ -1710,6 +1752,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
     ) -> None:
         if not (0 <= index < len(self.sources)):
             return
+        self._cancel_look_hover(refresh=False)
+        self._folder_feedback = ''
         if rollback_context is None:
             rollback_context = (
                 list(self.sources),
@@ -1755,6 +1799,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         return PreparedSessionPreview(session, native)
 
     def _install_session_preview(self, prepared) -> None:
+        self._reset_view_for_source()
         # Adopt one complete result. The first visible frame already has the
         # master crop; no reduced proxy is replaced after the ready signal.
         if self._native_after_id is not None:
@@ -1802,6 +1847,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self.swap_eyes.set(state.input_transform.swap_eyes)
         self.output_aspect.set(state.framing.aspect)
         self.color_match_enabled.set(state.color.enabled)
+        self._sync_look_from_current()
         self._sync_localized_display_vars()
         # Analysis method is a processing preference, not a per-image GUI
         # default. The status area still shows the method used by this sidecar.
@@ -1853,6 +1899,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             # Keep the current state dirty. Export/navigation/close must retry
             # successfully before reading a sidecar or discarding this session.
             self._state_save_error = str(exc)
+            source = getattr(self.current, "source", None)
+            log_failure("Save image settings", exc, source=getattr(source, "sidecar_path", None))
             self._render_status()
             if explicit:
                 messagebox.showerror(APP_NAME, self._t("state_save_failed", text=str(exc)))
@@ -1896,6 +1944,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         if self.current is None or self.busy_state != "idle":
             return
         state = self.current.state
+        from .preferences import mark_preference
+        mark_preference(state, 'aspect')
         if state.framing.aspect != self.output_aspect.get():
             state.framing.aspect = self.output_aspect.get()
             state.framing.pan_x_permille = 0
@@ -1912,6 +1962,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         if self.current is None or self.busy_state != "idle":
             return
         self.current.state.color.enabled = bool(self.color_match_enabled.get())
+        from .preferences import mark_preference
+        mark_preference(self.current.state, 'color')
         self.current.state.color.strength = 1.0
         self._schedule_state_save()
         self._refresh_preview()
@@ -2059,7 +2111,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
     def _schedule_disparity_refresh(self) -> None:
         self._cancel_disparity_refresh()
         if (self.current is not None and self.busy_state == "idle"
-                and self.current.state.alignment.valid and self.current.state.disparity.stale):
+                and self.current.state.alignment.valid
+                and (self.current.state.disparity.stale or self._needs_endpoint_refresh())):
             self._measurement_after_id = self.after(450, self._run_disparity_refresh)
         self._render_status()
 
@@ -2070,7 +2123,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             self._render_status()
             return
         state = self.current.state
-        if not state.alignment.valid or not state.disparity.stale:
+        if not state.alignment.valid or not (state.disparity.stale or self._needs_endpoint_refresh()):
             self._render_status()
             return
         if self._measurement_running_id and self.measurement_worker.is_running(self._measurement_running_id):
@@ -2100,6 +2153,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
                     self._measurement_job_id = None
                     self._schedule_state_save()
                     self._render_status()
+                    if getattr(self, '_preview_pil', None) is not None:
+                        self._update_preview_display()
                 elif message.kind in {WorkerMessageKind.ERROR, WorkerMessageKind.CANCELLED}:
                     self._measurement_job_id = None
                     if message.kind == WorkerMessageKind.ERROR:
@@ -2184,9 +2239,13 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
                 self._request_native_preview()
             return
         base = self._ensure_preview_base(session, start_image=start_image)
+        state = session.state
+        if getattr(self, '_look_hover_state', None) is not None and session is self.current:
+            state = deepcopy(state)
+            state.look = deepcopy(self._look_hover_state)
         pair = render_preview_from_base(
             base,
-            session.state,
+            state,
             apply_color=not start_image,
             apply_floating_window=not start_image,
             bounds=self._preview_bounds(),
@@ -2207,6 +2266,9 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         """
         if self.detail_active:
             self._show_detail_preview()
+            return
+        if self._inspection_view.active:
+            self._show_inspection_preview()
             return
         if self._preview_pil is None:
             return
@@ -2243,6 +2305,10 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         else:
             self._preview_display_size = display_size
 
+        native_size = self._view_image_size()
+        if self.current is not None and native_size is not None:
+            image = self._decorate_view(image,(0,0,*native_size),native_size)
+
         border = preview_border_px(display_size[0])
         self.preview_label.grid_configure(padx=border, pady=border)
         scaling = self.preview_label._get_widget_scaling()
@@ -2268,6 +2334,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         return self.preview_mode.get()
 
     def _on_preview_mode_changed(self) -> None:
+        if self.preview_mode.get() == 'Kreuzblick':
+            self._end_point_measurement()
         if self.preview_mode.get() != "Kreuzblick":
             self._last_anaglyph_preview_mode = self.preview_mode.get()
         if self._preview_left_current is not None and self._preview_right_current is not None:
@@ -2368,6 +2436,8 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             return
         if not self.analysis_only.get() and not self._commit_sbs_suffix(show_error=True):
             return
+        self._inspection_view.reset()
+        self._end_point_measurement()
         self._batch_progress_index = None
         self._batch_progress_total = None
         self._batch_progress_source_name = None
@@ -2444,7 +2514,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
                 elif message.kind == WorkerMessageKind.RESULT:
                     self._finish_worker_success(message.payload)
                 elif message.kind == WorkerMessageKind.CANCELLED:
-                    self._finish_worker_cancelled()
+                    self._finish_worker_cancelled(message.payload)
                 elif message.kind == WorkerMessageKind.ERROR:
                     self._finish_worker_error(message.payload)
         except queue.Empty:
@@ -2454,6 +2524,11 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             self.after(20, self._poll_worker_messages)
 
     def _handle_progress(self, payload: Any) -> None:
+        if self.current_job_kind == 'folder_settings':
+            dialog = getattr(self, '_folder_dialog', None)
+            if dialog is not None:
+                dialog.update_progress(payload)
+            return
         if not (hasattr(payload, "index") and hasattr(payload, "total")):
             return
 
@@ -2501,6 +2576,10 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
 
     def _finish_worker_success(self, payload: Any) -> None:
         kind = self._finish_busy_common()
+        if kind == 'folder_settings':
+            from .folder_dialog import finish_folder_settings
+            finish_folder_settings(self, payload)
+            return
         if kind == 'analysis' and isinstance(payload, PreparedSessionPreview):
             # The worker result is only provisional until analysis AND its view
             # are ready. A late cancellation must leave the old .sfin untouched.
@@ -2512,6 +2591,7 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
                 payload.session.sidecar = load_sidecar(payload.session.source.sidecar_path,
                                                        expected_source=payload.session.source_stamp)
             except Exception as exc:
+                log_failure("Save completed analysis", exc, source=payload.session.source.sidecar_path)
                 messagebox.showerror(APP_NAME, self._t('state_save_failed', text=str(exc)))
                 self._refresh_preview()
                 return
@@ -2622,8 +2702,12 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             self._request_native_preview()
         return True
 
-    def _finish_worker_cancelled(self) -> None:
+    def _finish_worker_cancelled(self, payload=None) -> None:
         kind = self._finish_busy_common()
+        if kind == 'folder_settings' and payload is not None:
+            from .folder_dialog import finish_folder_settings
+            finish_folder_settings(self, payload)
+            return
         if kind == "load":
             self._restore_load_rollback()
         elif kind in {"batch", "save", "analysis"} and self.current is not None:
@@ -2635,6 +2719,12 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
 
     def _finish_worker_error(self, payload: Any) -> None:
         kind = self._finish_busy_common()
+        log_failure('Worker '+str(kind), payload.get('exception') if isinstance(payload, dict) else payload,
+                    detail=payload.get('traceback', '') if isinstance(payload, dict) else '')
+        if kind == 'folder_settings':
+            dialog = getattr(self, '_folder_dialog', None)
+            if dialog is not None:
+                dialog.destroy(); self._folder_dialog = None
         if kind == "load":
             self._restore_load_rollback()
         elif kind in {"batch", "save", "analysis"} and self.current is not None:
@@ -3091,9 +3181,25 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
             restore_dark_titlebar(self)
 
     def _on_escape(self, _event=None):
+        menu = getattr(self, 'look_menu', None)
+        if menu is not None and menu.popup is not None:
+            menu.close_popup()
+            return 'break'
+        menu = getattr(self, '_view_context_menu', None)
+        if menu is not None and menu.winfo_exists() and menu.winfo_ismapped():
+            menu.unpost()
+            return 'break'
         if self._shortcut_help_window is not None and self._shortcut_help_window.winfo_exists():
             self._close_shortcuts_help()
             return "break"
+        tool = getattr(self, '_measure_tool_var', None)
+        if tool is not None and tool.get():
+            self._end_point_measurement()
+            self._update_preview_display()
+            return 'break'
+        view = getattr(self, '_inspection_view', None)
+        if view is not None and view.active:
+            return self._fit_inspection()
         if self.fullscreen:
             self.toggle_fullscreen()
         return "break"
@@ -3107,121 +3213,16 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         return self.show_shortcuts_help(event)
 
     def show_shortcuts_help(self, _event=None):
-        if self.busy_state != "idle":
-            return "break"
+        if self.busy_state != 'idle':
+            return 'break'
         if self._shortcut_help_window is not None and self._shortcut_help_window.winfo_exists():
             self._shortcut_help_window.lift()
-            self._shortcut_help_window.focus()
-            return "break"
-
-        window = ctk.CTkToplevel(self)
-        self._shortcut_help_window = window
-        window.title(self._t("help_title"))
-        screen_w = max(1, window.winfo_screenwidth())
-        screen_h = max(1, window.winfo_screenheight())
-        help_w = min(960, max(760, screen_w - 120))
-        help_h = min(640, max(560, screen_h - 100))
-        window.geometry(f"{help_w}x{help_h}")
-        window.minsize(min(820, help_w), min(560, help_h))
-        window.resizable(True, True)
-        window.configure(fg_color=APP_BG)
-        window.transient(self)
-        window.protocol("WM_DELETE_WINDOW", self._close_shortcuts_help)
-        window.bind("<Escape>", lambda _e: self._close_shortcuts_help())
-        # F1 is handled once via the application-wide repeat-safe binding.
-
-        frame = ctk.CTkFrame(window, fg_color=PANEL_BG, corner_radius=PANEL_RADIUS)
-        frame.pack(fill="both", expand=True, padx=18, pady=18)
-        frame.grid_columnconfigure(0, weight=1)
-        frame.grid_rowconfigure(1, weight=1)
-
-        ctk.CTkLabel(
-            frame,
-            text=self._t("help_heading"),
-            text_color=GOLD_LIGHT,
-            font=self._font(22, "bold"),
-            anchor="w",
-        ).grid(row=0, column=0, sticky="ew", padx=18, pady=(14, 9))
-
-        content = ctk.CTkFrame(frame, fg_color="transparent")
-        content.grid(row=1, column=0, sticky="nsew", padx=16, pady=(0, 16))
-        content.grid_columnconfigure((0, 1), weight=1, uniform="help")
-        content.grid_rowconfigure(0, weight=1)
-
-        blocks = [block for block in self._t("help_text").split("\n\n") if block.strip()]
-        columns = (blocks[:3], blocks[3:])
-
-        def build_table(parent, column: int, table_blocks: list[str]) -> None:
-            table = ctk.CTkFrame(parent, fg_color=SECONDARY_BG, corner_radius=CONTROL_RADIUS)
-            table.grid(
-                row=0,
-                column=column,
-                sticky="nsew",
-                padx=(0, 5) if column == 0 else (5, 0),
-            )
-            table.grid_columnconfigure(0, minsize=148, weight=0)
-            table.grid_columnconfigure(1, weight=1)
-
-            ctk.CTkLabel(
-                table,
-                text=self._t("help_key_column"),
-                text_color=TEXT_SECONDARY,
-                font=self._font(11, "bold"),
-                anchor="e",
-            ).grid(row=0, column=0, sticky="ew", padx=(10, 9), pady=(8, 5))
-            ctk.CTkLabel(
-                table,
-                text=self._t("help_action_column"),
-                text_color=TEXT_SECONDARY,
-                font=self._font(11, "bold"),
-                anchor="w",
-            ).grid(row=0, column=1, sticky="ew", padx=(9, 10), pady=(8, 5))
-
-            grid_row = 1
-            for block_index, block in enumerate(table_blocks):
-                lines = [line.rstrip() for line in block.splitlines() if line.strip()]
-                if not lines:
-                    continue
-                if block_index:
-                    ctk.CTkFrame(table, height=1, fg_color=BORDER, corner_radius=0).grid(
-                        row=grid_row, column=0, columnspan=2, sticky="ew", padx=10, pady=(4, 4)
-                    )
-                    grid_row += 1
-
-                ctk.CTkLabel(
-                    table,
-                    text=lines[0].strip(),
-                    text_color=TEXT_PRIMARY,
-                    font=self._font(12, "bold"),
-                    anchor="w",
-                ).grid(row=grid_row, column=0, columnspan=2, sticky="ew", padx=10, pady=(1, 3))
-                grid_row += 1
-
-                for line in lines[1:]:
-                    match = re.match(r"^\s*(.*?)\s{2,}(.*?)\s*$", line)
-                    if match:
-                        key_text, action_text = match.groups()
-                    else:
-                        key_text, action_text = line.strip(), ""
-                    ctk.CTkLabel(
-                        table,
-                        text=key_text,
-                        text_color=GOLD_LIGHT,
-                        font=self._font(11, "bold"),
-                        anchor="e",
-                    ).grid(row=grid_row, column=0, sticky="ew", padx=(10, 9), pady=1)
-                    ctk.CTkLabel(
-                        table,
-                        text=action_text,
-                        text_color=TEXT_PRIMARY,
-                        font=self._font(11),
-                        anchor="w",
-                    ).grid(row=grid_row, column=1, sticky="ew", padx=(9, 10), pady=1)
-                    grid_row += 1
-
-        build_table(content, 0, list(columns[0]))
-        build_table(content, 1, list(columns[1]))
-        return "break"
+            self._shortcut_help_window.focus_set()
+            return 'break'
+        self.look_menu.close_popup()
+        from .controls_guide import ControlsGuide
+        self._shortcut_help_window = ControlsGuide(self)
+        return 'break'
 
     def _close_shortcuts_help(self) -> None:
         if self._shortcut_help_window is not None:
@@ -3261,8 +3262,17 @@ class StereoFineApp(NativePreviewMixin, ctk.CTk):
         self.destroy()
 
 
+    def report_callback_exception(self, exc_type, exc, tb):
+        log_failure("Tk callback", exc, detail="".join(traceback.format_exception(exc_type, exc, tb)))
+        super().report_callback_exception(exc_type, exc, tb)
+
+
 def run() -> None:
-    app = StereoFineApp()
-    app.mainloop()
+    try:
+        app = StereoFineApp()
+        app.mainloop()
+    except Exception as exc:
+        log_failure("Program startup or main loop", exc, detail=traceback.format_exc())
+        raise
 
 

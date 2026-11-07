@@ -1,4 +1,4 @@
-"""Pixel references captured from the original full-frame measurement overlay."""
+"""Pixel references for the selected N/F measurement-cross palette."""
 import hashlib
 import json
 from pathlib import Path
@@ -18,8 +18,8 @@ def background(width, height):
 
 
 class MeasurementOverlayTests(unittest.TestCase):
-    def test_optimized_overlay_matches_original_pixels_at_center_and_edges(self):
-        # Recorded before optimizing the renderer at 99924196ba56345c404c9b052487c1de9e432130.
+    def test_measurement_cross_matches_selected_style_at_center_and_edges(self):
+        # Reference: previous renderer at cc46f8b with comparison style B.
         cases = json.loads((Path(__file__).parent/'fixtures/measurement_overlay_reference.json').read_text())
         for case in cases:
             with self.subTest(case=case):

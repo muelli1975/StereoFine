@@ -35,3 +35,9 @@ The pinned pillow-heif 1.8.1 wheel includes the BSD-3-Clause wrapper, libheif 1.
 
 The tiny synthetic stereo fixtures come unchanged from pillow-heif v1.8.1 and retain their BSD notice under `tests/fixtures/heif`.
 
+
+## Supplied colour looks
+
+The LUTs in the development build retain their individual terms. See the [sources, authors and terms](assets/luts/CREDITS.md) and `assets/luts/manifest.json`. Full license texts are in `licenses/`. Film and camera names identify approximations and do not imply endorsement.
+
+Preview text uses the Roboto font supplied with CustomTkinter. Its Apache 2.0 notice is retained in `licenses/Roboto-Apache-2.0.txt`.

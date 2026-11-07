@@ -286,9 +286,9 @@ class FoundationTests(unittest.TestCase):
             self.assertIn("Rotation", text)
             self.assertIn("Anmerkung", text)
             self.assertIn("bild001", text)
-            self.assertIn("19.00‰", text)
-            self.assertIn("0.381 px", text)
-            self.assertIn("-0.0042°", text)
+            self.assertIn("19,00‰", text)
+            self.assertIn("0,381 px", text)
+            self.assertIn("-0,0042°", text)
             self.assertIn("⚠ Einschätzung unsicher – bitte mit M prüfen!", text)
             self.assertNotIn("Modell", text)
             self.assertNotIn("Matches", text)
@@ -1466,7 +1466,7 @@ class ReleaseStatusTests(unittest.TestCase):
         }
         sections = build_status_sections(state, input_text="scene", language="de")
         rows = {row.label: row.value for section in sections for row in section.rows}
-        self.assertEqual(rows["Vergenz (Trapezkorrektur)"], "0.8123 px")
+        self.assertEqual(rows["Vergenz (Trapezkorrektur)"], "0,8123 px")
         self.assertNotIn("V 0", rows["Vergenz (Trapezkorrektur)"])
         model_values = [row.value for section in sections for row in section.rows if row.label == "Modell"]
         self.assertEqual(model_values, ["Affine + Vergence"])
@@ -1476,7 +1476,7 @@ class ReleaseStatusTests(unittest.TestCase):
         state.alignment.correction = compact
         sections = build_status_sections(state, input_text="scene", language="de")
         rows = {row.label: row.value for section in sections for row in section.rows}
-        self.assertEqual(rows["Vergenz (Trapezkorrektur)"], "0.8123 px")
+        self.assertEqual(rows["Vergenz (Trapezkorrektur)"], "0,8123 px")
 
     def test_visible_status_hides_technical_warning_reasons(self):
         from stereofine.status import build_status_sections

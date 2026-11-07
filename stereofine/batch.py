@@ -195,7 +195,7 @@ def run_batch(
             if cancellation is not None:
                 cancellation.raise_if_cancelled()
             if progress:
-                preview_left, preview_right = _export_preview(left, right, processed.loaded_pair.icc_profile)
+                preview_left, preview_right = _export_preview(left, right, getattr(_render_info, 'output_icc_profile', processed.loaded_pair.icc_profile))
                 progress(BatchProgress(index, total, source.display_name, "preview",
                     preview_rgb=(np.concatenate([preview_right, preview_left], axis=1)
                                  if options.preview_mode == "Kreuzblick" else
@@ -211,7 +211,7 @@ def run_batch(
                 save_cross=options.save_cross,
                 tiff_sbs=options.tiff_sbs,
                 sbs_suffix=options.sbs_suffix,
-                icc_profile=processed.loaded_pair.icc_profile,
+                icc_profile=getattr(_render_info, 'output_icc_profile', processed.loaded_pair.icc_profile),
                 metadata_source=source.metadata_source,
                 filename_deviation_permille=(
                     processed.state.disparity.total_permille
@@ -238,6 +238,8 @@ def run_batch(
             # Cancellation is a job state, never a per-image processing error.
             raise
         except Exception as exc:
+            from .diagnostics import log_failure
+            log_failure("Batch image", exc, source=source.sidecar_path)
             message = str(exc)
             result.failed.append((source, message))
             records.append(_error_record(source, message))

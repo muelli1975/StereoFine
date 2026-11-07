@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from .config import ASPECT_RATIOS, normalize_aspect_code
+from .config import ASPECT_RATIOS, DEFAULT_LOOK_PRESET_ID, normalize_aspect_code
 from .resources import settings_path
 from .output_naming import validate_sbs_suffix
 
@@ -31,6 +31,12 @@ class AppSettings:
     save_anaglyph: bool = True
     use_custom_sbs_suffix: bool = False
     sbs_suffix: str = "_cs"
+    look_enabled: bool = False
+    look_preset_id: str = DEFAULT_LOOK_PRESET_ID
+    look_path: str = ""
+    look_strength: float = 1.0
+    last_lut_location: str = ""
+    show_deviation_points: bool = False
 
     def normalize(self) -> "AppSettings":
         self.schema_version = SETTINGS_SCHEMA_VERSION
@@ -50,6 +56,12 @@ class AppSettings:
         self.tiff_sbs = bool(self.tiff_sbs)
         self.save_anaglyph = bool(self.save_anaglyph)
         self.use_custom_sbs_suffix = bool(self.use_custom_sbs_suffix)
+        from .state import LookState
+        look = LookState(self.look_enabled, self.look_preset_id,
+                         self.look_path, self.look_strength).normalize()
+        self.look_enabled, self.look_preset_id = look.enabled, look.preset_id
+        self.look_path, self.look_strength = look.path, look.strength
+        self.show_deviation_points = bool(self.show_deviation_points)
         try:
             self.sbs_suffix = validate_sbs_suffix(self.sbs_suffix)
         except ValueError:
@@ -74,6 +86,14 @@ class AppSettings:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self.normalize())
+
+    def restored_defaults(self) -> "AppSettings":
+        """Reset parameters while retaining language and dialog/output choices."""
+        fresh = AppSettings()
+        for name in ("language", "last_input_location", "last_lut_location",
+                     "custom_output_folder", "use_input_output_subfolder"):
+            setattr(fresh, name, getattr(self, name))
+        return fresh
 
 
 def load_settings(path: Path | None = None) -> AppSettings:

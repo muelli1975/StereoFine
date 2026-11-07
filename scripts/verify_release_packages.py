@@ -15,20 +15,22 @@ else:
     from package_source import ROOT, committed_sources
 
 PACKAGES = {
-    'StereoFine_1.2_Windows_x64.zip': 'windows',
-    'StereoFine_1.2_Linux_x64.tar.gz': 'linux',
-    'StereoFine_1.2_macOS_AppleSilicon.zip': 'arm64',
-    'StereoFine_1.2_macOS_Intel.zip': 'intel',
+    'StereoFine_1.3_Windows_x64.zip': 'windows',
+    'StereoFine_1.3_Linux_x64.tar.gz': 'linux',
+    'StereoFine_1.3_macOS_AppleSilicon.zip': 'arm64',
+    'StereoFine_1.3_macOS_Intel.zip': 'intel',
 }
 ASSETS = {'stereofine.jpg', 'stereofine.ico', 'stereofine.icns', 'ready.wav'}
-
-
 def verify_archive(path: Path, platform: str, expected: dict[str, bytes]) -> dict:
     sources = {}
     assets = set()
     binary = None
     helper = False
     tool = exif_version = notes = cms = False
+    resources = ('StereoFine/StereoFine.app/Contents/Resources/'
+                 if platform in {'arm64', 'intel'} else 'StereoFine/_internal/')
+    expected_luts = {name for name in expected if name.startswith('assets/luts/')}
+    packaged_luts = set()
 
     def inspect(name: str, read) -> None:
         nonlocal binary, helper, tool, exif_version, notes, cms
@@ -37,6 +39,20 @@ def verify_archive(path: Path, platform: str, expected: dict[str, bytes]) -> dic
         if '/Source/' in name:
             sources[name.split('/Source/', 1)[1]] = read()
             return
+        if '/private-build-assets/' in name or name.endswith('/Autumn LUT #1.cube'):
+            raise RuntimeError(f'Unexpected private resource in {path.name}')
+        if name.startswith(resources + 'assets/luts/'):
+            relative = name.removeprefix(resources)
+            expected_content = expected.get(relative)
+            content = read()
+            if expected_content is None or (
+                content != expected_content and (
+                    relative.endswith(('.cube', '.png'))
+                    or content.replace(b'\r\n', b'\n') != expected_content.replace(b'\r\n', b'\n')
+                )
+            ):
+                raise RuntimeError(f'Changed or unexpected packaged LUT asset: {name}')
+            packaged_luts.add(relative)
         leaf = name.rsplit('/', 1)[-1]
         if '/assets/' in name and leaf in ASSETS:
             if read() != (ROOT / 'assets' / leaf).read_bytes():
@@ -55,9 +71,9 @@ def verify_archive(path: Path, platform: str, expected: dict[str, bytes]) -> dic
         if '/tools/' in name and name.endswith('/Image/ExifTool.pm'):
             body = read()
             exif_version = b"$VERSION = '13.59'" in body or b'$VERSION = "13.59"' in body
-        if name == 'StereoFine/RELEASE_NOTES_1.2.md':
+        if name == 'StereoFine/RELEASE_NOTES_1.3.md':
             # Windows checkout text uses CRLF; canonical Source stays byte-exact.
-            notes = read().replace(b'\r\n', b'\n') == expected['RELEASE_NOTES_1.2.md'].replace(b'\r\n', b'\n')
+            notes = read().replace(b'\r\n', b'\n') == expected['RELEASE_NOTES_1.3.md'].replace(b'\r\n', b'\n')
 
     if path.name.endswith('.tar.gz'):
         with tarfile.open(path, 'r|gz') as archive:
@@ -72,6 +88,8 @@ def verify_archive(path: Path, platform: str, expected: dict[str, bytes]) -> dic
     if sources != expected:
         changed = sorted(k for k in sources.keys() | expected.keys() if sources.get(k) != expected.get(k))
         raise RuntimeError(f'{path.name}: source mismatch: {changed}')
+    if packaged_luts != expected_luts:
+        raise RuntimeError(f'{path.name}: incomplete built-in LUT resources')
     if not binary or assets != ASSETS or not all([helper, tool, exif_version, notes, cms]):
         raise RuntimeError(f'{path.name}: binary={bool(binary)}, assets={sorted(assets)}, '
                            f'tool={tool}, exif_version={exif_version}, notes={notes}')
@@ -94,7 +112,7 @@ def verify_archive(path: Path, platform: str, expected: dict[str, bytes]) -> dic
 
 def main(folder: Path) -> None:
     if not set(PACKAGES).issubset({p.name for p in folder.iterdir()}):
-        raise RuntimeError('Expected all four native 1.2 packages')
+        raise RuntimeError('Expected all four native 1.3 packages')
     commit, expected = committed_sources()
     expected['SOURCE_COMMIT.txt'] = (commit + '\n').encode()
     for name, platform in PACKAGES.items():

@@ -412,6 +412,10 @@ def _analyze_horizontal_disparity(
     _classify_range(classification)
     traffic, status = classification['traffic'], classification['status']
 
+    from .endpoints import locate_endpoints
+    endpoints = locate_endpoints(disp_l_raw, confidence_mask, near_confirmation,
+                                 far_confirmation, low_edge, high_edge)
+
     return {
         "ready": True,
         "status": status,
@@ -436,6 +440,7 @@ def _analyze_horizontal_disparity(
         "deviation_method": "percentile_1_confirmed_near",
         "near_confirmation": near_confirmation,
         "far_confirmation": far_confirmation,
+        "endpoints": endpoints,
         "deviation_permille_0_5_99_5": float(deviation_permille_0_5_99_5),
         "deviation_permille_2_98": float(deviation_permille_2_98),
         "uncertain_reasons": uncertain_reasons,

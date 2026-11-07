@@ -9,7 +9,13 @@ from typing import Any, Callable, Iterable
 import numpy as np
 
 from .alignment import analyze_pair_features
-from .config import ALIGNMENT_ANALYSIS_MAX_WIDTH, AUTO_NEAR_WINDOW_BACK_PERMILLE, CROP_ZOOM_LEVELS, DISPARITY_ANALYSIS_MAX_WIDTH
+from .config import (
+    ALIGNMENT_ANALYSIS_MAX_WIDTH,
+    AUTO_NEAR_WINDOW_BACK_PERMILLE,
+    CROP_ZOOM_LEVELS,
+    DEFAULT_LOOK_PRESET_ID,
+    DISPARITY_ANALYSIS_MAX_WIDTH,
+)
 from .disparity import (
     analyze_horizontal_disparity,
     json_safe_disparity_summary,
@@ -37,6 +43,10 @@ class ProcessingDefaults:
     swap_eyes: bool = False
     aspect: str = "original"
     color_enabled: bool = True
+    look_enabled: bool = False
+    look_preset_id: str = DEFAULT_LOOK_PRESET_ID
+    look_path: str = ""
+    look_strength: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -186,6 +196,9 @@ def _apply_processing_defaults(state: PairState, defaults: ProcessingDefaults) -
     state.framing.aspect = defaults.aspect
     state.color.enabled = defaults.color_enabled
     state.color.strength = 1.0
+    from .state import LookState
+    state.look = LookState(defaults.look_enabled, defaults.look_preset_id,
+                           defaults.look_path, defaults.look_strength).normalize()
 
 
 def _store_alignment_result(state: PairState, result: dict[str, Any], basis: dict[str, Any]) -> None:
@@ -240,6 +253,7 @@ def _store_disparity_result(
         valid=bool(valid),
         stale=False,
         diagnostics=summary,
+        endpoints=dict(result.get("endpoints") or {}),
     )
 
     if not update_framing:
@@ -280,9 +294,12 @@ def refresh_current_disparity(loaded: LoadedStereoPair, state: PairState, *, can
     from .render import render_final_pair
     token = cancellation or _NullCancellationToken()
     token.raise_if_cancelled()
-    left, right, _ = render_final_pair(loaded, state, apply_color=False, apply_floating_window=False)
+    left, right, info = render_final_pair(loaded, state, apply_color=False, apply_floating_window=False)
     token.raise_if_cancelled()
     result = analyze_horizontal_disparity(master_to_uint8(left), master_to_uint8(right), DISPARITY_ANALYSIS_MAX_WIDTH)
+    from .endpoints import to_master
+    result['endpoints'] = to_master(result.get('endpoints') or {}, state,
+                                    info.aligned_shape, info.input_aspect)
     token.raise_if_cancelled()
     _store_disparity_result(state, result, basis=current_disparity_basis(state),
                             base_width_px=left.shape[1], update_framing=False)
@@ -345,6 +362,9 @@ def process_source(
         raise ValueError("Die Quelldatei wurde seit dem Laden verändert. Bitte das Bild erneut öffnen, bevor es gespeichert wird.")
     load_result = load_sidecar(source.sidecar_path, expected_source=source_stamp)
     state = _state_from_sidecar(load_result)
+    if load_result.document is not None and load_result.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
+        from .preferences import inherit_missing_preferences
+        inherit_missing_preferences(state, options.defaults, load_result.document)
     if load_result.document is None or load_result.status not in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
         _apply_processing_defaults(state, options.defaults)
     # Pipeline mismatches invalidate only the affected calculated cache.  User

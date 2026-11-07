@@ -11,6 +11,7 @@ import plistlib
 import shutil
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import time
 
@@ -19,14 +20,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def archive_spec(candidate, commit, system, machine):
     if not candidate:
-        return f'StereoFine_1.2-dev_{commit[:8]}_{system}_{machine}', 'zip'
+        return f'StereoFine_1.3-dev_{commit[:8]}_{system}_{machine}', 'zip'
     if system == 'Windows' and machine.lower() in {'amd64', 'x86_64'}:
-        return 'StereoFine_1.2_Windows_x64', 'zip'
+        return 'StereoFine_1.3_Windows_x64', 'zip'
     if system == 'Linux' and machine.lower() in {'amd64', 'x86_64'}:
-        return 'StereoFine_1.2_Linux_x64', 'gztar'
+        return 'StereoFine_1.3_Linux_x64', 'gztar'
     if system == 'macOS' and machine.lower() in {'arm64', 'aarch64', 'x86_64'}:
         architecture = 'Intel' if machine.lower() == 'x86_64' else 'AppleSilicon'
-        return f'StereoFine_1.2_macOS_{architecture}', 'zip'
+        return f'StereoFine_1.3_macOS_{architecture}', 'zip'
     raise ValueError(f'Unsupported release target: {system}/{machine}')
 
 
@@ -40,11 +41,11 @@ def require_candidate_version(root):
                 if isinstance(target, ast.Name) and target.id == 'APP_VERSION':
                     values[target.id] = ast.literal_eval(statement.value)
     info = (root/'version_info.txt').read_text('utf-8')
-    if (values.get('APP_VERSION') != '1.2'
-            or "StringStruct('FileVersion', '1.2')" not in info
-            or "StringStruct('ProductVersion', '1.2')" not in info
+    if (values.get('APP_VERSION') != '1.3'
+            or "StringStruct('FileVersion', '1.3')" not in info
+            or "StringStruct('ProductVersion', '1.3')" not in info
             or 'flags=0x0,' not in info):
-        raise RuntimeError('Final candidates require APP_VERSION and Windows metadata set to 1.2 without prerelease flags.')
+        raise RuntimeError('Final candidates require APP_VERSION and Windows metadata set to 1.3 without prerelease flags.')
 
 
 def run(*arguments):
@@ -54,15 +55,26 @@ def run(*arguments):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--skip-helper-build', action='store_true')
-    parser.add_argument('--candidate', action='store_true', help='Require final 1.2 metadata; build without publishing')
+    parser.add_argument('--reuse-native-tools', action='store_true',
+                        help='Reuse an already prepared complete native tools tree')
+    parser.add_argument('--candidate', action='store_true', help='Require final 1.3 metadata; build without publishing')
     parser.add_argument('--fixtures', type=Path, default=ROOT/'tests/fixtures/heif')
     args = parser.parse_args()
     if args.candidate:
         require_candidate_version(ROOT)
     build_kind = 'candidate' if args.candidate else 'development'
-    run(sys.executable, 'scripts/prepare_lcms.py')
-    if not args.skip_helper_build:
-        run(sys.executable, 'scripts/prepare_heif.py')
+    if args.reuse_native_tools:
+        cms_name = ('lcms2.dll' if sys.platform == 'win32' else
+                    'liblcms2.dylib' if sys.platform == 'darwin' else 'liblcms2.so')
+        helper_name = 'StereoFine-HEIF.exe' if sys.platform == 'win32' else 'StereoFine-HEIF'
+        for relative in ('lcms/'+cms_name, 'heif/'+helper_name,
+                         'heif/BUILD_SOURCES.json', 'heif/BUILD_READER.json'):
+            if not (ROOT/'tools'/relative).is_file():
+                raise RuntimeError('Prepared native tool is missing: '+relative)
+    else:
+        run(sys.executable, 'scripts/prepare_lcms.py')
+        if not args.skip_helper_build:
+            run(sys.executable, 'scripts/prepare_heif.py')
     # Snapshot before PyInstaller touches generated files. Canonical tracked blobs.
     snapshot = ROOT/f'build/{build_kind}-source'
     if snapshot.exists(): shutil.rmtree(snapshot)
@@ -94,15 +106,23 @@ def main():
         target = tools_root/path.name
         if path.is_dir(): shutil.copytree(path, target)
         else: shutil.copy2(path, target)
-    for name in ('README_DE.md', 'README_EN.md', 'LICENSE.txt', 'THIRD_PARTY_NOTICES.md', 'RELEASE_NOTES_1.2.md'):
+    for name in ('README_DE.md', 'README_EN.md', 'LICENSE.txt', 'THIRD_PARTY_NOTICES.md', 'RELEASE_NOTES_1.3.md'):
         shutil.copy2(ROOT/name, package/name)
     shutil.copytree(ROOT/'licenses', package/'licenses')
+    python_license = next((path for path in (
+        Path(sys.base_prefix)/'LICENSE.txt',
+        Path(sys.base_prefix)/'LICENSE',
+        Path(sysconfig.get_path('stdlib'))/'LICENSE.txt',
+    ) if path.is_file()), None)
+    if python_license is None:
+        raise RuntimeError('The build Python installation is missing its runtime license.')
+    shutil.copy2(python_license, package/'licenses/Python-3.12.10-LICENSE.txt')
     shutil.copytree(snapshot, package/'Source')
     run(sys.executable, 'scripts/package_source.py', '--verify', package/'Source')
     if args.candidate and sys.platform == 'darwin':
         info = package/'StereoFine.app/Contents/Info.plist'
         data = plistlib.loads(info.read_bytes())
-        data.update(CFBundleShortVersionString='1.2', CFBundleVersion='1.2.0',
+        data.update(CFBundleShortVersionString='1.3', CFBundleVersion='1.3.0',
                     CFBundleIdentifier='org.stereotools.stereofine')
         info.write_bytes(plistlib.dumps(data))
         run('codesign', '--force', '--deep', '--sign', '-', package/'StereoFine.app')
@@ -117,7 +137,7 @@ def main():
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
     marker = 'BUILD_INFO.txt' if args.candidate else 'DEVELOPMENT_BUILD.txt'
     (package/marker).write_text(
-        f'StereoFine 1.2\nCommit: {commit}\nPlatform: {platform.system()} {platform.machine()}\n'
+        f'StereoFine 1.3\nCommit: {commit}\nPlatform: {platform.system()} {platform.machine()}\n'
         'Build checks and SHA-256 manifest accompany the release.\n', 'utf-8')
     label = {'win32': 'Windows', 'darwin': 'macOS'}.get(sys.platform, 'Linux')
     name, archive_format = archive_spec(args.candidate, commit, label, platform.machine())

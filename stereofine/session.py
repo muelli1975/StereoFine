@@ -55,6 +55,9 @@ def _apply_defaults(state: PairState, defaults: ProcessingDefaults) -> None:
     state.framing.aspect = defaults.aspect
     state.color.enabled = defaults.color_enabled
     state.color.strength = 1.0
+    from .state import LookState
+    state.look = LookState(defaults.look_enabled, defaults.look_preset_id,
+                           defaults.look_path, defaults.look_strength).normalize()
 
 
 def browse_source(source: StereoSource, defaults: ProcessingDefaults = ProcessingDefaults()) -> BrowsedSource:
@@ -71,6 +74,8 @@ def browse_source(source: StereoSource, defaults: ProcessingDefaults = Processin
 
     if sidecar.document is not None and sidecar.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
         state = PairState.from_sidecar(sidecar.document)
+        from .preferences import inherit_missing_preferences
+        inherit_missing_preferences(state, defaults, sidecar.document)
         # Cached calculations may be obsolete while user intent remains useful.
         if not sidecar.alignment_cache_valid:
             state.alignment.valid = False

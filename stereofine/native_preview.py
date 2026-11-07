@@ -22,6 +22,7 @@ from .preview import draw_grid_overlay, draw_measure_cross_overlay
 from .render import _stable_digest, render_final_pair, match_final_pair_color
 from .state import reproducible_alignment_correction
 from .worker import WorkerManager, WorkerMessageKind
+from .look_controls import preview_look
 
 MEASURE_REPEAT_MS = 16
 MEASURE_HOLD_DELAY_MS = 200
@@ -62,18 +63,21 @@ def fit_display_pair(left, right, bounds):
                  for eye in (left, right))
 
 
-def detail_texture_key(key, window, mode):
-    return key, tuple(asdict(window).items()), mode
+def detail_texture_key(key, window, mode, look=None):
+    from .looks import look_signature
+    return key, tuple(asdict(window).items()), mode, look_signature(look)
 
 
-def prepare_detail_texture(key, left, right, window, mode, token):
+def prepare_detail_texture(key, left, right, window, mode, token, look=None):
     token.raise_if_cancelled()
+    from .looks import apply_pair_look
+    left, right = apply_pair_look(left, right, look)
     a, b = apply_floating_window_masks(left, right, window.left_permille,
         window.right_permille, window.top_permille, window.bottom_permille)
     pixels = (np.concatenate([b, a], axis=1) if mode == 'Kreuzblick' else
               make_anaglyph(a, b, gray=mode == 'Graustufen'))
     token.raise_if_cancelled()
-    return detail_texture_key(key, window, mode), Image.fromarray(pixels)
+    return detail_texture_key(key, window, mode, look), Image.fromarray(pixels)
 
 
 def prepare_native_preview(loaded, state, key, bounds, token, mode='Farbig', *, preview_base=None):
@@ -157,6 +161,8 @@ class NativePreviewMixin:
         self._detail_texture_worker.cancel_all()
         for timer in [self._native_after_id, self._native_poll_id, self._detail_release_id, self._detail_repeat_job,
                       self._detail_texture_after_id, self._detail_texture_poll_id,
+                      getattr(self, '_fit_notice_job', None), getattr(self, '_look_settings_job', None),
+                      getattr(self, '_look_hover_job', None),
                       *self._detail_arrow_releases.values(), *self._mode_release_ids.values()]:
             if timer is not None:
                 try:
@@ -235,6 +241,9 @@ class NativePreviewMixin:
                         if not self._native_deferred:
                             self._apply_native_preview()
                 elif message.kind == WorkerMessageKind.ERROR:
+                    from .diagnostics import log_failure
+                    log_failure("Native preview", message.payload['exception'],
+                                detail=message.payload.get('traceback', ''))
                     self._native_failed_key = self._native_running_key
                     if self.current is not None and self._native_running_key == native_key(self.current):
                         exc = message.payload['exception']
@@ -275,7 +284,8 @@ class NativePreviewMixin:
             color.strength = self.current.state.color.strength
             changed = color != self.current.state.color
             self.current.state.color = color
-            if changed and getattr(self.current, 'sidecar', None) is not None:
+            if (changed and getattr(self.current, 'sidecar', None) is not None
+                    and getattr(self, '_look_hover_state', None) is None):
                 from .sidecar import SidecarStatus
                 if self.current.sidecar.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
                     self._schedule_state_save(create_if_missing=False)
@@ -287,6 +297,8 @@ class NativePreviewMixin:
                 self._request_native_preview(immediate=True)
                 return True
             self._show_detail_preview()
+        elif getattr(self, '_inspection_view', None) is not None and self._inspection_view.active:
+            self._show_inspection_preview()
         else:
             if fitted and (not native or not self._native_views_need_resize()):
                 a, b = self._native_views[2][self.current.state.color.enabled]
@@ -330,13 +342,15 @@ class NativePreviewMixin:
         self._mode_release_ids[mode] = self.after_idle(released)
 
     def _mask_preview_pair(self, left, right, **kwargs):
+        from .looks import apply_pair_look
+        left, right = apply_pair_look(left, right, preview_look(self))
         fw = self.current.state.floating_window
         return apply_floating_window_masks(left, right, fw.left_permille, fw.right_permille,
                                            fw.top_permille, fw.bottom_permille, **kwargs)
 
     def _detail_texture_signature(self):
         return detail_texture_key(native_key(self.current), self.current.state.floating_window,
-                                  self._effective_preview_mode())
+                                  self._effective_preview_mode(), preview_look(self))
 
     def _request_detail_texture(self):
         if self._detail_texture_cache is not None and self._detail_texture_cache[0] == self._detail_texture_signature():
@@ -353,9 +367,10 @@ class NativePreviewMixin:
         key, left, right = self._native_cache
         window = deepcopy(self.current.state.floating_window)
         mode = self._effective_preview_mode()
-        self._detail_texture_running_key = detail_texture_key(key, window, mode)
+        look = deepcopy(preview_look(self))
+        self._detail_texture_running_key = detail_texture_key(key, window, mode, look)
         def render(token, _progress):
-            return prepare_detail_texture(key, left, right, window, mode, token)
+            return prepare_detail_texture(key, left, right, window, mode, token, look)
         self._detail_texture_job_id = self._detail_texture_worker.start(render,
             name='StereoFine-detail-texture').job_id
         self._detail_texture_poll_id = self.after(16, self._poll_detail_texture)
@@ -373,13 +388,19 @@ class NativePreviewMixin:
                         self._detail_texture_cache = message.payload
                         if self.detail_active:
                             self._show_detail_preview()
+                        elif getattr(self, '_inspection_view', None) is not None and self._inspection_view.active:
+                            self._show_inspection_preview()
                 elif message.kind == WorkerMessageKind.ERROR:
+                    from .diagnostics import log_failure
+                    log_failure("Detail preview", message.payload['exception'],
+                                detail=message.payload.get('traceback', ''))
                     self._detail_texture_failed_key = self._detail_texture_running_key
         except queue.Empty:
             pass
         if self._detail_texture_job_id:
             self._detail_texture_poll_id = self.after(16, self._poll_detail_texture)
-        elif self.detail_active and self.current is not None:
+        elif (self.detail_active or (getattr(self, '_inspection_view', None) is not None
+                                   and self._inspection_view.active)) and self.current is not None:
             if self._detail_texture_cache is None or self._detail_texture_cache[0] != self._detail_texture_signature():
                 self._request_detail_texture()
 
@@ -425,6 +446,8 @@ class NativePreviewMixin:
                                                reference_width=left.shape[1])
             self._measure_display_size = image.size
         # CTkImage sizes are logical units; its backing PIL image is physical.
+        if hasattr(self, '_decorate_view'):
+            image = self._decorate_view(image, box, (left.shape[1], left.shape[0]), detail=True)
         # Dividing here prevents a second enlargement at 125/150/200% DPI.
         scaling = self.preview_label._get_widget_scaling()
         logical_size = (image.width / scaling, image.height / scaling)

@@ -1,6 +1,8 @@
-# StereoFine 1.2
+# StereoFine 1.3
 
-[Downloads and SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.2) · [Deutsch](README_DE.md) · [Changes](RELEASE_NOTES_1.2.md)
+[Downloads and SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.3) · [Deutsch](README_DE.md) · [Changes](RELEASE_NOTES_1.3.md)
+
+**Version 1.3:** Mouse and keyboard view zoom, near/far markers, a two-click disparity meter, and 25 LUT looks in four groups with custom .cube/HaldCLUT .png import and adjustable strength.
 
 **Version 1.2:** Optional lossless TIFF SBS export retains 8 or 16 bits per channel automatically. Hold **Z** for a native 100% view; pan with the arrow keys, accelerating when held and release **Z** to return. Preview and output use the same final-crop colour matching. Failed sidecar writes retain your edits and prevent export with old settings.
 
@@ -20,16 +22,16 @@ StereoFine works completely locally: no account, no cloud, no tracking and no au
 
 | Platform | Archive |
 | --- | --- |
-| Windows x64 | [StereoFine_1.2_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_Windows_x64.zip) |
-| Linux x64 | [StereoFine_1.2_Linux_x64.tar.gz](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_Linux_x64.tar.gz) |
-| macOS Apple Silicon | [StereoFine_1.2_macOS_AppleSilicon.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_macOS_AppleSilicon.zip) |
-| macOS Intel | [StereoFine_1.2_macOS_Intel.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_macOS_Intel.zip) |
+| Windows x64 | [StereoFine_1.3_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_Windows_x64.zip) |
+| Linux x64 | [StereoFine_1.3_Linux_x64.tar.gz](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_Linux_x64.tar.gz) |
+| macOS Apple Silicon | [StereoFine_1.3_macOS_AppleSilicon.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_macOS_AppleSilicon.zip) |
+| macOS Intel | [StereoFine_1.3_macOS_Intel.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_macOS_Intel.zip) |
 
-[SHA-256 checksums](https://github.com/muelli1975/StereoFine/releases/download/v1.2/SHA256SUMS.txt). Extract the entire archive before starting the application. On macOS open `StereoFine.app`; on Linux start `StereoFine`.
+[SHA-256 checksums](https://github.com/muelli1975/StereoFine/releases/download/v1.3/SHA256SUMS.txt). Extract the entire archive before starting the application. On macOS open `StereoFine.app`; on Linux start `StereoFine`.
 
 The Windows package is portable:
 
-1. Download [StereoFine_1.2_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.2/StereoFine_1.2_Windows_x64.zip) and extract the complete archive into a normal writable folder.
+1. Download [StereoFine_1.3_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_Windows_x64.zip) and extract the complete archive into a normal writable folder.
 2. Open the extracted `StereoFine` folder and start `StereoFine.exe`.
 3. Keep the application folder together; `tools`, `_internal` and the other supplied files belong to the application.
 
@@ -195,7 +197,7 @@ the application and analysis report. No number is added when a current measureme
 
 Where possible, StereoFine copies metadata using the bundled ExifTool. Preview, Orientation and MPF/MPO container metadata are not copied into ordinary SBS/anaglyph JPEG files. If only metadata copying fails, a successfully written image remains valid and StereoFine shows a warning.
 
-## Keyboard
+## Controls
 
 ### Navigation
 
@@ -214,7 +216,7 @@ Where possible, StereoFine copies metadata using the bundled ExifTool. Preview, 
 ### Crop
 
 - `Alt` + Arrow – move crop
-- `Ctrl+Shift+↑/↓` – zoom
+- `Ctrl+Shift+↑/↓` – crop zoom
 
 ### Floating Window
 
@@ -230,12 +232,35 @@ Where possible, StereoFine copies metadata using the bundled ExifTool. Preview, 
 - hold `M` – show measurement cross
 - `M` + Arrow keys – move measurement cross
 - `F11` – fullscreen
-- `F1` – keyboard help
-- `Esc` – close fullscreen/help
+- `D` – toggle near/far points (also under Preview)
+- `Ctrl` + Mouse wheel – view zoom around the pointer
+- `Ctrl+Plus/Minus` – keyboard view zoom
+- Middle-button drag – pan magnified view
+- `Ctrl+0` or double-click the magnified view - fit image
+- Right click – context menu with disparity meter, in anaglyph previews only
+- Two left clicks in measurement mode – set start and end
+- `F1` – Controls guide
+- `Esc` - close the menu, help or measurement mode first, then fit a magnified view, then leave fullscreen
+
+## LUT looks
+
+Below symmetric colour matching, **Apply LUT** enables the selected look. Strength ranges from 0 to 100%. **Import (.cube, .png)** loads a custom 3D Cube file or square 8/16-bit HaldCLUT PNG. The per-image `.sfin` stores selection, strength and the custom file path; custom LUT files must remain available at that path. Both eyes receive the same look, before floating-window masks and anaglyph conversion.
+
+Hover over a look to preview it, click to apply it, or press Esc to keep the previous selection. Use Cross-view to judge colours. Clicking the LUT or custom SBS suffix field enables its corresponding option.
+
+**Apply to folder…** lists the input folder and the number of recognised stereo images. Select any combination of aspect ratio, LUT including strength, and symmetric colour matching. StereoFine writes those choices to the image settings files. The dialog shows progress, and cancelling keeps completed updates. Individual image settings take precedence over program defaults. Missing settings follow the current defaults.
+
+View zoom only changes the preview. Crop zoom determines the exported image area. N/F labels use the same values and formatting as the status display. The markers show the corresponding image evidence, with a question mark when its location is uncertain. View and measurement annotations stay in the preview.
+
+Look sources and terms: [CREDITS](assets/luts/CREDITS.md).
 
 ## Settings and language
 
+**Restore defaults**, below the preview options, resets program options while retaining the language, selected output destination and destination mode, and dialog locations. Use `Ctrl+R` to reset manual image corrections.
+
 Global preferences are stored in `settings.json` next to the portable application. Image-specific state belongs exclusively in `.sfin`.
+
+Diagnostic messages are stored in `logs/stereofine.log` with two rotated copies and a 2 MiB limit per file. StereoFine clears its diagnostic log files older than 30 days on startup.
 
 **Analysis only** and **Export favorites only** are job modes and are not stored as persistent preferences.
 

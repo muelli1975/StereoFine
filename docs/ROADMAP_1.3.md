@@ -1,54 +1,11 @@
-# StereoFine 1.3 ideas
+# StereoFine 1.3 implementation scope
 
-Recorded on 6 November 2026. These are proposals, not implemented features or
-final interaction decisions. Release the maintenance update to 1.2 first.
+The active development build adds the agreed N/F preview checkbox and D shortcut, view-only mouse zoom, an anaglyph two-click meter, LUT import and 25 test looks in four groups, and Restore defaults below the preview options. The input guide is called Controls (Bedienhilfe in German).
 
-## First topic: near and far overlays
+The parallel-view preview, LoMa research and another ORB trial are outside this round. A stereo copy/retouching tool remains a separate future design topic. A double-click fits a magnified view.
 
-- A toggle shows **N** at the near-point candidate and **F** at the far-point
-  candidate, including uncertain estimates. Choose the shortcut together.
-- Keep the image easy to inspect: small outlined labels, readable on bright
-  and dark subjects. Distinguish uncertain candidates with a hollow or dashed
-  marker, while retaining the status warning.
-- Check which verified image coordinates support each endpoint. A statistical
-  endpoint or safety margin must not be presented as an exact located pixel.
-  If a usable location is unavailable, say so instead of inventing a marker.
-- Optionally add a horizontal deviation bracket with short vertical end caps.
-  Decide whether it belongs beside a matched feature or in a small screen
-  overlay. A bracket of arbitrary length must not imply a measured disparity.
-- Use the final-crop coordinate system in fitted and native views. Keep overlays
-  out of image exports by default.
+The existing geometry correction stays in 1.3. The [vergence pilot](VERGENCE_SEED_PILOT_1.3.md) retained it in all 56 runs on the available original pairs.
 
-## Mouse interaction
+Custom output folder and the selected folder mode survive Restore defaults. Sidecars preserve LUT enablement, identity/path and strength; view zoom is transient and does not alter framing. Existing image adjustments remain compatible.
 
-- Mouse wheel for zoom, with an explicit decision between inspection zoom and
-  output-crop zoom. Avoid silently changing the exported crop.
-- Hold right or middle mouse to pan the view; define separately whether an
-  optional modifier moves the output crop.
-- Left mouse may position the measurement cross, turn the cursor into the
-  cross, or measure disparity with two clicks on corresponding features.
-- Retain keyboard controls and avoid conflicts with sliders and scrolling.
-
-## Local stereo retouching
-
-Consider an SPM-style copy tool that transfers a selected region from one eye
-to the other to remove local disturbances. Define source eye, destination eye,
-correspondence/offset and feathering explicitly. Discuss undo, a before/after
-view, reproducible saved edits, and how edited regions affect measurement and
-colour matching. Original source images must remain unchanged.
-
-## Defaults, LUTs and viewing modes
-
-- Add a Restore defaults button analogous to SplatTricia. First agree which
-  settings it resets and how it differs from the existing Ctrl+R image reset.
-- Optional user-loaded LUTs, especially for low-contrast Fuji W3 images. Discuss
-  `.cube` support, neutral default, shared application to both eyes, processing
-  order relative to colour matching, and consistent preview/export behaviour.
-- Full-colour stereo previews provide the clearest view of a LUT's appearance.
-  Decide whether anaglyph previews show the same graded pair before the
-  anaglyph conversion, and explain their limits for judging colour.
-- Consider adding parallel-view preview, with **II** and **X** as compact menu
-  choices. Decide how they integrate with the existing preview cycle.
-
-No research-mode disparity changes or relaxed uncertainty thresholds are part
-of the 1.2 maintenance update.
+All 1.3 builds use StereoFine's MIT-licensed Herbstgold Cube. The three Creative Pack looks, including Bleachbypass 2, retain RawTherapee's CC BY-SA 4.0 terms. Windows native controls, image-coordinate measurements, both master depths and previous processing behaviour are validated before packaging. macOS/Linux desktop checks remain separate from the local Windows tests.

@@ -1,15 +1,15 @@
-# Building StereoFine 1.1 on Windows
+# Building StereoFine 1.3 on Windows
 
 StereoFine is published as a **portable Windows x64 onedir application**. The public executable must be built on Windows; PyInstaller is not used to cross-compile it from Linux.
 
-The read-only development workflow builds commit-labelled artifacts with `scripts/build_development.py` and checks the actual frozen application and separate HEIF reader. It never publishes a release or changes existing RC3/1.0 files. For final candidates, `prepare-release.yml` reuses the same checked builder with `--candidate`; it requires final 1.1 version metadata and never publishes. See `RELEASE_CHECKLIST.md`. The PowerShell route below is an alternative clean Windows build.
+The read-only development workflow builds commit-labelled artifacts with `scripts/build_development.py` and checks the actual frozen application and separate HEIF reader. It never publishes a release or changes existing RC3/1.0 files. For final candidates, `prepare-release.yml` reuses the same checked builder with `--candidate`; it requires final 1.3 version metadata and never publishes. See `RELEASE_CHECKLIST.md`. The PowerShell route below is an alternative clean Windows build.
 
 ## Required build environment
 
 - Windows x64
 - Python **3.12.10**, 64 bit, installed with the standard Python installer
 - Internet access for the one-time installation of the pinned Python build dependencies
-- the complete committed StereoFine 1.1 source directory, including `assets/`, `native/heif/` and the official ExifTool tree under `tools/`
+- the complete committed StereoFine 1.3 source directory, including `assets/`, `native/heif/` and the official ExifTool tree under `tools/`
 
 Runtime dependencies are pinned in `requirements-lock.txt`. The build tool is pinned in `requirements-build.txt`:
 
@@ -18,7 +18,7 @@ Runtime dependencies are pinned in `requirements-lock.txt`. The build tool is pi
 
 ## Build
 
-Open PowerShell in the exact StereoFine 1.1 source directory and run:
+Open PowerShell in the exact StereoFine 1.3 source directory and run:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
@@ -32,7 +32,7 @@ Expected final artifacts:
 
 ```text
 release/
-    StereoFine_1.1_Windows_x64.zip
+    StereoFine_1.3_Windows_x64.zip
     SHA256SUMS.txt
 
 dist/
@@ -58,11 +58,19 @@ dist/
 
 `Source/` contains the exact application source, assets, tests, documentation and build files used for the executable. The third-party ExifTool package remains visible once at `tools/` beside the executable and is not duplicated inside `Source/`.
 
+Herbstgold uses StereoFine's MIT-licensed `assets/luts/Herbstgold.cube` on all platforms. Release archive verification checks the packaged LUTs against the committed source files.
+
+The candidate entry point is `python scripts/build_package.py --candidate --fixtures build/heif-fixtures`. When the pinned native tools are already installed under `tools/`, add `--reuse-native-tools`.
+
+## GitHub release builds
+
+The `prepare-release.yml` workflow builds all four platform packages from the public source on pushes to `development/1.3` and on manual dispatch. Candidate archives, input checks and SHA-256 sums are saved as workflow artifacts for review.
+
 StereoFine stores `settings.json` beside `StereoFine.exe` at runtime. This is deliberate portable behavior, so the application should be kept in a normal writable folder rather than a protected system directory.
 
 ## Required manual Windows smoke check
 
-After the script finishes, extract `release/StereoFine_1.1_Windows_x64.zip` into a fresh folder and check at least:
+After the script finishes, extract `release/StereoFine_1.3_Windows_x64.zip` into a fresh folder and check at least:
 
 1. `StereoFine.exe` starts without an external Python installation being used.
 2. The application icon is correct in Explorer, the title bar and taskbar.
@@ -78,7 +86,7 @@ After the script finishes, extract `release/StereoFine_1.1_Windows_x64.zip` into
 12. The full `G` grid cycle keeps the visible Off/White/Black controls and spacing menu synchronized; after returning to Off, the spacing menu remains usable instead of getting stuck/disabled.
 13. `L/R/T/B` + arrow keys update Floating Window masks immediately in the preview, and `S` changes only left/right coupling. At 30‰ the curtain must remain fully visible inside the image edge, with the documented pure-black `3% + 2 px` preview border still outside the image.
 14. When the projective Vergence stage is active, the status shows `Vergenz (Trapezkorrektur)` / `Vergence (trapezoid correction)` with the actually applied correction magnitude; genuine legacy V/H values are used only for legacy V/H sidecars, and reloading `.sfin` does not change the status.
-15. F1 help is cleanly aligned as a two-column key/function table and fits without scrolling.
+15. F1 opens the bilingual Controls guide. Check the three-column layout at Full HD and normal Windows scaling.
 16. The application closes cleanly.
 
 A genuine camera MPO and additional real camera color-mismatch material are useful extra checks when available, and actual Windows camera validation remains required for this release candidate.
@@ -88,7 +96,7 @@ A genuine camera MPO and additional real camera color-mismatch material are usef
 The alternative PowerShell build produces:
 
 ```text
-StereoFine_1.1_Windows_x64.zip
+StereoFine_1.3_Windows_x64.zip
 ```
 
 The four-platform release route is `prepare-release.yml`. It verifies canonical sources and assets, executable architecture, the separate reader and metadata tools, then repeats actual input/session/export checks after extraction. Development artifacts retain separate commit/platform-specific names; preserve the historical RC3 and 1.0 archives.

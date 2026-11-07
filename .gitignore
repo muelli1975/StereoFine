@@ -11,9 +11,11 @@ __pycache__/
 build/
 dist/
 release/
+/private-build-assets/
 
 # Runtime/user data
 settings.json
+logs/
 _stereofine/
 output/
 *.sfin
@@ -26,3 +28,5 @@ StereoFine_1.0.zip
 .idea/
 .DS_Store
 Thumbs.db
+# Local implementation environment and repeatable validation scratch.
+.venv/

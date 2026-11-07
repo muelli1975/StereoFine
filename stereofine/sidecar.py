@@ -55,16 +55,34 @@ class SidecarDocument:
     )
     disparity: dict[str, Any] = field(default_factory=dict)
     color: dict[str, Any] = field(default_factory=dict)
+    look: dict[str, Any] = field(default_factory=dict)
+    preference_fields: list[str] | None = None
+    settings_only: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
         data["schema_version"] = SIDECAR_SCHEMA_VERSION
         data["app"] = {"name": APP_NAME, "version": APP_VERSION}
+        if self.preference_fields is not None:
+            if 'aspect' not in self.preference_fields:
+                data['framing'].pop('aspect', None)
+            if 'color' not in self.preference_fields:
+                data['color'].pop('enabled', None)
+            if 'look' not in self.preference_fields:
+                data['look'] = {}
         return data
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "SidecarDocument":
+        fields = data.get('preference_fields')
+        if fields is not None and (not isinstance(fields, list) or
+                any(x not in {'aspect', 'color', 'look'} for x in fields)):
+            raise ValueError('Invalid preference selection.')
+        if not isinstance(data.get('settings_only', False), bool):
+            raise ValueError('Invalid settings-only flag.')
         return cls(
+            preference_fields=data.get('preference_fields'),
+            settings_only=bool(data.get('settings_only', False)),
             schema_version=int(data.get("schema_version", SIDECAR_SCHEMA_VERSION)),
             app=dict(data.get("app") or {}),
             source=dict(data.get("source") or {}),
@@ -77,6 +95,7 @@ class SidecarDocument:
             floating_window=dict(data.get("floating_window") or {}),
             disparity=dict(data.get("disparity") or {}),
             color=dict(data.get("color") or {}),
+            look=dict(data.get("look") or {}),
         )
 
 
@@ -89,14 +108,20 @@ class SidecarLoadResult:
 
     @property
     def alignment_cache_valid(self) -> bool:
+        if self.document is not None and self.document.settings_only:
+            return False
         return self.status == SidecarStatus.VALID and not {"input", "alignment"}.intersection(self.pipeline_mismatches)
 
     @property
     def disparity_cache_valid(self) -> bool:
+        if self.document is not None and self.document.settings_only:
+            return False
         return self.status == SidecarStatus.VALID and not {"input", "alignment", "disparity"}.intersection(self.pipeline_mismatches)
 
     @property
     def color_cache_valid(self) -> bool:
+        if self.document is not None and self.document.settings_only:
+            return False
         # Fitted color curves are based on the rendered/aligned pair. A change
         # in alignment/render geometry therefore invalidates color parameters
         # even when the color algorithm itself is unchanged.
@@ -120,10 +145,11 @@ def source_stamp_to_dict(stamp: SourceStamp) -> dict[str, Any]:
     }
 
 
-def _file_stamp_matches(saved: dict[str, Any], expected: FileStamp, *, allow_transposed_dimensions: bool = False) -> bool:
+def _file_stamp_matches(saved: dict[str, Any], expected: FileStamp, *, allow_transposed_dimensions: bool = False,
+                        settings_only: bool = False) -> bool:
     try:
         saved_dimensions = (int(saved.get("width", -1)), int(saved.get("height", -1)))
-        dimensions_match = saved_dimensions == (expected.width, expected.height)
+        dimensions_match = settings_only or saved_dimensions == (expected.width, expected.height)
         if allow_transposed_dimensions:
             dimensions_match |= saved_dimensions == (expected.height, expected.width)
         return (
@@ -131,18 +157,21 @@ def _file_stamp_matches(saved: dict[str, Any], expected: FileStamp, *, allow_tra
             and int(saved.get("size_bytes", -1)) == expected.size_bytes
             and int(saved.get("mtime_ns", -1)) == expected.mtime_ns
             and dimensions_match
-            and saved.get("frame") == expected.frame
-            and saved.get("entity") == expected.entity
+            and (settings_only or saved.get("frame") == expected.frame)
+            and (settings_only or saved.get("entity") == expected.entity)
         )
     except (TypeError, ValueError):
         return False
 
 
-def source_matches(saved: dict[str, Any], expected: SourceStamp, *, allow_transposed_dimensions: bool = False) -> bool:
+def source_matches(saved: dict[str, Any], expected: SourceStamp, *, allow_transposed_dimensions: bool = False,
+                   settings_only: bool = False) -> bool:
     if not saved or saved.get("kind") != expected.kind:
         return False
-    return _file_stamp_matches(dict(saved.get("left") or {}), expected.left, allow_transposed_dimensions=allow_transposed_dimensions) and _file_stamp_matches(
-        dict(saved.get("right") or {}), expected.right, allow_transposed_dimensions=allow_transposed_dimensions
+    return _file_stamp_matches(dict(saved.get("left") or {}), expected.left,
+        allow_transposed_dimensions=allow_transposed_dimensions, settings_only=settings_only) and _file_stamp_matches(
+        dict(saved.get("right") or {}), expected.right,
+        allow_transposed_dimensions=allow_transposed_dimensions, settings_only=settings_only
     )
 
 
@@ -217,10 +246,16 @@ def load_sidecar(path: Path, expected_source: SourceStamp | None = None) -> Side
         # frame and exact/transposed dimensions still have to match per eye.
         legacy_input = "input" not in doc.pipeline
         if expected_source is not None and not source_matches(
-            doc.source, expected_source, allow_transposed_dimensions=legacy_input
+            doc.source, expected_source, allow_transposed_dimensions=legacy_input, settings_only=doc.settings_only
         ):
             return SidecarLoadResult(SidecarStatus.STALE, doc, "Quelldatei stimmt nicht mit Sidecar überein.")
         mismatches = pipeline_mismatches(doc.pipeline)
+        if doc.settings_only:
+            # Header-free folder settings never own computed image caches.
+            doc.alignment = {}
+            doc.disparity = {}
+            doc.color.pop('parameters', None)
+            doc.color['valid'] = False
         message = ""
         if mismatches:
             message = "Neu berechnen: " + ", ".join(mismatches)

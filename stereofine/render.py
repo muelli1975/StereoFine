@@ -30,6 +30,8 @@ class RenderInfo:
     color_applied: bool
     preview_base: Any = None
     aligned_shape: tuple[int, int] | None = None
+    output_icc_profile: bytes | None = None
+    input_aspect: float | None = None
 
 
 def _stable_digest(value: Any) -> str:
@@ -147,6 +149,16 @@ def render_final_pair(
         left, right, color_refit = match_final_pair_color(left, right, state)
         color_applied = True
 
+    output_profile = loaded.icc_profile
+    if apply_color and state.look.enabled and state.look.strength > 0:
+        from .color_profiles import transform_rgb
+        from .looks import apply_pair_look
+        # LUTs operate on display-referred sRGB, before presentation masks.
+        left = transform_rgb(left, output_profile)
+        right = transform_rgb(right, output_profile)
+        left, right = apply_pair_look(left, right, state.look)
+        output_profile = None  # None is the established sRGB contract.
+
     if apply_floating_window:
         fw = state.floating_window.normalize()
         left, right = apply_floating_window_masks(
@@ -165,5 +177,7 @@ def render_final_pair(
         color_applied=color_applied,
         preview_base=preview_base,
         aligned_shape=aligned_shape,
+        output_icc_profile=output_profile,
+        input_aspect=input_aspect,
     )
 

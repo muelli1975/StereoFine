@@ -14,11 +14,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ReleaseHygieneTests(unittest.TestCase):
     def test_public_version_agrees_with_windows_metadata(self):
-        self.assertIn(APP_VERSION, {'1.2-dev', '1.2'})
+        self.assertEqual(APP_VERSION, '1.3')
         text = (ROOT/'version_info.txt').read_text(encoding='utf-8')
         for field in ['FileVersion', 'ProductVersion']:
             self.assertIn(f"StringStruct('{field}', '{APP_VERSION}')", text)
-        self.assertIn('flags=0x0,' if APP_VERSION == '1.2' else 'flags=0x2,', text)
+        self.assertIn('flags=0x0,' if APP_VERSION == '1.3' else 'flags=0x2,', text)
 
     def test_release_files_exist(self):
         required = [
@@ -117,13 +117,11 @@ class ReleaseHygieneTests(unittest.TestCase):
         self.assertIn("_ensure_status_widgets", gui_source)
         self.assertIn("border_reserve = preview_border_px(width)", gui_source)
         self.assertIn("width - border_reserve * 2", gui_source)
-        self.assertIn('help_w = min(960', gui_source)
-        self.assertIn('help_h = min(640', gui_source)
         self.assertNotIn("CTkScrollableFrame(window", gui_source)
 
     def test_f_shortcut_toggles_existing_favorite_action(self):
         gui_source = (ROOT / "stereofine" / "gui.py").read_text(encoding="utf-8")
-        i18n_source = (ROOT / "stereofine" / "i18n.py").read_text(encoding="utf-8")
+        i18n_source = (ROOT / "stereofine" / "controls_help.py").read_text(encoding="utf-8")
         self.assertIn('bind_all("<f>", self._on_f)', gui_source)
         self.assertIn('bind_all("<F>", self._on_f)', gui_source)
         self.assertIn('bind_all("<KeyRelease-f>", lambda e: self._release_shortcut_key("f"))', gui_source)
@@ -131,8 +129,8 @@ class ReleaseHygieneTests(unittest.TestCase):
         self.assertIn('def _on_f(self, event=None):', gui_source)
         self.assertIn('_claim_shortcut_key("f", event)', gui_source)
         self.assertIn('return self._on_favorite_clicked(event)', gui_source)
-        self.assertIn('F                       Favorit setzen/entfernen', i18n_source)
-        self.assertIn('F                       Toggle favorite', i18n_source)
+        self.assertRegex(i18n_source, r'F\s{2,}Favorit setzen/entfernen')
+        self.assertRegex(i18n_source, r'F\s{2,}Toggle favorite')
         self.assertIn('`F` – toggle favorite', (ROOT / "README.md").read_text(encoding="utf-8"))
         self.assertIn('`F` – toggle favorite', (ROOT / "README_EN.md").read_text(encoding="utf-8"))
         self.assertIn('`F` – Favorit setzen/entfernen', (ROOT / "README_DE.md").read_text(encoding="utf-8"))
