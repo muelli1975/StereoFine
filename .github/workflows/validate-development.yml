@@ -162,7 +162,6 @@ jobs:
 
   packages:
     name: Checked package (${{ matrix.os }})
-    needs: validate
     timeout-minutes: 30
     strategy:
       fail-fast: false

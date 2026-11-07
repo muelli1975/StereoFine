@@ -1,6 +1,7 @@
 """Hidden native GUI checks for the 1.3 input and colour workflow."""
 from __future__ import annotations
 
+import _tkinter
 from dataclasses import asdict
 import json
 from pathlib import Path
@@ -23,7 +24,10 @@ from stereofine.sources import source_from_pair
 def pump(app, predicate=lambda: True, timeout=45):
     deadline=time.monotonic()+timeout
     while time.monotonic()<deadline:
-        app.update_idletasks();app.update()
+        # A withdrawn Aqua window can keep feeding events to Tcl's update.
+        for _ in range(32):
+            if not app.tk.dooneevent(_tkinter.ALL_EVENTS | _tkinter.DONT_WAIT):
+                break
         if predicate(): return
         time.sleep(.01)
     raise TimeoutError(f'GUI timeout: {app.busy_state}, {app.current_job_kind}')
@@ -95,7 +99,7 @@ def main():
             menu._step(1)
             assert menu._popup_buttons[menu._active_index].cget('text') == 'Cinema'
             menu._activate(menu.cget('values').index('Matrix'))
-            pump(app, lambda: app._look_hover_state is not None)
+            pump(app, lambda: getattr(app._look_hover_state, 'preset_id', None) == 'matrix')
             assert app._look_hover_state.preset_id == 'matrix'
             assert asdict(app.current.state.look) == look_before
             assert source.sidecar_path.read_bytes() == sidecar_before
@@ -111,10 +115,12 @@ def main():
             assert app.current.state.look.preset_id == 'matrix'
             menu._open_dropdown_menu()
             menu._activate(menu.cget('values').index('Blue House'))
-            pump(app, lambda: app._look_hover_state is not None)
-            with patch('stereofine.look_controls.filedialog.askopenfilename', return_value=''):
+            pump(app, lambda: getattr(app._look_hover_state, 'preset_id', None) == 'blue_house')
+            with patch('stereofine.look_controls.filedialog.askopenfilename', return_value='') as choose_file:
                 menu._choose(menu.cget('values').index('Import (.cube, .png)'))
-            assert app._look_hover_state is None and app.current.state.look.preset_id == 'matrix'
+            choose_file.assert_called_once()
+            assert app._look_hover_state is None, app._look_hover_state
+            assert app.current.state.look.preset_id == 'matrix', app.current.state.look
             assert app._flush_state_save()
             assert json.loads(source.sidecar_path.read_text('utf-8'))['look']['preset_id'] == 'matrix'
             geometry=(asdict(app.current.state.framing),asdict(app.current.state.manual),

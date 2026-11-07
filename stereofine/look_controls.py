@@ -124,7 +124,10 @@ class LookControlsMixin:
             initial = self.settings.last_lut_location or (str(Path(self._look_path).parent) if self._look_path else None)
             selected = filedialog.askopenfilename(parent=self, title=self._t('look_import'),
                 initialdir=initial, filetypes=[('3D LUT', '*.cube *.png'),('Cube', '*.cube'),('HaldCLUT PNG','*.png')])
-            if not selected: return
+            if not selected:
+                self._cancel_look_hover()
+                self._sync_look_display()
+                return
             try:
                 load_lut(selected)
             except (OSError, ValueError) as exc:
