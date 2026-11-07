@@ -559,7 +559,6 @@ TEXTS['de'].update({
     'folder_error_log': 'Fehlerdetails: logs/stereofine.log',
     'folder_no_images': 'Keine passenden Stereobilder im aktuellen Ordner gefunden.',
     'save_series_input': 'Als Serienausrichtung speichern',
-    'use_series_input': 'Serienausrichtung verwenden',
     'series_input_saved': 'Serienausrichtung gespeichert.',
 })
 TEXTS['en'].update({
@@ -575,6 +574,5 @@ TEXTS['en'].update({
     'folder_error_log': 'Error details: logs/stereofine.log',
     'folder_no_images': 'No matching stereo images found in the current folder.',
     'save_series_input': 'Save as series orientation',
-    'use_series_input': 'Use series orientation',
     'series_input_saved': 'Series orientation saved.',
 })

@@ -106,7 +106,7 @@ class ReleaseHygieneTests(unittest.TestCase):
         self.assertNotIn('_on_sidebar_mousewheel', gui_source)
         metadata_source = (ROOT / 'stereofine' / 'metadata.py').read_text(encoding='utf-8')
         self.assertIn('("exiftool.exe", "exiftool")', metadata_source)
-        self.assertIn("_use_series_input", gui_source)
+        self.assertIn("_save_series_input", gui_source)
         self.assertIn("_schedule_status_refresh", gui_source)
         self.assertIn("PREVIEW_RESIZE_DEBOUNCE_MS = 150", gui_source)
         self.assertIn("self._refresh_preview(rebuild_base=True)", gui_source)

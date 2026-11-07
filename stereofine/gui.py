@@ -51,7 +51,7 @@ from .native_preview import (NativePreviewMixin, native_key, prepare_native_prev
 from .tooltip import attach_tooltip
 from .preview import PreviewImageCache, draw_grid_overlay, draw_measure_cross_overlay
 from .preview_render import PreviewBasePair, build_preview_base, render_preview_from_base, preview_geometry_key
-from .preferences import save_series_input, series_input_path, with_series_input
+from .preferences import save_series_input, series_input_path
 from .processing import ProcessingDefaults, ProcessingOptions, process_source
 from .resources import asset_path
 from .session import (
@@ -594,10 +594,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.swap_eyes_box.grid(row=row, column=0, sticky="w", padx=20, pady=(0, 8)); row += 1
         self.save_series_input_button = self._secondary_button(
             self.sidebar, self._t('save_series_input'), self._save_series_input)
-        self.save_series_input_button.grid(row=row, column=0, sticky='ew', padx=20, pady=(0, 6)); row += 1
-        self.series_input_button = self._secondary_button(
-            self.sidebar, self._t('use_series_input'), self._use_series_input)
-        self.series_input_button.grid(row=row, column=0, sticky='ew', padx=20, pady=(0, 8)); row += 1
+        self.save_series_input_button.grid(row=row, column=0, sticky='ew', padx=20, pady=(0, 8)); row += 1
 
         ctk.CTkLabel(self.sidebar, text=self._t("analysis_method"), text_color=TEXT_PRIMARY, font=self._font(13), anchor="w").grid(
             row=row, column=0, sticky="ew", padx=20, pady=(4, 4)
@@ -1307,8 +1304,6 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         )
         self.save_button.configure(state="normal" if has_source and not self.batch_mode and not busy else "disabled")
         self.save_series_input_button.configure(state='normal' if has_source and not busy else 'disabled')
-        self.series_input_button.configure(
-            state='normal' if has_source and not busy and self.current.state.input_override else 'disabled')
 
         if busy:
             self._set_start_button_cancel()
@@ -1897,7 +1892,14 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         first_or_anchor = self._session_series_input is None or self._session_series_input[0] == source
         if first_or_anchor and not series_input_path(source).is_file():
             self._session_series_input = source, deepcopy(transform)
-        self._set_image_input_transform(transform, override=True)
+        state.input_transform = transform
+        state.invalidate_for_input_transform()
+        state.input_override = True
+        self._sync_vars_from_current()
+        self._schedule_state_save()
+        self._refresh_preview(rebuild_base=True)
+        self._render_status()
+        self._refresh_control_states()
 
     def _save_series_input(self) -> None:
         if self.current is None or self.busy_state != 'idle' or not self._flush_state_save(explicit=True):
@@ -1910,33 +1912,6 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self._session_series_input = None
         self._folder_feedback = self._t('series_input_saved')
         self._render_status()
-
-    def _use_series_input(self) -> None:
-        if self.current is None or self.busy_state != 'idle' or not self.current.state.input_override:
-            return
-        try:
-            defaults = with_series_input(self._source_defaults(self.current.source), self.current.source)
-        except (OSError, ValueError) as exc:
-            messagebox.showerror(APP_NAME, self._t('state_save_failed', text=str(exc)))
-            return
-        transform = InputTransformState(**{
-            name: getattr(defaults, name) for name in InputTransformState.__dataclass_fields__
-        })
-        self._set_image_input_transform(transform, override=False)
-
-    def _set_image_input_transform(self, transform: InputTransformState, *, override: bool) -> None:
-        state = self.current.state
-        if transform != state.input_transform:
-            state.input_transform = transform
-            state.invalidate_for_input_transform()
-        state.input_override = override
-        if not override:
-            self.current.loaded_input_transform = deepcopy(transform)
-        self._sync_vars_from_current()
-        self._schedule_state_save()
-        self._refresh_preview(rebuild_base=True)
-        self._render_status()
-        self._refresh_control_states()
 
     def _on_aspect_changed(self, _value=None) -> None:
         self.output_aspect_display.set(aspect_label(self.output_aspect.get(), self.settings.language))

@@ -135,15 +135,17 @@ class ViewControlsMixin:
                 if self._effective_preview_mode() == 'Kreuzblick':
                     w = max(1, w/2)
                 anchor = (point[0] % w)/w, point[1]/h
-        self._fit_notice = False
         was_active = self._inspection_view.active
+        if event is not None and factor < 1 and not was_active:
+            return 'break'
+        self._fit_notice = False
         self._inspection_view.zoom(factor, size, self._view_viewport(), anchor)
         if was_active and not self._inspection_view.active:
-            return self._fit_inspection()
+            return self._fit_inspection(wheel=event is not None)
         self._update_preview_display()
         return 'break'
 
-    def _fit_inspection(self, _event=None, *, notice=True):
+    def _fit_inspection(self, _event=None, *, notice=True, wheel=False):
         if self.busy_state != 'idle':
             return 'break'
         self._inspection_view.reset()
@@ -151,7 +153,7 @@ class ViewControlsMixin:
         if self._fit_notice_job is not None:
             self.after_cancel(self._fit_notice_job)
         self._fit_notice = bool(notice and self.current is not None)
-        self._fit_notice_job = self.after(2000, self._clear_fit_notice) if self._fit_notice else None
+        self._fit_notice_job = self.after(1000 if wheel else 2000, self._clear_fit_notice) if self._fit_notice else None
         if not self._apply_native_preview():
             self._update_preview_display()
         return 'break'

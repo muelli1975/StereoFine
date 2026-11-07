@@ -157,6 +157,23 @@ def main():
             assert not app._measure_tool_var.get() and app._inspection_view.active
             app._on_view_double_click(None);pump(app)
             assert not app._inspection_view.active
+            wheel = SimpleNamespace(x_root=app.preview_frame.winfo_rootx(),
+                                    y_root=app.preview_frame.winfo_rooty())
+            app._on_view_wheel(wheel, 1)
+            assert app._inspection_view.active and not app._fit_notice
+            with patch.object(app, 'after', wraps=app.after) as schedule:
+                app._on_view_wheel(wheel, -1)
+                assert any(call.args == (1000, app._clear_fit_notice) for call in schedule.call_args_list)
+            fit_job = app._fit_notice_job
+            assert app._fit_notice and fit_job is not None
+            app._on_view_wheel(wheel, -1)
+            assert app._fit_notice and app._fit_notice_job == fit_job
+            app._on_view_wheel(wheel, 1)
+            assert app._inspection_view.active and not app._fit_notice
+            app._on_view_wheel(wheel, -1)
+            assert app._fit_notice
+            pump(app, lambda: not app._fit_notice, timeout=3)
+            assert not app._inspection_view.active
             assert app._flush_state_save()
             saved=json.loads(source.sidecar_path.read_text('utf-8'))
             assert saved['look']['strength']==.43
@@ -280,12 +297,11 @@ def main():
             app.previous_source()
             pump(app, lambda: app.busy_state == 'idle' and app.current.source == other)
             assert app.left_orientation.get() == app.right_orientation.get() == '0'
-            assert app.series_input_button.cget('state') == 'normal'
-            app.series_input_button.invoke()
+            app.left_orientation.set('180'); app.right_orientation.set('180')
+            app._on_input_transform_changed()
             assert app.left_orientation.get() == app.right_orientation.get() == '180'
             assert app._flush_state_save()
-            assert json.loads(other.sidecar_path.read_text('utf-8'))['input_override'] is False
-            assert app.series_input_button.cget('state') == 'disabled'
+            assert json.loads(other.sidecar_path.read_text('utf-8'))['input_override'] is True
             assert not series_path.exists()
             assert app.save_series_input_button.cget('state') == 'normal'
             app.save_series_input_button.invoke()
