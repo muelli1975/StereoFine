@@ -291,9 +291,10 @@ def main():
             assert app._flush_state_save()
             explicit = process_source(other, batch_options).state.input_transform
             assert explicit.left_orientation == explicit.right_orientation == '0'
+            assert app._source_defaults(third).left_orientation == '0'
             app.next_source()
             pump(app, lambda: app.busy_state == 'idle' and app.current.source == third)
-            assert app.left_orientation.get() == app.right_orientation.get() == '180'
+            assert app.left_orientation.get() == app.right_orientation.get() == '0'
             app.previous_source()
             pump(app, lambda: app.busy_state == 'idle' and app.current.source == other)
             assert app.left_orientation.get() == app.right_orientation.get() == '0'
@@ -306,9 +307,21 @@ def main():
             assert app.save_series_input_button.cget('state') == 'normal'
             app.save_series_input_button.invoke()
             assert app._folder_feedback == app._t('series_input_saved')
-            assert json.loads(series_path.read_text('utf-8'))['input_state']['left_orientation'] == '180'
-            persisted = process_source(third, ProcessingOptions(save_sidecar=False)).state.input_transform
+            saved_series = series_path.read_bytes()
+            assert json.loads(saved_series)['input_state']['left_orientation'] == '180'
+            app.left_orientation.set('0'); app.right_orientation.set('0')
+            app._on_input_transform_changed()
+            assert app._flush_state_save()
+            batch_options = ProcessingOptions(defaults=app._source_defaults(third), save_sidecar=False)
+            persisted = process_source(third, batch_options).state.input_transform
             assert persisted.left_orientation == persisted.right_orientation == '180'
+            app.next_source()
+            pump(app, lambda: app.busy_state == 'idle' and app.current.source == third)
+            assert app.left_orientation.get() == app.right_orientation.get() == '180'
+            app.previous_source()
+            pump(app, lambda: app.busy_state == 'idle' and app.current.source == other)
+            assert app.left_orientation.get() == app.right_orientation.get() == '0'
+            assert series_path.read_bytes() == saved_series
             assert not messages,messages
             assert not errors,errors
             report=dict(loading=True,look_strength_sidecar=True,zoom_preserves_crop=True,

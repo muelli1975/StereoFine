@@ -153,7 +153,7 @@ def main() -> None:
             assert app.current is not None
             assert app.current.source.base_name == "scene01"
 
-            # An orientation edit seeds this session without creating a folder setting.
+            # The next image can use the current orientation without a folder setting.
             assert not app.current.source.sidecar_path.exists()
             series_path = app.current.source.sidecar_path.with_name('series.json')
             assert not series_path.exists()
@@ -179,7 +179,7 @@ def main() -> None:
             assert app.left_mirror.get() is True
             assert app.swap_eyes.get() is True
 
-            # Batch uses the session orientation and the program's other defaults.
+            # Batch uses the current orientation and the program's other defaults.
             batch_defaults = app._processing_options(use_batch_defaults=True).defaults
             assert batch_defaults.left_orientation == batch_defaults.right_orientation == "180"
             assert batch_defaults.left_mirror and batch_defaults.swap_eyes
