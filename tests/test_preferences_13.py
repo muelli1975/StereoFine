@@ -14,6 +14,7 @@ from stereofine.endpoints import locate_endpoints, to_master, current_markers
 from stereofine.folder_settings import apply_folder_preferences, FolderChoices
 from stereofine.label_layout import place_labels
 from stereofine.numbers import endpoint_values
+from stereofine.preferences import save_series_input
 from stereofine.processing import ProcessingDefaults
 from stereofine.session import browse_source, save_browsed_state
 from stereofine.sources import source_from_stereo_file
@@ -104,8 +105,7 @@ class PreferenceTests(unittest.TestCase):
         legacy.sidecar_path.write_text(json.dumps(old_document), encoding='utf-8')
 
         upside_down = InputTransformState('180', '180', True, False, True)
-        result = apply_folder_preferences(self.sources, FolderChoices(series_input=upside_down))
-        self.assertTrue(result.series_input_saved)
+        self.assertTrue(save_series_input(first, upside_down).is_file())
         self.assertFalse(first.sidecar_path.exists())
         self.assertEqual(lut_only.sidecar_path.read_bytes(), lut_sidecar)
         self.assertEqual(browse_source(lut_only).state.input_transform, upside_down)
@@ -114,7 +114,7 @@ class PreferenceTests(unittest.TestCase):
         inherited = browse_source(first)
         save_browsed_state(inherited)
         upright = InputTransformState()
-        apply_folder_preferences(self.sources, FolderChoices(series_input=upright))
+        save_series_input(first, upright)
         self.assertEqual(browse_source(first).state.input_transform, upright)
         self.assertFalse(browse_source(first).state.input_override)
 

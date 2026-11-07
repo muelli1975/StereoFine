@@ -7,7 +7,7 @@ import customtkinter as ctk
 
 from .config import APP_NAME
 from .folder_settings import FolderChoices, FolderProgress, apply_folder_preferences
-from .i18n import aspect_label, orientation_label
+from .i18n import aspect_label
 from .looks import builtin_looks, look_label
 from .sources import discover_pair_sources, discover_stereo_file_sources
 from .theme import APP_BG, SECONDARY_BG, BORDER, HOVER_BG, TEXT_PRIMARY, TEXT_SECONDARY, GOLD_DARK, GOLD_LIGHT
@@ -25,11 +25,10 @@ class FolderSettingsDialog(ctk.CTkToplevel):
         self.protocol('WM_DELETE_WINDOW', self.cancel)
         self.bind('<Escape>', lambda e: self.cancel())
         self.bind('<Return>', lambda e: self.start())
-        self.selection = {key: ctk.BooleanVar(value=False) for key in ('aspect', 'look', 'color', 'series_input')}
+        self.selection = {key: ctk.BooleanVar(value=False) for key in ('aspect', 'look', 'color')}
         self.aspect = app.output_aspect.get()
         self.look = deepcopy(app._current_look_option())
         self.color_enabled = bool(app.color_match_enabled.get())
-        self.series_input = deepcopy(app.current.state.input_transform)
         frame = ctk.CTkFrame(self, fg_color=SECONDARY_BG, corner_radius=8)
         frame.pack(fill='both', expand=True, padx=18, pady=18)
         frame.grid_columnconfigure(1, weight=1)
@@ -43,18 +42,9 @@ class FolderSettingsDialog(ctk.CTkToplevel):
             (look_label(item, app.settings.language) for item in builtin_looks()
              if item['id'] == self.look.preset_id), self.look.preset_id))
         switch = lambda value: app._t('folder_on' if value else 'folder_off')
-        transform = self.series_input
-        def eye_orientation(value, mirrored):
-            rotation = orientation_label(value, app.settings.language)
-            return f'{rotation}, {app._t("mirror")}' if mirrored else rotation
-        orientation = ' / '.join((eye_orientation(transform.left_orientation, transform.left_mirror),
-                                  eye_orientation(transform.right_orientation, transform.right_mirror)))
-        if transform.swap_eyes:
-            orientation += f' · {app._t("swap_eyes")}'
         values = [('aspect', app._t('aspect_ratio'), aspect_label(self.aspect, app.settings.language)),
                   ('look', app._t('look_apply'), f'{switch(self.look.enabled)} · {name} · {self.look.strength*100:.0f}%'),
-                  ('color', app._t('color_match'), switch(self.color_enabled)),
-                  ('series_input', app._t('save_series_input'), orientation)]
+                  ('color', app._t('color_match'), switch(self.color_enabled))]
         self.checkboxes = []
         for row, (key, title, value) in enumerate(values, 2):
             box = ctk.CTkCheckBox(frame, text=title, variable=self.selection[key], command=self._changed,
@@ -67,16 +57,16 @@ class FolderSettingsDialog(ctk.CTkToplevel):
                     sticky='ew', padx=(14, 16), pady=9)
         ctk.CTkLabel(frame, text=app._t('folder_scope'), font=app._font(12),
             text_color=TEXT_SECONDARY, wraplength=520, justify='left', anchor='w').grid(
-                row=6, column=0, columnspan=2, sticky='ew', padx=16, pady=(12, 8))
+                row=5, column=0, columnspan=2, sticky='ew', padx=16, pady=(12, 8))
         self.progress_label = ctk.CTkLabel(frame, text='', font=app._font(12), text_color=TEXT_PRIMARY,
                                          anchor='w', wraplength=520)
-        self.progress_label.grid(row=7, column=0, columnspan=2, sticky='ew', padx=16)
+        self.progress_label.grid(row=6, column=0, columnspan=2, sticky='ew', padx=16)
         # Reserve the row before the run so the buttons stay at the same height.
         self.progress = ctk.CTkProgressBar(frame, fg_color=SECONDARY_BG, progress_color=SECONDARY_BG)
         self.progress.set(0)
-        self.progress.grid(row=8, column=0, columnspan=2, sticky='ew', padx=16, pady=(0, 12))
+        self.progress.grid(row=7, column=0, columnspan=2, sticky='ew', padx=16, pady=(0, 12))
         buttons = ctk.CTkFrame(frame, fg_color='transparent')
-        buttons.grid(row=9, column=0, columnspan=2, sticky='e', padx=16, pady=(4, 16))
+        buttons.grid(row=8, column=0, columnspan=2, sticky='e', padx=16, pady=(4, 16))
         self.apply_button = app._secondary_button(buttons, app._t('folder_commit'), self.start, width=120)
         self.apply_button.pack(side='left', padx=(0, 8)); self.apply_button.configure(state='disabled')
         self.cancel_button = app._secondary_button(buttons, app._t('cancel'), self.cancel, width=120)
@@ -108,8 +98,7 @@ class FolderSettingsDialog(ctk.CTkToplevel):
             return 'break'
         choices = FolderChoices(self.aspect if self.selection['aspect'].get() else None,
             deepcopy(self.look) if self.selection['look'].get() else None,
-            self.color_enabled if self.selection['color'].get() else None,
-            self.series_input if self.selection['series_input'].get() else None)
+            self.color_enabled if self.selection['color'].get() else None)
         self.running = True
         for box in self.checkboxes:
             self.app._set_checkbox_enabled(box, False)
@@ -156,12 +145,7 @@ def finish_folder_settings(app, result):
     dialog = getattr(app, '_folder_dialog', None)
     if dialog is not None:
         dialog.destroy(); app._folder_dialog = None
-    messages = []
-    if result.series_input_saved:
-        messages.append(app._t('series_input_saved'))
-    if result.updated or result.unchanged or result.failed:
-        messages.append(app._t('folder_done', updated=len(result.updated), unchanged=len(result.unchanged), failed=len(result.failed)))
-    text = '\n'.join(messages)
+    text = app._t('folder_done', updated=len(result.updated), unchanged=len(result.unchanged), failed=len(result.failed))
     if result.cancelled:
         text = app._t('folder_cancelled')+' '+text
     if result.failed:

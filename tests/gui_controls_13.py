@@ -63,6 +63,7 @@ def main():
         app.report_callback_exception=lambda *exc: errors.append(repr(exc))
         try:
             pump(app)
+            assert app.save_series_input_button.cget('state') == 'disabled'
             app._set_source_collection([source],0,batch=False)
             pump(app,lambda: app.busy_state=='idle' and app.current is not None)
             pump(app,lambda: app._detail_texture_cache is not None)
@@ -171,6 +172,9 @@ def main():
             for language in ('de','en'):
                 app.settings.language=language;app._rebuild_for_language();pump(app)
                 assert app._t('help_heading')==('Bedienhilfe' if language=='de' else 'Controls')
+                assert app.save_series_input_button.cget('text') == (
+                    'Als Serienausrichtung speichern' if language == 'de' else 'Save as series orientation')
+                assert int(app.save_series_input_button.grid_info()['row']) == int(app.swap_eyes_box.grid_info()['row']) + 1
                 if language == 'en':
                     assert list(app.look_menu.section_headers.values()) == [
                         'Color & Instant Film', 'Monochrome & Sepia', 'Cinema', 'Light & Mood',
@@ -192,6 +196,7 @@ def main():
             app.show_folder_settings()
             dialog = app._folder_dialog
             assert len(dialog.sources) == 2
+            assert set(dialog.selection) == {'aspect', 'look', 'color'}
             assert not any(value.get() for value in dialog.selection.values())
             assert dialog.apply_button.cget('state') == 'disabled'
             dialog.update_idletasks()
@@ -248,12 +253,9 @@ def main():
             pump(app, lambda: app.busy_state == 'idle' and app.current.source == source)
             series_path = source.sidecar_path.with_name('series.json')
             assert not series_path.exists()
-            app.show_folder_settings()
-            dialog = app._folder_dialog
-            dialog.selection['series_input'].set(True)
-            dialog._changed()
-            dialog.start()
-            pump(app, lambda: app.busy_state == 'idle' and app._folder_dialog is None)
+            assert app.save_series_input_button.cget('state') == 'normal'
+            app.save_series_input_button.invoke()
+            assert app._folder_feedback == app._t('series_input_saved')
             assert json.loads(series_path.read_text('utf-8'))['input_state']['left_orientation'] == '180'
             assert json.loads(other.sidecar_path.read_text('utf-8')) == saved_other
             app.next_source()

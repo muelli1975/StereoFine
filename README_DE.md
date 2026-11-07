@@ -253,7 +253,7 @@ Beim Überfahren eines Looks erscheint die Vorschau. Ein Klick übernimmt den Lo
 
 **Für Ordner übernehmen…** zeigt den Eingabeordner und die Anzahl erkannter Stereobilder. Seitenverhältnis, LUT samt Stärke und symmetrische Farbangleichung lassen sich unabhängig auswählen. StereoFine schreibt die gewählten Einstellungen in die Bilddateien mit Endung `.sfin`. Der Dialog zeigt den Fortschritt. Bei Abbruch bleiben bereits gespeicherte Änderungen erhalten. Gespeicherte Bildwerte haben Vorrang vor den Programmvorgaben. Fehlende Einstellungen folgen den aktuellen Vorgaben.
 
-**Serienausrichtung speichern** legt Drehung, Spiegelung und L/R-Tausch des aktuellen Bildes als Ordnervorgabe in `_stereofine/series.json` ab. Ein Bild mit eigener Ausrichtung behält seine Einstellung. **Serienausrichtung verwenden** hebt die Bildausnahme auf.
+Unter **Ausrichtung** legt **Als Serienausrichtung speichern** Drehung, Spiegelung und L/R-Tausch des aktuellen Bildes als Ordnervorgabe in `_stereofine/series.json` ab. Ein Bild mit eigener Ausrichtung behält seine Einstellung. **Serienausrichtung verwenden** hebt die Bildausnahme auf.
 
 Der Ansichtszoom verändert ausschließlich die Vorschau. Der Beschnittzoom bestimmt den ausgegebenen Bildausschnitt. Bei N/F stehen dieselben Werte wie im Status. Die Kreuze markieren die zugehörigen Bildstellen. Ein Fragezeichen kennzeichnet eine unsichere Punktposition. Ansichts- und Messmarkierungen bleiben in der Vorschau.
 

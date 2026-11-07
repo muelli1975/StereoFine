@@ -250,7 +250,7 @@ Hover over a look to preview it, click to apply it, or press Esc to keep the pre
 
 **Apply to folder…** lists the input folder and the number of recognised stereo images. Select any combination of aspect ratio, LUT including strength, and symmetric colour matching. StereoFine writes those choices to the image settings files. The dialog shows progress, and cancelling keeps completed updates. Individual image settings take precedence over program defaults. Missing settings follow the current defaults.
 
-**Save series orientation** stores the current image's rotation, mirroring and eye order as the folder default in `_stereofine/series.json`. An image with its own orientation keeps it. **Use series orientation** clears that image's override.
+Under **Alignment**, **Save as series orientation** stores the current image's rotation, mirroring and eye order as the folder default in `_stereofine/series.json`. An image with its own orientation keeps it. **Use series orientation** clears that image's override.
 
 View zoom only changes the preview. Crop zoom determines the exported image area. N/F labels use the same values and formatting as the status display. The markers show the corresponding image evidence, with a question mark when its location is uncertain. View and measurement annotations stay in the preview.
 
