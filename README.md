@@ -250,7 +250,7 @@ Hover over a look to preview it, click to apply it, or press Esc to keep the pre
 
 **Apply to folder…** lists the input folder and the number of recognised stereo images. Select any combination of aspect ratio, LUT including strength, and symmetric colour matching. StereoFine writes those choices to the image settings files. The dialog shows progress, and cancelling keeps completed updates. Individual image settings take precedence over program defaults. Missing settings follow the current defaults.
 
-Under **Alignment**, **Save as series orientation** stores the current image's rotation, mirroring and eye order as the folder default in `_stereofine/series.json`. An image with its own orientation keeps it.
+Under **Alignment**, **Save as folder orientation** stores the current image's rotation, mirroring and eye order as the folder default in `_stereofine/series.json`. An image with its own orientation keeps it.
 
 Without a saved folder default, browsing to an image without its own orientation uses the orientation of the last displayed image in the same folder. Batch processing uses the current image's orientation as that fallback.
 

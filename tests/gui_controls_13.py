@@ -190,7 +190,9 @@ def main():
                 app.settings.language=language;app._rebuild_for_language();pump(app)
                 assert app._t('help_heading')==('Bedienhilfe' if language=='de' else 'Controls')
                 assert app.save_series_input_button.cget('text') == (
-                    'Als Serienausrichtung speichern' if language == 'de' else 'Save as series orientation')
+                    'Als Ordnerausrichtung speichern' if language == 'de' else 'Save as folder orientation')
+                assert app._t('series_input_saved') == (
+                    'Ordnerausrichtung gespeichert.' if language == 'de' else 'Folder orientation saved.')
                 assert int(app.save_series_input_button.grid_info()['row']) == int(app.swap_eyes_box.grid_info()['row']) + 1
                 if language == 'en':
                     assert list(app.look_menu.section_headers.values()) == [

@@ -23,13 +23,13 @@ def with_series_input(defaults, source):
     except FileNotFoundError:
         return defaults
     except ValueError as exc:
-        raise ValueError(f'Invalid series orientation: {path}') from exc
+        raise ValueError(f'Ungültige Ordnerausrichtung: {path}') from exc
     transform = data.get('input_state') if isinstance(data, dict) and data.get('version') == 1 else None
     if (not isinstance(transform, dict) or transform.keys() != InputTransformState.__dataclass_fields__.keys()
             or any(transform[name] not in ('0', '180', '90_cw', '90_ccw')
                    for name in ('left_orientation', 'right_orientation'))
             or any(type(transform[name]) is not bool for name in ('left_mirror', 'right_mirror', 'swap_eyes'))):
-        raise ValueError(f'Invalid series orientation: {path}')
+        raise ValueError(f'Ungültige Ordnerausrichtung: {path}')
     return replace(defaults, **transform)
 
 

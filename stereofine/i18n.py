@@ -434,6 +434,7 @@ CORE_PREFIX_TRANSLATIONS: dict[str, dict[str, str]] = {
         "Metadaten Anaglyphe: ": "Anaglyph metadata: ",
         "Neu berechnen: ": "Recompute: ",
         "Unbekannte Stereoquelle: ": "Unknown stereo source: ",
+        "Ungültige Ordnerausrichtung: ": "Invalid folder orientation: ",
     }
 }
 
@@ -557,8 +558,8 @@ TEXTS['de'].update({
     'folder_cancelled': 'Abgebrochen.',
     'folder_error_log': 'Fehlerdetails: logs/stereofine.log',
     'folder_no_images': 'Keine passenden Stereobilder im aktuellen Ordner gefunden.',
-    'save_series_input': 'Als Serienausrichtung speichern',
-    'series_input_saved': 'Serienausrichtung gespeichert.',
+    'save_series_input': 'Als Ordnerausrichtung speichern',
+    'series_input_saved': 'Ordnerausrichtung gespeichert.',
 })
 TEXTS['en'].update({
     'look_tooltip': 'LUTs apply film simulations and film looks. They change colour, brightness and contrast; adjust their effect with Strength. Use the cross-view preview to judge colours, as anaglyphs alter colour reproduction.',
@@ -572,6 +573,6 @@ TEXTS['en'].update({
     'folder_cancelled': 'Cancelled.',
     'folder_error_log': 'Error details: logs/stereofine.log',
     'folder_no_images': 'No matching stereo images found in the current folder.',
-    'save_series_input': 'Save as series orientation',
-    'series_input_saved': 'Series orientation saved.',
+    'save_series_input': 'Save as folder orientation',
+    'series_input_saved': 'Folder orientation saved.',
 })
