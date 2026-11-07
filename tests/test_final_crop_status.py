@@ -68,11 +68,11 @@ class FinalCropStatusTests(unittest.TestCase):
         for key in ('rendered_pair', 'offset_x_px', 'offset_y_px'):
             payload['disparity']['basis'].pop(key, None)
         payload['disparity']['reference_width_px'] = None
-        payload['manual'].update(delta_x_px=7, delta_y_px=-2)
+        payload['manual'] = {'delta_x_px': 7, 'delta_y_px': -2}
         payload['framing'].update(aspect='1:1', crop_zoom_index=3,
                                   pan_x_permille=210, pan_y_permille=-130)
         payload['favorite'] = True
-        payload['floating_window']['right_permille'] = 4
+        payload['floating_window'] = {'right_permille': 4}
         source.sidecar_path.write_text(json.dumps(payload))
         return source
 

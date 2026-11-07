@@ -173,7 +173,7 @@ class ObservedRangeTests(unittest.TestCase):
                 payload['pipeline']['disparity'] = 'sf-disparity-5'
                 payload['disparity']['total_permille'] = 999.
                 payload['favorite'] = True
-                payload['manual']['delta_x_px'] = 7
+                payload['manual'] = {'delta_x_px': 7}
                 source.sidecar_path.write_text(json.dumps(payload))
                 second = process_source(source)
                 self.assertTrue(second.alignment_from_cache)

@@ -8,11 +8,10 @@ import os
 from pathlib import Path
 import tempfile
 
-from .config import APP_NAME, APP_VERSION
+from .config import SIDECAR_SCHEMA_VERSION
 from .diagnostics import log_event, log_failure
 from .models import FileStamp
-from .preferences import document_preferences
-from .sidecar import SidecarDocument, SIDECAR_SCHEMA_VERSION
+from .sidecar import SidecarDocument
 from .sources import validate_source_names
 from .state import LookState
 
@@ -46,10 +45,11 @@ class FolderProgress:
 
 
 def _source_header(source):
-    frame = source.kind not in {'pair', 'heif'}
-    return dict(kind=source.kind, **{eye: asdict(FileStamp.from_path(path,
-        relative_to=source.input_root, width=0, height=0, frame=i if frame else None))
-        for i, (eye, path) in enumerate((('left', source.left_path), ('right', source.right_path)))})
+    header = {'kind': source.kind}
+    for eye, path in (('left', source.left_path), ('right', source.right_path)):
+        stamp = FileStamp.from_path(path, relative_to=source.input_root, width=0, height=0)
+        header[eye] = {'path': stamp.path, 'size_bytes': stamp.size_bytes, 'mtime_ns': stamp.mtime_ns}
+    return header
 
 
 def _verify_source(saved, header):
@@ -63,9 +63,12 @@ def _verify_source(saved, header):
 
 def _patch_preferences(raw, choices):
     result = deepcopy(raw)
-    owned = document_preferences(SidecarDocument.from_dict(raw)) | choices.selected
-    if owned != {'aspect', 'color', 'look'} or 'preference_fields' in result:
-        result['preference_fields'] = sorted(owned)
+    if not SidecarDocument.from_dict(raw).input_state:
+        result.pop('input_state', None)
+    for field in ('app', 'preference_fields', 'settings_only', 'input_override'):
+        result.pop(field, None)
+    if 'pipeline' in result:
+        result['pipeline'].pop('anaglyph', None)
     if choices.aspect is not None:
         framing = result.setdefault('framing', {})
         if framing.get('aspect') != choices.aspect:
@@ -115,16 +118,11 @@ def apply_folder_preferences(sources, choices, *, cancellation=None, progress=No
             header = _source_header(source)
             previous = path.read_bytes() if path.exists() else None
             if previous is None:
-                raw = dict(schema_version=SIDECAR_SCHEMA_VERSION,
-                    app=dict(name=APP_NAME, version=APP_VERSION),
-                    source=header, pipeline=SidecarDocument().pipeline,
-                    settings_only=True, preference_fields=[])
+                raw = dict(schema_version=SIDECAR_SCHEMA_VERSION, source=header)
             else:
                 raw = json.loads(previous.decode('utf-8'))
                 if not isinstance(raw, dict) or raw.get('schema_version') != SIDECAR_SCHEMA_VERSION:
                     raise ValueError('Unsupported or damaged settings; open and save this image first.')
-                # Parse before writing. Unknown non-preference keys remain byte-value equivalent.
-                SidecarDocument.from_dict(raw)
                 _verify_source(raw.get('source') or {}, header)
             updated = _patch_preferences(raw, choices)
             if updated == raw and previous is not None:

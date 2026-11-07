@@ -10,10 +10,12 @@ from unittest.mock import patch
 import cv2
 import numpy as np
 
+from stereofine.preferences import save_series_input
 from stereofine.processing import ProcessingOptions, process_source
 from stereofine.render import render_final_pair
 from stereofine.session import browse_source, save_browsed_state
 from stereofine.sources import discover_pair_sources
+from stereofine.state import InputTransformState
 from stereofine.worker import CancellationToken, JobCancelled
 
 
@@ -45,6 +47,19 @@ class RestartAlignmentTests(unittest.TestCase):
         session.state.invalidate_disparity_for_framing()
         save_browsed_state(session)
         return session
+
+    def test_analysis_saves_effective_folder_orientation_for_the_image(self):
+        with tempfile.TemporaryDirectory() as td:
+            source = self.source(Path(td))
+            upside_down = InputTransformState('180', '180')
+            save_series_input(source, upside_down)
+            self.assertEqual(browse_source(source).state.input_transform, upside_down)
+            self.assertFalse(source.sidecar_path.exists())
+
+            process_source(source)
+            save_series_input(source, InputTransformState())
+
+            self.assertEqual(browse_source(source).state.input_transform, upside_down)
 
     def test_restart_matches_clean_crop_analysis_and_persists_zero_nudges(self):
         with tempfile.TemporaryDirectory() as td:

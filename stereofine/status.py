@@ -157,7 +157,7 @@ def sidecar_status_text(sidecar: SidecarLoadResult | None, language: str = "de")
         return tr.t("settings_none")
     if sidecar.status == SidecarStatus.MISSING:
         return tr.t("sidecar_new")
-    if sidecar.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
+    if sidecar.status == SidecarStatus.VALID:
         return tr.t("sidecar_loaded")
     if sidecar.status == SidecarStatus.STALE:
         return tr.t("sidecar_stale")

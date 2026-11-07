@@ -1819,6 +1819,8 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
     def _schedule_state_save(self, *, immediate: bool = False, create_if_missing: bool = True) -> None:
         if self.current is None:
             return
+        if not create_if_missing and self.current.sidecar.status != SidecarStatus.VALID:
+            return
         self._state_dirty = True
         self._state_dirty_can_create_sidecar = self._state_dirty_can_create_sidecar or bool(create_if_missing)
         if self._save_after_id:
@@ -1828,10 +1830,6 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
                 pass
             self._save_after_id = None
 
-        has_reusable_sidecar = self.current.sidecar.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}
-        if not create_if_missing and not has_reusable_sidecar:
-            # Calculated preview state cannot establish a sidecar on its own.
-            return
         if immediate:
             self._flush_state_save()
         else:
@@ -1846,12 +1844,12 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             self._save_after_id = None
         if self.current is None or not self._state_dirty:
             return True
-        reusable = self.current.sidecar.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}
+        reusable = self.current.sidecar.status == SidecarStatus.VALID
         try:
             if reusable or self._state_dirty_can_create_sidecar:
                 save_browsed_state(self.current)
                 updated = load_sidecar(self.current.source.sidecar_path, expected_source=self.current.source_stamp)
-                if updated.status not in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
+                if updated.status != SidecarStatus.VALID:
                     raise OSError(updated.message or "Saved settings could not be verified.")
                 self.current.sidecar = updated
         except Exception as exc:
@@ -1887,7 +1885,6 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             return
         state.input_transform = transform
         state.invalidate_for_input_transform()
-        state.input_override = True
         self._sync_vars_from_current()
         self._schedule_state_save()
         self._refresh_preview(rebuild_base=True)
@@ -2119,7 +2116,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
                 if message.kind == WorkerMessageKind.RESULT:
                     self.current.state.disparity = message.payload
                     self._measurement_job_id = None
-                    self._schedule_state_save()
+                    self._schedule_state_save(create_if_missing=False)
                     self._render_status()
                     if getattr(self, '_preview_pil', None) is not None:
                         self._update_preview_display()
@@ -2555,7 +2552,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
                 color = deepcopy(payload.native_result[3])
                 color.enabled = payload.session.state.color.enabled
                 payload.session.state.color = color
-                save_browsed_state(payload.session)
+                save_browsed_state(payload.session, save_orientation=True)
                 payload.session.sidecar = load_sidecar(payload.session.source.sidecar_path,
                                                        expected_source=payload.session.source_stamp)
             except Exception as exc:
@@ -2652,7 +2649,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         if processed.source != self.current.source or processed.source_stamp != self.current.source_stamp:
             return False
         saved = load_sidecar(processed.source.sidecar_path, expected_source=processed.source_stamp)
-        if saved.status not in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
+        if saved.status != SidecarStatus.VALID:
             return False
         previous_key = native_key(self.current)
         previous_window = deepcopy(self.current.state.floating_window)

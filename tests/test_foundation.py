@@ -144,29 +144,17 @@ class FoundationTests(unittest.TestCase):
             stale = load_sidecar(path, expected_source=changed_source)
             self.assertEqual(stale.status, SidecarStatus.STALE)
 
-    def test_v2_migration_drops_obsolete_window_fields(self):
+    def test_pre_release_v2_does_not_supply_image_settings(self):
         with tempfile.TemporaryDirectory() as td:
             path = Path(td) / "legacy.sfin"
-            path.write_text(
-                json.dumps(
-                    {
-                        "version": 2,
-                        "favorite": True,
-                        "window_position_percent": 80,
-                        "window_back_permille": 7,
-                        "manual_offset_x": 4,
-                        "floating_left_permille": 3,
-                    }
-                ),
-                encoding="utf-8",
-            )
+            payload = {"version": 2, "favorite": True, "floating_left_permille": "invalid"}
+            path.write_text(json.dumps(payload), encoding="utf-8")
+
             result = load_sidecar(path)
-            self.assertEqual(result.status, SidecarStatus.MIGRATED)
-            data = result.document.to_dict()
-            serialized = json.dumps(data)
-            self.assertNotIn("window_position_percent", serialized)
-            self.assertNotIn("window_back_permille", serialized)
-            self.assertTrue(result.document.favorite)
+
+            self.assertEqual(result.status, SidecarStatus.INVALID)
+            self.assertIsNone(result.document)
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8")), payload)
 
     def test_english_analysis_report_translates_presentation_only(self):
         with tempfile.TemporaryDirectory() as td:
@@ -667,14 +655,15 @@ class SourceAndSidecarValidityTests(unittest.TestCase):
             )
             doc = SidecarDocument(source=source_stamp_to_dict(stamp), favorite=True)
             doc.manual = {"offset_x_px": 12, "offset_y_px": -3}
-            doc.pipeline["anaglyph"] = "old-anaglyph"
+            doc.input_state = {"left_orientation": "0"}
+            doc.pipeline["color"] = "old-color"
             path = root / "_stereofine" / "x.sfin"
             save_sidecar(path, doc)
             result = load_sidecar(path, stamp)
             self.assertEqual(result.status, SidecarStatus.VALID)
-            self.assertIn("anaglyph", result.pipeline_mismatches)
+            self.assertIn("color", result.pipeline_mismatches)
             self.assertTrue(result.alignment_cache_valid)
-            self.assertFalse(result.anaglyph_cache_valid)
+            self.assertFalse(result.color_cache_valid)
             self.assertTrue(result.document.favorite)
             self.assertEqual(result.document.manual["offset_x_px"], 12)
 
@@ -688,7 +677,6 @@ class SourceAndSidecarValidityTests(unittest.TestCase):
         self.assertFalse(result.alignment_cache_valid)
         self.assertFalse(result.color_cache_valid)
         self.assertFalse(result.disparity_cache_valid)
-        self.assertTrue(result.anaglyph_cache_valid)
 
     def test_discover_suffix_pair_source_and_sidecar_location(self):
         from stereofine.sources import discover_pair_sources
@@ -914,41 +902,6 @@ class AutoFramingStateTests(unittest.TestCase):
         self.assertTrue(state.disparity.valid)
         self.assertFalse(state.disparity.stale)
 
-    def test_v2_migration_does_not_replay_legacy_geometry(self):
-        from stereofine.sidecar import load_sidecar, SidecarStatus
-        from stereofine.state import PairState
-        with tempfile.TemporaryDirectory() as td:
-            path = Path(td) / "legacy.sfin"
-            path.write_text(json.dumps({
-                "version": 2,
-                "left_orientation": "90° rechts",
-                "right_orientation": "90° rechts",
-                "left_mirror": True,
-                "favorite": True,
-                "manual_offset_x": 52,
-                "manual_offset_y": -2,
-                "near_framing": {"offset_x_px": 40, "base_width_px": 2000, "shift_permille": 20.0},
-                "crop_zoom_index": 4,
-                "crop_pan_x_permille": 500,
-                "floating_bottom_permille": 10,
-            }), encoding="utf-8")
-            loaded = load_sidecar(path)
-            self.assertEqual(loaded.status, SidecarStatus.MIGRATED)
-            state = PairState.from_sidecar(loaded.document)
-            # Geometry from legacy files is not safe to replay in 1.0.
-            self.assertIsNone(state.framing.auto_near_offset_x_px)
-            self.assertEqual(state.manual.delta_x_px, 0)
-            self.assertEqual(state.manual.delta_y_px, 0)
-            self.assertEqual(state.framing.crop_zoom_index, 0)
-            self.assertEqual(state.framing.pan_x_permille, 0)
-            self.assertFalse(state.alignment.valid)
-            # Geometry-independent user intent survives.
-            self.assertEqual(state.input_transform.left_orientation, "90_cw")
-            self.assertEqual(state.input_transform.right_orientation, "90_cw")
-            self.assertTrue(state.input_transform.left_mirror)
-            self.assertTrue(state.favorite)
-            self.assertEqual(state.floating_window.bottom_permille, 10)
-
 
 class PreviewResponsivenessTests(unittest.TestCase):
     def test_floating_window_is_part_of_authoritative_preview_pair(self):
@@ -1134,7 +1087,7 @@ class ProcessingIntegrationTests(unittest.TestCase):
             payload["pipeline"]["alignment"] = "sf-align-4"
             payload["favorite"] = True
             payload["manual"] = {"delta_x_px": 7, "delta_y_px": -2}
-            payload["floating_window"]["left_permille"] = 4
+            payload["floating_window"] = {"left_permille": 4}
             payload["framing"]["auto_near_offset_x_px"] = 9999
             payload["framing"]["auto_near_shift_permille"] = 9999
             source.sidecar_path.write_text(json.dumps(payload), encoding="utf-8")

@@ -34,8 +34,6 @@ def with_series_input(defaults, source):
 
 
 def document_preferences(document):
-    if document.preference_fields is not None:
-        return set(document.preference_fields).intersection(PREFERENCE_NAMES)
     return {name for name, present in (
         ('aspect', 'aspect' in document.framing), ('color', 'enabled' in document.color),
         ('look', bool(document.look))) if present}
@@ -45,11 +43,11 @@ def inherit_missing_preferences(state, defaults, document):
     transform = replace(state.input_transform, **{
         name: getattr(defaults, name)
         for name in InputTransformState.__dataclass_fields__
-        if not state.input_override or name not in document.input_state
+        if name not in document.input_state
     })
     if transform != state.input_transform:
         state.input_transform = transform
-        state.invalidate_for_input_transform()
+        state.invalidate_for_input_transform(keep_manual=True)
 
     owned = document_preferences(document)
     if 'aspect' not in owned:

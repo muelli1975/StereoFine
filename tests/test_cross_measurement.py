@@ -35,9 +35,9 @@ class CrossMeasurementTests(unittest.TestCase):
                 np.testing.assert_allclose(np.asarray(image)[16, 24], right[16,24], atol=3)
                 np.testing.assert_allclose(np.asarray(image)[16, 72], left[16,24], atol=3)
 
-    def test_preview_and_anaglyph_choices_are_independent_and_migrate(self):
-        settings = AppSettings.from_dict({'preview_mode':'Graustufen'})
-        self.assertTrue(settings.gray_anaglyph)
+    def test_preview_mode_does_not_set_anaglyph_export(self):
+        self.assertFalse(AppSettings.from_dict({'preview_mode': 'Graustufen'}).gray_anaglyph)
+        settings = AppSettings.from_dict({'gray_anaglyph': True})
         settings.save_cross = True
         restored = AppSettings.from_dict(settings.to_dict())
         self.assertTrue(restored.gray_anaglyph and restored.save_cross)

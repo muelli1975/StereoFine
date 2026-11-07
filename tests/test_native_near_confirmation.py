@@ -170,7 +170,8 @@ class NativeNearConfirmationTests(unittest.TestCase):
                 self.assertIsNotNone(point)
                 self.assertLessEqual(point['disparity_px']*1000/left.shape[1],-3.)
                 payload=json.loads(source.sidecar_path.read_text())
-                payload['favorite']=True;payload['manual']['delta_x_px']=7
+                payload['favorite'] = True
+                payload['manual'] = {'delta_x_px': 7}
                 source.sidecar_path.write_text(json.dumps(payload))
                 second=process_source(source)
                 self.assertTrue(second.alignment_from_cache)

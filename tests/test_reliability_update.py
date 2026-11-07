@@ -194,7 +194,7 @@ class ReliabilityUpdateTests(unittest.TestCase):
             self.assertEqual(load_sidecar(source.sidecar_path).document.manual['delta_x_px'],15)
             with patch('stereofine.gui.play_ready_sound'): app._finish_worker_success(prepared)
             self.assertIs(app.current,session)
-            self.assertEqual(load_sidecar(source.sidecar_path).document.manual['delta_x_px'],0)
+            self.assertEqual(browse_source(source).state.manual.delta_x_px, 0)
 
     def test_proxy_and_master_share_rectangle_through_crop_pan_and_offsets(self):
         loaded = loaded_pair(); bounds=(320,230)

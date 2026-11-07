@@ -182,7 +182,7 @@ def _oriented_master_pair(loaded: LoadedStereoPair, state: PairState) -> tuple[n
 def _state_from_sidecar(load_result: SidecarLoadResult) -> PairState:
     if load_result.document is None:
         return PairState()
-    if load_result.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
+    if load_result.status == SidecarStatus.VALID:
         return PairState.from_sidecar(load_result.document)
     # Stale/invalid sidecars must never silently leak edits into a different or
     # changed source.  The file remains untouched until a successful new save.
@@ -190,7 +190,6 @@ def _state_from_sidecar(load_result: SidecarLoadResult) -> PairState:
 
 
 def _apply_processing_defaults(state: PairState, defaults: ProcessingDefaults) -> None:
-    state.input_override = False
     state.input_transform.left_orientation = defaults.left_orientation
     state.input_transform.right_orientation = defaults.right_orientation
     state.input_transform.left_mirror = defaults.left_mirror
@@ -366,7 +365,7 @@ def process_source(
     load_result = load_sidecar(source.sidecar_path, expected_source=source_stamp)
     state = _state_from_sidecar(load_result)
     defaults = with_series_input(options.defaults, source) if options.read_series_input else options.defaults
-    if load_result.document is not None and load_result.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
+    if load_result.document is not None and load_result.status == SidecarStatus.VALID:
         inherit_missing_preferences(state, defaults, load_result.document)
     else:
         _apply_processing_defaults(state, defaults)

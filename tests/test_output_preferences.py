@@ -183,6 +183,3 @@ class OutputPreferencesTests(unittest.TestCase):
                 self.assertEqual(sidecar.alignment_cache_valid, not {'input', 'alignment'}.intersection(mismatch))
                 self.assertEqual(sidecar.disparity_cache_valid, not {'input', 'alignment', 'disparity'}.intersection(mismatch))
                 self.assertEqual(sidecar.color_cache_valid, 'color' not in mismatch and 'input' not in mismatch)
-            migrated = SidecarLoadResult(SidecarStatus.MIGRATED)
-            self.assertEqual(sidecar_status_text(migrated, language), expected)
-            self.assertFalse(migrated.alignment_cache_valid)

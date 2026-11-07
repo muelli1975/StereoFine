@@ -10,15 +10,10 @@ from typing import Any
 
 from .config import (
     ALIGNMENT_PIPELINE_VERSION,
-    ANAGLYPH_PIPELINE_VERSION,
-    APP_NAME,
-    APP_VERSION,
     COLOR_PIPELINE_VERSION,
     DISPARITY_PIPELINE_VERSION,
     INPUT_PIPELINE_VERSION,
     SIDECAR_SCHEMA_VERSION,
-    normalize_aspect_code,
-    normalize_orientation_code,
 )
 from .models import FileStamp, SourceStamp
 
@@ -26,7 +21,6 @@ from .models import FileStamp, SourceStamp
 class SidecarStatus(str, Enum):
     MISSING = "missing"
     VALID = "valid"
-    MIGRATED = "migrated"
     STALE = "stale"
     INVALID = "invalid"
 
@@ -34,7 +28,6 @@ class SidecarStatus(str, Enum):
 @dataclass
 class SidecarDocument:
     schema_version: int = SIDECAR_SCHEMA_VERSION
-    app: dict[str, Any] = field(default_factory=lambda: {"name": APP_NAME, "version": APP_VERSION})
     source: dict[str, Any] = field(default_factory=dict)
     pipeline: dict[str, str] = field(
         default_factory=lambda: {
@@ -42,57 +35,33 @@ class SidecarDocument:
             "alignment": ALIGNMENT_PIPELINE_VERSION,
             "disparity": DISPARITY_PIPELINE_VERSION,
             "color": COLOR_PIPELINE_VERSION,
-            "anaglyph": ANAGLYPH_PIPELINE_VERSION,
         }
     )
     favorite: bool = False
     input_state: dict[str, Any] = field(default_factory=dict)
     alignment: dict[str, Any] = field(default_factory=dict)
-    manual: dict[str, Any] = field(default_factory=lambda: {"delta_x_px": 0, "delta_y_px": 0})
+    manual: dict[str, Any] = field(default_factory=dict)
     framing: dict[str, Any] = field(default_factory=dict)
-    floating_window: dict[str, Any] = field(
-        default_factory=lambda: {"left_permille": 0, "right_permille": 0, "top_permille": 0, "bottom_permille": 0}
-    )
+    floating_window: dict[str, Any] = field(default_factory=dict)
     disparity: dict[str, Any] = field(default_factory=dict)
     color: dict[str, Any] = field(default_factory=dict)
     look: dict[str, Any] = field(default_factory=dict)
-    preference_fields: list[str] | None = None
-    settings_only: bool = False
-    input_override: bool | None = None
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
         data["schema_version"] = SIDECAR_SCHEMA_VERSION
-        data["app"] = {"name": APP_NAME, "version": APP_VERSION}
-        if self.preference_fields is not None:
-            if 'aspect' not in self.preference_fields:
-                data['framing'].pop('aspect', None)
-            if 'color' not in self.preference_fields:
-                data['color'].pop('enabled', None)
-            if 'look' not in self.preference_fields:
-                data['look'] = {}
-        return data
+        return {key: value for key, value in data.items() if value}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "SidecarDocument":
-        fields = data.get('preference_fields')
-        if fields is not None and (not isinstance(fields, list) or
-                any(x not in {'aspect', 'color', 'look'} for x in fields)):
-            raise ValueError('Invalid preference selection.')
-        if not isinstance(data.get('settings_only', False), bool):
-            raise ValueError('Invalid settings-only flag.')
-        if data.get('input_override') is not None and not isinstance(data['input_override'], bool):
-            raise ValueError('Invalid input orientation override.')
         return cls(
-            preference_fields=data.get('preference_fields'),
-            settings_only=bool(data.get('settings_only', False)),
-            input_override=data.get('input_override'),
             schema_version=int(data.get("schema_version", SIDECAR_SCHEMA_VERSION)),
-            app=dict(data.get("app") or {}),
             source=dict(data.get("source") or {}),
             pipeline=dict(data.get("pipeline") or {}),
             favorite=bool(data.get("favorite", False)),
-            input_state=dict(data.get("input_state") or {}),
+            # Test builds also wrote preview orientations. Only the stored
+            # image value, if any, survives a read or rewrite.
+            input_state={} if data.get("input_override") is False else dict(data.get("input_state") or {}),
             alignment=dict(data.get("alignment") or {}),
             manual=dict(data.get("manual") or {}),
             framing=dict(data.get("framing") or {}),
@@ -112,20 +81,14 @@ class SidecarLoadResult:
 
     @property
     def alignment_cache_valid(self) -> bool:
-        if self.document is not None and self.document.settings_only:
-            return False
         return self.status == SidecarStatus.VALID and not {"input", "alignment"}.intersection(self.pipeline_mismatches)
 
     @property
     def disparity_cache_valid(self) -> bool:
-        if self.document is not None and self.document.settings_only:
-            return False
         return self.status == SidecarStatus.VALID and not {"input", "alignment", "disparity"}.intersection(self.pipeline_mismatches)
 
     @property
     def color_cache_valid(self) -> bool:
-        if self.document is not None and self.document.settings_only:
-            return False
         # Fitted color curves are based on the rendered/aligned pair. A change
         # in alignment/render geometry therefore invalidates color parameters
         # even when the color algorithm itself is unchanged.
@@ -136,24 +99,20 @@ class SidecarLoadResult:
             and "color" not in self.pipeline_mismatches
         )
 
-    @property
-    def anaglyph_cache_valid(self) -> bool:
-        return self.status == SidecarStatus.VALID and "anaglyph" not in self.pipeline_mismatches
-
 
 def source_stamp_to_dict(stamp: SourceStamp) -> dict[str, Any]:
     return {
         "kind": stamp.kind,
-        "left": asdict(stamp.left),
-        "right": asdict(stamp.right),
+        "left": {key: value for key, value in asdict(stamp.left).items() if value is not None},
+        "right": {key: value for key, value in asdict(stamp.right).items() if value is not None},
     }
 
 
 def _file_stamp_matches(saved: dict[str, Any], expected: FileStamp, *, allow_transposed_dimensions: bool = False,
-                        settings_only: bool = False) -> bool:
+                        header_only: bool = False) -> bool:
     try:
         saved_dimensions = (int(saved.get("width", -1)), int(saved.get("height", -1)))
-        dimensions_match = settings_only or saved_dimensions == (expected.width, expected.height)
+        dimensions_match = header_only or saved_dimensions == (expected.width, expected.height)
         if allow_transposed_dimensions:
             dimensions_match |= saved_dimensions == (expected.height, expected.width)
         return (
@@ -161,21 +120,21 @@ def _file_stamp_matches(saved: dict[str, Any], expected: FileStamp, *, allow_tra
             and int(saved.get("size_bytes", -1)) == expected.size_bytes
             and int(saved.get("mtime_ns", -1)) == expected.mtime_ns
             and dimensions_match
-            and (settings_only or saved.get("frame") == expected.frame)
-            and (settings_only or saved.get("entity") == expected.entity)
+            and (header_only or saved.get("frame") == expected.frame)
+            and (header_only or saved.get("entity") == expected.entity)
         )
     except (TypeError, ValueError):
         return False
 
 
 def source_matches(saved: dict[str, Any], expected: SourceStamp, *, allow_transposed_dimensions: bool = False,
-                   settings_only: bool = False) -> bool:
+                   header_only: bool = False) -> bool:
     if not saved or saved.get("kind") != expected.kind:
         return False
     return _file_stamp_matches(dict(saved.get("left") or {}), expected.left,
-        allow_transposed_dimensions=allow_transposed_dimensions, settings_only=settings_only) and _file_stamp_matches(
+        allow_transposed_dimensions=allow_transposed_dimensions, header_only=header_only) and _file_stamp_matches(
         dict(saved.get("right") or {}), expected.right,
-        allow_transposed_dimensions=allow_transposed_dimensions, settings_only=settings_only
+        allow_transposed_dimensions=allow_transposed_dimensions, header_only=header_only
     )
 
 
@@ -185,48 +144,8 @@ def pipeline_mismatches(saved: dict[str, Any]) -> tuple[str, ...]:
         "alignment": ALIGNMENT_PIPELINE_VERSION,
         "disparity": DISPARITY_PIPELINE_VERSION,
         "color": COLOR_PIPELINE_VERSION,
-        "anaglyph": ANAGLYPH_PIPELINE_VERSION,
     }
     return tuple(key for key, value in expected.items() if saved.get(key) != value)
-
-
-def pipeline_matches(saved: dict[str, Any]) -> bool:
-    return not pipeline_mismatches(saved)
-
-
-def _migrate_v2(data: dict[str, Any]) -> SidecarDocument:
-    """Import only geometry-independent user intent from legacy v2 sidecars.
-
-    The v41-era sidecar mixed automatic geometry, near-point framing and manual
-    deltas in representations that are not safe to replay blindly in the 1.0
-    pipeline.  Reusing those values can make an otherwise correct pair look
-    badly shifted.  Orientation/eye order, favorite and floating-window masks
-    are independent user intent and are safe to retain; alignment, disparity,
-    manual offsets and crop framing are deliberately reset and recalculated.
-    """
-    input_state = {
-        "left_orientation": normalize_orientation_code(data.get("left_orientation")),
-        "right_orientation": normalize_orientation_code(data.get("right_orientation")),
-        "left_mirror": bool(data.get("left_mirror", False)),
-        "right_mirror": bool(data.get("right_mirror", False)),
-        "swap_eyes": bool(data.get("swap_eyes", False)),
-    }
-    floating = {
-        "left_permille": int(data.get("floating_left_permille", 0) or 0),
-        "right_permille": int(data.get("floating_right_permille", 0) or 0),
-        "top_permille": int(data.get("floating_top_permille", 0) or 0),
-        "bottom_permille": int(data.get("floating_bottom_permille", 0) or 0),
-    }
-    return SidecarDocument(
-        favorite=bool(data.get("favorite", False)),
-        input_state=input_state,
-        manual={"delta_x_px": 0, "delta_y_px": 0},
-        framing={"aspect": "maximum", "crop_zoom_index": 0, "pan_x_permille": 0, "pan_y_permille": 0},
-        floating_window=floating,
-        alignment={},
-        disparity={},
-        color={},
-    )
 
 
 def load_sidecar(path: Path, expected_source: SourceStamp | None = None) -> SidecarLoadResult:
@@ -239,45 +158,37 @@ def load_sidecar(path: Path, expected_source: SourceStamp | None = None) -> Side
     except Exception as exc:
         return SidecarLoadResult(SidecarStatus.INVALID, message=str(exc))
 
-    if raw.get("schema_version") == SIDECAR_SCHEMA_VERSION:
-        try:
-            doc = SidecarDocument.from_dict(raw)
-        except Exception as exc:
-            return SidecarLoadResult(SidecarStatus.INVALID, message=str(exc))
-        # The former TIFF double transform left orientations 5..8 with the
-        # stored (unrotated) dimensions. Keep user edits for those unchanged
-        # files, but never reuse their calculated data. Path, byte size, mtime,
-        # frame and exact/transposed dimensions still have to match per eye.
-        legacy_input = "input" not in doc.pipeline
+    if raw.get("schema_version") != SIDECAR_SCHEMA_VERSION:
+        return SidecarLoadResult(SidecarStatus.INVALID, message="Unbekanntes Sidecar-Schema.")
+
+    try:
+        doc = SidecarDocument.from_dict(raw)
+        eyes = (doc.source.get("left"), doc.source.get("right"))
+        header_only = all(isinstance(eye, dict) and not eye.get("width") and not eye.get("height")
+                          for eye in eyes)
+        # Before the TIFF decoder fix, an unchanged source could have
+        # transposed dimensions. Preserve its edits and invalidate its caches.
         if expected_source is not None and not source_matches(
-            doc.source, expected_source, allow_transposed_dimensions=legacy_input, settings_only=doc.settings_only
+            doc.source, expected_source, allow_transposed_dimensions="input" not in doc.pipeline,
+            header_only=header_only,
         ):
             return SidecarLoadResult(SidecarStatus.STALE, doc, "Quelldatei stimmt nicht mit Sidecar überein.")
-        mismatches = pipeline_mismatches(doc.pipeline)
-        if doc.settings_only:
-            # Header-free folder settings never own computed image caches.
-            doc.alignment = {}
-            doc.disparity = {}
-            doc.color.pop('parameters', None)
-            doc.color['valid'] = False
-        message = ""
-        if mismatches:
-            message = "Neu berechnen: " + ", ".join(mismatches)
-        # Pipeline changes invalidate only the affected cached calculations, not
-        # manual framing, floating-window values or the favorite flag.
-        return SidecarLoadResult(SidecarStatus.VALID, doc, message, mismatches)
+    except (TypeError, ValueError) as exc:
+        return SidecarLoadResult(SidecarStatus.INVALID, message=str(exc))
 
-    if raw.get("version") == 2:
-        doc = _migrate_v2(raw)
-        # Legacy v2 had no robust source stamp. It may be imported for manual
-        # review, but is never silently treated as fully validated cache data.
-        return SidecarLoadResult(
-            SidecarStatus.MIGRATED,
-            doc,
-            "Legacy-Sidecar v2: Ausrichtung/Favorit/Floating Window übernommen; Geometrie wird neu berechnet.",
-        )
-
-    return SidecarLoadResult(SidecarStatus.INVALID, message="Unbekanntes Sidecar-Schema.")
+    if header_only:
+        # Folder settings written without decoding the image have no caches.
+        doc.pipeline = {}
+        doc.alignment = {}
+        doc.disparity = {}
+        doc.color.pop("parameters", None)
+        doc.color.pop("valid", None)
+    mismatches = pipeline_mismatches(doc.pipeline)
+    if not doc.input_state and "input" not in mismatches:
+        # Reusable geometry must be tied to a saved orientation.
+        mismatches = ("input", *mismatches)
+    message = "Neu berechnen: " + ", ".join(mismatches) if mismatches and not header_only else ""
+    return SidecarLoadResult(SidecarStatus.VALID, doc, message, mismatches)
 
 
 def _source_path_identity(source: dict[str, Any]) -> tuple[str, str, str] | None:

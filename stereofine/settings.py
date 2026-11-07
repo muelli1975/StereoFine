@@ -79,9 +79,6 @@ class AppSettings:
         if (data.get("schema_version", 1) != SETTINGS_SCHEMA_VERSION
                 and not values["use_custom_sbs_suffix"] and data.get("sbs_suffix") == "_sbs"):
             values["sbs_suffix"] = "_cs"
-        # Preserve the export choice of old settings without restoring a preview.
-        if "gray_anaglyph" not in data:
-            values["gray_anaglyph"] = data.get("preview_mode") == "Graustufen"
         return cls(**values).normalize()
 
     def to_dict(self) -> dict[str, Any]:

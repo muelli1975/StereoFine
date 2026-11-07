@@ -396,7 +396,6 @@ CORE_MESSAGE_TRANSLATIONS: dict[str, dict[str, str]] = {
         "Kein passendes Links/Rechts-Bildpaar gefunden. Erwartet werden l/r-Unterordner oder Dateien mit _l/_r im selben Ordner.": "No matching Left/Right image pair found. Expected: l/r subfolders or files using _l/_r in the same folder.",
         "Quelldatei stimmt nicht mit Sidecar überein.": "Source file does not match the sidecar.",
         "Die Quelldatei wurde seit dem Laden verändert. Bitte das Bild erneut öffnen, bevor es gespeichert wird.": "The source file has changed since it was loaded. Please reopen the image before saving it.",
-        "Legacy-Sidecar v2 importiert; Quelle erneut prüfen.": "Legacy v2 sidecar imported; please check the source again.",
         "Kein vollständiges Bildpaar für Deviation-Analyse.": "No complete stereo pair for deviation analysis.",
         "Unbekanntes Sidecar-Schema.": "Unknown sidecar schema.",
     }

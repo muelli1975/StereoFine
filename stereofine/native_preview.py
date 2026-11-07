@@ -284,10 +284,10 @@ class NativePreviewMixin:
             color.strength = self.current.state.color.strength
             changed = color != self.current.state.color
             self.current.state.color = color
-            if (changed and getattr(self.current, 'sidecar', None) is not None
+            if (changed and self.current.state.alignment.valid and getattr(self.current, 'sidecar', None) is not None
                     and getattr(self, '_look_hover_state', None) is None):
                 from .sidecar import SidecarStatus
-                if self.current.sidecar.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
+                if self.current.sidecar.status == SidecarStatus.VALID:
                     self._schedule_state_save(create_if_missing=False)
             if len(self._native_views) > 6 and self._native_views[6] is not None:
                 self._preview_base = self._native_views[6]

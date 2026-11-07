@@ -45,8 +45,7 @@ class PreferenceTests(unittest.TestCase):
         self.assertEqual(len(result.updated), 3)
         first = self.sources[0]
         raw = json.loads(first.sidecar_path.read_text())
-        self.assertNotIn('look', raw)
-        self.assertNotIn('color', raw)
+        self.assertEqual(set(raw), {'schema_version', 'source', 'framing'})
         a = browse_source(first, ProcessingDefaults(color_enabled=False, look_enabled=True, look_strength=.43))
         self.assertEqual(a.state.framing.aspect, '1:1')
         self.assertTrue(a.state.look.enabled)
@@ -99,10 +98,8 @@ class PreferenceTests(unittest.TestCase):
         apply_folder_preferences([lut_only], FolderChoices(look=LookState(False, 'matrix')))
         lut_sidecar = lut_only.sidecar_path.read_bytes()
         session = browse_source(legacy)
-        save_browsed_state(session)
-        old_document = json.loads(legacy.sidecar_path.read_text('utf-8'))
-        old_document.pop('input_override')
-        legacy.sidecar_path.write_text(json.dumps(old_document), encoding='utf-8')
+        save_browsed_state(session, save_orientation=True)
+        self.assertEqual(json.loads(legacy.sidecar_path.read_text('utf-8'))['input_state']['left_orientation'], '0')
 
         upside_down = InputTransformState('180', '180', True, False, True)
         self.assertTrue(save_series_input(first, upside_down).is_file())
@@ -113,10 +110,36 @@ class PreferenceTests(unittest.TestCase):
 
         inherited = browse_source(first)
         save_browsed_state(inherited)
+        self.assertNotIn('input_state', json.loads(first.sidecar_path.read_text('utf-8')))
+        save_browsed_state(inherited, save_orientation=True)
+        raw = json.loads(first.sidecar_path.read_text('utf-8'))
+        self.assertEqual(raw['input_state'], asdict(upside_down))
+        self.assertTrue({'app', 'input_override', 'preference_fields', 'settings_only'}.isdisjoint(raw))
         upright = InputTransformState()
         save_series_input(first, upright)
-        self.assertEqual(browse_source(first).state.input_transform, upright)
-        self.assertFalse(browse_source(first).state.input_override)
+        self.assertEqual(browse_source(first).state.input_transform, upside_down)
+        self.assertEqual(browse_source(lut_only).state.input_transform, upright)
+
+    def test_test_build_preview_rotation_does_not_override_folder_or_keep_old_geometry(self):
+        source = self.sources[0]
+        session = browse_source(source)
+        session.state.favorite = True
+        session.state.input_transform = InputTransformState('180', '180')
+        session.state.alignment.valid = True
+        session.state.alignment.correction = {'rotation_deg': 3}
+        save_browsed_state(session, save_orientation=True)
+        raw = json.loads(source.sidecar_path.read_text('utf-8'))
+        raw['input_override'] = False
+        source.sidecar_path.write_text(json.dumps(raw), encoding='utf-8')
+
+        reopened = browse_source(source)
+        self.assertEqual(reopened.state.input_transform, InputTransformState())
+        self.assertTrue(reopened.state.favorite)
+        self.assertIsNone(reopened.state.alignment.correction)
+        save_browsed_state(reopened)
+        rewritten = json.loads(source.sidecar_path.read_text('utf-8'))
+        self.assertNotIn('input_state', rewritten)
+        self.assertNotIn('input_override', rewritten)
 
     def test_corrupt_or_changed_sources_are_not_overwritten(self):
         source = self.sources[0]
@@ -147,7 +170,7 @@ class PreferenceTests(unittest.TestCase):
         save_browsed_state(session)
         path = session.source.sidecar_path
         raw = json.loads(path.read_text())
-        raw.pop('look'); raw.pop('preference_fields', None)
+        raw.pop('look')
         path.write_text(json.dumps(raw), encoding='utf-8')
         changed = browse_source(self.sources[0], ProcessingDefaults(look_enabled=True, look_preset_id='matrix'))
         self.assertTrue(changed.state.look.enabled)

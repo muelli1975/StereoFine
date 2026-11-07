@@ -49,7 +49,6 @@ def source_from_selected_stereo_file(path: Path) -> StereoSource:
 
 
 def _apply_defaults(state: PairState, defaults: ProcessingDefaults) -> None:
-    state.input_override = False
     state.input_transform.left_orientation = defaults.left_orientation
     state.input_transform.right_orientation = defaults.right_orientation
     state.input_transform.left_mirror = defaults.left_mirror
@@ -76,7 +75,7 @@ def browse_source(source: StereoSource, defaults: ProcessingDefaults = Processin
     stamp = build_source_stamp(source, loaded)
     sidecar = load_sidecar(source.sidecar_path, expected_source=stamp)
 
-    if sidecar.document is not None and sidecar.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
+    if sidecar.document is not None and sidecar.status == SidecarStatus.VALID:
         state = PairState.from_sidecar(sidecar.document)
         inherit_missing_preferences(state, defaults, sidecar.document)
         # Cached calculations may be obsolete while user intent remains useful.
@@ -121,12 +120,17 @@ def browse_source(source: StereoSource, defaults: ProcessingDefaults = Processin
     return BrowsedSource(source, loaded, stamp, state, sidecar, deepcopy(state.input_transform))
 
 
-def save_browsed_state(session: BrowsedSource) -> Path:
-    """Persist the exact current per-image state using the already verified stamp."""
-    document = session.state.to_sidecar(source=source_stamp_to_dict(session.source_stamp))
-    if (session.loaded_input_transform is not None
-            and session.state.input_transform != session.loaded_input_transform):
-        document.input_override = True
-    path = save_sidecar(session.source.sidecar_path, document)
-    session.state.input_override = document.input_override
-    return path
+def save_browsed_state(session: BrowsedSource, *, save_orientation: bool = False) -> Path:
+    """Save edits without turning a display default into an image setting."""
+    existing = session.sidecar.document if session.sidecar.status == SidecarStatus.VALID else None
+    transform_changed = (session.loaded_input_transform is not None
+                         and session.state.input_transform != session.loaded_input_transform)
+    previous_manual = existing.manual if existing else {}
+    manual_changed = any(getattr(session.state.manual, key) != previous_manual.get(key, 0)
+                         for key in ("delta_x_px", "delta_y_px"))
+    document = session.state.to_sidecar(
+        source=source_stamp_to_dict(session.source_stamp),
+        save_orientation=(save_orientation or transform_changed or manual_changed
+                          or bool(existing and existing.input_state)),
+    )
+    return save_sidecar(session.source.sidecar_path, document)

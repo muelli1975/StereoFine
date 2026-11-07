@@ -11,7 +11,6 @@ INPUT_PIPELINE_VERSION = "sf-input-2"
 ALIGNMENT_PIPELINE_VERSION = "sf-align-5"
 DISPARITY_PIPELINE_VERSION = "sf-disparity-6"
 COLOR_PIPELINE_VERSION = "sf-color-2"
-ANAGLYPH_PIPELINE_VERSION = "sf-anaglyph-1"
 
 # Validated project baselines from the previous StereoFine test rounds.
 ALIGNMENT_ANALYSIS_MAX_WIDTH = 3000

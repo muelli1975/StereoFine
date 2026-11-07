@@ -265,7 +265,6 @@ class PairState:
     look: LookState = field(default_factory=LookState)
     warnings: list[str] = field(default_factory=list)
     preference_fields: list[str] | None = None
-    input_override: bool = True
 
     @property
     def auto_offset_x_px(self) -> int:
@@ -372,13 +371,14 @@ class PairState:
             if self.disparity.status == "stale":
                 self.disparity.status = "ok"
 
-    def invalidate_for_input_transform(self) -> None:
+    def invalidate_for_input_transform(self, *, keep_manual: bool = False) -> None:
         """Invalidate calculated geometry after orientation/mirror/eye changes."""
         method = self.alignment.method
         self.alignment = AlignmentState(method=method)
         self.disparity = DisparityState(stale=True, status="stale")
         self.framing.clear_auto_near(status="stale")
-        self.manual.reset()
+        if not keep_manual:
+            self.manual.reset()
         self.color.valid = False
 
     def invalidate_disparity_for_framing(self, _reason: str = "crop_changed") -> None:
@@ -389,7 +389,7 @@ class PairState:
         # it. A fresh analysis may replace it after the manual framing is kept.
         self.color.valid = False
 
-    def to_sidecar(self, *, source: dict[str, Any]) -> SidecarDocument:
+    def to_sidecar(self, *, source: dict[str, Any], save_orientation: bool = True) -> SidecarDocument:
         alignment = {
             "method": self.alignment.method,
             "model": self.alignment.model,
@@ -418,19 +418,36 @@ class PairState:
             "endpoints": dict(self.disparity.endpoints),
         }
 
+        framing = asdict(self.framing)
+        for key, default in asdict(FramingState()).items():
+            if key != "aspect" and framing[key] == default:
+                del framing[key]
+        floating_window = {key: value for key, value in asdict(self.floating_window.normalize()).items() if value}
+        color = asdict(self.color)
+        if not self.color.valid:
+            color = {"enabled": self.color.enabled, "strength": self.color.strength}
+        if self.color.strength == 1.0:
+            color.pop("strength")
+        look = asdict(self.look.normalize())
+        if self.preference_fields is not None:
+            if "aspect" not in self.preference_fields:
+                framing.pop("aspect")
+            if "color" not in self.preference_fields:
+                color.pop("enabled")
+            if "look" not in self.preference_fields:
+                look = {}
+
         return SidecarDocument(
-            preference_fields=self.preference_fields,
             source=source,
             favorite=bool(self.favorite),
-            input_state=asdict(self.input_transform),
-            input_override=self.input_override,
-            alignment=alignment,
-            manual=asdict(self.manual),
-            framing=asdict(self.framing),
-            floating_window=asdict(self.floating_window.normalize()),
-            disparity=disparity,
-            color=asdict(self.color),
-            look=asdict(self.look.normalize()),
+            input_state=asdict(self.input_transform) if save_orientation else {},
+            alignment=alignment if self.alignment != AlignmentState() else {},
+            manual={key: value for key, value in asdict(self.manual).items() if value},
+            framing=framing,
+            floating_window=floating_window,
+            disparity=disparity if self.disparity != DisparityState() else {},
+            color=color,
+            look=look,
         )
 
     @classmethod
@@ -457,7 +474,6 @@ class PairState:
         state = cls(
             favorite=bool(document.favorite),
             input_transform=filtered(InputTransformState, input_values),
-            input_override=(bool(document.input_state) if document.input_override is None else document.input_override),
             alignment=filtered(AlignmentState, document.alignment),
             manual=filtered(ManualState, manual_values),
             framing=filtered(FramingState, framing_values),
@@ -467,5 +483,4 @@ class PairState:
             look=filtered(LookState, document.look).normalize(),
         )
         state.floating_window.normalize()
-        state.preference_fields = document.preference_fields
         return state

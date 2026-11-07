@@ -233,7 +233,7 @@ def main():
             assert dialog.cancel_button.cget('state') == 'normal'
             pump(app, lambda: app.busy_state == 'idle' and app._folder_dialog is None)
             saved_other = json.loads(other.sidecar_path.read_text('utf-8'))
-            assert saved_other['preference_fields'] == ['look']
+            assert set(saved_other) == {'schema_version', 'source', 'look'}
             assert saved_other['look']['preset_id'] == 'matrix'
             assert app.current.source == source and app.current.state.alignment.valid
             assert app._folder_feedback
@@ -302,7 +302,9 @@ def main():
             app._on_input_transform_changed()
             assert app.left_orientation.get() == app.right_orientation.get() == '180'
             assert app._flush_state_save()
-            assert json.loads(other.sidecar_path.read_text('utf-8'))['input_override'] is True
+            saved_orientation = json.loads(other.sidecar_path.read_text('utf-8'))
+            assert saved_orientation['input_state']['left_orientation'] == '180'
+            assert 'input_override' not in saved_orientation
             assert not series_path.exists()
             assert app.save_series_input_button.cget('state') == 'normal'
             app.save_series_input_button.invoke()

@@ -100,9 +100,9 @@ class NearPointTests(unittest.TestCase):
             process_source(source)
             payload = json.loads(source.sidecar_path.read_text())
             payload["pipeline"]["disparity"] = "sf-disparity-2"
-            payload["manual"]["delta_x_px"] = 7
+            payload["manual"] = {"delta_x_px": 7}
             payload["favorite"] = True
-            payload["floating_window"]["right_permille"] = 4
+            payload["floating_window"] = {"right_permille": 4}
             payload["framing"]["auto_near_offset_x_px"] = 9999
             source.sidecar_path.write_text(json.dumps(payload))
             browsed = browse_source(source)
