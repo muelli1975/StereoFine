@@ -53,9 +53,11 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_*.py'
       - name: StereoFine 1.3 controls (Linux)
         if: runner.os == 'Linux'
+        timeout-minutes: 4
         run: PYTHONPATH=. xvfb-run -a -s '-screen 0 1920x1080x24' python tests/gui_controls_13.py
       - name: StereoFine 1.3 controls
         if: runner.os != 'Linux'
+        timeout-minutes: 4
         run: python -m tests.gui_controls_13
       - name: Research safety and synthetic geometry tests
         run: python -m unittest discover -s experiments/tests -p 'test_*.py'

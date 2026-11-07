@@ -142,7 +142,8 @@ def main():
                 app.current_job_kind = 'batch'
                 app._handle_progress(BatchProgress(2, 7, 'B.jpg', 'measured', state=snapshot))
                 app._render_status()
-                assert '21.00' in app._status_line_widgets['deviation'].cget('text')
+                expected_deviation = '21,00‰' if language == 'de' else '21.00‰'
+                assert expected_deviation in app._status_line_widgets['deviation'].cget('text')
                 assert app._status_line_widgets['warning'].cget('text')
                 app._handle_progress(BatchProgress(3, 7, 'C.jpg', 'analysis'))
                 app._render_status()

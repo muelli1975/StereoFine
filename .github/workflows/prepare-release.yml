@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: stereofine-candidate-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   checked-platforms:
     uses: ./.github/workflows/validate-development.yml

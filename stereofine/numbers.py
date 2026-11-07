@@ -3,7 +3,7 @@
 
 def format_number(value, suffix='', decimals=2, *, language='en', significant=None):
     if value is None:
-        return '-'
+        return '–'
     if isinstance(value, int):
         result = str(value)
     elif significant is not None:

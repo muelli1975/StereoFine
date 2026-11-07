@@ -574,7 +574,8 @@ def main() -> None:
             app._render_status()
             assert app._status_line_widgets['warning'].cget('text') == ''
             empty_endpoints = f"{app._t('status_near')}: – · {app._t('status_far')}: –"
-            assert app._status_line_widgets['near_far'].cget('text') == empty_endpoints
+            endpoint_text = app._status_line_widgets['near_far'].cget('text')
+            assert endpoint_text == empty_endpoints, (endpoint_text, empty_endpoints)
             from copy import deepcopy
             measured_state = deepcopy(app.current.state)
             measured_state.disparity.valid = True
@@ -585,7 +586,8 @@ def main() -> None:
             app._handle_progress(BatchProgress(17, 33, 'bild017', 'measured', state=measured_state))
             app._render_status()
             assert app._status_line_widgets['warning'].cget('text')
-            assert '21.00' in app._status_line_widgets['deviation'].cget('text')
+            expected_deviation = '21,00‰' if test_language == 'de' else '21.00‰'
+            assert expected_deviation in app._status_line_widgets['deviation'].cget('text')
             app._handle_progress(BatchProgress(33, 33, "bild033", "export"))
             app.update_idletasks(); app.update()
             final_status = app._input_status_text()
