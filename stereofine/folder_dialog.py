@@ -61,10 +61,10 @@ class FolderSettingsDialog(ctk.CTkToplevel):
         self.progress_label = ctk.CTkLabel(frame, text='', font=app._font(12), text_color=TEXT_PRIMARY,
                                          anchor='w', wraplength=520)
         self.progress_label.grid(row=6, column=0, columnspan=2, sticky='ew', padx=16)
-        self.progress = ctk.CTkProgressBar(frame, fg_color=BORDER, progress_color=GOLD_DARK)
+        # Reserve the row before the run so the buttons stay at the same height.
+        self.progress = ctk.CTkProgressBar(frame, fg_color=SECONDARY_BG, progress_color=SECONDARY_BG)
         self.progress.set(0)
         self.progress.grid(row=7, column=0, columnspan=2, sticky='ew', padx=16, pady=(0, 12))
-        self.progress.grid_remove()
         buttons = ctk.CTkFrame(frame, fg_color='transparent')
         buttons.grid(row=8, column=0, columnspan=2, sticky='e', padx=16, pady=(4, 16))
         self.apply_button = app._secondary_button(buttons, app._t('folder_commit'), self.start, width=120)
@@ -103,7 +103,7 @@ class FolderSettingsDialog(ctk.CTkToplevel):
         for box in self.checkboxes:
             self.app._set_checkbox_enabled(box, False)
         self.apply_button.configure(state='disabled')
-        self.progress.grid()
+        self.progress.configure(fg_color=BORDER, progress_color=GOLD_DARK)
         self.progress_label.configure(text=self.app._t('folder_progress', index=0, total=len(self.sources)))
         def job(token, progress):
             return apply_folder_preferences(self.sources, choices, cancellation=token, progress=progress)

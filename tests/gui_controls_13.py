@@ -17,6 +17,7 @@ from PIL import Image
 import stereofine.gui as gui
 from stereofine.inspection import measured_deviation
 from stereofine.looks import builtin_looks
+from stereofine.processing import ProcessingOptions, process_source
 from stereofine.settings import AppSettings
 from stereofine.sources import source_from_pair
 
@@ -193,10 +194,20 @@ def main():
             assert len(dialog.sources) == 2
             assert not any(value.get() for value in dialog.selection.values())
             assert dialog.apply_button.cget('state') == 'disabled'
+            dialog.update_idletasks()
+            button_row = dialog.apply_button.master
+            initial_button_y = button_row.winfo_y()
+            initial_dialog_height = dialog.winfo_reqheight()
+            assert initial_button_y > 0
+            assert dialog.progress.cget('fg_color') == '#181818'
             dialog.selection['look'].set(True)
             dialog._changed()
             assert dialog.apply_button.cget('state') == 'normal'
             dialog.start()
+            dialog.update_idletasks()
+            assert button_row.winfo_y() == initial_button_y
+            assert dialog.winfo_reqheight() == initial_dialog_height
+            assert dialog.progress.cget('fg_color') == '#333333'
             assert dialog.cancel_button.cget('state') == 'normal'
             pump(app, lambda: app.busy_state == 'idle' and app._folder_dialog is None)
             saved_other = json.loads(other.sidecar_path.read_text('utf-8'))
@@ -208,27 +219,61 @@ def main():
             app.settings.custom_output_folder=str(folder/'chosen-output')
             app.settings.use_input_output_subfolder=False
             app.use_input_subfolder.set(False)
+            before_defaults = source.sidecar_path.read_bytes()
             app.restore_program_defaults();pump(app)
             assert app.settings.custom_output_folder==str(folder/'chosen-output')
             assert not app.use_input_subfolder.get()
-            assert not app.current.state.look.enabled
-            assert app.look_slider.cget('state')=='disabled'
+            assert app.current.state.look.enabled and app.current.state.look.preset_id == 'matrix'
+            assert app.look_slider.cget('state')=='normal'
+            assert not app.current.state.color.enabled and app.settings.color_match_enabled
+            assert not app.settings.look_enabled and source.sidecar_path.read_bytes() == before_defaults
             assert not app.show_deviation_points.get()
             app.use_custom_sbs_suffix.set(False)
             app._refresh_control_states()
             assert app.sbs_suffix_menu.cget('state') == 'normal'
             app._activate_sbs_suffix()
             assert app.use_custom_sbs_suffix.get()
+            app.look_checkbox.toggle()
             assert not app.look_enabled.get()
             app.look_menu._open_dropdown_menu()
             assert app.look_enabled.get() and app.look_menu.popup is not None
             app._on_escape()
+
+            for name, pixels in [('third_l.png', left), ('third_r.png', right)]:
+                Image.fromarray(pixels).save(folder/name)
+            third = source_from_pair(folder/'third_l.png', folder/'third_r.png', folder)
+            app.left_orientation.set('180'); app.right_orientation.set('180')
+            app._on_input_transform_changed()
+            app._set_source_collection([source, other, third], 0, batch=True)
+            pump(app, lambda: app.busy_state == 'idle' and app.current.source == source)
+            app.next_source()
+            pump(app, lambda: app.busy_state == 'idle' and app.current.source == other)
+            assert app.left_orientation.get() == app.right_orientation.get() == '180'
+            assert app.current.state.look.preset_id == 'matrix'
+            batch_options = ProcessingOptions(defaults=app._batch_defaults(), save_sidecar=False)
+            inherited = process_source(other, batch_options).state.input_transform
+            assert inherited.left_orientation == inherited.right_orientation == '180'
+
+            app.left_orientation.set('0'); app.right_orientation.set('0')
+            app._on_input_transform_changed()
+            assert app._flush_state_save()
+            batch_options = ProcessingOptions(defaults=app._batch_defaults(), save_sidecar=False)
+            assert batch_options.defaults.left_orientation == '180'
+            explicit = process_source(other, batch_options).state.input_transform
+            assert explicit.left_orientation == explicit.right_orientation == '0'
+            app.next_source()
+            pump(app, lambda: app.busy_state == 'idle' and app.current.source == third)
+            assert app.left_orientation.get() == app.right_orientation.get() == '180'
+            app.previous_source()
+            pump(app, lambda: app.busy_state == 'idle' and app.current.source == other)
+            assert app.left_orientation.get() == app.right_orientation.get() == '0'
             assert not messages,messages
             assert not errors,errors
             report=dict(loading=True,look_strength_sidecar=True,zoom_preserves_crop=True,
                         z_restores_view=True,measurement_zoom_invariant=True,escape_priority=True,
                         near_far_evidence=True,help_languages=['de','en'],defaults_keep_destination=True,
                         hover_preview=True,folder_apply=True,field_activation=True,help_sizes=help_sizes,
+                        series_orientation=True,defaults_keep_image=True,folder_buttons_stable=True,
                         callback_errors=errors)
             (output/'gui-controls.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
             print(json.dumps(report))

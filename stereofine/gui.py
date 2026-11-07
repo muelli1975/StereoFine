@@ -63,6 +63,7 @@ from .session import (
 from .settings import AppSettings, load_settings, save_settings
 from .sidecar import SidecarStatus, load_sidecar
 from .sources import StereoSource, discover_pair_sources, discover_stereo_file_sources
+from .state import InputTransformState
 from .status import build_status_sections, sidecar_status_text
 from .theme import (
     APP_BG,
@@ -194,6 +195,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.sources: list[StereoSource] = []
         self.source_index: int | None = None
         self.batch_mode = False
+        self._series_input: tuple[StereoSource, InputTransformState] | None = None
         # Transient batch-preview identity.  The browsed source/index remains
         # untouched during a worker run so navigation can be restored cleanly;
         # these fields describe the lightweight image that is actually shown.
@@ -1395,38 +1397,22 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         )
 
     def _navigation_defaults(self) -> ProcessingDefaults:
-        """Defaults for the next/previous image in the same browsed collection.
-
-        v41 deliberately kept orientation, mirroring and eye order while
-        stepping through a folder because a camera series normally shares the
-        same physical orientation.  A valid per-image sidecar still wins; these
-        values are only used when the target image has no reusable sidecar.
-        Aspect and color remain global/per-image preferences and do not leak
-        from the currently displayed sidecar.
-        """
-        if self.current is None:
-            return self._new_source_defaults()
-        transform = self.current.state.input_transform
-        return ProcessingDefaults(
+        """Supply the series input transform wherever the image has no saved value."""
+        defaults = self._new_source_defaults()
+        if self._series_input is None:
+            return defaults
+        _, transform = self._series_input
+        return replace(
+            defaults,
             left_orientation=transform.left_orientation,
             right_orientation=transform.right_orientation,
-            left_mirror=bool(transform.left_mirror),
-            right_mirror=bool(transform.right_mirror),
-            swap_eyes=bool(transform.swap_eyes),
-            aspect=self.settings.default_aspect,
-            color_enabled=bool(self.settings.color_match_enabled),
-            look_enabled=self.settings.look_enabled, look_preset_id=self.settings.look_preset_id,
-            look_path=self.settings.look_path, look_strength=self.settings.look_strength,
+            left_mirror=transform.left_mirror,
+            right_mirror=transform.right_mirror,
+            swap_eyes=transform.swap_eyes,
         )
 
     def _batch_defaults(self) -> ProcessingDefaults:
-        """Camera-series transform plus global non-geometric defaults for a batch.
-
-        v41 kept orientation/mirroring/eye order while stepping through one
-        folder. The same camera-series transform must also seed batch items that
-        do not yet own a valid sidecar. Aspect and color remain global defaults
-        so values from one image sidecar never leak into another image.
-        """
+        """Use the same series orientation for browsing and batch processing."""
         return self._navigation_defaults()
 
     def _processing_defaults(self) -> ProcessingDefaults:
@@ -1693,6 +1679,15 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             return
         self._set_source_collection(sources, 0, batch=True)
 
+    def _same_input_root(self, source: StereoSource) -> bool:
+        if self.current is None:
+            return False
+        current_root = self.current.source.input_root
+        try:
+            return current_root.resolve() == source.input_root.resolve()
+        except (OSError, RuntimeError):
+            return current_root == source.input_root
+
     def _set_source_collection(self, sources: list[StereoSource], index: int, *, batch: bool) -> None:
         if not sources:
             return
@@ -1703,24 +1698,15 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             bool(self.batch_mode),
             str(self.settings.last_input_location or ""),
         )
-        inherit_input_transform = False
-        if self.current is not None:
-            try:
-                inherit_input_transform = (
-                    self.current.source.input_root.resolve() == sources[target_index].input_root.resolve()
-                )
-            except Exception:
-                inherit_input_transform = self.current.source.input_root == sources[target_index].input_root
-            if not self._flush_state_save(explicit=True):
-                return
+        inherit_input_transform = self._same_input_root(sources[target_index])
+        if self.current is not None and not self._flush_state_save(explicit=True):
+            return
         self.sources = list(sources)
         self.source_index = target_index
         self.batch_mode = bool(batch)
         self.settings.last_input_location = str(sources[self.source_index].input_root)
         self._persist_settings()
-        # Re-selecting another image from the same folder is the same camera
-        # series workflow as Page Up/Page Down in v41: keep orientation, mirror
-        # and eye order unless the target has its own valid sidecar.
+        # Re-selecting an image in this folder uses the same series as paging.
         self._load_source_index(
             self.source_index,
             inherit_input_transform=inherit_input_transform,
@@ -1769,10 +1755,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.measure_cross_y = None
         self._stop_measure_repeat()
 
-        # Tk variables must never be read from the worker thread.  When the
-        # user steps through one folder, preserve the current camera-series
-        # orientation exactly as v41 did.  A target image's valid sidecar still
-        # overrides these defaults.
+        # Capture the series defaults before the worker opens the image.
         defaults = self._navigation_defaults() if inherit_input_transform else self._new_source_defaults()
         bounds = self._preview_bounds()
         mode = self._effective_preview_mode()
@@ -1870,7 +1853,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
 
         has_reusable_sidecar = self.current.sidecar.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}
         if not create_if_missing and not has_reusable_sidecar:
-            # Orientation/mirror-only changes on a new source remain session
+            # Series orientation changes on a new source remain session
             # state until a real edit/analysis/export establishes a sidecar.
             return
         if immediate:
@@ -1917,23 +1900,21 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         if self.current is None or self.busy_state != "idle":
             return
         state = self.current.state
-        changed = (
-            state.input_transform.left_orientation != self.left_orientation.get()
-            or state.input_transform.right_orientation != self.right_orientation.get()
-            or state.input_transform.left_mirror != bool(self.left_mirror.get())
-            or state.input_transform.right_mirror != bool(self.right_mirror.get())
-            or state.input_transform.swap_eyes != bool(self.swap_eyes.get())
+        transform = InputTransformState(
+            left_orientation=self.left_orientation.get(),
+            right_orientation=self.right_orientation.get(),
+            left_mirror=bool(self.left_mirror.get()),
+            right_mirror=bool(self.right_mirror.get()),
+            swap_eyes=bool(self.swap_eyes.get()),
         )
-        state.input_transform.left_orientation = self.left_orientation.get()
-        state.input_transform.right_orientation = self.right_orientation.get()
-        state.input_transform.left_mirror = bool(self.left_mirror.get())
-        state.input_transform.right_mirror = bool(self.right_mirror.get())
-        state.input_transform.swap_eyes = bool(self.swap_eyes.get())
-        if changed:
-            state.invalidate_for_input_transform()
-        else:
+        if transform == state.input_transform:
             return
-        self._schedule_state_save(create_if_missing=False)
+        state.input_transform = transform
+        state.invalidate_for_input_transform()
+        is_series_source = self._series_input is None or self._series_input[0] == self.current.source
+        if is_series_source:
+            self._series_input = self.current.source, deepcopy(transform)
+        self._schedule_state_save(create_if_missing=not is_series_source)
         self._refresh_preview(rebuild_base=True)
         self._render_status()
 
@@ -2601,6 +2582,12 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         if kind in {"load", "analysis"} and isinstance(payload, BrowsedSource):
             if kind == "load":
                 self._load_rollback_context = None
+                if not self._same_input_root(payload.source):
+                    self._series_input = None
+                    document = payload.sidecar.document
+                    if (payload.sidecar.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}
+                            and document is not None and document.input_state):
+                        self._series_input = payload.source, deepcopy(payload.state.input_transform)
             self.current = payload
             self._state_dirty = False
             self._state_dirty_can_create_sidecar = False

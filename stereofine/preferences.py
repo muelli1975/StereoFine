@@ -1,5 +1,7 @@
 """Explicit per-image preferences, including intentionally partial sidecars."""
-from .state import LookState
+from dataclasses import replace
+
+from .state import InputTransformState, LookState
 
 PREFERENCE_NAMES = ('aspect', 'color', 'look')
 
@@ -13,6 +15,15 @@ def document_preferences(document):
 
 
 def inherit_missing_preferences(state, defaults, document):
+    transform = replace(state.input_transform, **{
+        name: getattr(defaults, name)
+        for name in InputTransformState.__dataclass_fields__
+        if name not in document.input_state
+    })
+    if transform != state.input_transform:
+        state.input_transform = transform
+        state.invalidate_for_input_transform()
+
     owned = document_preferences(document)
     if 'aspect' not in owned:
         state.framing.aspect = defaults.aspect

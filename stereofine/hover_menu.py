@@ -6,7 +6,7 @@ import tkinter as tk
 
 import customtkinter as ctk
 
-from .theme import SECONDARY_BG, HOVER_BG, BORDER, TEXT_PRIMARY, TEXT_SECONDARY
+from .theme import SECONDARY_BG, HOVER_BG, BORDER, TEXT_PRIMARY, GOLD_LIGHT
 
 
 def work_area(widget):
@@ -59,14 +59,15 @@ class HoverOptionMenu(ctk.CTkOptionMenu):
             return
         window = ctk.CTkToplevel(self.winfo_toplevel())
         window.withdraw(); window.overrideredirect(True)
-        window.configure(fg_color=SECONDARY_BG)
+        window.configure(fg_color=BORDER)
         self.popup = window
         values = self.cget('values')
         scale = self._get_widget_scaling()
         l, t, r, b = work_area(self)
         below = b-self.winfo_rooty()-self.winfo_height()-8
         above = self.winfo_rooty()-t-8
-        content_height = len(values)*30 + len(self.section_headers)*26 + 10
+        header_height, header_padding = 20, (10, 3)
+        content_height = len(values)*30 + len(self.section_headers)*(header_height + sum(header_padding)) + 10
         height = min(round(content_height*scale), max(below, above), int((b-t)*.82))
         width = max(round(260*scale), self.winfo_width())
         width = min(width, r-l-16)
@@ -76,15 +77,15 @@ class HoverOptionMenu(ctk.CTkOptionMenu):
         tk.Toplevel.geometry(window, f'{width}x{max(80,height)}{x:+d}{y:+d}')
         frame = ModalScrollableFrame(window, fg_color=SECONDARY_BG, corner_radius=0,
             scrollbar_button_color=BORDER, scrollbar_button_hover_color=HOVER_BG)
-        frame.pack(fill='both', expand=True, padx=2, pady=2)
+        frame.pack(fill='both', expand=True, padx=1, pady=1)
         self._popup_frame = frame
         self._popup_buttons = []
         header_font = ctk.CTkFont(size=12, weight='bold')
         for index, value in enumerate(values):
             if index in self.section_headers:
-                header = ctk.CTkLabel(frame, text=self.section_headers[index], height=20,
-                    anchor='w', text_color=TEXT_SECONDARY, font=header_font)
-                header.pack(fill='x', padx=8, pady=(6, 0))
+                header = ctk.CTkLabel(frame, text=self.section_headers[index], height=header_height,
+                    anchor='w', text_color=GOLD_LIGHT, font=header_font)
+                header.pack(fill='x', padx=8, pady=header_padding)
                 self._popup_headers[index] = header
             button = ctk.CTkButton(frame, text=value, height=28, anchor='w', corner_radius=0,
                 fg_color=SECONDARY_BG, hover_color=HOVER_BG, text_color=TEXT_PRIMARY,

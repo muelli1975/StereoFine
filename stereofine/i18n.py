@@ -547,7 +547,7 @@ def grid_spacing_code(label: str) -> str:
 
 
 TEXTS['de'].update({
-    'look_tooltip': 'Mit LUTs lassen sich Kamerasimulationen und Filmlooks anwenden. Sie verändern Farben, Helligkeit und Kontrast; die Wirkung lässt sich über die Stärke dosieren. Zum Beurteilen der Farben die Kreuzblick-Vorschau verwenden, da Anaglyphen die Farbwiedergabe verändern.',
+    'look_tooltip': 'Mit LUTs lassen sich Filmsimulationen und Filmlooks anwenden. Sie verändern Farben, Helligkeit und Kontrast; die Wirkung lässt sich über die Stärke dosieren. Zum Beurteilen der Farben die Kreuzblick-Vorschau verwenden, da Anaglyphen die Farbwiedergabe verändern.',
     'folder_apply': 'Für Ordner übernehmen…',
     'folder_commit': 'Übernehmen',
     'folder_count': '{count} erkannte Stereobilder',
@@ -560,7 +560,7 @@ TEXTS['de'].update({
     'folder_no_images': 'Keine passenden Stereobilder im aktuellen Ordner gefunden.',
 })
 TEXTS['en'].update({
-    'look_tooltip': 'LUTs apply camera simulations and film looks. They change colour, brightness and contrast; adjust their effect with Strength. Use the cross-view preview to judge colours, as anaglyphs alter colour reproduction.',
+    'look_tooltip': 'LUTs apply film simulations and film looks. They change colour, brightness and contrast; adjust their effect with Strength. Use the cross-view preview to judge colours, as anaglyphs alter colour reproduction.',
     'folder_apply': 'Apply to folder…',
     'folder_commit': 'Apply',
     'folder_count': '{count} recognised stereo images',

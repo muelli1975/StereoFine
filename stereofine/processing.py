@@ -34,7 +34,7 @@ from .worker import CancellationToken
 
 @dataclass(frozen=True)
 class ProcessingDefaults:
-    """GUI/session defaults used only when a source has no reusable sidecar."""
+    """GUI/session defaults for settings that a source does not provide."""
 
     left_orientation: str = "0"
     right_orientation: str = "0"

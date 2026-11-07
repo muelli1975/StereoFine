@@ -252,20 +252,13 @@ class LookControlsMixin:
         self._last_anaglyph_preview_mode = 'Farbig'
         self._look_preset_id, self._look_path = fresh.look_preset_id, ''
         self.sbs_suffix_display.set(suffix_label(fresh.sbs_suffix,fresh.language))
-        self._sync_look_display()
-        self._sync_localized_display_vars()
         self._end_point_measurement()
         self._inspection_view.reset()
         if self.current is not None:
-            state = self.current.state
-            state.preference_fields = None
-            if state.framing.aspect != fresh.default_aspect:
-                state.framing.aspect = fresh.default_aspect
-                state.invalidate_disparity_for_framing()
-            state.color.enabled = fresh.color_match_enabled
-            state.look = LookState()
-            self._schedule_state_save()
+            self._sync_vars_from_current()
+        else:
+            self._sync_look_display()
+            self._sync_localized_display_vars()
         self._persist_settings()
         self._refresh_control_states()
         self._refresh_preview()
-        self._schedule_disparity_refresh()
