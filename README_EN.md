@@ -246,7 +246,7 @@ Where possible, StereoFine copies metadata using the bundled ExifTool. Preview, 
 
 Below symmetric colour matching, **Apply LUT** enables the selected look. Strength ranges from 0 to 100%. **Import (.cube, .png)** loads a custom 3D Cube file or square 8/16-bit HaldCLUT PNG. The per-image `.sfin` stores selection, strength and the custom file path; custom LUT files must remain available at that path. Both eyes receive the same look, before floating-window masks and anaglyph conversion.
 
-Hover over a look to preview it, click to apply it, or press Esc to keep the previous selection. Use Cross-view to judge colours. Clicking the LUT or custom SBS suffix field enables its corresponding option.
+Hover over a look to preview it, click to apply it, or press Esc to keep the previous selection. Use Cross-view to judge colours. Enable the corresponding checkbox to use the LUT or the custom SBS suffix.
 
 **Apply to folder…** lists the input folder and the number of recognised stereo images. Select any combination of aspect ratio, LUT including strength, and symmetric colour matching. StereoFine writes those choices to the image settings files. The dialog shows progress, and cancelling keeps completed updates. Individual image settings take precedence over program defaults. Missing settings follow the current defaults.
 
