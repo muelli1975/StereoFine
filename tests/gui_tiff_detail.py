@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import customtkinter as ctk
 import numpy as np
-from PIL import ImageGrab
+from PIL import Image, ImageGrab
 
 from stereofine import gui
 from stereofine.inputs import LoadedStereoPair
@@ -167,7 +167,9 @@ def main():
                         box,_=detail_box(left.shape,(bounds[0]//2,bounds[1]),app._detail_center)
                         x0,y0,x1,y1=box
                         expected=np.concatenate([right[y0:y1,x0:x1],left[y0:y1,x0:x1]],axis=1)
-                        np.testing.assert_array_equal(np.asarray(image),expected)
+                        expected = app._decorate_view(Image.fromarray(expected), box,
+                                                      (left.shape[1], left.shape[0]), detail=True)
+                        np.testing.assert_array_equal(np.asarray(image), np.asarray(expected))
                         previous=app._detail_center
                         app._on_arrow('left')
                         assert app._detail_center[0] >= previous[0]-1
