@@ -21,8 +21,8 @@ def locate_endpoints(disparity, confidence, near_confirmation, far_confirmation,
             if name == 'far':
                 x, d = w-1-x, -d
             if 0 <= x < w and 0 <= x-d < w and 0 <= y < h:
-                points.append((abs(d*1000/w-target), x, y, d,
-                               not confirmation.get('confirmed', False)))
+                points.append((abs(d*1000/w-target), not confirmation.get('confirmed', False),
+                               x, y, d))
         if len(dense):
             distances = np.abs(dense*1000/w-target)
             count = min(8, len(dense))
@@ -30,22 +30,22 @@ def locate_endpoints(disparity, confidence, near_confirmation, far_confirmation,
             for index in indices:
                 x, y, d = float(xs[index]), float(ys[index]), float(dense[index])
                 if 0 <= x-d < w:
-                    points.append((float(distances[index]), x, y, d, True))
+                    points.append((float(distances[index]), True, x, y, d))
         if points:
             candidates[name] = sorted(points)[:8]
     chosen = {name: values[0] for name, values in candidates.items()}
     if 'near' in candidates and 'far' in candidates:
-        ordered = [(n[0]+f[0], n, f) for n in candidates['near'] for f in candidates['far']
-                   if n[3] >= f[3]]
+        ordered = [(n[0]+f[0], int(n[1])+int(f[1]), n, f)
+                   for n in candidates['near'] for f in candidates['far'] if n[4] >= f[4]]
         if ordered:
-            _, chosen['near'], chosen['far'] = min(ordered)
+            _, _, chosen['near'], chosen['far'] = min(ordered)
         else:
             # Contradictory verifier evidence must not reverse physical depth.
-            pair = sorted([chosen['near'], chosen['far']], key=lambda v: v[3])
+            pair = sorted([chosen['near'], chosen['far']], key=lambda v: v[4])
             chosen['far'], chosen['near'] = pair
-            chosen = {name: (*point[:4], True) for name, point in chosen.items()}
+            chosen = {name: (point[0], True, *point[2:]) for name, point in chosen.items()}
     markers = {}
-    for name, (_, x, y, d, tentative) in chosen.items():
+    for name, (_, tentative, x, y, d) in chosen.items():
         markers[name] = dict(left=[(x+.5)/w, (y+.5)/h],
                              right=[(x-d+.5)/w, (y+.5)/h],
                              tentative=tentative,

@@ -48,12 +48,16 @@ class InspectionTests(unittest.TestCase):
 
     def test_far_evidence_is_unreflected_before_drawing(self):
         disparity=np.full((60,100),4,np.float32)
-        confidence=np.ones_like(disparity,bool)
+        # Give the unverified point an equal disparity error and an earlier
+        # x-coordinate than either verified point.
+        confidence=np.zeros_like(disparity,bool)
+        confidence[20,55]=True
         near=dict(confirmed=True,verified_points=[dict(x=70,y=20,disparity_px=4)])
         far=dict(confirmed=True,verified_points=[dict(x=20,y=20,disparity_px=-4)])
         data=locate_endpoints(disparity,confidence,near,far,40,40)
         self.assertAlmostEqual(data['markers']['far']['left'][0],.795)
         self.assertAlmostEqual(data['markers']['far']['right'][0],.755)
+        self.assertFalse(data['markers']['far']['tentative'])
 
 
 if __name__=='__main__':unittest.main()
