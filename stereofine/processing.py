@@ -25,6 +25,7 @@ from .framing import AutoNearGeometry, compute_auto_near_framing
 from .geometry import apply_orientation, center_crop_to_common_size
 from .inputs import LoadedStereoPair, master_to_uint8
 from .models import AnalysisRecord, SourceStamp
+from .preferences import inherit_missing_preferences, with_series_input
 from .preview_render import build_preview_base_from_oriented_pair, render_preview_from_base
 from .sidecar import SidecarLoadResult, SidecarStatus, load_sidecar, save_sidecar, source_stamp_to_dict
 from .sources import StereoSource, SourceDirectoryIndex, build_source_stamp, load_source, validate_source_names
@@ -64,6 +65,7 @@ class ProcessingOptions:
     restart_alignment: bool = False
     # A single-image save must reproduce the source currently shown in the GUI.
     expected_source_stamp: SourceStamp | None = None
+    read_series_input: bool = True
 
 
 @dataclass
@@ -188,6 +190,7 @@ def _state_from_sidecar(load_result: SidecarLoadResult) -> PairState:
 
 
 def _apply_processing_defaults(state: PairState, defaults: ProcessingDefaults) -> None:
+    state.input_override = False
     state.input_transform.left_orientation = defaults.left_orientation
     state.input_transform.right_orientation = defaults.right_orientation
     state.input_transform.left_mirror = defaults.left_mirror
@@ -362,11 +365,11 @@ def process_source(
         raise ValueError("Die Quelldatei wurde seit dem Laden verändert. Bitte das Bild erneut öffnen, bevor es gespeichert wird.")
     load_result = load_sidecar(source.sidecar_path, expected_source=source_stamp)
     state = _state_from_sidecar(load_result)
+    defaults = with_series_input(options.defaults, source) if options.read_series_input else options.defaults
     if load_result.document is not None and load_result.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
-        from .preferences import inherit_missing_preferences
-        inherit_missing_preferences(state, options.defaults, load_result.document)
-    if load_result.document is None or load_result.status not in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
-        _apply_processing_defaults(state, options.defaults)
+        inherit_missing_preferences(state, defaults, load_result.document)
+    else:
+        _apply_processing_defaults(state, defaults)
     # Pipeline mismatches invalidate only the affected calculated cache.  User
     # intent (favorite, manual framing, floating window, color enabled flag) is
     # retained.

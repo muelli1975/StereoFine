@@ -151,6 +151,8 @@ class DeviationFilenameTests(unittest.TestCase):
                                        left_path=Path('source_l.jpg'), right_path=Path('source_r.jpg'))
         image = np.zeros((8, 12, 3), np.uint8)
         with tempfile.TemporaryDirectory() as temporary:
+            source.input_root = Path(temporary)
+            source.sidecar_path = source.input_root / '_stereofine' / 'photo.sfin'
             for enabled, valid, stale, uncertain, expected in [
                 (False, True, False, False, None), (True, True, False, False, 57.),
                 (True, True, False, True, 57.), (True, False, False, True, None),

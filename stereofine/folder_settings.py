@@ -11,10 +11,10 @@ import tempfile
 from .config import APP_NAME, APP_VERSION
 from .diagnostics import log_event, log_failure
 from .models import FileStamp
-from .preferences import document_preferences
+from .preferences import document_preferences, save_series_input
 from .sidecar import SidecarDocument, SIDECAR_SCHEMA_VERSION
 from .sources import validate_source_names
-from .state import LookState
+from .state import InputTransformState, LookState
 
 
 @dataclass(frozen=True)
@@ -22,6 +22,7 @@ class FolderChoices:
     aspect: str | None = None
     look: LookState | None = None
     color_enabled: bool | None = None
+    series_input: InputTransformState | None = None
 
     @property
     def selected(self):
@@ -36,6 +37,7 @@ class FolderApplyResult:
     unchanged: list[str] = field(default_factory=list)
     failed: list[tuple[str, str]] = field(default_factory=list)
     cancelled: bool = False
+    series_input_saved: bool = False
 
 
 @dataclass(frozen=True)
@@ -101,12 +103,20 @@ def _atomic_write(path, data, previous):
 def apply_folder_preferences(sources, choices, *, cancellation=None, progress=None):
     sources = list(sources)
     validate_source_names(sources, check_outputs=False)
-    if not choices.selected:
+    if not choices.selected and choices.series_input is None:
         raise ValueError('Select at least one setting.')
     if choices.look is not None and choices.look.enabled and choices.look.strength > 0:
         from .looks import load_lut, look_path
         load_lut(look_path(choices.look))
     result = FolderApplyResult(len(sources))
+    if choices.series_input is not None and not (cancellation and cancellation.cancelled):
+        if not sources or any(source.input_root != sources[0].input_root for source in sources):
+            raise ValueError('Series orientation requires one source folder.')
+        save_series_input(sources[0], choices.series_input)
+        result.series_input_saved = True
+    if not choices.selected:
+        result.cancelled = bool(cancellation and cancellation.cancelled)
+        return result
     for index, source in enumerate(sources, 1):
         if cancellation is not None and cancellation.cancelled:
             break

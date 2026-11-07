@@ -10,34 +10,51 @@ import numpy as np
 def herbstgold(rgb):
     source = np.asarray(rgb, np.float32).reshape(-1, 1, 3)
     hsv = cv2.cvtColor(source, cv2.COLOR_RGB2HSV)
-    h,s,v = (hsv[...,i] for i in range(3))
-    knots = [0,18,35,50,70,90,120,145,170,190,215,245,285,325,360]
-    # Golden foliage without treating every cool colour as faded sepia.
-    hue = np.interp(h,knots,[0,18,28,34,42,48,52,64,170,190,215,245,285,325,360])
-    sat = np.interp(h,knots,[1.02,1.06,1.16,1.14,1.10,1.04,.94,.90,.92,.96,.98,.98,1.,1.02,1.02])
-    saturation_weight = np.clip((s-.1)/.55,0,1)
-    foliage = np.interp(h,[0,35,60,90,140,170,360],[0,0,.5,1,1,0,0])
-    tone_x = [0, .08, .25, .5, .75, .9, 1]
-    tone_y = [0, .055, .22, .53, .81, .945, 1]
-    toned_v = np.interp(v, tone_x, tone_y)
-    toned_v += .035*foliage*s*4*v*(1-v)
-    chroma_mix = np.square(np.clip(s / .16, 0, 1))[..., None]
-    hsv[...,0] = h+(hue-h)*np.clip((s-.05)/.25,0,1)
-    hsv[...,1] = np.clip(s*(1+(sat-1)*saturation_weight),0,1)
-    hsv[...,2] = np.clip(toned_v,0,1)
-    result = cv2.cvtColor(hsv,cv2.COLOR_HSV2RGB)
-    # A common RGB tone curve around neutral colours avoids brightness teeth
-    # between diagonal cube entries where the identity of the HSV max changes.
-    result = chroma_mix * result + (1 - chroma_mix) * np.interp(source, tone_x, tone_y)
-    neutrality = np.square(1-hsv[...,1])
-    # Gentle warm midtones; exact black and white remain neutral. No local
-    # contrast, spatial sharpening, HDR tone mapping or reference-table fit.
-    luminance = result @ np.array([.2126, .7152, .0722])
-    warmth = neutrality*4*luminance*(1-luminance)
-    result[...,0] *= 1+.02*warmth
-    result[...,1] *= 1+.002*warmth
-    result[...,2] *= 1-.04*warmth
-    return np.clip(result.reshape(np.asarray(rgb).shape),0,1)
+    hue, saturation, value = (hsv[..., channel].copy() for channel in range(3))
+    knots = [0, 15, 30, 45, 60, 85, 115, 145, 175, 205, 225, 250, 285, 325, 360]
+    weights = np.array([.2126, .7152, .0722], dtype=np.float32)
+
+    # Turn yellow-green leaves toward amber and suppress cyan and blue
+    # saturation. The hue adjustment tapers out around the neutral axis.
+    autumn_hue = np.interp(
+        hue, knots, [0, 16, 24, 26, 29, 35, 42, 52, 180, 222, 230, 245, 282, 325, 360],
+    )
+    chroma_gain = np.interp(
+        hue, knots, [1.05, 1.14, 1.24, 1.22, 1.16, .83, .52, .28, .1, .15, .21, .4, .66, .9, 1.05],
+    )
+    hsv[..., 0] = hue + (autumn_hue - hue) * np.clip(saturation / .2, 0, 1)
+    hsv[..., 1] = np.clip(saturation * chroma_gain, 0, 1)
+    hsv[..., 2] = 1
+    colour = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+
+    # Pale cool highlights and richer shadows. Luminance is mapped separately
+    # so desaturating a clear blue sky does not turn it dark gray.
+    luma = source @ weights
+    lift = np.interp(
+        hue, knots, [.02, .05, .07, .03, -.02, -.04, -.04, .06, .28, .425, .465, .36, .17, .05, .02],
+    )
+    exposure = luma + lift * (value - luma)
+    tone_x = [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1]
+    tone_y = [0, .043, .112, .207, .32, .45, .595, .75, .887, .97, 1]
+    tone = np.interp(exposure, tone_x, tone_y)
+    colour_luma = colour @ weights
+    scale = np.minimum(tone / colour_luma, 1)
+    result = colour * scale[..., None] + (tone - scale * colour_luma)[..., None]
+
+    cool = np.interp(hue, [0, 145, 185, 235, 275, 360], [0, 0, 1, 1, 0, 0])
+    warmth = (1 - saturation) * 4 * tone * (1 - tone) * (1 - .80 * tone)
+    warmth *= 1 - .85 * cool * np.clip(saturation / .28, 0, 1)
+    result[..., 0] += .10 * warmth
+    result[..., 1] -= .013 * warmth
+    result[..., 2] -= .028 * warmth
+
+    # Keep the cells around the grey axis smooth after 3D interpolation.
+    neutral_tone = np.interp(luma, tone_x, tone_y)
+    neutral_warmth = 4 * neutral_tone * (1 - neutral_tone) * (1 - .80 * neutral_tone)
+    neutral = neutral_tone[..., None] + neutral_warmth[..., None] * [.10, -.013, -.028]
+    blend = np.clip((saturation - .02) / .04, 0, 1)[..., None]
+    result = neutral + (result - neutral) * blend**2 * (3 - 2 * blend)
+    return np.clip(result.reshape(np.asarray(rgb).shape), 0, 1)
 
 
 def main():

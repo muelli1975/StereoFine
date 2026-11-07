@@ -6,6 +6,7 @@
 - The release includes 25 built-in Cube looks in four groups, plus import of 3D .cube and square HaldCLUT .png files. A 0-100% strength slider applies the same look to both eyes before floating-window masks and anaglyph conversion. LUT selection, strength and custom path are retained in .sfin.
 - Hover over a LUT to preview it and click to apply it. Clicking the LUT or custom SBS suffix field enables the corresponding option.
 - Apply to folder independently saves aspect ratio, LUT and strength, and symmetric colour matching across the recognised stereo images. The dialog shows progress and keeps completed changes when cancelled.
+- Save series orientation in the folder dialog to share rotation, mirroring and eye order. Individual image orientations take precedence and can be returned to the folder setting with Use series orientation.
 - Restore defaults retains the selected output destination and dialog locations. The button is below the preview options. Manual image corrections remain controlled by Ctrl+R.
 - The bilingual Controls guide uses up to three columns and adapts to the available screen space.
 - Portable diagnostic logs rotate at 2 MiB with two backups and 30-day retention.

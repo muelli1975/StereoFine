@@ -94,6 +94,8 @@ class OutputPreferencesTests(unittest.TestCase):
         image = np.full((12, 18, 3), 120, np.uint8)
         for enabled in (False, True):
             with tempfile.TemporaryDirectory() as directory:
+                source.input_root = Path(directory)
+                source.sidecar_path = source.input_root / '_stereofine' / 'photo.sfin'
                 state = PairState()
                 processed = SimpleNamespace(state=state, analysis_record=object(), preview_pair=None,
                                             loaded_pair=SimpleNamespace(icc_profile=None))

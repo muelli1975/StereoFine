@@ -153,28 +153,25 @@ def main() -> None:
             assert app.current is not None
             assert app.current.source.base_name == "scene01"
 
-            # Viewing plus orientation-only edits must not create a fresh .sfin.
+            # Only the edited image owns an orientation until explicitly saved for the series.
             assert not app.current.source.sidecar_path.exists()
+            series_path = app.current.source.sidecar_path.with_name('series.json')
+            assert not series_path.exists()
             app.left_orientation.set("180")
             app.right_orientation.set("180")
             app.left_mirror.set(True)
             app.swap_eyes.set(True)
             app._on_input_transform_changed()
             app._flush_state_save()
-            assert not app.current.source.sidecar_path.exists()
+            assert app.current.source.sidecar_path.exists()
 
-            # Camera-series orientation is session state: selecting another
-            # image from the same folder (not only PageUp/PageDown) inherits it
-            # when that target has no sidecar of its own.
             app._set_source_collection(sources, 1, batch=True)
             pump(app, lambda: app.busy_state == "idle" and app.current is not None and app.source_index == 1)
-            assert app.left_orientation.get() == "180"
-            assert app.right_orientation.get() == "180"
-            assert app.left_mirror.get() is True
-            assert app.swap_eyes.get() is True
+            assert app.left_orientation.get() == app.right_orientation.get() == "0"
+            assert not app.left_mirror.get() and not app.swap_eyes.get()
             assert not app.current.source.sidecar_path.exists()
 
-            # Page navigation has the same v41 inheritance semantics.
+            # Page navigation restores the first image's explicit orientation.
             app.previous_source()
             pump(app, lambda: app.busy_state == "idle" and app.current is not None and app.source_index == 0)
             assert app.left_orientation.get() == "180"
@@ -182,14 +179,10 @@ def main() -> None:
             assert app.left_mirror.get() is True
             assert app.swap_eyes.get() is True
 
-            # The actual batch job must seed new/no-sidecar items with the same
-            # camera-series transform. Non-geometric defaults still come from
-            # global preferences rather than leaking from one image sidecar.
+            # Batch defaults stay independent of the current image's overrides.
             batch_defaults = app._processing_options(use_batch_defaults=True).defaults
-            assert batch_defaults.left_orientation == "180"
-            assert batch_defaults.right_orientation == "180"
-            assert batch_defaults.left_mirror is True
-            assert batch_defaults.swap_eyes is True
+            assert batch_defaults.left_orientation == batch_defaults.right_orientation == "0"
+            assert not batch_defaults.left_mirror and not batch_defaults.swap_eyes
             assert batch_defaults.aspect == app.settings.default_aspect
             assert batch_defaults.color_enabled == app.settings.color_match_enabled
 
@@ -199,7 +192,7 @@ def main() -> None:
             app.swap_eyes.set(False)
             app._on_input_transform_changed()
             app._flush_state_save()
-            assert not app.current.source.sidecar_path.exists()
+            assert app.current.source.sidecar_path.exists()
 
             # 1) Analysis-only through the real GUI -> worker -> batch -> report path.
             app.analysis_only.set(True)

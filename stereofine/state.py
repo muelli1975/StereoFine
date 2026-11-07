@@ -265,6 +265,7 @@ class PairState:
     look: LookState = field(default_factory=LookState)
     warnings: list[str] = field(default_factory=list)
     preference_fields: list[str] | None = None
+    input_override: bool = True
 
     @property
     def auto_offset_x_px(self) -> int:
@@ -422,6 +423,7 @@ class PairState:
             source=source,
             favorite=bool(self.favorite),
             input_state=asdict(self.input_transform),
+            input_override=self.input_override,
             alignment=alignment,
             manual=asdict(self.manual),
             framing=asdict(self.framing),
@@ -455,6 +457,7 @@ class PairState:
         state = cls(
             favorite=bool(document.favorite),
             input_transform=filtered(InputTransformState, input_values),
+            input_override=(bool(document.input_state) if document.input_override is None else document.input_override),
             alignment=filtered(AlignmentState, document.alignment),
             manual=filtered(ManualState, manual_values),
             framing=filtered(FramingState, framing_values),

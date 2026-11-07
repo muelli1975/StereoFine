@@ -18,7 +18,7 @@ FILES = {".gitignore", ".gitattributes", "AGENTS.md", "DESIGN_STANDARD_STEREOTOO
 def included(name: str) -> bool:
     path = Path(name)
     return (bool(path.parts) and (name in FILES or path.parts[0] in DIRECTORIES)
-            and "__pycache__" not in path.parts
+            and not {"__pycache__", "_stereofine"}.intersection(path.parts)
             and path.suffix not in {".pyc", ".sfin", ".log"} and path.name != "settings.json")
 
 

@@ -58,6 +58,7 @@ class SidecarDocument:
     look: dict[str, Any] = field(default_factory=dict)
     preference_fields: list[str] | None = None
     settings_only: bool = False
+    input_override: bool | None = None
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
@@ -80,9 +81,12 @@ class SidecarDocument:
             raise ValueError('Invalid preference selection.')
         if not isinstance(data.get('settings_only', False), bool):
             raise ValueError('Invalid settings-only flag.')
+        if data.get('input_override') is not None and not isinstance(data['input_override'], bool):
+            raise ValueError('Invalid input orientation override.')
         return cls(
             preference_fields=data.get('preference_fields'),
             settings_only=bool(data.get('settings_only', False)),
+            input_override=data.get('input_override'),
             schema_version=int(data.get("schema_version", SIDECAR_SCHEMA_VERSION)),
             app=dict(data.get("app") or {}),
             source=dict(data.get("source") or {}),
@@ -302,8 +306,12 @@ def save_sidecar(path: Path, document: SidecarDocument) -> Path:
                     "Die Einstellungsdatei gehört zu anderen Quelldateien. Bitte Quelldateien eindeutig umbenennen: "
                     + str(path)
                 )
+    return write_json_atomic(path, document.to_dict())
+
+
+def write_json_atomic(path: Path, data: dict[str, Any]) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = json.dumps(document.to_dict(), ensure_ascii=False, indent=2) + "\n"
+    payload = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
     fd, temp_name = tempfile.mkstemp(prefix=path.name + ".", suffix=".tmp", dir=path.parent)
     temp_path = Path(temp_name)
     try:

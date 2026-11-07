@@ -558,6 +558,9 @@ TEXTS['de'].update({
     'folder_cancelled': 'Abgebrochen.',
     'folder_error_log': 'Fehlerdetails: logs/stereofine.log',
     'folder_no_images': 'Keine passenden Stereobilder im aktuellen Ordner gefunden.',
+    'save_series_input': 'Serienausrichtung speichern',
+    'use_series_input': 'Serienausrichtung verwenden',
+    'series_input_saved': 'Serienausrichtung gespeichert.',
 })
 TEXTS['en'].update({
     'look_tooltip': 'LUTs apply film simulations and film looks. They change colour, brightness and contrast; adjust their effect with Strength. Use the cross-view preview to judge colours, as anaglyphs alter colour reproduction.',
@@ -571,4 +574,7 @@ TEXTS['en'].update({
     'folder_cancelled': 'Cancelled.',
     'folder_error_log': 'Error details: logs/stereofine.log',
     'folder_no_images': 'No matching stereo images found in the current folder.',
+    'save_series_input': 'Save series orientation',
+    'use_series_input': 'Use series orientation',
+    'series_input_saved': 'Series orientation saved.',
 })

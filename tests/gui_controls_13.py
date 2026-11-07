@@ -246,19 +246,27 @@ def main():
             app._on_input_transform_changed()
             app._set_source_collection([source, other, third], 0, batch=True)
             pump(app, lambda: app.busy_state == 'idle' and app.current.source == source)
+            series_path = source.sidecar_path.with_name('series.json')
+            assert not series_path.exists()
+            app.show_folder_settings()
+            dialog = app._folder_dialog
+            dialog.selection['series_input'].set(True)
+            dialog._changed()
+            dialog.start()
+            pump(app, lambda: app.busy_state == 'idle' and app._folder_dialog is None)
+            assert json.loads(series_path.read_text('utf-8'))['input_state']['left_orientation'] == '180'
+            assert json.loads(other.sidecar_path.read_text('utf-8')) == saved_other
             app.next_source()
             pump(app, lambda: app.busy_state == 'idle' and app.current.source == other)
             assert app.left_orientation.get() == app.right_orientation.get() == '180'
             assert app.current.state.look.preset_id == 'matrix'
-            batch_options = ProcessingOptions(defaults=app._batch_defaults(), save_sidecar=False)
+            batch_options = ProcessingOptions(save_sidecar=False)
             inherited = process_source(other, batch_options).state.input_transform
             assert inherited.left_orientation == inherited.right_orientation == '180'
 
             app.left_orientation.set('0'); app.right_orientation.set('0')
             app._on_input_transform_changed()
             assert app._flush_state_save()
-            batch_options = ProcessingOptions(defaults=app._batch_defaults(), save_sidecar=False)
-            assert batch_options.defaults.left_orientation == '180'
             explicit = process_source(other, batch_options).state.input_transform
             assert explicit.left_orientation == explicit.right_orientation == '0'
             app.next_source()
@@ -267,6 +275,12 @@ def main():
             app.previous_source()
             pump(app, lambda: app.busy_state == 'idle' and app.current.source == other)
             assert app.left_orientation.get() == app.right_orientation.get() == '0'
+            assert app.series_input_button.cget('state') == 'normal'
+            app.series_input_button.invoke()
+            assert app.left_orientation.get() == app.right_orientation.get() == '180'
+            assert app._flush_state_save()
+            assert json.loads(other.sidecar_path.read_text('utf-8'))['input_override'] is False
+            assert app.series_input_button.cget('state') == 'disabled'
             assert not messages,messages
             assert not errors,errors
             report=dict(loading=True,look_strength_sidecar=True,zoom_preserves_crop=True,

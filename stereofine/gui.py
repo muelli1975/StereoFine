@@ -51,6 +51,7 @@ from .native_preview import (NativePreviewMixin, native_key, prepare_native_prev
 from .tooltip import attach_tooltip
 from .preview import PreviewImageCache, draw_grid_overlay, draw_measure_cross_overlay
 from .preview_render import PreviewBasePair, build_preview_base, render_preview_from_base, preview_geometry_key
+from .preferences import with_series_input
 from .processing import ProcessingDefaults, ProcessingOptions, process_source
 from .resources import asset_path
 from .session import (
@@ -195,7 +196,6 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.sources: list[StereoSource] = []
         self.source_index: int | None = None
         self.batch_mode = False
-        self._series_input: tuple[StereoSource, InputTransformState] | None = None
         # Transient batch-preview identity.  The browsed source/index remains
         # untouched during a worker run so navigation can be restored cleanly;
         # these fields describe the lightweight image that is actually shown.
@@ -591,6 +591,9 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.right_mirror_box.grid(row=2, column=1, sticky="w", padx=(4, 0))
         self.swap_eyes_box = self._checkbox(self.sidebar, self._t("swap_eyes"), self.swap_eyes, self._on_input_transform_changed)
         self.swap_eyes_box.grid(row=row, column=0, sticky="w", padx=20, pady=(0, 8)); row += 1
+        self.series_input_button = self._secondary_button(
+            self.sidebar, self._t('use_series_input'), self._use_series_input)
+        self.series_input_button.grid(row=row, column=0, sticky='ew', padx=20, pady=(0, 8)); row += 1
 
         ctk.CTkLabel(self.sidebar, text=self._t("analysis_method"), text_color=TEXT_PRIMARY, font=self._font(13), anchor="w").grid(
             row=row, column=0, sticky="ew", padx=20, pady=(4, 4)
@@ -1299,6 +1302,8 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             state="normal" if can_navigate and self.source_index is not None and self.source_index < len(self.sources) - 1 else "disabled"
         )
         self.save_button.configure(state="normal" if has_source and not self.batch_mode and not busy else "disabled")
+        self.series_input_button.configure(
+            state='normal' if has_source and not busy and self.current.state.input_override else 'disabled')
 
         if busy:
             self._set_start_button_cancel()
@@ -1396,25 +1401,6 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             look_path=self.settings.look_path, look_strength=self.settings.look_strength,
         )
 
-    def _navigation_defaults(self) -> ProcessingDefaults:
-        """Supply the series input transform wherever the image has no saved value."""
-        defaults = self._new_source_defaults()
-        if self._series_input is None:
-            return defaults
-        _, transform = self._series_input
-        return replace(
-            defaults,
-            left_orientation=transform.left_orientation,
-            right_orientation=transform.right_orientation,
-            left_mirror=transform.left_mirror,
-            right_mirror=transform.right_mirror,
-            swap_eyes=transform.swap_eyes,
-        )
-
-    def _batch_defaults(self) -> ProcessingDefaults:
-        """Use the same series orientation for browsing and batch processing."""
-        return self._navigation_defaults()
-
     def _processing_defaults(self) -> ProcessingDefaults:
         look = self._current_look_option()
         return ProcessingDefaults(
@@ -1436,7 +1422,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         use_batch_defaults: bool = False,
         restart_alignment: bool = False,
     ) -> ProcessingOptions:
-        defaults = self._batch_defaults() if use_batch_defaults else self._processing_defaults()
+        defaults = self._new_source_defaults() if use_batch_defaults else self._processing_defaults()
         return ProcessingOptions(
             analysis_method=self.analysis_method.get(),
             save_sidecar=True,
@@ -1679,15 +1665,6 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             return
         self._set_source_collection(sources, 0, batch=True)
 
-    def _same_input_root(self, source: StereoSource) -> bool:
-        if self.current is None:
-            return False
-        current_root = self.current.source.input_root
-        try:
-            return current_root.resolve() == source.input_root.resolve()
-        except (OSError, RuntimeError):
-            return current_root == source.input_root
-
     def _set_source_collection(self, sources: list[StereoSource], index: int, *, batch: bool) -> None:
         if not sources:
             return
@@ -1698,7 +1675,6 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             bool(self.batch_mode),
             str(self.settings.last_input_location or ""),
         )
-        inherit_input_transform = self._same_input_root(sources[target_index])
         if self.current is not None and not self._flush_state_save(explicit=True):
             return
         self.sources = list(sources)
@@ -1706,10 +1682,8 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.batch_mode = bool(batch)
         self.settings.last_input_location = str(sources[self.source_index].input_root)
         self._persist_settings()
-        # Re-selecting an image in this folder uses the same series as paging.
         self._load_source_index(
             self.source_index,
-            inherit_input_transform=inherit_input_transform,
             rollback_context=rollback,
         )
 
@@ -1718,7 +1692,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             return "break"
         if not self._flush_state_save(explicit=True):
             return "break"
-        self._load_source_index(self.source_index - 1, inherit_input_transform=True)
+        self._load_source_index(self.source_index - 1)
         return "break"
 
     def next_source(self, event=None):
@@ -1726,14 +1700,13 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             return "break"
         if not self._flush_state_save(explicit=True):
             return "break"
-        self._load_source_index(self.source_index + 1, inherit_input_transform=True)
+        self._load_source_index(self.source_index + 1)
         return "break"
 
     def _load_source_index(
         self,
         index: int,
         *,
-        inherit_input_transform: bool = False,
         rollback_context: tuple[list[StereoSource], int | None, bool, str] | None = None,
     ) -> None:
         if not (0 <= index < len(self.sources)):
@@ -1755,8 +1728,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.measure_cross_y = None
         self._stop_measure_repeat()
 
-        # Capture the series defaults before the worker opens the image.
-        defaults = self._navigation_defaults() if inherit_input_transform else self._new_source_defaults()
+        defaults = self._new_source_defaults()
         bounds = self._preview_bounds()
         mode = self._effective_preview_mode()
 
@@ -1853,8 +1825,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
 
         has_reusable_sidecar = self.current.sidecar.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}
         if not create_if_missing and not has_reusable_sidecar:
-            # Series orientation changes on a new source remain session
-            # state until a real edit/analysis/export establishes a sidecar.
+            # Calculated preview state cannot establish a sidecar on its own.
             return
         if immediate:
             self._flush_state_save()
@@ -1909,14 +1880,34 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         )
         if transform == state.input_transform:
             return
-        state.input_transform = transform
-        state.invalidate_for_input_transform()
-        is_series_source = self._series_input is None or self._series_input[0] == self.current.source
-        if is_series_source:
-            self._series_input = self.current.source, deepcopy(transform)
-        self._schedule_state_save(create_if_missing=not is_series_source)
+        self._set_image_input_transform(transform, override=True)
+
+    def _use_series_input(self) -> None:
+        if self.current is None or self.busy_state != 'idle' or not self.current.state.input_override:
+            return
+        try:
+            defaults = with_series_input(ProcessingDefaults(), self.current.source)
+        except (OSError, ValueError) as exc:
+            messagebox.showerror(APP_NAME, self._t('state_save_failed', text=str(exc)))
+            return
+        transform = InputTransformState(**{
+            name: getattr(defaults, name) for name in InputTransformState.__dataclass_fields__
+        })
+        self._set_image_input_transform(transform, override=False)
+
+    def _set_image_input_transform(self, transform: InputTransformState, *, override: bool) -> None:
+        state = self.current.state
+        if transform != state.input_transform:
+            state.input_transform = transform
+            state.invalidate_for_input_transform()
+        state.input_override = override
+        if not override:
+            self.current.loaded_input_transform = deepcopy(transform)
+        self._sync_vars_from_current()
+        self._schedule_state_save()
         self._refresh_preview(rebuild_base=True)
         self._render_status()
+        self._refresh_control_states()
 
     def _on_aspect_changed(self, _value=None) -> None:
         self.output_aspect_display.set(aspect_label(self.output_aspect.get(), self.settings.language))
@@ -2582,12 +2573,6 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         if kind in {"load", "analysis"} and isinstance(payload, BrowsedSource):
             if kind == "load":
                 self._load_rollback_context = None
-                if not self._same_input_root(payload.source):
-                    self._series_input = None
-                    document = payload.sidecar.document
-                    if (payload.sidecar.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}
-                            and document is not None and document.input_state):
-                        self._series_input = payload.source, deepcopy(payload.state.input_transform)
             self.current = payload
             self._state_dirty = False
             self._state_dirty_can_create_sidecar = False

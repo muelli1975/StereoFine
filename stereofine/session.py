@@ -6,10 +6,11 @@ from pathlib import Path
 
 from .inputs import LoadedStereoPair, find_pair_for_image
 from .models import SourceStamp
+from .preferences import inherit_missing_preferences, with_series_input
 from .processing import ProcessingDefaults
 from .sidecar import SidecarLoadResult, SidecarStatus, load_sidecar, save_sidecar, source_stamp_to_dict
 from .sources import StereoSource, build_source_stamp, load_source, source_from_pair, source_from_stereo_file
-from .state import PairState
+from .state import InputTransformState, PairState
 
 
 @dataclass
@@ -21,6 +22,7 @@ class BrowsedSource:
     source_stamp: SourceStamp
     state: PairState
     sidecar: SidecarLoadResult
+    loaded_input_transform: InputTransformState | None = None
 
 
 def pair_input_root(left: Path, right: Path) -> Path:
@@ -47,6 +49,7 @@ def source_from_selected_stereo_file(path: Path) -> StereoSource:
 
 
 def _apply_defaults(state: PairState, defaults: ProcessingDefaults) -> None:
+    state.input_override = False
     state.input_transform.left_orientation = defaults.left_orientation
     state.input_transform.right_orientation = defaults.right_orientation
     state.input_transform.left_mirror = defaults.left_mirror
@@ -68,13 +71,13 @@ def browse_source(source: StereoSource, defaults: ProcessingDefaults = Processin
     current GUI defaults and remain unanalysed until the user starts processing.
     """
 
+    defaults = with_series_input(defaults, source)
     loaded = load_source(source)
     stamp = build_source_stamp(source, loaded)
     sidecar = load_sidecar(source.sidecar_path, expected_source=stamp)
 
     if sidecar.document is not None and sidecar.status in {SidecarStatus.VALID, SidecarStatus.MIGRATED}:
         state = PairState.from_sidecar(sidecar.document)
-        from .preferences import inherit_missing_preferences
         inherit_missing_preferences(state, defaults, sidecar.document)
         # Cached calculations may be obsolete while user intent remains useful.
         if not sidecar.alignment_cache_valid:
@@ -115,12 +118,15 @@ def browse_source(source: StereoSource, defaults: ProcessingDefaults = Processin
         state = PairState()
         _apply_defaults(state, defaults)
 
-    return BrowsedSource(source, loaded, stamp, state, sidecar)
+    return BrowsedSource(source, loaded, stamp, state, sidecar, deepcopy(state.input_transform))
 
 
 def save_browsed_state(session: BrowsedSource) -> Path:
     """Persist the exact current per-image state using the already verified stamp."""
-    return save_sidecar(
-        session.source.sidecar_path,
-        session.state.to_sidecar(source=source_stamp_to_dict(session.source_stamp)),
-    )
+    document = session.state.to_sidecar(source=source_stamp_to_dict(session.source_stamp))
+    if (session.loaded_input_transform is not None
+            and session.state.input_transform != session.loaded_input_transform):
+        document.input_override = True
+    path = save_sidecar(session.source.sidecar_path, document)
+    session.state.input_override = document.input_override
+    return path

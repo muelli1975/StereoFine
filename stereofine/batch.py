@@ -13,6 +13,7 @@ from .export import ExportResult, save_pair_outputs
 from .models import AnalysisRecord
 from .output_naming import validate_sbs_suffix
 from .output_paths import OutputPathGuard
+from .preferences import with_series_input
 from .processing import BatchProgress, ProcessedSource, ProcessingOptions, process_source
 from .render import render_final_pair
 from .reports import write_analysis_report
@@ -135,6 +136,7 @@ def run_batch(
         preview_max_width=BATCH_PREVIEW_MAX_WIDTH if options.analysis_only else None,
         preview_max_height=BATCH_PREVIEW_MAX_HEIGHT if options.analysis_only else None,
     )
+    series_options = {}
 
     for index, source in enumerate(source_list, start=1):
         if cancellation is not None:
@@ -142,7 +144,11 @@ def run_batch(
         if progress:
             progress(BatchProgress(index, total, source.display_name, "analysis"))
         try:
-            processed = process_source(source, process_options, cancellation=cancellation,
+            root = source.input_root
+            if root not in series_options:
+                series_options[root] = replace(process_options,
+                    defaults=with_series_input(process_options.defaults, source), read_series_input=False)
+            processed = process_source(source, series_options[root], cancellation=cancellation,
                                        directory_index=directory_index)
             item = BatchRunItem(processed=processed)
             if progress:

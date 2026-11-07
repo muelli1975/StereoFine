@@ -17,7 +17,7 @@ from stereofine.numbers import endpoint_values
 from stereofine.processing import ProcessingDefaults
 from stereofine.session import browse_source, save_browsed_state
 from stereofine.sources import source_from_stereo_file
-from stereofine.state import LookState, PairState
+from stereofine.state import InputTransformState, LookState, PairState
 from stereofine.status import build_status_sections
 from stereofine.worker import CancellationToken
 
@@ -92,6 +92,31 @@ class PreferenceTests(unittest.TestCase):
         self.assertEqual(state.look, look)
         self.assertFalse(state.color.enabled)
         self.assertEqual(state.framing.aspect, '16:9')
+
+    def test_series_orientation_survives_reopening_and_keeps_explicit_zero(self):
+        first, lut_only, legacy = self.sources
+        apply_folder_preferences([lut_only], FolderChoices(look=LookState(False, 'matrix')))
+        lut_sidecar = lut_only.sidecar_path.read_bytes()
+        session = browse_source(legacy)
+        save_browsed_state(session)
+        old_document = json.loads(legacy.sidecar_path.read_text('utf-8'))
+        old_document.pop('input_override')
+        legacy.sidecar_path.write_text(json.dumps(old_document), encoding='utf-8')
+
+        upside_down = InputTransformState('180', '180', True, False, True)
+        result = apply_folder_preferences(self.sources, FolderChoices(series_input=upside_down))
+        self.assertTrue(result.series_input_saved)
+        self.assertFalse(first.sidecar_path.exists())
+        self.assertEqual(lut_only.sidecar_path.read_bytes(), lut_sidecar)
+        self.assertEqual(browse_source(lut_only).state.input_transform, upside_down)
+        self.assertEqual(browse_source(legacy).state.input_transform, InputTransformState())
+
+        inherited = browse_source(first)
+        save_browsed_state(inherited)
+        upright = InputTransformState()
+        apply_folder_preferences(self.sources, FolderChoices(series_input=upright))
+        self.assertEqual(browse_source(first).state.input_transform, upright)
+        self.assertFalse(browse_source(first).state.input_override)
 
     def test_corrupt_or_changed_sources_are_not_overwritten(self):
         source = self.sources[0]
