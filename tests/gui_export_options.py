@@ -44,7 +44,7 @@ def check_export_options(app, checks, language):
     app._on_export_options_changed()
     assert app._effective_sbs_suffix() == '_sbs'
     assert app.settings.sbs_suffix == '_cs'
-    assert app.sbs_suffix_menu.cget('state') == 'normal'
+    assert app.sbs_suffix_menu.cget('state') == 'disabled'
     assert app.sbs_suffix_menu.cget('text_color') == TEXT_DISABLED
     assert app.sbs_suffix_menu.cget('text_color_disabled') == TEXT_DISABLED
     assert app.sbs_suffix_menu.cget('fg_color') == SECONDARY_BG
@@ -53,6 +53,9 @@ def check_export_options(app, checks, language):
     entry = app.sbs_suffix_menu._entry
     entry.event_generate('<ButtonPress-1>', x=5, y=5)
     entry.event_generate('<ButtonRelease-1>', x=5, y=5)
+    assert not app.use_custom_sbs_suffix.get()
+    assert app._effective_sbs_suffix() == '_sbs'
+    app.custom_sbs_suffix_box.toggle()
     assert app.use_custom_sbs_suffix.get()
     assert app._effective_sbs_suffix() == '_cs'
     assert app.sbs_suffix_menu.cget('text_color') == TEXT_PRIMARY

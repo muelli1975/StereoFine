@@ -644,9 +644,6 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         )
         self.sbs_suffix_menu.grid(row=row, column=0, sticky="ew", padx=(42, 20), pady=(0, 8)); row += 1
         self._lock_widgets.append(self.sbs_suffix_menu)
-        self.sbs_suffix_menu.bind("<ButtonPress-1>", self._activate_sbs_suffix, add="+")
-        for tag in ("right_parts", "dropdown_arrow"):
-            self.sbs_suffix_menu._canvas.tag_bind(tag, "<Button-1>", self._on_sbs_suffix_dropdown)
         self.sbs_suffix_menu.bind("<KeyRelease>", self._on_sbs_suffix_edited, add="+")
         self.sbs_suffix_menu.bind("<FocusOut>", self._on_sbs_suffix_edited, add="+")
         self.sbs_suffix_menu.bind("<FocusIn>", lambda _e: self._reset_keyboard_modes(), add="+")
@@ -1284,7 +1281,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             if not enabled:
                 self._release_sbs_suffix_focus()
             self.sbs_suffix_menu.configure(
-                state="disabled" if busy else "normal",
+                state="normal" if enabled else "disabled",
                 text_color=TEXT_PRIMARY if enabled else TEXT_DISABLED,
             )
 
@@ -1459,16 +1456,6 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
                 messagebox.showerror(APP_NAME, self._t('settings_save_failed', text=str(exc)))
             return
         self._settings_save_error = None
-
-    def _activate_sbs_suffix(self, _event=None):
-        if self.busy_state == "idle" and not self.use_custom_sbs_suffix.get():
-            self.use_custom_sbs_suffix.set(True)
-            self._on_export_options_changed()
-
-    def _on_sbs_suffix_dropdown(self, event):
-        if self.busy_state == "idle":
-            self._activate_sbs_suffix()
-            self.sbs_suffix_menu._clicked(event)
 
     def _commit_sbs_suffix(self, *, show_error=False) -> bool:
         value = suffix_value(self.sbs_suffix_display.get(), self.settings.language)

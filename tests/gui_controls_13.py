@@ -78,8 +78,8 @@ def main():
             assert app.current.state.look.enabled and app.current.state.look.preset_id == 'velvia50'
             app.look_checkbox.toggle()
 
+            app.look_checkbox.toggle()
             app._on_look_selected('Blue House')
-            app.look_enabled.set(True);app._on_look_enabled()
             app._on_look_strength(43)
             pump(app,lambda: app.busy_state == 'idle' and app._detail_texture_cache is not None and
                  app._detail_texture_cache[0]==app._detail_texture_signature())
@@ -201,6 +201,7 @@ def main():
                     app.show_shortcuts_help()
                 window=app._shortcut_help_window;window.withdraw();pump(app)
                 assert window.winfo_exists()
+                assert len(window.groups) == 6
                 width, height = window.initial_window_size
                 assert window.initial_content_height + 100*window.scale <= height
                 help_sizes[language] = [width, height, window.initial_columns]
@@ -252,14 +253,22 @@ def main():
             assert not app.show_deviation_points.get()
             app.use_custom_sbs_suffix.set(False)
             app._refresh_control_states()
-            assert app.sbs_suffix_menu.cget('state') == 'normal'
-            app._activate_sbs_suffix()
+            assert app.sbs_suffix_menu.cget('state') == 'disabled'
+            app.custom_sbs_suffix_box.toggle()
             assert app.use_custom_sbs_suffix.get()
             app.look_checkbox.toggle()
-            assert not app.look_enabled.get()
+            assert not app.look_enabled.get() and app.look_menu.cget('state') == 'disabled'
+            app.look_menu._open_dropdown_menu()
+            assert not app.look_enabled.get() and app.look_menu.popup is None
+            app.look_checkbox.toggle()
             app.look_menu._open_dropdown_menu()
             assert app.look_enabled.get() and app.look_menu.popup is not None
-            app._on_escape()
+            popup = app.look_menu.popup
+            event = SimpleNamespace(x_root=popup.winfo_rootx()-1, y_root=popup.winfo_rooty())
+            with patch.object(popup, 'winfo_containing', return_value=app.look_checkbox._canvas):
+                app.look_menu._outside_click(event)
+            assert not app.look_enabled.get() and app.look_menu.popup is None
+            app.look_checkbox.toggle()
 
             for name, pixels in [('third_l.png', left), ('third_r.png', right)]:
                 Image.fromarray(pixels).save(folder/name)

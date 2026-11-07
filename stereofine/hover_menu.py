@@ -40,9 +40,10 @@ class ModalScrollableFrame(ctk.CTkScrollableFrame):
 
 
 class HoverOptionMenu(ctk.CTkOptionMenu):
-    def __init__(self, *args, before_open=None, on_hover=None, on_cancel=None, **kwargs):
+    def __init__(self, *args, before_open=None, on_hover=None, on_cancel=None, dismiss_checkbox=None, **kwargs):
         self.popup = None
         self.before_open, self.on_hover, self.on_cancel = before_open, on_hover, on_cancel
+        self.dismiss_checkbox = dismiss_checkbox
         self.section_headers: dict[int, str] = {}
         self._popup_headers: dict[int, ctk.CTkLabel] = {}
         self._popup_buttons = []
@@ -154,7 +155,13 @@ class HoverOptionMenu(ctk.CTkOptionMenu):
         p = self.popup
         if p is not None and not (p.winfo_rootx() <= event.x_root < p.winfo_rootx()+p.winfo_width()
                                  and p.winfo_rooty() <= event.y_root < p.winfo_rooty()+p.winfo_height()):
-            return self._escape()
+            # The popup's grab intercepts the click before the checkbox sees it.
+            checkbox = self.dismiss_checkbox
+            target = p.winfo_containing(event.x_root, event.y_root) if checkbox is not None else None
+            self.close_popup()
+            if checkbox is not None and (target is checkbox or getattr(target, 'master', None) is checkbox):
+                checkbox.toggle()
+            return 'break'
 
     def _escape(self):
         self.close_popup()

@@ -69,7 +69,8 @@ class LookControlsMixin:
         self.look_menu = self._option_menu(parent, values=['Import (.cube, .png)'],
             variable=self.look_choice, command=self._on_look_selected, menu_class=HoverOptionMenu,
             before_open=self._begin_look_menu, on_hover=self._on_look_hover,
-            on_cancel=self._cancel_look_hover)
+            on_cancel=self._cancel_look_hover, dismiss_checkbox=self.look_checkbox,
+            text_color_disabled=TEXT_DISABLED)
         self.look_menu.grid(row=row, column=0, sticky='ew', padx=(42,20), pady=(0,4)); row += 1
         self.look_strength_label = ctk.CTkLabel(parent, text='', text_color=TEXT_PRIMARY,
                                                font=self._font(13), anchor='w')
@@ -95,8 +96,8 @@ class LookControlsMixin:
             return
         enabled = self.busy_state == 'idle' and bool(self.look_enabled.get())
         color = TEXT_PRIMARY if enabled else TEXT_DISABLED
-        self.look_menu.configure(state='normal' if self.busy_state == 'idle' else 'disabled', text_color=color)
-        if self.busy_state != 'idle':
+        self.look_menu.configure(state='normal' if enabled else 'disabled', text_color=color)
+        if not enabled:
             self.look_menu.close_popup()
         self.folder_settings_button.configure(state='normal' if self.busy_state == 'idle' and self.current is not None else 'disabled')
         self.look_strength_label.configure(text=self._t('look_strength',value=round(self.look_strength.get())),
@@ -146,15 +147,10 @@ class LookControlsMixin:
         self._sync_look_display()
 
     def _begin_look_menu(self):
-        if self.busy_state != 'idle':
+        if self.busy_state != 'idle' or not self.look_enabled.get():
             return False
         for hide in self._look_tooltip_hides:
             hide()
-        if not self.look_enabled.get():
-            self.look_enabled.set(True)
-            if not self._apply_look_change():
-                self.look_enabled.set(False)
-                return False
         if not self._flush_state_save(explicit=True):
             return False
         self._look_popup_generation += 1

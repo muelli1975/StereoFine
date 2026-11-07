@@ -26,20 +26,12 @@ def help_groups(language):
                           'Hilfe/Menü oder Messmodus schließen;\nsonst Ansicht einpassen;\ndanach Vollbild verlassen')
             rows.append((key, action))
         groups.append((lines[0], rows))
-    groups.append(('Film looks and folder settings' if language == 'en' else 'Filmlooks und Ordnereinstellungen',
-        [('Hover over LUT' if language == 'en' else 'Maus über LUT',
-          'Temporary preview' if language == 'en' else 'Vorübergehende Vorschau'),
-         ('Click on LUT' if language == 'en' else 'Klick auf LUT',
-          'Apply look; Esc cancels preview' if language == 'en' else 'Look übernehmen; Esc verwirft Vorschau'),
-         ('Apply to folder…' if language == 'en' else 'Für Ordner übernehmen…',
-          'Select aspect, LUT and/or color matching' if language == 'en' else
-          'Seitenverhältnis, LUT und/oder Farbangleichung auswählen')]))
     return groups
 
 
 def column_groups(groups, columns):
     if columns == 3:
-        return [[groups[i] for i in indices] for indices in ((0, 1), (2, 5), (3, 4, 6))]
+        return [[groups[i] for i in indices] for indices in ((0, 1), (2, 5), (3, 4))]
     if columns == 1:
         return [groups]
     result, heights = [[], []], [0, 0]
@@ -57,13 +49,14 @@ class ControlsGuide(ctk.CTkToplevel):
         self.app = app
         self.title(app._t('help_title'))
         self.configure(fg_color=APP_BG)
-        self.transient(app); self.resizable(True, True)
+        self.transient(app)
         self.protocol('WM_DELETE_WINDOW', app._close_shortcuts_help)
         self.bind('<Escape>', lambda e: app._close_shortcuts_help())
         self.scale = app.preview_label._get_widget_scaling()
         self.groups = help_groups(app.settings.language)
         self.panels, self.actions, self._layout_key = [], [], None
         self._resize_job = None
+        self._reveal_job = None
         outer = ctk.CTkFrame(self, fg_color=PANEL_BG, corner_radius=8)
         outer.pack(fill='both', expand=True, padx=18, pady=18)
         ctk.CTkLabel(outer, text=app._t('help_heading'), text_color=GOLD_LIGHT,
@@ -77,19 +70,45 @@ class ControlsGuide(ctk.CTkToplevel):
         width = min(r-l-48, round((1360 if columns == 3 else 1100 if columns == 2 else 650)*self.scale))
         self._arrange(width, force=True)
         self.update_idletasks()
-        content_height = max((panel.winfo_reqheight() for panel in self.panels), default=400)
-        height = min(b-t-70, max(round(540*self.scale), content_height+round(112*self.scale)))
+        content_height = self.content.winfo_reqheight()
+        chrome_height = self.winfo_reqheight() - self.content._parent_frame.winfo_reqheight()
+        height = min(b-t-70, max(round(540*self.scale), content_height+chrome_height+round(8*self.scale)))
+        scrollbar = self.content._scrollbar
+        if content_height <= height-chrome_height+2:
+            scrollbar.grid_remove()
         self.initial_columns = columns
         self.initial_content_height = content_height
         self.initial_window_size = (width, height)
+        self._window_size = self.initial_window_size
         x = round(max(l+16, min(r-width-16, app.winfo_rootx()+(app.winfo_width()-width)/2)))
         y = round(max(t+16, min(b-height-16, app.winfo_rooty()+(app.winfo_height()-height)/2)))
         tk.Toplevel.geometry(self, f'{width}x{height}{x:+d}{y:+d}')
-        self.minsize(520, 360)
+        self.minsize(min(520, self._reverse_window_scaling(width)),
+                     min(360, self._reverse_window_scaling(height)))
+        content_frame = self.content._parent_frame
+        padding = 2 * sum(self.winfo_pixels(frame.pack_info()['padx'])
+                          for frame in (outer, content_frame))
+        scrollbar_width = scrollbar.winfo_reqwidth() if scrollbar.winfo_manager() else 0
+        self._initial_canvas_width = width - padding - scrollbar_width
+        self.update_idletasks()
         self.bind('<Configure>', self._resized, add='+')
         if app.state() != 'withdrawn':
-            self.deiconify(); self.lift(); self.focus_set()
-        self.after_idle(self._update_scrollbar)
+            # Tk sizes the columns of the embedded frame only after mapping.
+            self.attributes('-alpha', 0)
+            self.content.bind('<Configure>', self._reveal_when_ready, add='+')
+            self._reveal_job = self.after(200, self._reveal)
+            self.deiconify()
+
+    def _reveal_when_ready(self, event):
+        if self._reveal_job is not None and event.width == self._initial_canvas_width:
+            self.after_cancel(self._reveal_job)
+            self._reveal_job = self.after_idle(self._reveal)
+
+    def _reveal(self):
+        self._reveal_job = None
+        self.attributes('-alpha', 1)
+        self.lift()
+        self.focus_set()
 
     def _arrange(self, width, *, force=False):
         logical = width/self.scale
@@ -134,14 +153,16 @@ class ControlsGuide(ctk.CTkToplevel):
                         self.actions.append(label)
                         row += 1
             for i in range(3):
-                self.content.grid_columnconfigure(i, weight=1 if i < columns else 0, uniform='guide')
+                self.content.grid_columnconfigure(i, weight=int(i < columns),
+                                                  uniform='guide' if i < columns else '')
         for label in self.actions:
             label.configure(wraplength=max(120, column_width-175))
         self._layout_key = signature
 
     def _resized(self, event):
-        if event.widget is not self:
+        if event.widget is not self or (event.width, event.height) == self._window_size:
             return
+        self._window_size = (event.width, event.height)
         if self._resize_job is not None:
             self.after_cancel(self._resize_job)
         self._resize_job = self.after(80, self._resize)
@@ -164,4 +185,6 @@ class ControlsGuide(ctk.CTkToplevel):
     def destroy(self):
         if getattr(self, '_resize_job', None) is not None:
             self.after_cancel(self._resize_job)
+        if getattr(self, '_reveal_job', None) is not None:
+            self.after_cancel(self._reveal_job)
         super().destroy()
