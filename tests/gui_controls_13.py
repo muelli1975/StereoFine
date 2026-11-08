@@ -5,6 +5,7 @@ import _tkinter
 from dataclasses import asdict
 import json
 from pathlib import Path
+import sys
 import tempfile
 import time
 from types import SimpleNamespace
@@ -32,6 +33,73 @@ def pump(app, predicate=lambda: True, timeout=45):
         if predicate(): return
         time.sleep(.01)
     raise TimeoutError(f'GUI timeout: {app.busy_state}, {app.current_job_kind}')
+
+
+def check_visible_shortcuts(app):
+    app.deiconify()
+    pump(app, lambda: app.preview_label._label.winfo_ismapped())
+    app.preview_frame.focus_force()
+    pump(app, lambda: app.focus_get() is app.preview_frame)
+
+    def key(sequence):
+        app.preview_frame.event_generate(sequence)
+        pump(app)
+
+    click_time = 1000
+
+    def double_click():
+        nonlocal click_time
+        click_time += 1000
+        label = app.preview_label._label
+        x, y = label.winfo_width() // 2, label.winfo_height() // 2
+        for offset in (0, 80):
+            label.event_generate('<ButtonPress-1>', x=x, y=y, time=click_time + offset)
+            label.event_generate('<ButtonRelease-1>', x=x, y=y, time=click_time + offset + 20)
+        pump(app)
+
+    def zoom():
+        app._zoom_inspection(2)
+        pump(app, lambda: app._inspection_view.active and app._view_source_box is not None)
+
+    zoom()
+    key('<Control-KeyPress-0>')
+    assert not app._inspection_view.active
+    zoom()
+    double_click()
+    assert not app._inspection_view.active
+
+    zoom()
+    app._measure_tool_var.set(True)
+    app._toggle_point_measurement()
+    double_click()
+    assert app._inspection_view.active and len(app._point_measurements) == 2
+    key('<Escape>')
+    assert app._inspection_view.active and not app._measure_tool_var.get()
+
+    key('<KeyPress-z>')
+    pump(app, lambda: app.detail_active)
+    double_click()
+    assert app._inspection_view.active and app.detail_active
+    key('<KeyRelease-z>')
+    pump(app, lambda: not app.detail_active)
+
+    app.toggle_fullscreen()
+    assert app.fullscreen
+    key('<Escape>')
+    assert app.fullscreen and not app._inspection_view.active
+    key('<Escape>')
+    assert not app.fullscreen
+
+    key('<KeyPress-F1>')
+    key('<KeyRelease-F1>')
+    window = app._shortcut_help_window
+    assert window is not None
+    pump(app, lambda: window.winfo_viewable() and window._reveal_job is None)
+    if sys.platform == 'win32':
+        from tests.gui_final_update import windows_theme
+
+        assert windows_theme(window) == 1
+    app._close_shortcuts_help()
 
 
 def main():
@@ -204,6 +272,23 @@ def main():
                 window=app._shortcut_help_window;window.withdraw();pump(app)
                 assert window.winfo_exists()
                 assert len(window.groups) == 6
+                labels = {label.cget('text') for label in window.actions}
+                if language == 'de':
+                    assert {
+                        'Ansicht einpassen',
+                        'Ansicht einpassen (bei Ansichtszoom, außerhalb des Messmodus)',
+                        'Menü, Hilfe oder Messmodus schließen. Sonst bei Zoom die Ansicht einpassen '
+                        'oder bei eingepasster Ansicht das Vollbild verlassen.',
+                        'Kontextmenü öffnen (Disparitätsmesser bei Anaglyphen)',
+                    } <= labels
+                else:
+                    assert {
+                        'Fit view',
+                        'Fit view (when zoomed, outside measurement mode)',
+                        'Close the menu, help or measurement mode. Otherwise fit the zoomed view, '
+                        'or exit fullscreen if already fitted.',
+                        'Open context menu (disparity meter in anaglyph views)',
+                    } <= labels
                 width, height = window.initial_window_size
                 assert window.initial_content_height + 100*window.scale <= height
                 help_sizes[language] = [width, height, window.initial_columns]
@@ -335,6 +420,7 @@ def main():
             pump(app, lambda: app.busy_state == 'idle' and app.current.source == other)
             assert app.left_orientation.get() == app.right_orientation.get() == '0'
             assert series_path.read_bytes() == saved_series
+            check_visible_shortcuts(app)
             assert not messages,messages
             assert not errors,errors
             report=dict(loading=True,look_strength_sidecar=True,zoom_preserves_crop=True,
@@ -342,6 +428,7 @@ def main():
                         near_far_evidence=True,help_languages=['de','en'],defaults_keep_destination=True,
                         hover_preview=True,folder_apply=True,field_activation=True,help_sizes=help_sizes,
                         series_orientation=True,defaults_keep_image=True,folder_buttons_stable=True,
+                        visible_shortcuts=True,windows_help_titlebar=sys.platform == 'win32',
                         callback_errors=errors)
             (output/'gui-controls.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
             print(json.dumps(report))

@@ -8,7 +8,10 @@ import customtkinter as ctk
 
 from .controls_help import HELP_TEXT_DE, HELP_TEXT_EN
 from .hover_menu import ModalScrollableFrame, work_area
-from .theme import APP_BG, PANEL_BG, SECONDARY_BG, BORDER, HOVER_BG, GOLD_LIGHT, TEXT_PRIMARY, TEXT_SECONDARY
+from .theme import (
+    APP_BG, PANEL_BG, SECONDARY_BG, BORDER, HOVER_BG, GOLD_LIGHT, TEXT_PRIMARY, TEXT_SECONDARY,
+    restore_dark_titlebar,
+)
 
 
 def help_groups(language):
@@ -20,10 +23,6 @@ def help_groups(language):
         for line in lines[1:]:
             parts = re.split(r'\s{2,}', line.strip(), maxsplit=1)
             key, action = parts if len(parts) == 2 else (parts[0], '')
-            if key == 'Esc':
-                action = ('Close help/menu or meter;\notherwise fit image;\nthen leave fullscreen'
-                          if language == 'en' else
-                          'Hilfe/Menü oder Messmodus schließen;\nsonst Ansicht einpassen;\ndanach Vollbild verlassen')
             rows.append((key, action))
         groups.append((lines[0], rows))
     return groups
@@ -106,6 +105,7 @@ class ControlsGuide(ctk.CTkToplevel):
 
     def _reveal(self):
         self._reveal_job = None
+        restore_dark_titlebar(self)
         self.attributes('-alpha', 1)
         self.lift()
         self.focus_set()
