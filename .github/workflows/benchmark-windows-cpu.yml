@@ -1,0 +1,55 @@
+name: StereoFine 1.4 Windows CPU benchmark
+
+on:
+  push:
+    branches:
+      - benchmark/windows-cpu-1.4
+    paths:
+      - .github/workflows/benchmark-windows-cpu.yml
+      - tools/benchmark_cpu_batch.py
+      - tools/benchmark_windows_cpu.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        workload: [single, batch]
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - name: Install the pinned runtime and the benchmark memory sampler
+        run: python -m pip install -r requirements-lock.txt psutil==7.2.2
+      - name: Prepare the release's portable ExifTool
+        if: matrix.workload == 'batch'
+        shell: pwsh
+        run: |
+          curl.exe -fL --retry 3 --retry-all-errors --retry-delay 2 'https://sourceforge.net/projects/exiftool/files/exiftool-13.59_64.zip/download' -o exiftool.zip
+          if ($LASTEXITCODE -ne 0) { throw 'Could not download ExifTool' }
+          Expand-Archive exiftool.zip -DestinationPath exiftool-download
+          $pkg = Get-ChildItem exiftool-download -Directory | Select-Object -First 1
+          if (-not $pkg) { throw 'ExifTool package directory not found' }
+          Copy-Item -Recurse -Force (Join-Path $pkg.FullName '*') tools
+          $exe = Get-ChildItem tools -File | Where-Object { $_.Name -like 'exiftool*.exe' } | Select-Object -First 1
+          if (-not $exe) { throw 'ExifTool executable not found' }
+          Rename-Item -Force $exe.FullName 'exiftool.exe'
+          & .\tools\exiftool.exe -ver
+      - name: Run the repeated CPU profiles
+        run: python -m tools.benchmark_windows_cpu ${{ matrix.workload }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sf14-windows-${{ matrix.workload }}
+          path: sf14-${{ matrix.workload }}-results.json
+          if-no-files-found: error
