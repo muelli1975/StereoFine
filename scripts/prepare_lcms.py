@@ -12,18 +12,33 @@ from urllib.request import urlopen
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = '2.19.1'
 SHA256 = 'bfc54f7bab59fbc921012014a8032e4cba4abd46db47d46b76416a8c0b2815c8'
-URL = f'https://github.com/mm2/Little-CMS/releases/download/lcms{VERSION}/lcms2-{VERSION}.tar.gz'
+SOURCES = (
+    f'https://github.com/mm2/Little-CMS/releases/download/lcms{VERSION}/lcms2-{VERSION}.tar.gz',
+    f'https://downloads.sourceforge.net/project/lcms/lcms/{VERSION}/lcms2-{VERSION}.tar.gz',
+)
 
 
 def main():
     build = ROOT / 'build/lcms'
     build.mkdir(parents=True, exist_ok=True)
     archive = build / 'source.tar.gz'
-    if not archive.exists():
-        with urlopen(URL, timeout=90) as response:
-            archive.write_bytes(response.read())
-    if hashlib.sha256(archive.read_bytes()).hexdigest() != SHA256:
+    cached = archive.exists()
+    if cached:
+        source_bytes = archive.read_bytes()
+    else:
+        for url in SOURCES:
+            try:
+                with urlopen(url, timeout=90) as response:
+                    source_bytes = response.read()
+                break
+            except OSError as exc:
+                if url == SOURCES[-1]:
+                    raise
+                print(f'LittleCMS download failed, trying the mirror: {exc}', file=sys.stderr)
+    if hashlib.sha256(source_bytes).hexdigest() != SHA256:
         raise RuntimeError('LittleCMS source SHA-256 mismatch.')
+    if not cached:
+        archive.write_bytes(source_bytes)
     source = build / f'lcms2-{VERSION}'
     if not source.exists():
         with tarfile.open(archive) as data:
