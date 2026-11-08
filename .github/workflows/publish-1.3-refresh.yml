@@ -14,8 +14,8 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     env:
-      UPDATE_SOURCE_SHA: 8da937f0a0221ba9f3ed954b4e8894d6a3c51dfb
-      CANDIDATE_RUN: '42409660222'
+      UPDATE_SOURCE_SHA: 264577f82222f0acc00cb35de225ceb2e752158d
+      CANDIDATE_RUN: '42500454438'
     steps:
       - name: Require the exact successful candidate run
         env:
@@ -39,7 +39,7 @@ jobs:
           exit 1
       - uses: actions/checkout@v4
         with:
-          ref: 8da937f0a0221ba9f3ed954b4e8894d6a3c51dfb
+          ref: 264577f82222f0acc00cb35de225ceb2e752158d
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -47,13 +47,14 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           github-token: ${{ github.token }}
-          run-id: 42409660222
+          run-id: 42500454438
           pattern: StereoFine-1.3-candidate-*
           path: release
           merge-multiple: true
       - name: Recheck archives, exact source snapshot and SHA-256 manifest
         run: |
           test "$(git rev-parse HEAD)" = "$UPDATE_SOURCE_SHA"
+          cmp README.md README_EN.md
           cp release/SHA256SUMS.txt "$RUNNER_TEMP/candidate-sha256.txt"
           (cd release && sha256sum -c SHA256SUMS.txt)
           python scripts/release_checksums.py release
@@ -68,15 +69,15 @@ jobs:
             "repository": "muelli1975/StereoFine",
             "tag": "v1.3",
             "branch": "development/1.3",
-            "previous_tag": "6541edd3fabbac9375df8259838a7d9616ba5134",
+            "previous_tag": "656fbb562ea0030eeda62db6a5717a1f1a33b1a2",
             "release_id": 437692632,
             "notes_file": "RELEASE_NOTES_1.3.md",
             "assets": {
-              "SHA256SUMS.txt": "sha256:4c6b51521a16c397b455c98797d3852f15c2a233b5ba9a0a8db089f9225a1fd5",
-              "StereoFine_1.3_Linux_x64.tar.gz": "sha256:134273b721444b067d1dd1c3c8101954db26a9292175d95b235256fd67ecd2cc",
-              "StereoFine_1.3_macOS_AppleSilicon.zip": "sha256:7454cbf91face1ac1ac3bf1b9019e1e73fc405d6f10079a2be4a114ff6498fdc",
-              "StereoFine_1.3_macOS_Intel.zip": "sha256:797b456648b6ba19068e524d1f86e6cafcd6ee47cb812ceb5fdf54ac34ae2f44",
-              "StereoFine_1.3_Windows_x64.zip": "sha256:046449a5ba1a0b62ad1331f40a9a1f99670c85bc194504f11a724c0c51e6dc2f"
+              "SHA256SUMS.txt": "sha256:0f81cc38e366292fb20959e32d8c6b28c297d7875d1e357684e6aed549ba16b7",
+              "StereoFine_1.3_Linux_x64.tar.gz": "sha256:b3d79cd70ac28575814851e049429afcdfc28c35dbf10821ea0939679005aae6",
+              "StereoFine_1.3_macOS_AppleSilicon.zip": "sha256:913b9fd1ad22c1fa35b022e0562e6fee9b5e52df73063a13df2d5db83c8d2f29",
+              "StereoFine_1.3_macOS_Intel.zip": "sha256:8e792e9d862efd882d532f6727768797aea4ded9e13cad25cd62702262d49759",
+              "StereoFine_1.3_Windows_x64.zip": "sha256:5de76d8c3170544b232eeb178df10cf97f719d073c2f7e0683596b0668e86450"
             },
             "replace": [
               "SHA256SUMS.txt",
