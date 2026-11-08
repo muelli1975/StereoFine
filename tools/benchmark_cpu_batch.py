@@ -33,14 +33,12 @@ from stereofine.worker import CancellationToken, JobCancelled
 
 RAW = "https://raw.githubusercontent.com"
 HIGH_RES = f"{RAW}/gengshan-y/high-res-stereo/bd657d4e855c8dfa3ba1eeb7b894111b9ac14646/data-mbtest"
-PHOTO = f"{RAW}/NamanMakkar/Stereo/146ff8e10a8f6e428372467c41754c77c2910005/input"
 FOUNDATION = f"{RAW}/NVlabs/FoundationStereo/6e8806816b533e4d13ddbb95ffa907b797060a62/assets"
 OPENCV = f"{RAW}/opencv/opencv/4.13.0/samples/data"
 SCENES = (
     ("Aloe", "lr-jpg", f"{OPENCV}/aloeL.jpg", f"{OPENCV}/aloeR.jpg"),
     ("CrusadeP", "sbs-png", f"{HIGH_RES}/CrusadeP/im0.png", f"{HIGH_RES}/CrusadeP/im1.png"),
     ("DanceA", "lr-png", f"{HIGH_RES}/0593_8_0661_1/im0.png", f"{HIGH_RES}/0593_8_0661_1/im1.png"),
-    ("Photo", "sbs-jpg", f"{PHOTO}/left/0001.png", f"{PHOTO}/right/0001.png"),
     ("Foundation", "lr-jpg", f"{FOUNDATION}/left.png", f"{FOUNDATION}/right.png"),
     ("DanceB", "sbs-jpg", f"{HIGH_RES}/0600_4_0641_1/im0.png", f"{HIGH_RES}/0600_4_0641_1/im1.png"),
 )
