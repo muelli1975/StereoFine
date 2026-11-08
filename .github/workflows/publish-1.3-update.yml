@@ -1,0 +1,79 @@
+name: Publish verified StereoFine 1.3 update
+
+on:
+  push:
+    branches: [release/publish-1.3-update]
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: stereofine-current-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'muelli1975/StereoFine'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    env:
+      UPDATE_SOURCE_SHA: 656fbb562ea0030eeda62db6a5717a1f1a33b1a2
+      CANDIDATE_RUN_ID: '42494522061'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 656fbb562ea0030eeda62db6a5717a1f1a33b1a2
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - name: Confirm the candidate source and successful build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$UPDATE_SOURCE_SHA"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN_ID" |
+            jq -e --arg sha "$UPDATE_SOURCE_SHA" '.head_sha == $sha and .head_branch == "development/1.3" and .conclusion == "success"'
+          cmp README.md README_EN.md
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: '42494522061'
+          pattern: StereoFine-1.3-candidate-*
+          path: release
+          merge-multiple: true
+      - name: Check the exact candidate downloads before publishing
+        run: |
+          cd release
+          printf '%s  %s\n' '0f81cc38e366292fb20959e32d8c6b28c297d7875d1e357684e6aed549ba16b7' SHA256SUMS.txt | sha256sum --strict -c -
+          sha256sum --strict -c SHA256SUMS.txt
+      - name: Refresh v1.3 and verify each public download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > "$RUNNER_TEMP/stereofine-release-update.json" <<'JSON'
+          {
+            "repository": "muelli1975/StereoFine",
+            "tag": "v1.3",
+            "branch": "development/1.3",
+            "previous_tag": "8da937f0a0221ba9f3ed954b4e8894d6a3c51dfb",
+            "release_id": 437692632,
+            "notes_file": "RELEASE_NOTES_1.3.md",
+            "assets": {
+              "SHA256SUMS.txt": "sha256:d8bcdb9d75bc0bed379f4038b2bcf3008997887fd04ce889ee2d2a59f4bcbc3b",
+              "StereoFine_1.3_Linux_x64.tar.gz": "sha256:fa010e29b4ed9253b201806e6bfe784d5c0b36e364b3944b1dee1ce2bf42b162",
+              "StereoFine_1.3_macOS_AppleSilicon.zip": "sha256:5ca17ee414cf266fea2bacfbfc5ef9295dfbfbb099e9c93ce3196a7446b9cb20",
+              "StereoFine_1.3_macOS_Intel.zip": "sha256:75c1596bbc44c9bb4c0d0cc47251ad145c682587941d1c696fa2b114a8f59f37",
+              "StereoFine_1.3_Windows_x64.zip": "sha256:eecd2ad2edc9b8aad1ce1106fc597fb4a3d0c45cd879cb1383147dc2ce25fab4"
+            },
+            "replace": [
+              "StereoFine_1.3_Windows_x64.zip",
+              "StereoFine_1.3_Linux_x64.tar.gz",
+              "StereoFine_1.3_macOS_AppleSilicon.zip",
+              "StereoFine_1.3_macOS_Intel.zip",
+              "SHA256SUMS.txt"
+            ]
+          }
+          JSON
+          python scripts/publish_update.py --root release --config "$RUNNER_TEMP/stereofine-release-update.json"
