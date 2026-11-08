@@ -86,10 +86,11 @@ class LookTests(unittest.TestCase):
         self.assertFalse(fresh.use_input_output_subfolder)
         self.assertEqual(fresh.language,'en')
         self.assertFalse(fresh.look_enabled)
-        self.assertEqual(fresh.look_preset_id, 'velvia50')
+        self.assertEqual(fresh.look_preset_id, '')
         self.assertEqual(fresh.look_strength,1)
-        saved = AppSettings.from_dict({'look_preset_id': 'portra160nc'})
-        self.assertEqual(saved.look_preset_id, 'portra160nc')
+        saved = AppSettings.from_dict({'look_preset_id': 'velvia50'})
+        self.assertEqual(saved.look_preset_id, 'velvia50')
+        self.assertEqual(LookState(enabled=True).normalize().preset_id, builtin_looks()[0]['id'])
 
     def test_every_bundled_preset_is_loadable_and_order_is_stable(self):
         entries=builtin_looks()

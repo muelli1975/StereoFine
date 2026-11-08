@@ -185,7 +185,7 @@ def look_path(look) -> Path:
     if look.path:
         return Path(look.path)
     for entry in builtin_looks():
-        if entry['id'] == look.preset_id:
+        if not look.preset_id or entry['id'] == look.preset_id:
             return asset_path('luts/' + entry['file'])
     raise ValueError(f'Unknown LUT preset: {look.preset_id}')
 

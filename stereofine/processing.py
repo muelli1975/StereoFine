@@ -13,7 +13,6 @@ from .config import (
     ALIGNMENT_ANALYSIS_MAX_WIDTH,
     AUTO_NEAR_WINDOW_BACK_PERMILLE,
     CROP_ZOOM_LEVELS,
-    DEFAULT_LOOK_PRESET_ID,
     DISPARITY_ANALYSIS_MAX_WIDTH,
 )
 from .disparity import (
@@ -45,7 +44,7 @@ class ProcessingDefaults:
     aspect: str = "original"
     color_enabled: bool = True
     look_enabled: bool = False
-    look_preset_id: str = DEFAULT_LOOK_PRESET_ID
+    look_preset_id: str = ""
     look_path: str = ""
     look_strength: float = 1.0
 

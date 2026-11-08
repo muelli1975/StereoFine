@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from .config import ASPECT_RATIOS, DEFAULT_LOOK_PRESET_ID, normalize_aspect_code
+from .config import ASPECT_RATIOS, normalize_aspect_code
 from .resources import settings_path
 from .output_naming import validate_sbs_suffix
 
@@ -32,7 +32,7 @@ class AppSettings:
     use_custom_sbs_suffix: bool = False
     sbs_suffix: str = "_cs"
     look_enabled: bool = False
-    look_preset_id: str = DEFAULT_LOOK_PRESET_ID
+    look_preset_id: str = ""
     look_path: str = ""
     look_strength: float = 1.0
     last_lut_location: str = ""

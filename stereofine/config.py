@@ -3,7 +3,6 @@ from __future__ import annotations
 APP_NAME = "StereoFine"
 APP_VERSION = "1.3"
 SIDECAR_SCHEMA_VERSION = 3
-DEFAULT_LOOK_PRESET_ID = "velvia50"
 
 # Pipeline versions are intentionally separate from the app version so a later
 # GUI-only release does not invalidate valid analysis results.

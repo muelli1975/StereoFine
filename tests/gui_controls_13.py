@@ -201,10 +201,14 @@ def main():
             assert len(builtin_looks()) == 50
             assert app.look_menu.cget('values')[:2] == ['Analog sanft', 'Farbnegativ lebendig']
             assert app.look_menu.cget('values')[-2:] == ['Sam Kolder', 'Import (.cube, .png)']
-            assert app.look_choice.get() == 'Dia kräftig'
+            assert app.look_choice.get() == app.look_menu.cget('values')[0]
             assert not app.current.state.look.enabled
             app.look_checkbox.toggle()
-            assert app.current.state.look.enabled and app.current.state.look.preset_id == 'velvia50'
+            assert app.current.state.look.enabled and app.current.state.look.preset_id == builtin_looks()[0]['id']
+            app._cycle_look(1)
+            assert app.current.state.look.preset_id == builtin_looks()[1]['id']
+            app._cycle_look(-1)
+            assert app.current.state.look.preset_id == builtin_looks()[0]['id']
             app.look_checkbox.toggle()
 
             app.look_checkbox.toggle()

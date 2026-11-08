@@ -223,6 +223,7 @@ class LookControlsMixin:
         except (OSError, ValueError) as exc:
             messagebox.showerror(APP_NAME,self._t('look_load_failed',text=str(exc)))
             return False
+        self._look_preset_id = look.preset_id
         self.settings.look_enabled, self.settings.look_preset_id = look.enabled, look.preset_id
         self.settings.look_path, self.settings.look_strength = look.path, look.strength
         self._refresh_look_controls()

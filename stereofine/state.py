@@ -5,7 +5,6 @@ from typing import Any
 
 from .config import (
     AUTO_NEAR_WINDOW_BACK_PERMILLE,
-    DEFAULT_LOOK_PRESET_ID,
     normalize_aspect_code,
     normalize_orientation_code,
 )
@@ -151,21 +150,25 @@ class ColorState:
 @dataclass
 class LookState:
     enabled: bool = False
-    preset_id: str = DEFAULT_LOOK_PRESET_ID
+    preset_id: str = ""
     path: str = ""
     strength: float = 1.0
 
     def normalize(self):
         import math
         self.enabled = bool(self.enabled)
-        self.preset_id = str(self.preset_id or DEFAULT_LOOK_PRESET_ID)
+        self.preset_id = str(self.preset_id or "")
         self.path = str(self.path or "")
-        if not self.path and self.preset_id != DEFAULT_LOOK_PRESET_ID:
+        if not self.path and (self.enabled or self.preset_id):
             from .looks import builtin_looks
 
-            if not any(entry["id"] == self.preset_id for entry in builtin_looks()):
-                self.preset_id = DEFAULT_LOOK_PRESET_ID
-                self.enabled = False
+            entries = builtin_looks()
+            if self.preset_id:
+                if not any(entry["id"] == self.preset_id for entry in entries):
+                    self.preset_id = ""
+                    self.enabled = False
+            elif entries:
+                self.preset_id = entries[0]["id"]
         value = float(self.strength)
         self.strength = max(0., min(1., value)) if math.isfinite(value) else 1.
         return self
