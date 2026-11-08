@@ -235,6 +235,12 @@ def main():
                 'Farbfilm & Kameralooks', 'Schwarzweiß & Tonung', 'Kino-Looks',
                 'Nacht & Effekte', 'Retro & Labor', 'Licht & Stimmung',
             ]
+            menu._activate(0, preview=False)
+            menu._step(-1)
+            assert menu._active_index == len(menu.cget('values')) - 1
+            assert menu._popup_buttons[menu._active_index].cget('text') == 'Import (.cube, .png)'
+            menu._step(1)
+            assert menu._active_index == 0
             menu._activate(menu.cget('values').index('Cyanotypie'), preview=False)
             menu._step(1)
             assert menu._popup_buttons[menu._active_index].cget('text') == 'Kino klassisch'

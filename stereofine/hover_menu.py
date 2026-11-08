@@ -119,7 +119,7 @@ class HoverOptionMenu(ctk.CTkOptionMenu):
             self.on_hover(self.cget('values')[index])
 
     def _step(self, direction):
-        index = max(0, min(len(self._popup_buttons)-1, self._active_index+direction))
+        index = (self._active_index + direction) % len(self._popup_buttons)
         self._activate(index)
         self._reveal_active()
         return 'break'
