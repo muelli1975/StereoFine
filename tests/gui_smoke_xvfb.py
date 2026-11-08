@@ -155,7 +155,7 @@ def main() -> None:
 
             # The next image can use the current orientation without a folder setting.
             assert not app.current.source.sidecar_path.exists()
-            series_path = app.current.source.sidecar_path.with_name('series.json')
+            series_path = app.current.source.sidecar_path.with_name('orientation.json')
             assert not series_path.exists()
             app.left_orientation.set("180")
             app.right_orientation.set("180")
@@ -627,7 +627,7 @@ def main() -> None:
             rollback_batch = app.batch_mode
             rollback_input = str(app.settings.last_input_location or "")
             app._load_rollback_context = (
-                rollback_sources, rollback_index, rollback_batch, rollback_input
+                rollback_sources, rollback_index, rollback_batch, rollback_input, app._favorite_indices
             )
             app.sources = list(reversed(app.sources))
             app.source_index = 1 if len(app.sources) > 1 else 0

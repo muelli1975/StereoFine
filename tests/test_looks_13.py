@@ -98,15 +98,15 @@ class LookTests(unittest.TestCase):
             'classic_chrome',
             'delta100', 'retro80s', 'cinema_noir', 'ortho25', 'acros_red', 'rollei_ir_400', 'barnack',
             'cyanotype',
-            'classic_cinema', 'teal_orange', 'cinematic_lady_bird', 'city_neon_cinema',
-            'cinema', 'cinema_2', 'cinema_3', 'cinema_4', 'cinema_5', 'bleachbypass_2', 'matrix',
+            'classic_cinema', 'teal_orange', 'cinema', 'cinema_2', 'cinema_3', 'cinema_4', 'cinema_5',
+            'cinematic_lady_bird', 'city_neon_cinema', 'old_west', 'bleachbypass_2', 'matrix',
             'foggy_night', 'nightfromday', 'bleak_future', 'false_color_infrared',
-            'faded_film', 'cross_process', 'redscale', 'two_strip_color', 'era', 'old_west', 'operation_yellow',
-            'gentle_contrast', 'crispwarm', 'rosegold', 'prussian_blue', 'blue_house', 'blue_ice',
-            'goldengate', 'caribe', 'lia_color', 'sam_kolder', 'taiga', 'fall_colors',
+            'faded_film', 'cross_process', 'redscale', 'two_strip_color', 'era',
+            'gentle_contrast', 'taiga', 'fall_colors', 'crispwarm', 'operation_yellow', 'rosegold',
+            'prussian_blue', 'blue_house', 'blue_ice', 'goldengate', 'caribe', 'lia_color', 'sam_kolder',
         ])
         self.assertEqual({i: e['section'] for i, e in enumerate(entries) if 'section' in e},
-                         {0: 'film', 8: 'monochrome', 16: 'cinema', 27: 'night', 31: 'retro', 38: 'mood'})
+                         {0: 'film', 8: 'monochrome', 16: 'cinema', 28: 'night', 32: 'retro', 37: 'mood'})
         self.assertEqual(entries[14]['name'], 'Vintage 35 mm')
         from hashlib import sha256
         from stereofine.resources import asset_path

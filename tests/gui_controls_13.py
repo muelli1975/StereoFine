@@ -45,6 +45,36 @@ def check_visible_shortcuts(app):
         app.preview_frame.event_generate(sequence)
         pump(app)
 
+    def tap_c():
+        key('<KeyPress-c>')
+        key('<KeyRelease-c>')
+        pump(app, lambda: 'c' not in app._shortcut_keys_down)
+
+    if not app.look_enabled.get():
+        tap_c()
+    app._on_look_selected('Blue House')
+    app._on_look_strength(43)
+    manual_before = asdict(app.current.state.manual)
+    key('<KeyPress-c>')
+    key('<KeyPress-Right>')
+    key('<KeyRelease-Right>')
+    key('<KeyRelease-c>')
+    pump(app, lambda: 'c' not in app._shortcut_keys_down)
+    assert app.current.state.look.enabled and app.current.state.look.preset_id == 'blue_ice'
+    assert app.current.state.look.strength == .43 and app.look_menu.popup is None
+    assert app._look_notice == 'LUT: Blue Ice'
+    tap_c()
+    assert not app.current.state.look.enabled and app._look_notice == app._t('look_notice_off')
+    key('<KeyPress-c>')
+    key('<KeyPress-Left>')
+    key('<KeyRelease-Left>')
+    key('<KeyRelease-c>')
+    pump(app, lambda: 'c' not in app._shortcut_keys_down)
+    assert not app.current.state.look.enabled and app.current.state.look.preset_id == 'blue_ice'
+    assert asdict(app.current.state.manual) == manual_before
+    tap_c()
+    assert app.current.state.look.enabled and app.current.state.look.strength == .43
+
     click_time = 1000
 
     def double_click():
@@ -102,6 +132,36 @@ def check_visible_shortcuts(app):
     app._close_shortcuts_help()
 
 
+def check_favorite_filter(app, first, middle, last):
+    label = app.favorite_filter_label
+    assert label.cget('font') is app.help_footer_label.cget('font')
+    assert label.winfo_rooty() == app.help_footer_label.winfo_rooty()
+    assert label.winfo_rootx() >= app.help_footer_label.winfo_rootx() + app.help_footer_label.winfo_width()
+    assert label.winfo_rootx() + label.winfo_width() <= app.sidebar_bottom.winfo_rootx() + app.sidebar_bottom.winfo_width()
+    for source in (first, last):
+        app._load_source_index(app.sources.index(source))
+        pump(app, lambda: app.busy_state == 'idle' and app.current.source == source)
+        if not app.current.state.favorite:
+            app._on_favorite_clicked()
+    app.previous_source()
+    pump(app, lambda: app.busy_state == 'idle' and app.current.source == middle)
+    assert not app.current.state.favorite
+    label._label.event_generate('<Button-1>')
+    pump(app, lambda: app.busy_state == 'idle' and app.current.source == last)
+    assert label.cget('text_color') == gui.GOLD_LIGHT
+    assert app.sources == [first, middle, last] and not app.favorites_only.get()
+    assert app.next_button.cget('state') == 'disabled'
+    app.previous_source()
+    pump(app, lambda: app.busy_state == 'idle' and app.current.source == first)
+    app._folder_feedback = 'Folder settings applied'
+    app._render_status()
+    label._label.event_generate('<Button-1>')
+    pump(app)
+    assert app.sidecar_status_label.cget('text') == 'Folder settings applied'
+    app.next_source()
+    pump(app, lambda: app.busy_state == 'idle' and app.current.source == middle)
+
+
 def main():
     messages=[];errors=[];settings_writes=[]
     settings=AppSettings(color_match_enabled=False)
@@ -140,7 +200,7 @@ def main():
             assert int(app.defaults_button.grid_info()['row']) > int(app.grid_spacing_menu.grid_info()['row'])
             assert len(builtin_looks()) == 50
             assert app.look_menu.cget('values')[:2] == ['Analog sanft', 'Farbnegativ lebendig']
-            assert app.look_menu.cget('values')[-2:] == ['Herbstfarben', 'Import (.cube, .png)']
+            assert app.look_menu.cget('values')[-2:] == ['Sam Kolder', 'Import (.cube, .png)']
             assert app.look_choice.get() == 'Dia kräftig'
             assert not app.current.state.look.enabled
             app.look_checkbox.toggle()
@@ -269,8 +329,8 @@ def main():
                         'Color Film & Camera Looks', 'Monochrome & Toning', 'Cinema Looks',
                         'Night & Effects', 'Retro & Lab', 'Light & Mood',
                     ]
-                    assert app.look_menu.cget('values')[40] == 'Rose Gold'
-                    assert app.look_menu.cget('values')[-2] == 'Fall Colors'
+                    assert app.look_menu.cget('values')[39] == 'Fall Colors'
+                    assert app.look_menu.cget('values')[42] == 'Rose Gold'
                 with patch('stereofine.controls_guide.work_area', return_value=(0, 0, 1920, 1040)):
                     app.show_shortcuts_help()
                 window=app._shortcut_help_window;window.withdraw();pump(app)
@@ -284,6 +344,7 @@ def main():
                         'Menü, Hilfe oder Messmodus schließen. Sonst bei Zoom die Ansicht einpassen '
                         'oder bei eingepasster Ansicht das Vollbild verlassen.',
                         'Kontextmenü öffnen (Disparitätsmesser bei Anaglyphen)',
+                        'LUT ein-/ausschalten', 'Vorherigen/nächsten LUT-Look wählen',
                     } <= labels
                 else:
                     assert {
@@ -292,6 +353,7 @@ def main():
                         'Close the menu, help or measurement mode. Otherwise fit the zoomed view, '
                         'or exit fullscreen if already fitted.',
                         'Open context menu (disparity meter in anaglyph views)',
+                        'Toggle LUT', 'Select previous/next LUT look',
                     } <= labels
                 width, height = window.initial_window_size
                 assert window.initial_content_height + 100*window.scale <= height
@@ -368,7 +430,7 @@ def main():
             app._on_input_transform_changed()
             app._set_source_collection([source, other, third], 0, batch=True)
             pump(app, lambda: app.busy_state == 'idle' and app.current.source == source)
-            series_path = source.sidecar_path.with_name('series.json')
+            series_path = source.sidecar_path.with_name('orientation.json')
             assert not series_path.exists()
             app.show_folder_settings()
             dialog = app._folder_dialog
@@ -425,6 +487,7 @@ def main():
             assert app.left_orientation.get() == app.right_orientation.get() == '0'
             assert series_path.read_bytes() == saved_series
             check_visible_shortcuts(app)
+            check_favorite_filter(app, source, other, third)
             assert not messages,messages
             assert not errors,errors
             report=dict(loading=True,look_strength_sidecar=True,zoom_preserves_crop=True,
@@ -432,7 +495,7 @@ def main():
                         near_far_evidence=True,help_languages=['de','en'],defaults_keep_destination=True,
                         hover_preview=True,folder_apply=True,field_activation=True,help_sizes=help_sizes,
                         series_orientation=True,defaults_keep_image=True,folder_buttons_stable=True,
-                        visible_shortcuts=True,windows_help_titlebar=sys.platform == 'win32',
+                        visible_shortcuts=True,favorite_navigation=True,windows_help_titlebar=sys.platform == 'win32',
                         callback_errors=errors)
             (output/'gui-controls.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
             print(json.dumps(report))

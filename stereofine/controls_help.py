@@ -39,6 +39,8 @@ Schwebendes Scheinfenster
 
 Vorschau und Hilfe
   A                        Farbig/Graustufen/Kreuzblick
+  C                        LUT ein-/ausschalten
+  C halten + ←/→           Vorherigen/nächsten LUT-Look wählen
   G                        Gitter durchschalten
   Shift + G                Gitter aus
   Esc                      Menü, Hilfe oder Messmodus schließen. Sonst bei Zoom die Ansicht einpassen oder bei eingepasster Ansicht das Vollbild verlassen.
@@ -83,6 +85,8 @@ Floating Window
 
 Preview and help
   A                        Color/Grayscale/Cross-view
+  C                        Toggle LUT
+  Hold C + ←/→             Select previous/next LUT look
   G                        Cycle grid
   Shift + G                Grid off
   Esc                      Close the menu, help or measurement mode. Otherwise fit the zoomed view, or exit fullscreen if already fitted.

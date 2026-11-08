@@ -162,7 +162,7 @@ class NativePreviewMixin:
         for timer in [self._native_after_id, self._native_poll_id, self._detail_release_id, self._detail_repeat_job,
                       self._detail_texture_after_id, self._detail_texture_poll_id,
                       getattr(self, '_fit_notice_job', None), getattr(self, '_look_settings_job', None),
-                      getattr(self, '_look_hover_job', None),
+                      getattr(self, '_look_hover_job', None), getattr(self, '_look_notice_job', None),
                       *self._detail_arrow_releases.values(), *self._mode_release_ids.values()]:
             if timer is not None:
                 try:

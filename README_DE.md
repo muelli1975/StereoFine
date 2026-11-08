@@ -253,7 +253,7 @@ Beim Überfahren eines Looks erscheint die Vorschau. Ein Klick übernimmt den Lo
 
 **Für Ordner übernehmen…** zeigt den Eingabeordner und die Anzahl erkannter Stereobilder. Seitenverhältnis, LUT samt Stärke und symmetrische Farbangleichung lassen sich unabhängig auswählen. StereoFine schreibt die gewählten Einstellungen in die Bilddateien mit Endung `.sfin`. Der Dialog zeigt den Fortschritt. Bei Abbruch bleiben bereits gespeicherte Änderungen erhalten. Gespeicherte Bildwerte haben Vorrang vor den Programmvorgaben. Fehlende Einstellungen folgen den aktuellen Vorgaben.
 
-Unter **Ausrichtung** legt **Als Ordnerausrichtung speichern** Drehung, Spiegelung und L/R-Tausch des aktuellen Bildes als Ordnervorgabe in `_stereofine/series.json` ab. Ein Bild mit eigener Ausrichtung behält seine Einstellung.
+Unter **Ausrichtung** legt **Als Ordnerausrichtung speichern** Drehung, Spiegelung und L/R-Tausch des aktuellen Bildes als Ordnervorgabe in `_stereofine/orientation.json` ab. Ein Bild mit eigener Ausrichtung behält seine Einstellung.
 
 Ohne gespeicherte Ordnervorgabe übernimmt ein Bild beim Blättern die Ausrichtung des zuletzt angezeigten Bildes im selben Ordner, sofern es keine eigene Ausrichtung hat. Bei der Stapelverarbeitung dient dafür die Ausrichtung des aktuell angezeigten Bildes als Vorgabe.
 

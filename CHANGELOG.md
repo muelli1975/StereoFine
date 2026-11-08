@@ -6,6 +6,8 @@
 - Add optional near/far point overlays and an anaglyph-only two-click disparity meter.
 - Add 50 built-in Cube looks in six groups, custom Cube/HaldCLUT import, and 0-100% strength, retained per image.
 - Preview a LUT on hover and optionally apply aspect, LUT and colour matching to a folder.
+- Toggle LUTs with C and switch looks with C held and the Left or Right arrow. Show the selected name in the preview and clear stored LUT choices when applying a disabled LUT to a folder.
+- Filter browsing by favorites and save folder orientation in `orientation.json`.
 - Add Restore defaults while retaining the output destination and language.
 - Fit a magnified view by double-clicking. Clarify fit, Escape and right-click actions in the bilingual Controls guide.
 - Rotate local diagnostic logs and match displayed near/far values to the status display.

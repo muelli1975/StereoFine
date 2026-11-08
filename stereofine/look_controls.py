@@ -117,7 +117,7 @@ class LookControlsMixin:
         self._sync_look_display()
         self._refresh_look_controls()
 
-    def _on_look_selected(self, value):
+    def _on_look_selected(self, value, *, persist=True):
         self._cancel_look_hover(refresh=value == 'Import (.cube, .png)')
         previous_id, previous_path = self._look_preset_id, self._look_path
         if value == 'Import (.cube, .png)':
@@ -141,10 +141,26 @@ class LookControlsMixin:
                           if look_label(item, self.settings.language) == value), None)
             if entry is not None:
                 self._look_preset_id, self._look_path = entry['id'], ''
-        if not self._apply_look_change():
+        applied = self._apply_look_change(persist=persist)
+        if not applied:
             self._look_preset_id, self._look_path = previous_id, previous_path
             self._refresh_preview()
         self._sync_look_display()
+        return applied
+
+    def _cycle_look(self, step):
+        if self.current is None or self.busy_state != 'idle' or not self.look_enabled.get():
+            return
+        entries = builtin_looks()
+        if not entries:
+            return
+        index = -1 if step > 0 else len(entries)
+        if not self._look_path:
+            index = next((i for i, entry in enumerate(entries) if entry['id'] == self._look_preset_id), index)
+        entry = entries[max(0, min(len(entries) - 1, index + step))]
+        if self._look_path or entry['id'] != self._look_preset_id:
+            if self._on_look_selected(look_label(entry, self.settings.language), persist=False):
+                self._show_look_notice()
 
     def _begin_look_menu(self):
         if self.busy_state != 'idle' or not self.look_enabled.get():

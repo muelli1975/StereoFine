@@ -5,10 +5,10 @@ from copy import deepcopy
 from pathlib import Path
 
 from .inputs import LoadedStereoPair, find_pair_for_image
-from .models import SourceStamp
+from .models import FileStamp, SourceStamp
 from .preferences import inherit_missing_preferences, with_series_input
 from .processing import ProcessingDefaults
-from .sidecar import SidecarLoadResult, SidecarStatus, load_sidecar, save_sidecar, source_stamp_to_dict
+from .sidecar import SidecarLoadResult, SidecarStatus, load_sidecar, save_sidecar, source_matches, source_stamp_to_dict
 from .sources import StereoSource, build_source_stamp, load_source, source_from_pair, source_from_stereo_file
 from .state import InputTransformState, PairState
 
@@ -46,6 +46,20 @@ def source_from_selected_pair_image(path: Path) -> StereoSource:
 
 def source_from_selected_stereo_file(path: Path) -> StereoSource:
     return source_from_stereo_file(path, path.parent)
+
+
+def is_saved_favorite(source: StereoSource) -> bool:
+    """Read the favorite flag without decoding the stereo image."""
+    saved = load_sidecar(source.sidecar_path)
+    if saved.status != SidecarStatus.VALID or saved.document is None or not saved.document.favorite:
+        return False
+    try:
+        left = FileStamp.from_path(source.left_path, relative_to=source.input_root, width=0, height=0)
+        right = left if source.right_path == source.left_path else FileStamp.from_path(
+            source.right_path, relative_to=source.input_root, width=0, height=0)
+        return source_matches(saved.document.source, SourceStamp(source.kind, left, right), header_only=True)
+    except (OSError, TypeError, ValueError):
+        return False
 
 
 def _apply_defaults(state: PairState, defaults: ProcessingDefaults) -> None:

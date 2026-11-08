@@ -43,6 +43,8 @@ class ViewControlsMixin:
         self._view_pan_pointer = None
         self._fit_notice_job = None
         self._fit_notice = False
+        self._look_notice_job = None
+        self._look_notice = ''
         self._measure_tool_var = tk.BooleanVar(value=False)
         self._point_measurements = []
         self._point_measure_hover = None
@@ -163,11 +165,28 @@ class ViewControlsMixin:
         self._fit_notice = False
         self._update_preview_display()
 
+    def _show_look_notice(self):
+        if self._look_notice_job is not None:
+            self.after_cancel(self._look_notice_job)
+        self._look_notice = (self._t('look_notice', name=self.look_choice.get())
+                             if self.look_enabled.get() else self._t('look_notice_off'))
+        self._look_notice_job = self.after(2000, self._clear_look_notice)
+        self._update_preview_display()
+
+    def _clear_look_notice(self):
+        self._look_notice_job = None
+        self._look_notice = ''
+        self._update_preview_display()
+
     def _reset_view_for_source(self):
         if not hasattr(self, '_inspection_view'):
             self._inspection_view = InspectionView()
         self._inspection_view.reset()
         self._fit_notice = False
+        if getattr(self, '_look_notice_job', None) is not None:
+            self.after_cancel(self._look_notice_job)
+            self._look_notice_job = None
+            self._look_notice = ''
         self._view_source_box = None
         self._end_point_measurement()
 
@@ -327,7 +346,8 @@ class ViewControlsMixin:
         tool_on = bool(tool is not None and tool.get())
         view = getattr(self, '_inspection_view', None)
         hud_on = detail or bool(view is not None and view.active) or getattr(self, '_fit_notice', False)
-        if not points_on and not tool_on and not hud_on:
+        look_notice = getattr(self, '_look_notice', '')
+        if not points_on and not tool_on and not hud_on and not look_notice:
             return image
         scaling = self.preview_label._get_widget_scaling()
         font = overlay_font(max(14, round(16*scaling)))
@@ -396,11 +416,18 @@ class ViewControlsMixin:
             else:
                 text = self._t('measure_choose_end' if points else 'measure_choose_start')
             overlay_text(draw,(12*scaling,10*scaling),text,font)
+        notices = []
         if hud_on:
             if detail: text=self._t('view_zoom',value='100')
             elif view is not None and view.active: text=self._t('view_zoom',value=f'{view.scale*100:.0f}')
             else: text=self._t('view_fitted')
-            tw=draw.textlength(text,font=font); x=12*scaling; y=image.height-font.size-15*scaling
+            notices.append(text)
+        if look_notice:
+            notices.append(look_notice)
+        for row, text in enumerate(notices):
+            tw = draw.textlength(text, font=font)
+            x = 12*scaling
+            y = image.height-font.size-15*scaling-row*(font.size+14*scaling)
             draw.rounded_rectangle((x-6,y-3,x+tw+7,y+font.size+7),radius=4,fill=(0,0,0,145))
             overlay_text(draw,(x,y),text,font)
         return Image.alpha_composite(image.convert('RGBA'),overlay).convert('RGB')

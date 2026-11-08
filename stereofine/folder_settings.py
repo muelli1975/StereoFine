@@ -81,7 +81,10 @@ def _patch_preferences(raw, choices):
     if choices.color_enabled is not None:
         result.setdefault('color', {})['enabled'] = bool(choices.color_enabled)
     if choices.look is not None:
-        result['look'] = asdict(deepcopy(choices.look).normalize())
+        if choices.look.enabled:
+            result['look'] = asdict(deepcopy(choices.look).normalize())
+        else:
+            result.pop('look', None)
     return result
 
 
@@ -125,7 +128,7 @@ def apply_folder_preferences(sources, choices, *, cancellation=None, progress=No
                     raise ValueError('Unsupported or damaged settings; open and save this image first.')
                 _verify_source(raw.get('source') or {}, header)
             updated = _patch_preferences(raw, choices)
-            if updated == raw and previous is not None:
+            if updated == raw:
                 result.unchanged.append(name)
             else:
                 _verify_source(header, _source_header(source))

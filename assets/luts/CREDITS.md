@@ -19,7 +19,7 @@ The exact source and license-source URLs and file hashes are recorded in manifes
 - Sam Kolder: original file credit Sverre Ryland Glomnes; FreshLUTs entry 1403, uploader Oskar, title Kold (Sam Kolder). The supplied file is retained unchanged.
 - Operation Yellow and Faded Film (Faded Retro 01): Alex Jordan, FreshLUTs entries 59 and 29; unchanged G'MIC Cubes.
 - Vintage 35 mm: PictureFX-Leica-Barnack-125 by Marc Roovers (FreshLUTs: MarcR.), entry 1182. This supplied Cube is retained unchanged under the CC0 declaration on that specific entry.
-- Classic Cinema (Revirssab), Teal & Orange (vannoeun), City Neon Cinema (Gina) and Era (jackofalltrades) use the unchanged Cubes from [OpenShot v4.1.1](https://github.com/OpenShot/openshot-qt/blob/v4.1.1/src/colors/AUTHORS.md), whose catalog records the original FreshLUTs credits and terms.
+- Classic Cinema (Revirssab), Teal & Orange (Alexander Barrels, original title Relatives), City Neon Cinema (Gina) and Era (jackofalltrades) use the unchanged Cubes from [OpenShot v4.1.1](https://github.com/OpenShot/openshot-qt/blob/v4.1.1/src/colors/AUTHORS.md), whose catalog records the original FreshLUTs credits and terms.
 - Cyanotype, False Color Infrared, Two-Strip Color and Gentle Contrast (Gentle S-Curve) are [OpenStill Originals](https://github.com/haon-v2/OpenStill/blob/3ad4dcfcf4f5b67d70e19d87482b20adb6465353/Resources/Licenses/LUTs/PROVENANCE.md). StereoFine exports their published 33³ table samples to Cube with six decimal places, matching OpenStill's Cube exporter. Each Cube header records the source table checksum.
 
 CC0 terms: https://creativecommons.org/publicdomain/zero/1.0/ ; full text: ../../licenses/CC0-1.0.txt . G'MIC: https://gmic.eu/color_presets/ .

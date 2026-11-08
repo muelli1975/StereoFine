@@ -86,16 +86,37 @@ class PreferenceTests(unittest.TestCase):
 
     def test_lut_and_color_can_be_applied_independently(self):
         source = self.sources[0]
-        look = LookState(False, 'matrix', '', .27)
+        look = LookState(True, 'matrix', '', .27)
         apply_folder_preferences([source], FolderChoices(look=look, color_enabled=False))
         state = browse_source(source, ProcessingDefaults(aspect='16:9')).state
         self.assertEqual(state.look, look)
         self.assertFalse(state.color.enabled)
         self.assertEqual(state.framing.aspect, '16:9')
 
+    def test_folder_lut_off_clears_saved_looks_and_restores_inheritance(self):
+        active, disabled, fresh = self.sources
+        apply_folder_preferences([active, disabled], FolderChoices(
+            aspect='1:1', look=LookState(True, 'matrix', '', .27), color_enabled=False))
+        legacy = json.loads(disabled.sidecar_path.read_text())
+        legacy['look']['enabled'] = False
+        disabled.sidecar_path.write_text(json.dumps(legacy), encoding='utf-8')
+        before = [json.loads(source.sidecar_path.read_text()) for source in (active, disabled)]
+
+        result = apply_folder_preferences(self.sources, FolderChoices(look=LookState(False, 'matrix')))
+
+        self.assertEqual(result.updated, [active.display_name, disabled.display_name])
+        self.assertEqual(result.unchanged, [fresh.display_name])
+        self.assertFalse(result.failed)
+        self.assertFalse(fresh.sidecar_path.exists())
+        defaults = ProcessingDefaults(look_enabled=True, look_preset_id='cinema', look_strength=.62)
+        for source, previous in zip((active, disabled), before):
+            previous.pop('look')
+            self.assertEqual(json.loads(source.sidecar_path.read_text()), previous)
+            self.assertEqual(browse_source(source, defaults).state.look, LookState(True, 'cinema', '', .62))
+
     def test_series_orientation_survives_reopening_and_keeps_explicit_zero(self):
         first, lut_only, legacy = self.sources
-        apply_folder_preferences([lut_only], FolderChoices(look=LookState(False, 'matrix')))
+        apply_folder_preferences([lut_only], FolderChoices(look=LookState(True, 'matrix')))
         lut_sidecar = lut_only.sidecar_path.read_bytes()
         session = browse_source(legacy)
         save_browsed_state(session, save_orientation=True)

@@ -57,6 +57,7 @@ from .resources import asset_path
 from .session import (
     BrowsedSource,
     browse_source,
+    is_saved_favorite,
     save_browsed_state,
     source_from_selected_pair_image,
     source_from_selected_stereo_file,
@@ -195,6 +196,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.current: BrowsedSource | None = None
         self.sources: list[StereoSource] = []
         self.source_index: int | None = None
+        self._favorite_indices: set[int] | None = None
         self.batch_mode = False
         # Transient batch-preview identity.  The browsed source/index remains
         # untouched during a worker run so navigation can be restored cleanly;
@@ -203,7 +205,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self._batch_progress_total: int | None = None
         self._batch_progress_source_name: str | None = None
         self._batch_progress_state = None
-        self._load_rollback_context: tuple[list[StereoSource], int | None, bool, str] | None = None
+        self._load_rollback_context: tuple[list[StereoSource], int | None, bool, str, set[int] | None] | None = None
         self._save_after_id: str | None = None
         self._state_save_error = None
         self._state_dirty = False
@@ -253,6 +255,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self._measure_last_tick_at: float | None = None
         self._floating_key_edge: str | None = None
         self._g_key_down = False
+        self._look_key_used = False
         self._shortcut_keys_down: set[str] = set()
         self._keyboard_focus_after_id: str | None = None
         self._shortcut_help_window: ctk.CTkToplevel | None = None
@@ -842,18 +845,30 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.save_button = self._secondary_button(self.sidebar_bottom, self._t("save"), self.save_current_result, height=36)
         self.save_button.grid(row=5, column=0, sticky="ew", padx=20, pady=(0, 4))
 
+        help_footer = ctk.CTkFrame(self.sidebar_bottom, fg_color="transparent")
+        help_footer.grid(row=6, column=0, sticky="ew", padx=20, pady=(1, 12))
+        help_footer.grid_columnconfigure(0, weight=1)
+        footer_font = self._font(12, "bold")
         self.help_footer_label = ctk.CTkLabel(
-            self.sidebar_bottom,
+            help_footer,
             text=self._t("help_footer"),
             text_color=GOLD_LIGHT,
-            font=self._font(12, "bold"),
+            font=footer_font,
             anchor="w",
             cursor="hand2",
         )
-        self.help_footer_label.grid(row=6, column=0, sticky="ew", padx=20, pady=(1, 12))
+        self.help_footer_label.grid(row=0, column=0, sticky="w", padx=(0, 8))
         self.help_footer_label.bind("<Button-1>", self.show_shortcuts_help)
         self.help_footer_label.bind("<Enter>", lambda _e: self.help_footer_label.configure(text_color=TEXT_PRIMARY))
         self.help_footer_label.bind("<Leave>", lambda _e: self.help_footer_label.configure(text_color=GOLD_LIGHT))
+        self.favorite_filter_label = ctk.CTkLabel(
+            help_footer, text=self._t('favorite_filter'), text_color=TEXT_DISABLED,
+            font=footer_font, anchor='e',
+        )
+        self.favorite_filter_label.grid(row=0, column=1, sticky='e')
+        self.favorite_filter_label.bind('<Button-1>', self._toggle_favorite_filter)
+        self.favorite_filter_label.bind('<Enter>', lambda _e: self._update_favorite_filter(hover=True))
+        self.favorite_filter_label.bind('<Leave>', lambda _e: self._update_favorite_filter())
 
     # ------------------------------------------------------------------
     # Status and visual state
@@ -1293,11 +1308,12 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             self.output_path_label.configure(text_color=custom_color)
 
         self.previous_button.configure(
-            state="normal" if can_navigate and (self.source_index or 0) > 0 else "disabled"
+            state="normal" if can_navigate and self._navigation_index(-1) is not None else "disabled"
         )
         self.next_button.configure(
-            state="normal" if can_navigate and self.source_index is not None and self.source_index < len(self.sources) - 1 else "disabled"
+            state="normal" if can_navigate and self._navigation_index(1) is not None else "disabled"
         )
+        self._update_favorite_filter()
         self.save_button.configure(state="normal" if has_source and not self.batch_mode and not busy else "disabled")
         self.save_series_input_button.configure(state='normal' if has_source and not busy else 'disabled')
 
@@ -1666,11 +1682,13 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             self.source_index,
             bool(self.batch_mode),
             str(self.settings.last_input_location or ""),
+            self._favorite_indices,
         )
         if self.current is not None and not self._flush_state_save(explicit=True):
             return
         self.sources = list(sources)
         self.source_index = target_index
+        self._favorite_indices = None
         self.batch_mode = bool(batch)
         self.settings.last_input_location = str(sources[self.source_index].input_root)
         self._persist_settings()
@@ -1679,27 +1697,34 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             rollback_context=rollback,
         )
 
+    def _navigation_index(self, step):
+        if self.source_index is None:
+            return None
+        start = self.source_index + step
+        favorites = getattr(self, '_favorite_indices', None)
+        if favorites is None:
+            return start if 0 <= start < len(self.sources) else None
+        stop = len(self.sources) if step > 0 else -1
+        return next((index for index in range(start, stop, step) if index in favorites), None)
+
+    def _navigate_source(self, step):
+        if self.busy_state == 'idle':
+            index = self._navigation_index(step)
+            if index is not None and self._flush_state_save(explicit=True):
+                self._load_source_index(index)
+        return 'break'
+
     def previous_source(self, event=None):
-        if self.busy_state != "idle" or self.source_index is None or self.source_index <= 0:
-            return "break"
-        if not self._flush_state_save(explicit=True):
-            return "break"
-        self._load_source_index(self.source_index - 1)
-        return "break"
+        return self._navigate_source(-1)
 
     def next_source(self, event=None):
-        if self.busy_state != "idle" or self.source_index is None or self.source_index >= len(self.sources) - 1:
-            return "break"
-        if not self._flush_state_save(explicit=True):
-            return "break"
-        self._load_source_index(self.source_index + 1)
-        return "break"
+        return self._navigate_source(1)
 
     def _load_source_index(
         self,
         index: int,
         *,
-        rollback_context: tuple[list[StereoSource], int | None, bool, str] | None = None,
+        rollback_context: tuple[list[StereoSource], int | None, bool, str, set[int] | None] | None = None,
     ) -> None:
         if not (0 <= index < len(self.sources)):
             return
@@ -1711,6 +1736,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
                 self.source_index,
                 bool(self.batch_mode),
                 str(self.settings.last_input_location or ""),
+                self._favorite_indices,
             )
         self._load_rollback_context = rollback_context
         source = self.sources[index]
@@ -1768,10 +1794,11 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self._load_rollback_context = None
         if context is None:
             return
-        sources, index, batch_mode, last_input = context
+        sources, index, batch_mode, last_input, favorite_indices = context
         self.sources = list(sources)
         self.source_index = index
         self.batch_mode = bool(batch_mode)
+        self._favorite_indices = favorite_indices
         self.settings.last_input_location = last_input
         try:
             self._persist_settings()
@@ -1926,7 +1953,43 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.current.state.favorite = not self.current.state.favorite
         self._schedule_state_save(immediate=True)
         self._update_favorite_star()
+        if getattr(self, '_favorite_indices', None) is not None and self.source_index is not None:
+            if self.current.state.favorite:
+                self._favorite_indices.add(self.source_index)
+            else:
+                self._favorite_indices.discard(self.source_index)
+                if not self._favorite_indices:
+                    self._favorite_indices = None
+            self._refresh_control_states()
         return "break"
+
+    def _update_favorite_filter(self, hover=False):
+        label = getattr(self, 'favorite_filter_label', None)
+        if label is None:
+            return
+        enabled = self.busy_state == 'idle' and self.current is not None and len(self.sources) > 1
+        color = GOLD_LIGHT if self._favorite_indices is not None else TEXT_PRIMARY if hover else TEXT_SECONDARY
+        label.configure(text_color=color if enabled else TEXT_DISABLED, cursor='hand2' if enabled else '')
+
+    def _toggle_favorite_filter(self, _event=None):
+        if self.busy_state != 'idle' or self.current is None or self.source_index is None or len(self.sources) < 2:
+            return 'break'
+        if self._favorite_indices is not None:
+            self._favorite_indices = None
+        else:
+            if not self._flush_state_save(explicit=True):
+                return 'break'
+            favorites = {i for i, source in enumerate(self.sources)
+                         if (self.current.state.favorite if i == self.source_index else is_saved_favorite(source))}
+            if not favorites:
+                messagebox.showinfo(APP_NAME, self._t('favorite_filter_empty'))
+                return 'break'
+            self._favorite_indices = favorites
+            if self.source_index not in favorites:
+                index = self._navigation_index(1)
+                self._load_source_index(max(favorites) if index is None else index)
+        self._refresh_control_states()
+        return 'break'
 
     def reset_manual_to_auto(self) -> None:
         if self.current is None or self.busy_state != "idle":
@@ -2338,6 +2401,9 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
     def _start_worker(self, kind: str, button_text: str, function) -> None:
         if self.busy_state != "idle":
             return
+        if 'c' in getattr(self, '_shortcut_keys_down', ()):
+            self._cancel_mode_release('look')
+            self._release_shortcut_key('c')
         if kind == "save":
             self._stop_detail_repeat()
             self._stop_measure_repeat()
@@ -2729,6 +2795,9 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         bind_all("<A>", self._on_a)
         bind_all("<KeyRelease-a>", lambda e: self._release_shortcut_key("a"))
         bind_all("<KeyRelease-A>", lambda e: self._release_shortcut_key("a"))
+        for key in ('c', 'C'):
+            bind(f'<KeyPress-{key}>', self._on_look_key_press)
+            bind(f'<KeyRelease-{key}>', self._on_look_key_release)
         bind_all("<f>", self._on_f)
         bind_all("<F>", self._on_f)
         bind_all("<KeyRelease-f>", lambda e: self._release_shortcut_key("f"))
@@ -2835,6 +2904,14 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         return 1
 
     def _on_arrow(self, direction: str, event=None):
+        if direction in {'left', 'right'} and 'c' in getattr(self, '_shortcut_keys_down', ()):
+            self._look_key_used = True
+            pending = self._detail_arrow_releases.pop(direction, None)
+            if pending is not None:
+                self.after_cancel(pending)
+            self._detail_arrows_down.add(direction)
+            self._cycle_look(-1 if direction == 'left' else 1)
+            return 'break'
         if self._handle_detail_arrow(direction):
             return "break"
         if self._handle_measure_arrow(direction):
@@ -2896,6 +2973,31 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
     def _release_shortcut_key(self, key: str):
         self._shortcut_keys_down.discard(key)
         return "break"
+
+    def _on_look_key_press(self, event=None):
+        if self._is_ctrl(event) or self._is_alt(event):
+            return None
+        if self.current is None or self.busy_state != 'idle' or self.look_menu.popup is not None:
+            return 'break'
+        self._cancel_mode_release('look')
+        if self._claim_shortcut_key('c', event):
+            self._look_key_used = False
+        return 'break'
+
+    def _on_look_key_release(self, _event=None):
+        if 'c' not in self._shortcut_keys_down:
+            return None
+
+        def released():
+            self._release_shortcut_key('c')
+            if self._look_key_used:
+                self._block_mode_arrows()
+            elif self.current is not None and self.busy_state == 'idle':
+                self.look_checkbox.toggle()
+                self._show_look_notice()
+
+        self._release_key_mode('look', released)
+        return 'break'
 
     def _on_a(self, event=None):
         if self.busy_state != "idle" or not self._claim_shortcut_key("a", event):

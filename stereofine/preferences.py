@@ -9,7 +9,7 @@ PREFERENCE_NAMES = ('aspect', 'color', 'look')
 
 
 def series_input_path(source):
-    return source.sidecar_path.with_name('series.json')
+    return source.sidecar_path.with_name('orientation.json')
 
 
 def save_series_input(source, transform):
