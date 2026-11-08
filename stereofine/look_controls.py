@@ -157,7 +157,7 @@ class LookControlsMixin:
         index = -1 if step > 0 else len(entries)
         if not self._look_path:
             index = next((i for i, entry in enumerate(entries) if entry['id'] == self._look_preset_id), index)
-        entry = entries[max(0, min(len(entries) - 1, index + step))]
+        entry = entries[(index + step) % len(entries)]
         if self._look_path or entry['id'] != self._look_preset_id:
             if self._on_look_selected(look_label(entry, self.settings.language), persist=False):
                 self._show_look_notice()

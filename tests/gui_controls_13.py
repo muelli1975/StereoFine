@@ -205,6 +205,10 @@ def main():
             assert not app.current.state.look.enabled
             app.look_checkbox.toggle()
             assert app.current.state.look.enabled and app.current.state.look.preset_id == builtin_looks()[0]['id']
+            app._cycle_look(-1)
+            assert app.current.state.look.preset_id == builtin_looks()[-1]['id']
+            app._cycle_look(1)
+            assert app.current.state.look.preset_id == builtin_looks()[0]['id']
             app._cycle_look(1)
             assert app.current.state.look.preset_id == builtin_looks()[1]['id']
             app._cycle_look(-1)
