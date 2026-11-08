@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import _tkinter
-from dataclasses import asdict
+from dataclasses import asdict, replace
 import json
 from pathlib import Path
 import sys
@@ -368,6 +368,13 @@ def main():
                 Image.fromarray(pixels).save(folder/name)
             other = source_from_pair(folder/'second_l.png',folder/'second_r.png',folder)
             assert app._flush_state_save()
+            inactive_look = replace(app._current_look_option(), enabled=False)
+            with patch.object(app, '_current_look_option', return_value=inactive_look):
+                app.show_folder_settings()
+            dialog = app._folder_dialog
+            look_label = dialog.checkboxes[1].master.grid_slaves(row=3, column=1)[0]
+            assert look_label.cget('text') == app._t('folder_off')
+            dialog.cancel()
             app.show_folder_settings()
             dialog = app._folder_dialog
             assert len(dialog.sources) == 2

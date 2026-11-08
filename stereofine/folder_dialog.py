@@ -38,12 +38,15 @@ class FolderSettingsDialog(ctk.CTkToplevel):
         ctk.CTkLabel(frame, text=app._t('folder_count', count=len(sources)), font=app._font(12),
             text_color=TEXT_SECONDARY, anchor='w').grid(row=1, column=0, columnspan=2,
                                                       sticky='ew', padx=16, pady=(0, 14))
-        name = (Path(self.look.path).name if self.look.path else next(
-            (look_label(item, app.settings.language) for item in builtin_looks()
-             if item['id'] == self.look.preset_id), self.look.preset_id))
         switch = lambda value: app._t('folder_on' if value else 'folder_off')
+        look_value = switch(self.look.enabled)
+        if self.look.enabled:
+            name = (Path(self.look.path).name if self.look.path else next(
+                (look_label(item, app.settings.language) for item in builtin_looks()
+                 if item['id'] == self.look.preset_id), self.look.preset_id))
+            look_value = f'{look_value} · {name} · {self.look.strength*100:.0f}%'
         values = [('aspect', app._t('aspect_ratio'), aspect_label(self.aspect, app.settings.language)),
-                  ('look', app._t('look_apply'), f'{switch(self.look.enabled)} · {name} · {self.look.strength*100:.0f}%'),
+                  ('look', app._t('look_apply'), look_value),
                   ('color', app._t('color_match'), switch(self.color_enabled))]
         self.checkboxes = []
         for row, (key, title, value) in enumerate(values, 2):
