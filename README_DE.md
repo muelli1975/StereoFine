@@ -2,7 +2,7 @@
 
 [Downloads und SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.3) · [English](README.md) · [Änderungen](RELEASE_NOTES_1.3.md)
 
-**Version 1.3:** Ansichtszoom per Maus und Tastatur, Nah-/Fernpunkte, ein Disparitätsmesser mit zwei Klicks, 25 LUT-Looks in vier Gruppen und Import eigener .cube-/HaldCLUT-.png-Dateien mit Stärke-Regler.
+**Version 1.3:** Ansichtszoom per Maus und Tastatur, Nah-/Fernpunkte, ein Disparitätsmesser mit zwei Klicks, 50 LUT-Looks in sechs Gruppen und Import eigener .cube-/HaldCLUT-.png-Dateien mit Stärke-Regler.
 
 **Version 1.2:** Optionaler verlustfreier TIFF-SBS-Export mit automatisch erhaltener Farbtiefe von 8 oder 16 Bit pro Kanal. **Z** halten zeigt die native 100-%-Ansicht; mit den Pfeiltasten wird sie fein und beim Halten zunehmend schneller verschoben. Beim Loslassen erscheint wieder die vorherige Ansicht. Vorschau und Export verwenden dieselbe Farbangleichung auf Basis des endgültigen Ausschnitts. Fehlgeschlagenes Speichern erhält die Änderungen und verhindert den Export mit alten Einstellungen.
 

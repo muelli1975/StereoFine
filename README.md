@@ -2,7 +2,7 @@
 
 [Downloads and SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.3) · [Deutsch](README_DE.md) · [Changes](RELEASE_NOTES_1.3.md)
 
-**Version 1.3:** Mouse and keyboard view zoom, near/far markers, a two-click disparity meter, and 25 LUT looks in four groups with custom .cube/HaldCLUT .png import and adjustable strength.
+**Version 1.3:** Mouse and keyboard view zoom, near/far markers, a two-click disparity meter, and 50 LUT looks in six groups with custom .cube/HaldCLUT .png import and adjustable strength.
 
 **Version 1.2:** Optional lossless TIFF SBS export retains 8 or 16 bits per channel automatically. Hold **Z** for a native 100% view; pan with the arrow keys, accelerating when held and release **Z** to return. Preview and output use the same final-crop colour matching. Failed sidecar writes retain your edits and prevent export with old settings.
 

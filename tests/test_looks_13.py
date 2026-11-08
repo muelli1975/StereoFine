@@ -94,18 +94,27 @@ class LookTests(unittest.TestCase):
     def test_every_bundled_preset_is_loadable_and_order_is_stable(self):
         entries=builtin_looks()
         self.assertEqual([entry['id'] for entry in entries], [
-            'velvia50', 'portra160nc', 'polaroid669',
-            'delta100', 'retro80s', 'rollei_ir_400', 'barnack',
+            'portra160nc', 'vista200', 'provia100f', 'kodachrome64', 'velvia50', 'fp100c', 'polaroid669',
+            'classic_chrome',
+            'delta100', 'retro80s', 'cinema_noir', 'ortho25', 'acros_red', 'rollei_ir_400', 'barnack',
+            'cyanotype',
+            'classic_cinema', 'teal_orange', 'cinematic_lady_bird', 'city_neon_cinema',
             'cinema', 'cinema_2', 'cinema_3', 'cinema_4', 'cinema_5', 'bleachbypass_2', 'matrix',
-            'crispwarm', 'rosegold', 'blue_house', 'blue_ice', 'goldengate', 'caribe',
-            'lia_color', 'sam_kolder', 'old_west', 'operation_yellow', 'herbstgold',
+            'foggy_night', 'nightfromday', 'bleak_future', 'false_color_infrared',
+            'faded_film', 'cross_process', 'redscale', 'two_strip_color', 'era', 'old_west', 'operation_yellow',
+            'gentle_contrast', 'crispwarm', 'rosegold', 'prussian_blue', 'blue_house', 'blue_ice',
+            'goldengate', 'caribe', 'lia_color', 'sam_kolder', 'taiga', 'fall_colors',
         ])
         self.assertEqual({i: e['section'] for i, e in enumerate(entries) if 'section' in e},
-                         {0: 'film', 3: 'monochrome', 7: 'cinema', 14: 'mood'})
-        self.assertEqual(entries[6]['name'], 'Vintage 35 mm')
+                         {0: 'film', 8: 'monochrome', 16: 'cinema', 27: 'night', 31: 'retro', 38: 'mood'})
+        self.assertEqual(entries[14]['name'], 'Vintage 35 mm')
+        from hashlib import sha256
         from stereofine.resources import asset_path
         for entry in entries:
-            with self.subTest(entry=entry['name']):load_lut(asset_path('luts/'+entry['file']))
+            with self.subTest(entry=entry['name']):
+                path = asset_path('luts/' + entry['file'])
+                self.assertEqual(sha256(path.read_bytes()).hexdigest(), entry['sha256'])
+                load_lut(path)
 
     def test_preview_texture_and_export_use_same_look_before_masks(self):
         loaded=loaded_pair()
@@ -121,18 +130,5 @@ class LookTests(unittest.TestCase):
         texture=prepare_detail_texture(key,native[1],native[2],state.floating_window,
                                        'Farbig',CancellationToken(),state.look)[1]
         np.testing.assert_array_equal(np.asarray(texture),make_anaglyph(expected_l,expected_r))
-
-    def test_autumn_gold_preserves_gradient_detail(self):
-        from stereofine.looks import look_path
-        from stereofine.resources import asset_path
-
-        path = look_path(LookState(preset_id='herbstgold'))
-        self.assertEqual(path, asset_path('luts/Herbstgold.cube'))
-        lut = load_lut(path)
-        gray = np.linspace(0, 1, 513, dtype=np.float32)
-        ramp = np.repeat(gray[None, :, None], 3, axis=2)
-        graded = lut.apply(ramp)
-        self.assertTrue(np.all(np.diff(graded, axis=1) > 0))
-        np.testing.assert_array_equal(graded[0, [0, -1]], ramp[0, [0, -1]])
 
 if __name__=='__main__':unittest.main()

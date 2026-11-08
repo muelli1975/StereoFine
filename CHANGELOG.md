@@ -1,13 +1,13 @@
 # Changelog
 
-## 1.3 - Unreleased
+## 1.3 – 2026-11-07
 
 - Add independent mouse/keyboard view zoom and middle-button panning.
 - Add optional near/far point overlays and an anaglyph-only two-click disparity meter.
-- Add 25 built-in Cube looks in four groups, custom Cube/HaldCLUT import, and 0-100% strength, retained per image.
+- Add 50 built-in Cube looks in six groups, custom Cube/HaldCLUT import, and 0-100% strength, retained per image.
 - Preview a LUT on hover and optionally apply aspect, LUT and colour matching to a folder.
 - Add Restore defaults while retaining the output destination and language.
-- Fit a magnified view by double-clicking and expand the bilingual Controls guide.
+- Fit a magnified view by double-clicking. Clarify fit, Escape and right-click actions in the bilingual Controls guide.
 - Rotate local diagnostic logs and match displayed near/far values to the status display.
 
 ## 1.2 – 2026-11-05 (updated 2026-11-06)

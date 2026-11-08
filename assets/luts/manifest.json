@@ -1,17 +1,5 @@
 [
   {
-    "id": "velvia50",
-    "name": "Dia kräftig",
-    "file": "fuji_velvia_50.cube",
-    "original": "Fuji Velvia 50",
-    "creator": "Pat David and contributors",
-    "license": "CC-BY-SA-4.0",
-    "source": "https://gmic.eu/color_presets/colorslide/colorslide_cube.zip",
-    "sha256": "9b7f3a78e2d13a6a759c0545c463183c07a3020c8b17e01511e634b94eaf4367",
-    "name_en": "Vivid Slide",
-    "section": "film"
-  },
-  {
     "id": "portra160nc",
     "name": "Analog sanft",
     "file": "kodak_portra_160_nc.cube",
@@ -20,7 +8,67 @@
     "license": "CC-BY-SA-4.0",
     "source": "https://gmic.eu/color_presets/negative_color/negative_color_cube.zip",
     "sha256": "525304b7c546e20ec418cf15f226b74aecdd37d6649b21d5b3e95a00b33c37de",
-    "name_en": "Soft Analog"
+    "name_en": "Soft Analog",
+    "section": "film"
+  },
+  {
+    "id": "vista200",
+    "name": "Farbnegativ lebendig",
+    "file": "agfa_vista_200.cube",
+    "original": "Agfa Vista 200",
+    "creator": "Pat David and contributors; Cube conversion by G'MIC",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://gmic.eu/color_presets/negative_color/clut/agfa_vista_200.zip",
+    "license_source": "https://github.com/cedeber/hald-clut/blob/master/HaldCLUT/Film%20Simulation/README.txt",
+    "sha256": "97a02c81cd7619fcfa19b4ce0ebb87829b58bcbb25f0913c4a246f674ec1c77e",
+    "name_en": "Vivid Color Negative"
+  },
+  {
+    "id": "provia100f",
+    "name": "Dia neutral",
+    "file": "fuji_provia_100f.cube",
+    "original": "Fujifilm Provia 100F",
+    "creator": "Pat David and contributors; Cube conversion by G'MIC",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://gmic.eu/color_presets/colorslide/clut/fuji_provia_100f.zip",
+    "license_source": "https://github.com/cedeber/hald-clut/blob/master/HaldCLUT/Film%20Simulation/README.txt",
+    "sha256": "11de7403a187f15be494a7dd561354a47b09867489a5088323d0f01561f79a5b",
+    "name_en": "Neutral Slide"
+  },
+  {
+    "id": "kodachrome64",
+    "name": "Dia klassisch",
+    "file": "kodak_kodachrome_64.cube",
+    "original": "Kodak Kodachrome 64",
+    "creator": "Pat David and contributors; Cube conversion by G'MIC",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://gmic.eu/color_presets/colorslide/clut/kodak_kodachrome_64.zip",
+    "license_source": "https://github.com/cedeber/hald-clut/blob/master/HaldCLUT/Film%20Simulation/README.txt",
+    "sha256": "6c00da3b52ff7ef0ef23995ab5994050d12145856fad6d99324ac32b271273aa",
+    "name_en": "Classic Slide"
+  },
+  {
+    "id": "velvia50",
+    "name": "Dia kräftig",
+    "file": "fuji_velvia_50.cube",
+    "original": "Fuji Velvia 50",
+    "creator": "Pat David and contributors",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://gmic.eu/color_presets/colorslide/colorslide_cube.zip",
+    "sha256": "9b7f3a78e2d13a6a759c0545c463183c07a3020c8b17e01511e634b94eaf4367",
+    "name_en": "Vivid Slide"
+  },
+  {
+    "id": "fp100c",
+    "name": "Sofortbild natürlich",
+    "file": "fuji_fp-100c.cube",
+    "original": "Fujifilm FP-100C",
+    "creator": "Pat David and contributors; Cube conversion by G'MIC",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://gmic.eu/color_presets/instant_pro/clut/fuji_fp-100c.zip",
+    "license_source": "https://github.com/cedeber/hald-clut/blob/master/HaldCLUT/Film%20Simulation/README.txt",
+    "sha256": "baf140e6bd6b126cc32a9f8a996f1a0f09b102b3e9fd9e0e6a20f85dbac997a7",
+    "name_en": "Natural Instant Film"
   },
   {
     "id": "polaroid669",
@@ -32,6 +80,18 @@
     "source": "https://gmic.eu/color_presets/instant_pro/clut/polaroid_669.zip",
     "sha256": "f8ffdd00e1de6dd9bd7fbb98d097b7f0667d064168b5b1f7c88d85f390612a91",
     "name_en": "Retro Instant Film"
+  },
+  {
+    "id": "classic_chrome",
+    "name": "Reportage dezent",
+    "file": "fuji_xtrans_iii_classic_chrome.cube",
+    "original": "Fujifilm X-Trans III Classic Chrome",
+    "creator": "Stuart Sowerby; Cube conversion by G'MIC",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://gmic.eu/color_presets/fujixtransiii/clut/fuji_xtrans_iii_classic_chrome.zip",
+    "license_source": "https://github.com/GreycLab/gmic-community/issues/15#issuecomment-131894845",
+    "sha256": "eb118666c2bc9605aa39902a0ea2fb0d933229afda154eefcf1204c30ab23c92",
+    "name_en": "Muted Documentary"
   },
   {
     "id": "delta100",
@@ -57,6 +117,42 @@
     "name_en": "Retro Monochrome"
   },
   {
+    "id": "cinema_noir",
+    "name": "Cinema Noir",
+    "file": "cinema_noir.cube",
+    "original": "Cinema Noir",
+    "creator": "Abigail Gonzalez (FreshLUTs profile: Andy)",
+    "license": "CC0-1.0",
+    "source": "https://gmic.eu/color_presets/abigailgonzalez/clut/cinema_noir.zip",
+    "license_source": "https://freshluts.com/luts/222",
+    "sha256": "80da8abfb35e20eb95f049cc9578adfd437fd92c9d2a84235249d21d4d2e1b85",
+    "name_en": "Cinema Noir"
+  },
+  {
+    "id": "ortho25",
+    "name": "Orthochromatisch",
+    "file": "rollei_ortho_25.cube",
+    "original": "Rollei Ortho 25",
+    "creator": "Pat David and contributors; Cube conversion by G'MIC",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://gmic.eu/color_presets/bw/clut/rollei_ortho_25.zip",
+    "license_source": "https://github.com/cedeber/hald-clut/blob/master/HaldCLUT/Film%20Simulation/README.txt",
+    "sha256": "0f1b0f2604c1ebc70514ac154afa42142a0b080f681f1941f669bb24c66e35ff",
+    "name_en": "Orthochromatic"
+  },
+  {
+    "id": "acros_red",
+    "name": "Monochrom mit Rotfilter",
+    "file": "fuji_xtrans_iii_acros+r.cube",
+    "original": "Fujifilm X-Trans III ACROS+R",
+    "creator": "Stuart Sowerby; Cube conversion by G'MIC",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://gmic.eu/color_presets/fujixtransiii/clut/fuji_xtrans_iii_acros+r.zip",
+    "license_source": "https://github.com/GreycLab/gmic-community/issues/15#issuecomment-131894845",
+    "sha256": "a471d684ee46507dba5cff0b7fe1b7ba6cf989bbaa7e014955c96aeec15b6001",
+    "name_en": "Red Filter Monochrome"
+  },
+  {
     "id": "rollei_ir_400",
     "name": "Infrarot Schwarzweiß",
     "file": "rollei_ir_400.cube",
@@ -79,6 +175,67 @@
     "name_en": "Vintage 35 mm"
   },
   {
+    "id": "cyanotype",
+    "name": "Cyanotypie",
+    "file": "openstill_cyanotype.cube",
+    "original": "Cyanotype",
+    "creator": "OpenStill",
+    "license": "CC0-1.0",
+    "source": "https://github.com/haon-v2/OpenStill/blob/3ad4dcfcf4f5b67d70e19d87482b20adb6465353/Resources/LUTs/Library.lutpack",
+    "license_source": "https://github.com/haon-v2/OpenStill/blob/3ad4dcfcf4f5b67d70e19d87482b20adb6465353/Resources/Licenses/LUTs/PROVENANCE.md",
+    "sha256": "e246a9308aef46086374aad7e489ad28def7b2ada99e95ae1ed08a61f437a349",
+    "name_en": "Cyanotype"
+  },
+  {
+    "id": "classic_cinema",
+    "name": "Kino klassisch",
+    "file": "standard_film.cube",
+    "original": "Rec.709 Film Look",
+    "creator": "Revirssab",
+    "license": "CC0-1.0",
+    "source": "https://github.com/OpenShot/openshot-qt/blob/v4.1.1/src/colors/film_stock_%26_vintage/standard_film.cube",
+    "license_source": "https://freshluts.com/luts/1440",
+    "sha256": "a60303f734d3bf9599e1ae91a16a4b9150b925512eb02f8d07e8bdc6194f2a29",
+    "name_en": "Classic Cinema",
+    "section": "cinema"
+  },
+  {
+    "id": "teal_orange",
+    "name": "Teal & Orange",
+    "file": "signature_teal_&_orange.cube",
+    "original": "Teal-orange(Lut)",
+    "creator": "vannoeun",
+    "license": "CC0-1.0",
+    "source": "https://github.com/OpenShot/openshot-qt/blob/v4.1.1/src/colors/teal_%26_orange_vibes/signature_teal_%26_orange.cube",
+    "license_source": "https://freshluts.com/luts/682",
+    "sha256": "38529bbf5a1d6e63033df229987b7cfef7b113b1a6e42362d7ab098995c081cb",
+    "name_en": "Teal & Orange"
+  },
+  {
+    "id": "cinematic_lady_bird",
+    "name": "Cinematic Lady Bird",
+    "file": "cinematic_lady_bird.cube",
+    "original": "Cinematic Lady Bird",
+    "creator": "Hebus Tetram; Cube conversion by G'MIC",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://gmic.eu/color_presets/pixlsus/clut/cinematic_lady_bird.zip",
+    "license_source": "https://github.com/GreycLab/gmic-community/issues/15#issuecomment-131894845",
+    "sha256": "514c014dee0db66f084abf62b025c633f8c399dcdbf76201ccf81c9b2983ebbe",
+    "name_en": "Cinematic Lady Bird"
+  },
+  {
+    "id": "city_neon_cinema",
+    "name": "City Neon Cinema",
+    "file": "city_neon_cinema.cube",
+    "original": "Hong Kong 1",
+    "creator": "Gina",
+    "license": "CC0-1.0",
+    "source": "https://github.com/OpenShot/openshot-qt/blob/v4.1.1/src/colors/cinematic_%26_blockbuster/city_neon_cinema.cube",
+    "license_source": "https://freshluts.com/luts/2426",
+    "sha256": "7deb16c12b14c67d2c8627aefdcd71b6c2b14e26aecbff817f2fdcbdc7608cb1",
+    "name_en": "City Neon Cinema"
+  },
+  {
     "id": "cinema",
     "name": "Cinema",
     "file": "cinema.cube",
@@ -87,8 +244,7 @@
     "source": "https://gmic.eu/color_presets/abigailgonzalez/abigailgonzalez_cube.zip",
     "license_source": "https://freshluts.com/luts/213",
     "sha256": "3c9a86a7ecfffebe5b7722e8e1b627ef7d4244116f491ba31d8361c6c5714d89",
-    "name_en": "Cinema",
-    "section": "cinema"
+    "name_en": "Cinema"
   },
   {
     "id": "cinema_2",
@@ -158,6 +314,151 @@
     "name_en": "Matrix"
   },
   {
+    "id": "foggy_night",
+    "name": "Neblige Nacht",
+    "file": "foggynight.cube",
+    "original": "FoggyNight",
+    "creator": "RawTherapee Film Simulation Collection; Cube conversion by G'MIC",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://gmic.eu/color_presets/creative/clut/foggynight.zip",
+    "license_source": "https://github.com/cedeber/hald-clut/blob/master/HaldCLUT/Film%20Simulation/README.txt",
+    "sha256": "531e9cd01ab0b03c8e2acfe894725e5a845b91f7e87bd6244e2baf812a01b0ad",
+    "name_en": "Foggy Night",
+    "section": "night"
+  },
+  {
+    "id": "nightfromday",
+    "name": "Tag zur Nacht",
+    "file": "nightfromday.cube",
+    "original": "NightFromDay",
+    "creator": "RawTherapee Film Simulation Collection; Cube conversion by G'MIC",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://gmic.eu/color_presets/creative/clut/nightfromday.zip",
+    "license_source": "https://github.com/cedeber/hald-clut/blob/master/HaldCLUT/Film%20Simulation/README.txt",
+    "sha256": "4aaf7fb8f4088532565856cb4e9874a84491a5fef0cffd897d92a4537bcb6f8c",
+    "name_en": "Nightfromday"
+  },
+  {
+    "id": "bleak_future",
+    "name": "Bleak Future",
+    "file": "futuristicbleak_2.cube",
+    "original": "FuturisticBleak2",
+    "creator": "RawTherapee Film Simulation Collection; Cube conversion by G'MIC",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://gmic.eu/color_presets/creative/clut/futuristicbleak_2.zip",
+    "license_source": "https://github.com/cedeber/hald-clut/blob/master/HaldCLUT/Film%20Simulation/README.txt",
+    "sha256": "767472793580763f20719be65ce1a18864e491b039dbe95833a5ef7b280f4950",
+    "name_en": "Bleak Future"
+  },
+  {
+    "id": "false_color_infrared",
+    "name": "Falschfarben-Infrarot",
+    "file": "openstill_infrared_false_color.cube",
+    "original": "Infrared False Color",
+    "creator": "OpenStill",
+    "license": "CC0-1.0",
+    "source": "https://github.com/haon-v2/OpenStill/blob/3ad4dcfcf4f5b67d70e19d87482b20adb6465353/Resources/LUTs/Library.lutpack",
+    "license_source": "https://github.com/haon-v2/OpenStill/blob/3ad4dcfcf4f5b67d70e19d87482b20adb6465353/Resources/Licenses/LUTs/PROVENANCE.md",
+    "sha256": "42cb9fd9e17dcdbe03f9701b3ddd7a493a24c16a547093cb6b9b5f6b4b347cc0",
+    "name_en": "False Color Infrared"
+  },
+  {
+    "id": "faded_film",
+    "name": "Verblasster Film",
+    "file": "faded_retro_01.cube",
+    "original": "Faded Retro 01",
+    "creator": "Alex Jordan",
+    "license": "CC0-1.0",
+    "source": "https://gmic.eu/color_presets/alexjordan/clut/faded_retro_01.zip",
+    "license_source": "https://freshluts.com/luts/29",
+    "sha256": "f1b648ae0ff34f6594d2ff2139c823f0223e1bd95bcb85fd5fbc3b2548ce2f18",
+    "name_en": "Faded Film",
+    "section": "retro"
+  },
+  {
+    "id": "cross_process",
+    "name": "Cross Process",
+    "file": "kodak_elite_100_xpro.cube",
+    "original": "Kodak Elite 100 Xpro",
+    "creator": "Pat David and contributors; Cube conversion by G'MIC",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://gmic.eu/color_presets/negative_color/clut/kodak_elite_100_xpro.zip",
+    "license_source": "https://github.com/cedeber/hald-clut/blob/master/HaldCLUT/Film%20Simulation/README.txt",
+    "sha256": "4bd409f7a920de27662a3bc11503c1ae9ba068a886ba2300615a4e2a4e94b5c7",
+    "name_en": "Cross Process"
+  },
+  {
+    "id": "redscale",
+    "name": "Redscale",
+    "file": "lomography_redscale_100.cube",
+    "original": "Lomography Redscale 100",
+    "creator": "Pat David and contributors; Cube conversion by G'MIC",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://gmic.eu/color_presets/negative_color/clut/lomography_redscale_100.zip",
+    "license_source": "https://github.com/cedeber/hald-clut/blob/master/HaldCLUT/Film%20Simulation/README.txt",
+    "sha256": "381595ae6cbfd4c619b884ae4ba1801d187f1b158ab8c468305f6896fcac9f5e",
+    "name_en": "Redscale"
+  },
+  {
+    "id": "two_strip_color",
+    "name": "Zweifarbenfilm",
+    "file": "openstill_two_strip_color.cube",
+    "original": "Two-Strip Color",
+    "creator": "OpenStill",
+    "license": "CC0-1.0",
+    "source": "https://github.com/haon-v2/OpenStill/blob/3ad4dcfcf4f5b67d70e19d87482b20adb6465353/Resources/LUTs/Library.lutpack",
+    "license_source": "https://github.com/haon-v2/OpenStill/blob/3ad4dcfcf4f5b67d70e19d87482b20adb6465353/Resources/Licenses/LUTs/PROVENANCE.md",
+    "sha256": "7456e00fb585f4db05c5ecf1fb650675ddd737d8995ea90e3d02df7fe2ea56c9",
+    "name_en": "Two-Strip Color"
+  },
+  {
+    "id": "era",
+    "name": "Era",
+    "file": "noir_era.cube",
+    "original": "Era",
+    "creator": "jackofalltrades",
+    "license": "CC0-1.0",
+    "source": "https://github.com/OpenShot/openshot-qt/blob/v4.1.1/src/colors/dark_%26_moody/noir_era.cube",
+    "license_source": "https://freshluts.com/luts/1053",
+    "sha256": "5b6663cbb50f8e3a61664b44315501e7cf44eaf29d7e55311fe12bff9a9b09fe",
+    "name_en": "Era"
+  },
+  {
+    "id": "old_west",
+    "name": "Old West",
+    "file": "old_west.cube",
+    "creator": "Abigail Gonzalez (FreshLUTs profile: Andy)",
+    "license": "CC0-1.0",
+    "source": "https://gmic.eu/color_presets/abigailgonzalez/abigailgonzalez_cube.zip",
+    "license_source": "https://freshluts.com/luts/227",
+    "sha256": "7b02105eca41627c77ce5930c1e76dd5af677aeadd2230ddd532ad2d1bce0a43",
+    "name_en": "Old West"
+  },
+  {
+    "id": "operation_yellow",
+    "name": "Operation Yellow",
+    "file": "operation_yellow.cube",
+    "creator": "Alex Jordan",
+    "license": "CC0-1.0",
+    "source": "https://gmic.eu/color_presets/alexjordan/clut/operation_yellow.zip",
+    "license_source": "https://freshluts.com/luts/59",
+    "sha256": "1644fb86bb1f35e9168811f279e514baa18c11bbb8efc17544bb545cf0792d91",
+    "name_en": "Operation Yellow"
+  },
+  {
+    "id": "gentle_contrast",
+    "name": "Sanfter Kontrast",
+    "file": "openstill_gentle_s_curve.cube",
+    "original": "Gentle S-Curve",
+    "creator": "OpenStill",
+    "license": "CC0-1.0",
+    "source": "https://github.com/haon-v2/OpenStill/blob/3ad4dcfcf4f5b67d70e19d87482b20adb6465353/Resources/LUTs/Library.lutpack",
+    "license_source": "https://github.com/haon-v2/OpenStill/blob/3ad4dcfcf4f5b67d70e19d87482b20adb6465353/Resources/Licenses/LUTs/PROVENANCE.md",
+    "sha256": "b579ce26f53c9ad8b3e20418d570262f01b2d4ff99b01b5976832638eb1be7e2",
+    "name_en": "Gentle Contrast",
+    "section": "mood"
+  },
+  {
     "id": "crispwarm",
     "name": "Crisp Warm",
     "file": "crispwarm.cube",
@@ -166,8 +467,7 @@
     "source": "https://gmic.eu/color_presets/creative/creative_cube.zip",
     "license_source": "https://github.com/cedeber/hald-clut/blob/master/HaldCLUT/Film%20Simulation/README.txt",
     "sha256": "a1b5db2ea6ad38597f496e3288356b138d7e3073c42dfebbb8f9770bb6215d99",
-    "name_en": "Crisp Warm",
-    "section": "mood"
+    "name_en": "Crisp Warm"
   },
   {
     "id": "rosegold",
@@ -180,6 +480,18 @@
     "license_source": "https://github.com/cedeber/hald-clut/blob/master/HaldCLUT/Film%20Simulation/README.txt",
     "sha256": "42b7779a740c883e2a85a5fa2fad8352f0cafd182db0bbf9a0184f9eaf5c07d1",
     "name_en": "Rose Gold"
+  },
+  {
+    "id": "prussian_blue",
+    "name": "Preußischblau",
+    "file": "prussian_blue.cube",
+    "original": "Prussian Blue",
+    "creator": "Hebus Tetram; Cube conversion by G'MIC",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://gmic.eu/color_presets/pixlsus/clut/prussian_blue.zip",
+    "license_source": "https://github.com/GreycLab/gmic-community/issues/15#issuecomment-131894845",
+    "sha256": "f936fde87a95c5c947207ab137bc5f3ffa3c18fbcf4154c09529bd131e2ea899",
+    "name_en": "Prussian Blue"
   },
   {
     "id": "blue_house",
@@ -246,35 +558,27 @@
     "name_en": "Sam Kolder"
   },
   {
-    "id": "old_west",
-    "name": "Old West",
-    "file": "old_west.cube",
-    "creator": "Abigail Gonzalez (FreshLUTs profile: Andy)",
-    "license": "CC0-1.0",
-    "source": "https://gmic.eu/color_presets/abigailgonzalez/abigailgonzalez_cube.zip",
-    "license_source": "https://freshluts.com/luts/227",
-    "sha256": "7b02105eca41627c77ce5930c1e76dd5af677aeadd2230ddd532ad2d1bce0a43",
-    "name_en": "Old West"
+    "id": "taiga",
+    "name": "Taiga",
+    "file": "taiga.cube",
+    "original": "Taiga",
+    "creator": "Hebus Tetram; Cube conversion by G'MIC",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://gmic.eu/color_presets/pixlsus/clut/taiga.zip",
+    "license_source": "https://github.com/GreycLab/gmic-community/issues/15#issuecomment-131894845",
+    "sha256": "7236f93df44fb41ae05f01da3711cf5afe70acf459e1fa998a7dde53746a797c",
+    "name_en": "Taiga"
   },
   {
-    "id": "operation_yellow",
-    "name": "Operation Yellow",
-    "file": "operation_yellow.cube",
-    "creator": "Alex Jordan",
-    "license": "CC0-1.0",
-    "source": "https://gmic.eu/color_presets/alexjordan/clut/operation_yellow.zip",
-    "license_source": "https://freshluts.com/luts/59",
-    "sha256": "1644fb86bb1f35e9168811f279e514baa18c11bbb8efc17544bb545cf0792d91",
-    "name_en": "Operation Yellow"
-  },
-  {
-    "id": "herbstgold",
-    "name": "Herbstgold",
-    "file": "Herbstgold.cube",
-    "creator": "StereoFine",
-    "license": "MIT",
-    "source": "scripts/build_herbstgold.py",
-    "sha256": "6e22e91341ad6e3558659a93a595982205b05aff7fcb416b015e351c4221f9d3",
-    "name_en": "Autumn Gold"
+    "id": "fall_colors",
+    "name": "Herbstfarben",
+    "file": "fallcolors.cube",
+    "original": "FallColors",
+    "creator": "RawTherapee Film Simulation Collection; Cube conversion by G'MIC",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://gmic.eu/color_presets/creative/clut/fallcolors.zip",
+    "license_source": "https://github.com/cedeber/hald-clut/blob/master/HaldCLUT/Film%20Simulation/README.txt",
+    "sha256": "9dbe823567f1fb899b8e165250652963bd9f8e89aad75c9a82dae907da70af76",
+    "name_en": "Fall Colors"
   }
 ]

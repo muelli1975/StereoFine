@@ -138,8 +138,9 @@ def main():
             assert app.deviation_points_box.cget('text')=='Nah-/Fernpunkte anzeigen'
             assert int(app.deviation_points_box.grid_info()['row']) < int(app.grid_spacing_menu.grid_info()['row'])
             assert int(app.defaults_button.grid_info()['row']) > int(app.grid_spacing_menu.grid_info()['row'])
-            assert len(builtin_looks()) == 25
-            assert app.look_menu.cget('values')[:2] == ['Dia kräftig', 'Analog sanft']
+            assert len(builtin_looks()) == 50
+            assert app.look_menu.cget('values')[:2] == ['Analog sanft', 'Farbnegativ lebendig']
+            assert app.look_menu.cget('values')[-2:] == ['Herbstfarben', 'Import (.cube, .png)']
             assert app.look_choice.get() == 'Dia kräftig'
             assert not app.current.state.look.enabled
             app.look_checkbox.toggle()
@@ -163,11 +164,12 @@ def main():
             assert menu.popup is not None
             assert [widget.cget('text') for widget in menu._popup_frame.winfo_children()
                     if isinstance(widget, gui.ctk.CTkLabel)] == [
-                'Farbfilm & Sofortbild', 'Schwarzweiß & Sepia', 'Kino', 'Licht & Stimmung',
+                'Farbfilm & Kameralooks', 'Schwarzweiß & Tonung', 'Kino-Looks',
+                'Nacht & Effekte', 'Retro & Labor', 'Licht & Stimmung',
             ]
-            menu._activate(menu.cget('values').index('Vintage 35 mm'), preview=False)
+            menu._activate(menu.cget('values').index('Cyanotypie'), preview=False)
             menu._step(1)
-            assert menu._popup_buttons[menu._active_index].cget('text') == 'Cinema'
+            assert menu._popup_buttons[menu._active_index].cget('text') == 'Kino klassisch'
             menu._activate(menu.cget('values').index('Matrix'))
             pump(app, lambda: getattr(app._look_hover_state, 'preset_id', None) == 'matrix')
             assert app._look_hover_state.preset_id == 'matrix'
@@ -264,9 +266,11 @@ def main():
                 assert int(app.save_series_input_button.grid_info()['row']) == int(app.swap_eyes_box.grid_info()['row']) + 1
                 if language == 'en':
                     assert list(app.look_menu.section_headers.values()) == [
-                        'Color & Instant Film', 'Monochrome & Sepia', 'Cinema', 'Light & Mood',
+                        'Color Film & Camera Looks', 'Monochrome & Toning', 'Cinema Looks',
+                        'Night & Effects', 'Retro & Lab', 'Light & Mood',
                     ]
-                    assert app.look_menu.cget('values')[15] == 'Rose Gold'
+                    assert app.look_menu.cget('values')[40] == 'Rose Gold'
+                    assert app.look_menu.cget('values')[-2] == 'Fall Colors'
                 with patch('stereofine.controls_guide.work_area', return_value=(0, 0, 1920, 1040)):
                     app.show_shortcuts_help()
                 window=app._shortcut_help_window;window.withdraw();pump(app)

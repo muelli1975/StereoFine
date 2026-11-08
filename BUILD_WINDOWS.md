@@ -58,7 +58,7 @@ dist/
 
 `Source/` contains the exact application source, assets, tests, documentation and build files used for the executable. The third-party ExifTool package remains visible once at `tools/` beside the executable and is not duplicated inside `Source/`.
 
-Herbstgold uses StereoFine's MIT-licensed `assets/luts/Herbstgold.cube` on all platforms. Release archive verification checks the packaged LUTs against the committed source files.
+Release archive verification checks the packaged Cube LUTs and their catalog against the committed source files.
 
 The candidate entry point is `python scripts/build_package.py --candidate --fixtures build/heif-fixtures`. When the pinned native tools are already installed under `tools/`, add `--reuse-native-tools`.
 

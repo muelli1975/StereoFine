@@ -160,6 +160,12 @@ class LookState:
         self.enabled = bool(self.enabled)
         self.preset_id = str(self.preset_id or DEFAULT_LOOK_PRESET_ID)
         self.path = str(self.path or "")
+        if not self.path and self.preset_id != DEFAULT_LOOK_PRESET_ID:
+            from .looks import builtin_looks
+
+            if not any(entry["id"] == self.preset_id for entry in builtin_looks()):
+                self.preset_id = DEFAULT_LOOK_PRESET_ID
+                self.enabled = False
         value = float(self.strength)
         self.strength = max(0., min(1., value)) if math.isfinite(value) else 1.
         return self
