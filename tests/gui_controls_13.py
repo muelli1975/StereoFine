@@ -418,7 +418,7 @@ def main():
             pump(app, lambda: app.busy_state == 'idle' and app._folder_dialog is None)
             saved_other = json.loads(other.sidecar_path.read_text('utf-8'))
             assert set(saved_other) == {'schema_version', 'source', 'look'}
-            assert saved_other['look']['preset_id'] == 'matrix'
+            assert saved_other['look']['preset_id'] == 'matrix', (saved_other, dialog.look, app.current.state.look)
             assert app.current.source == source and app.current.state.alignment.valid
             assert app._folder_feedback
 
@@ -499,6 +499,14 @@ def main():
             assert asdict(app.current.state.look) == previous_look
             assert not json.loads(third.sidecar_path.read_text('utf-8')).get('look')
             assert app.left_orientation.get() == app.right_orientation.get() == '0'
+            app.previous_source()
+            pump(app, lambda: app.busy_state == 'idle' and app.current.source == other)
+            assert asdict(app.current.state.look) == previous_look
+            app._set_source_collection([source, other, third], 2, batch=True)
+            pump(app, lambda: app.busy_state == 'idle' and app.current.source == third)
+            assert not app.current.state.look.enabled and app.current.state.look.preset_id == ''
+            assert app.current.state.look.strength == 1.0
+            assert app.look_choice.get() == app.look_menu.cget('values')[0]
             app.previous_source()
             pump(app, lambda: app.busy_state == 'idle' and app.current.source == other)
             assert app.left_orientation.get() == app.right_orientation.get() == '0'

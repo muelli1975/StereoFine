@@ -65,7 +65,7 @@ from .session import (
 from .settings import AppSettings, load_settings, save_settings
 from .sidecar import SidecarStatus, load_sidecar
 from .sources import StereoSource, discover_pair_sources, discover_stereo_file_sources
-from .state import InputTransformState
+from .state import InputTransformState, LookState
 from .status import build_status_sections, sidecar_status_text
 from .theme import (
     APP_BG,
@@ -1430,11 +1430,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
     def _source_defaults(self, source: StereoSource) -> ProcessingDefaults:
         defaults = self._new_source_defaults()
         if self.current is not None and self.current.source.input_root == source.input_root:
-            defaults = replace(defaults, **asdict(self.current.state.input_transform))
-            if self.current.source != source:
-                look = self.current.state.look
-                defaults = replace(defaults, look_enabled=look.enabled, look_preset_id=look.preset_id,
-                                   look_path=look.path, look_strength=look.strength)
+            return replace(defaults, **asdict(self.current.state.input_transform))
         return defaults
 
     def _processing_options(
@@ -1715,7 +1711,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         if self.busy_state == 'idle':
             index = self._navigation_index(step)
             if index is not None and self._flush_state_save(explicit=True):
-                self._load_source_index(index)
+                self._load_source_index(index, inherit_look=True)
         return 'break'
 
     def previous_source(self, event=None):
@@ -1728,6 +1724,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self,
         index: int,
         *,
+        inherit_look: bool = False,
         rollback_context: tuple[list[StereoSource], int | None, bool, str, set[int] | None] | None = None,
     ) -> None:
         if not (0 <= index < len(self.sources)):
@@ -1751,6 +1748,11 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self._stop_measure_repeat()
 
         defaults = self._source_defaults(source)
+        look = LookState()
+        if inherit_look and self.current is not None and self.current.source.input_root == source.input_root:
+            look = self.current.state.look
+        defaults = replace(defaults, look_enabled=look.enabled, look_preset_id=look.preset_id,
+                           look_path=look.path, look_strength=look.strength)
         bounds = self._preview_bounds()
         mode = self._effective_preview_mode()
 
@@ -2697,7 +2699,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
                     self._refresh_preview()
                 return
             if self.source_index is not None and self.sources:
-                self._load_source_index(self.source_index)
+                self._load_source_index(self.source_index, inherit_look=True)
 
     def _adopt_saved_result(self, payload: BatchRunResult) -> bool:
         if self.current is None or payload.failed or len(payload.items) != 1:
