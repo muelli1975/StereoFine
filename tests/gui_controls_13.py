@@ -19,7 +19,7 @@ import stereofine.gui as gui
 from stereofine.inspection import measured_deviation
 from stereofine.looks import builtin_looks
 from stereofine.processing import ProcessingOptions, process_source
-from stereofine.settings import AppSettings
+from stereofine.settings import load_settings
 from stereofine.sources import source_from_pair
 
 
@@ -164,8 +164,6 @@ def check_favorite_filter(app, first, middle, last):
 
 def main():
     messages=[];errors=[];settings_writes=[]
-    settings=AppSettings(color_match_enabled=False)
-    gui.load_settings=lambda: settings
     gui.save_settings=lambda value: settings_writes.append(asdict(value))
     gui.messagebox.showerror=lambda _title,text: messages.append(str(text))
     gui.messagebox.showwarning=lambda _title,text: messages.append(str(text))
@@ -175,6 +173,14 @@ def main():
     output=root/'build/checks-13';output.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='sf13-controls-') as td:
         folder=Path(td)
+        settings_path=folder/'settings.json'
+        settings_path.write_text(json.dumps({
+            'color_match_enabled': False,
+            'look_enabled': False,
+            'look_preset_id': 'delta100',
+            'look_strength': .42,
+        }), encoding='utf-8')
+        gui.load_settings=lambda: load_settings(settings_path)
         rng=np.random.default_rng(313)
         left=cv2.GaussianBlur(rng.integers(0,256,(640,1024,3),np.uint8),(5,5),0)
         for _ in range(70):
@@ -192,6 +198,9 @@ def main():
         try:
             pump(app)
             assert app.save_series_input_button.cget('state') == 'disabled'
+            assert app.look_choice.get() == app.look_menu.cget('values')[0] == 'Analog sanft'
+            assert not app.look_enabled.get()
+            assert app.look_strength.get() == 100
             app._set_source_collection([source],0,batch=False)
             pump(app,lambda: app.busy_state=='idle' and app.current is not None)
             pump(app,lambda: app._detail_texture_cache is not None)

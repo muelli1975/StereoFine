@@ -88,9 +88,28 @@ class LookTests(unittest.TestCase):
         self.assertFalse(fresh.look_enabled)
         self.assertEqual(fresh.look_preset_id, '')
         self.assertEqual(fresh.look_strength,1)
-        saved = AppSettings.from_dict({'look_preset_id': 'velvia50'})
-        self.assertEqual(saved.look_preset_id, 'velvia50')
         self.assertEqual(LookState(enabled=True).normalize().preset_id, builtin_looks()[0]['id'])
+
+    def test_program_settings_keep_lut_selection_in_the_session(self):
+        saved = AppSettings.from_dict({
+            'look_enabled': True,
+            'look_preset_id': 'delta100',
+            'look_path': 'old.cube',
+            'look_strength': .42,
+            'last_lut_location': 'looks',
+        })
+        self.assertEqual(
+            LookState(saved.look_enabled, saved.look_preset_id, saved.look_path, saved.look_strength),
+            LookState(),
+        )
+        self.assertEqual(saved.last_lut_location, 'looks')
+        session = AppSettings(look_enabled=True, look_preset_id='delta100', look_strength=.42)
+        persisted = session.to_dict()
+        self.assertTrue(session.look_enabled)
+        self.assertEqual(session.look_preset_id, 'delta100')
+        self.assertEqual(session.look_strength, .42)
+        for key in ('look_enabled', 'look_preset_id', 'look_path', 'look_strength'):
+            self.assertNotIn(key, persisted)
 
     def test_every_bundled_preset_is_loadable_and_order_is_stable(self):
         entries=builtin_looks()

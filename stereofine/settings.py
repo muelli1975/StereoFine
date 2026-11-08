@@ -12,6 +12,7 @@ from .resources import settings_path
 from .output_naming import validate_sbs_suffix
 
 SETTINGS_SCHEMA_VERSION = 2
+_SESSION_LOOK_FIELDS = {"look_enabled", "look_preset_id", "look_path", "look_strength"}
 
 
 @dataclass
@@ -73,6 +74,7 @@ class AppSettings:
         values = {
             field: data.get(field, getattr(cls(), field))
             for field in cls.__dataclass_fields__
+            if field not in _SESSION_LOOK_FIELDS
         }
         # Earlier builds kept the mandatory standard as the inactive custom
         # default. Use COSIMA there; retain active or other custom choices.
@@ -82,7 +84,8 @@ class AppSettings:
         return cls(**values).normalize()
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self.normalize())
+        return {name: value for name, value in asdict(self.normalize()).items()
+                if name not in _SESSION_LOOK_FIELDS}
 
     def restored_defaults(self) -> "AppSettings":
         """Reset parameters while retaining language and dialog/output choices."""
