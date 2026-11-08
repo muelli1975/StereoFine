@@ -484,6 +484,11 @@ def main():
             explicit = process_source(other, batch_options).state.input_transform
             assert explicit.left_orientation == explicit.right_orientation == '0'
             assert app._source_defaults(third).left_orientation == '0'
+            # The preceding folder operation gave the third image an explicit look.
+            # Remove that fixture field to exercise browsing with no saved look.
+            third_settings = json.loads(third.sidecar_path.read_text('utf-8'))
+            third_settings.pop('look')
+            third.sidecar_path.write_text(json.dumps(third_settings), encoding='utf-8')
             app.restore_program_defaults()
             pump(app)
             assert not app.settings.look_enabled and app.settings.look_preset_id == ''
@@ -492,7 +497,7 @@ def main():
             app.next_source()
             pump(app, lambda: app.busy_state == 'idle' and app.current.source == third)
             assert asdict(app.current.state.look) == previous_look
-            assert not third.sidecar_path.exists()
+            assert not json.loads(third.sidecar_path.read_text('utf-8')).get('look')
             assert app.left_orientation.get() == app.right_orientation.get() == '0'
             app.previous_source()
             pump(app, lambda: app.busy_state == 'idle' and app.current.source == other)
