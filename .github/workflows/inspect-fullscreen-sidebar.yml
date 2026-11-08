@@ -1,0 +1,26 @@
+name: Inspect fullscreen sidebar repaint
+on:
+  push:
+    branches: [diagnostics/fullscreen-sidebar]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: windows-2022
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - run: python -m pip install -r requirements-lock.txt -r requirements-heif.txt
+      - run: python scripts/prepare_lcms.py
+      - run: python -u -m tests.inspect_fullscreen_sidebar
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fullscreen-sidebar-captures
+          path: build/fullscreen-sidebar/
+          if-no-files-found: error
