@@ -335,6 +335,7 @@ def main():
             app.start_processing()
             pump(app,lambda: app.busy_state=='idle' and app.current.state.alignment.valid,timeout=90)
             assert app.current.state.disparity.endpoints.get('coordinate_system')=='aligned_master'
+            assert app.current.state.look.preset_id == 'matrix', (app.current.state.look, source.sidecar_path.read_text('utf-8'))
             pump(app)
             app._preview_ctk_image._light_image.save(output/'near-far-preview.png')
 
@@ -397,6 +398,7 @@ def main():
             app.show_folder_settings()
             dialog = app._folder_dialog
             assert len(dialog.sources) == 2
+            assert dialog.look.preset_id == 'matrix', (dialog.look, app.current.state.look, app.settings.look_preset_id)
             assert set(dialog.selection) == {'aspect', 'look', 'color'}
             assert not any(value.get() for value in dialog.selection.values())
             assert dialog.apply_button.cget('state') == 'disabled'
@@ -418,7 +420,7 @@ def main():
             pump(app, lambda: app.busy_state == 'idle' and app._folder_dialog is None)
             saved_other = json.loads(other.sidecar_path.read_text('utf-8'))
             assert set(saved_other) == {'schema_version', 'source', 'look'}
-            assert saved_other['look']['preset_id'] == 'matrix'
+            assert saved_other['look']['preset_id'] == 'matrix', (saved_other, dialog.look, app.current.state.look)
             assert app.current.source == source and app.current.state.alignment.valid
             assert app._folder_feedback
 
