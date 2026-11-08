@@ -1,0 +1,42 @@
+name: StereoFine 1.4 CPU batch benchmark
+
+on:
+  push:
+    branches:
+      - benchmark/cpu-batch-1.4
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - name: Install release dependencies and ExifTool
+        run: |
+          python -m pip install -r requirements-lock.txt
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libimage-exiftool-perl
+      - name: Record CPU and memory
+        run: |
+          lscpu
+          free -m
+          cat /sys/fs/cgroup/cpu.max
+          cat /sys/fs/cgroup/memory.max
+      - name: Run repeated end-to-end measurements
+        run: python -m tools.benchmark_cpu_batch
+      - name: Save measurements
+        uses: actions/upload-artifact@v4
+        with:
+          name: stereofine-cpu-batch-results
+          path: cpu-batch-results.json
+          if-no-files-found: error
