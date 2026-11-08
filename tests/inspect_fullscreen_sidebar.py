@@ -100,7 +100,13 @@ def main():
     app = gui.StereoFineApp()
     results = []
     try:
+        # Some CI desktops are narrower than StereoFine\x27s normal window minimum.
+        scale = app._get_window_scaling()
+        app.minsize(min(1100, int(app.winfo_screenwidth() / scale) - 40),
+                    min(700, int(app.winfo_screenheight() / scale) - 40))
         pump(app, .6)
+        flash = probe_flash(app, output)
+        (output / "flash.json").write_text(json.dumps(flash, indent=2), encoding="utf-8")
         ctypes.windll.user32.SetCursorPos(app.winfo_rootx() + 600, app.winfo_rooty() + 220)
 
         def f11():
@@ -155,8 +161,6 @@ def main():
                       after_help_pixels_equal=before.size == after.size
                       and ImageChops.difference(before, after).getbbox() is None)
         (output / "report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
-        flash = probe_flash(app, output)
-        (output / "flash.json").write_text(json.dumps(flash, indent=2), encoding="utf-8")
         print(json.dumps(report))
         print(json.dumps([dict(name=item["name"], samples=item["samples"], theme=item["theme"],
                                max_title=max(frame["white"] for frame in item["title"]),
