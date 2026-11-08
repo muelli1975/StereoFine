@@ -14,8 +14,8 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     env:
-      UPDATE_SOURCE_SHA: df3e7498cb941357dacec3b4caa5d0d463337062
-      CANDIDATE_RUN: '42501480847'
+      UPDATE_SOURCE_SHA: 15842dbbb12f859f98be4caeeacd3f45186c50c2
+      CANDIDATE_RUN: '42501901469'
     steps:
       - name: Require the exact successful candidate run
         env:
@@ -39,7 +39,7 @@ jobs:
           exit 1
       - uses: actions/checkout@v4
         with:
-          ref: df3e7498cb941357dacec3b4caa5d0d463337062
+          ref: 15842dbbb12f859f98be4caeeacd3f45186c50c2
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -47,7 +47,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           github-token: ${{ github.token }}
-          run-id: 42501480847
+          run-id: 42501901469
           pattern: StereoFine-1.3-candidate-*
           path: release
           merge-multiple: true
