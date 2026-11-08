@@ -30,8 +30,6 @@ jobs:
         run: |
           lscpu
           free -m
-          cat /sys/fs/cgroup/cpu.max
-          cat /sys/fs/cgroup/memory.max
       - name: Run repeated end-to-end measurements
         run: python -m tools.benchmark_cpu_batch
       - name: Save measurements
