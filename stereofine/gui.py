@@ -1974,8 +1974,13 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         if label is None:
             return
         enabled = self.busy_state == 'idle' and self.current is not None and len(self.sources) > 1
-        color = GOLD_LIGHT if self._favorite_indices is not None else TEXT_PRIMARY if hover else TEXT_SECONDARY
-        label.configure(text_color=color if enabled else TEXT_DISABLED, cursor='hand2' if enabled else '')
+        if self._favorite_indices is not None and (enabled or self.busy_state == 'load'):
+            color = GOLD_LIGHT
+        elif enabled:
+            color = TEXT_PRIMARY if hover else TEXT_SECONDARY
+        else:
+            color = TEXT_DISABLED
+        label.configure(text_color=color, cursor='hand2' if enabled else '')
 
     def _toggle_favorite_filter(self, _event=None):
         if self.busy_state != 'idle' or self.current is None or self.source_index is None or len(self.sources) < 2:

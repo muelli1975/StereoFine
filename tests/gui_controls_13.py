@@ -152,7 +152,13 @@ def check_favorite_filter(app, first, middle, last):
     assert app.sources == [first, middle, last] and not app.favorites_only.get()
     assert app.next_button.cget('state') == 'disabled'
     app.previous_source()
+    assert app.busy_state == 'load'
+    assert label.cget('text_color') == gui.GOLD_LIGHT
+    assert label.cget('cursor') == ''
+    label._label.event_generate('<Button-1>')
+    assert app._favorite_indices == {0, 2}
     pump(app, lambda: app.busy_state == 'idle' and app.current.source == first)
+    assert label.cget('text_color') == gui.GOLD_LIGHT
     app._folder_feedback = 'Folder settings applied'
     app._render_status()
     label._label.event_generate('<Button-1>')
