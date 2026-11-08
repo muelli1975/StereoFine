@@ -92,6 +92,23 @@ def check_visible_shortcuts(app):
         pump(app, lambda: app._inspection_view.active and app._view_source_box is not None)
 
     zoom()
+    pump(app, lambda: app._detail_texture_cache is not None and
+         app._detail_texture_cache[0] == app._detail_texture_signature())
+    before = app._preview_ctk_image._light_image.tobytes()
+    offset = app.current.state.manual.delta_y_px
+    scale = app._inspection_view.scale
+    started = time.perf_counter()
+    key('<KeyPress-Up>')
+    key('<KeyRelease-Up>')
+    assert app.current.state.manual.delta_y_px == offset - 1
+    assert app._inspection_view.active and app._inspection_view.scale == scale
+    pump(app, lambda: app._preview_ctk_image._light_image.tobytes() != before and
+         app._detail_texture_cache is not None and
+         app._detail_texture_cache[0] == app._detail_texture_signature())
+    print(f'Zoomed manual correction and redraw: {time.perf_counter() - started:.3f} s', flush=True)
+    key('<KeyPress-Down>')
+    key('<KeyRelease-Down>')
+    assert app.current.state.manual.delta_y_px == offset
     key('<Control-KeyPress-0>')
     assert not app._inspection_view.active
     zoom()
@@ -108,6 +125,11 @@ def check_visible_shortcuts(app):
 
     key('<KeyPress-z>')
     pump(app, lambda: app.detail_active)
+    offset = app.current.state.manual.delta_y_px
+    key('<KeyPress-Up>')
+    key('<KeyRelease-Up>')
+    assert app.current.state.manual.delta_y_px == offset
+    print('Held Z: arrow leaves manual correction unchanged', flush=True)
     double_click()
     assert app._inspection_view.active and app.detail_active
     key('<KeyRelease-z>')
