@@ -80,7 +80,7 @@ def prepare(root):
     dimensions = {}
     exif = Image.Exif()
     exif[271] = MAKE
-    exif[36867] = "2026:11:08 10:12:00"
+    exif[306] = "2026:11:08 10:12:00"
     for (scene, layout), source in zip(SCENES, make_sources(root), strict=True):
         left, right = (read_view(scene, eye) for eye in (0, 1))
         assert left.size == right.size
@@ -139,16 +139,16 @@ class OrderedAnalysis:
 
 
 def output_signature(path):
+    with path.open("rb") as stream:
+        digest = hashlib.file_digest(stream, "sha256").hexdigest()
     with Image.open(path) as image:
         assert image.getexif().get(271) == MAKE, path
-        date = image.getexif().get(36867)
-        if not date:
-            date = image.getexif().get_ifd(34665).get(36867)
+        date = image.getexif().get(306)
         assert date == "2026:11:08 10:12:00", (path, date)
         return {
             "name": path.name, "size": image.size,
             "pixels": hashlib.sha256(image.tobytes()).hexdigest(),
-            "file": hashlib.file_digest(path.open("rb"), "sha256").hexdigest(),
+            "file": digest,
         }
 
 
@@ -175,8 +175,8 @@ def run(root, output, mode, cancel=False):
         return timed
 
     def progress(event):
-        events.append((event.index, event.phase))
-        if cancel and event.index == 2 and event.phase == "analysis":
+        events.append((event.index, event.stage))
+        if cancel and event.index == 2 and event.stage == "analysis":
             token.cancel()
 
     with ExitStack() as stack:
