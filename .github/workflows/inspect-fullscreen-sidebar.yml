@@ -1,30 +1,56 @@
-name: Inspect fullscreen sidebar repaint
+name: Compare historical fullscreen and help windows
 on:
   push:
     branches: [diagnostics/fullscreen-sidebar]
 permissions:
   contents: read
 jobs:
-  inspect:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-2022, windows-2025]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 6
+  compare:
+    runs-on: windows-2025
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 3dd480aea26912f6aa5870166047344ea911489a
+          path: v1.0
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 396df78803a539164c5fff4c339cb3b703abdf11
+          path: v1.1
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: f22c4a6e5a2db942ccaeb7ca7202f9681fffdc31
+          path: v1.2
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 8da937f0a0221ba9f3ed954b4e8894d6a3c51dfb
+          path: v1.3
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12.10'
       - run: python -m pip install -r requirements-lock.txt -r requirements-heif.txt
       - run: python scripts/prepare_lcms.py
-      - run: python -u -m tests.inspect_fullscreen_sidebar
+      - name: Record each version on the same desktop
+        run: |
+          python -u tests/inspect_fullscreen_history.py v1.0 v1.0
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -u tests/inspect_fullscreen_history.py v1.1 v1.1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -u tests/inspect_fullscreen_history.py v1.2 v1.2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -u tests/inspect_fullscreen_history.py v1.3 v1.3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -u tests/inspect_fullscreen_history.py . candidate
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: fullscreen-sidebar-captures-${{ matrix.os }}
-          path: build/fullscreen-sidebar/
+          name: fullscreen-version-comparison
+          path: build/fullscreen-history/
           if-no-files-found: error
