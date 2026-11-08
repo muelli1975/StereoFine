@@ -1,0 +1,27 @@
+name: Verify LUT list order
+
+on:
+  push:
+    branches: [test/lut-order-1.4]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements-lock.txt -r requirements-heif.txt
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libimage-exiftool-perl
+      - name: Run application tests
+        run: python -m unittest discover -s tests -p 'test_*.py'
+      - name: Verify menu and first activation
+        run: PYTHONPATH=. xvfb-run -a -s '-screen 0 1920x1080x24' python tests/gui_controls_13.py
