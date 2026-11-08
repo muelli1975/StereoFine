@@ -58,6 +58,15 @@ class PreferenceTests(unittest.TestCase):
         self.assertAlmostEqual(b.state.look.strength, .7)
         self.assertEqual(b.state.framing.aspect, '1:1')
 
+    def test_saved_look_overrides_inherited_look_as_a_unit(self):
+        source = self.sources[0]
+        apply_folder_preferences([source], FolderChoices(look=LookState(True, 'matrix')))
+        saved = json.loads(source.sidecar_path.read_text(encoding='utf-8'))
+        saved['look'] = {'enabled': True, 'preset_id': 'matrix'}
+        source.sidecar_path.write_text(json.dumps(saved), encoding='utf-8')
+        inherited = ProcessingDefaults(look_enabled=True, look_path='previous.cube', look_strength=.42)
+        self.assertEqual(browse_source(source, inherited).state.look, LookState(True, 'matrix'))
+
     def test_folder_patch_preserves_edits_and_invalidates_crop_dependents(self):
         source = self.sources[0]
         a = browse_source(source)

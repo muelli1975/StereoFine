@@ -55,10 +55,9 @@ def inherit_missing_preferences(state, defaults, document):
     if 'color' not in owned:
         state.color.enabled = defaults.color_enabled
         state.color.valid = False
-    look = document.look if 'look' in owned else {}
-    state.look = LookState(look.get('enabled', defaults.look_enabled),
-        look.get('preset_id', defaults.look_preset_id), look.get('path', defaults.look_path),
-        look.get('strength', defaults.look_strength)).normalize()
+    if 'look' not in owned:
+        state.look = LookState(defaults.look_enabled, defaults.look_preset_id,
+                               defaults.look_path, defaults.look_strength).normalize()
     state.preference_fields = None if owned == set(PREFERENCE_NAMES) else sorted(owned)
 
 

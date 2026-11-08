@@ -484,8 +484,15 @@ def main():
             explicit = process_source(other, batch_options).state.input_transform
             assert explicit.left_orientation == explicit.right_orientation == '0'
             assert app._source_defaults(third).left_orientation == '0'
+            app.restore_program_defaults()
+            pump(app)
+            assert not app.settings.look_enabled and app.settings.look_preset_id == ''
+            previous_look = asdict(app.current.state.look)
+            assert previous_look['enabled'] and previous_look['preset_id'] == 'matrix'
             app.next_source()
             pump(app, lambda: app.busy_state == 'idle' and app.current.source == third)
+            assert asdict(app.current.state.look) == previous_look
+            assert not third.sidecar_path.exists()
             assert app.left_orientation.get() == app.right_orientation.get() == '0'
             app.previous_source()
             pump(app, lambda: app.busy_state == 'idle' and app.current.source == other)

@@ -1430,7 +1430,11 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
     def _source_defaults(self, source: StereoSource) -> ProcessingDefaults:
         defaults = self._new_source_defaults()
         if self.current is not None and self.current.source.input_root == source.input_root:
-            return replace(defaults, **asdict(self.current.state.input_transform))
+            defaults = replace(defaults, **asdict(self.current.state.input_transform))
+            if self.current.source != source:
+                look = self.current.state.look
+                defaults = replace(defaults, look_enabled=look.enabled, look_preset_id=look.preset_id,
+                                   look_path=look.path, look_strength=look.strength)
         return defaults
 
     def _processing_options(
