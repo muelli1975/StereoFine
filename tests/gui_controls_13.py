@@ -165,6 +165,14 @@ def check_visible_shortcuts(app):
     pump(app, lambda: app.focus_get() is not entry)
     assert app.current.state.exposure == .42
 
+    entry.focus_force()
+    pump(app, lambda: app.focus_get() is entry)
+    value.set('0,43')
+    seen = []
+    app._image_control_command(lambda: seen.append(app.current.state.exposure))()
+    assert seen == [.43]
+    assert app.focus_get() is not entry
+
     def reset_slider(slider):
         canvas = slider._canvas
         x, y = canvas.winfo_width() * 3 // 4, canvas.winfo_height() // 2

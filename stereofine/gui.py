@@ -1550,7 +1550,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self._release_sbs_suffix_focus()
         entry = getattr(getattr(self, "_exposure_entry", None), "_entry", None)
         if entry is not None and self.focus_get() is entry:
-            self.focus_set()
+            self._commit_exposure_entry(True)
 
     def _image_control_command(self, command):
         if command is None:
