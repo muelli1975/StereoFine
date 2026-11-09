@@ -30,6 +30,7 @@ from .config import (
 )
 from .diagnostics import configure_logging, log_failure
 from .geometry import crop_shifted_pair_to_overlap, framing_crop_geometry, clamp_offset_for_size
+from .geometry_controls import GeometryControlsMixin
 from .i18n import (
     Translator,
     aspect_code,
@@ -189,7 +190,7 @@ PREVIEW_RENDER_MAX_WIDTH = 1600
 PREVIEW_RENDER_MAX_HEIGHT = 1000
 PREVIEW_RESIZE_DEBOUNCE_MS = 150
 
-class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ctk.CTk):
+class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ctk.CTk):
     """GUI shell over the GUI-independent processing core."""
 
     def __init__(self) -> None:
@@ -626,6 +627,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.save_series_input_button = self._secondary_button(
             self.sidebar, self._t('save_series_input'), self._save_series_input)
         self.save_series_input_button.grid(row=row, column=0, sticky='ew', padx=20, pady=(0, 8)); row += 1
+        attach_tooltip(self.save_series_input_button, self._t('series_input_tooltip'))
 
         ctk.CTkLabel(self.sidebar, text=self._t("analysis_method"), text_color=TEXT_PRIMARY, font=self._font(13), anchor="w").grid(
             row=row, column=0, sticky="ew", padx=20, pady=(4, 4)
@@ -1901,6 +1903,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
     ) -> None:
         if not (0 <= index < len(self.sources)):
             return
+        self._take_geometry_draft()
         self._cancel_look_hover(refresh=False)
         self._folder_feedback = ''
         if rollback_context is None:
@@ -2116,6 +2119,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         )
         if transform == state.input_transform:
             return
+        self._take_geometry_draft()
         state.input_transform = transform
         state.invalidate_for_input_transform()
         self._sync_vars_from_current()
@@ -2504,23 +2508,33 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         here.  This is the hot path used by window resizing, grid changes and
         the measurement cross.
         """
-        if self.detail_active:
-            self._show_detail_preview()
-            return
-        if self._inspection_view.active:
-            self._show_inspection_preview()
-            return
-        if self._preview_pil is None:
+        draft = self._geometry_draft
+        if draft is None:
+            if self.detail_active:
+                self._show_detail_preview()
+                return
+            if self._inspection_view.active:
+                self._show_inspection_preview()
+                return
+            source_image = self._preview_pil
+        else:
+            try:
+                source_image = self._geometry_draft_image(draft)
+            except (ValueError, OSError) as exc:
+                self.preview_label.configure(text=self._t("preview_error", text=self.tr.message(str(exc))),
+                                             text_color=TEXT_PRIMARY, image=None)
+                return
+        if source_image is None:
             return
 
         max_width, max_height = self._preview_bounds()
-        source_w, source_h = self._preview_pil.size
+        source_w, source_h = source_image.size
         scale = min(max_width / max(1, source_w), max_height / max(1, source_h))
         display_size = (
             max(1, int(round(source_w * scale))),
             max(1, int(round(source_h * scale))),
         )
-        image = self._preview_display_cache.scaled(self._preview_pil, display_size, resampling)
+        image = self._preview_display_cache.scaled(source_image, display_size, resampling)
 
         # Overlays belong to the visible preview and therefore stay crisp and
         # correctly scaled while the main window changes size.
@@ -2545,9 +2559,12 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         else:
             self._preview_display_size = display_size
 
-        native_size = self._view_image_size()
-        if self.current is not None and native_size is not None:
-            image = self._decorate_view(image,(0,0,*native_size),native_size)
+        if draft is not None:
+            image = self._decorate_geometry_draft(image, draft)
+        else:
+            native_size = self._view_image_size()
+            if self.current is not None and native_size is not None:
+                image = self._decorate_view(image,(0,0,*native_size),native_size)
 
         border = preview_border_px(display_size[0])
         self.preview_label.grid_configure(padx=border, pady=border)
@@ -2560,6 +2577,10 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
     def _refresh_preview(self, *, rebuild_base: bool = False, fitted_frame=None) -> None:
         if rebuild_base:
             self._invalidate_preview_base()
+        if self._geometry_draft is not None:
+            self._geometry_draft.preview = self._geometry_draft.image = None
+            self._update_preview_display()
+            return
         if self.current is not None:
             try:
                 if fitted_frame is None:
@@ -2581,7 +2602,9 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             self._end_point_measurement()
         if self.preview_mode.get() != "Kreuzblick":
             self._last_anaglyph_preview_mode = self.preview_mode.get()
-        if self._preview_left_current is not None and self._preview_right_current is not None:
+        if self._geometry_draft is not None:
+            self._update_preview_display()
+        elif self._preview_left_current is not None and self._preview_right_current is not None:
             self._build_preview_anaglyph()
         else:
             self._refresh_preview()
@@ -2657,32 +2680,36 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.current_job_id = job.job_id
 
     def start_processing(self, event=None):
-        if self.current is None or self.busy_state != "idle":
+        if self.current is None or self.busy_state != "idle" or self._geometry_draft is not None:
             return "break"
         if not self._flush_state_save(explicit=True):
             return "break"
         if self.batch_mode:
             self._start_batch_run()
         else:
-            source = self.current.source
-            options = replace(self._processing_options(keep_loaded_pair=True, restart_alignment=True),
-                              save_sidecar=False,
-                              parallel_features=batch_worker_count(self.current.loaded_pair) > 1)
-            bounds = self._preview_bounds()
-            mode = self._effective_preview_mode()
-            missing_preview = self._t("internal_preview_error")
-
-            def job(token, _progress):
-                processed = process_source(source, options, cancellation=token)
-                if processed.loaded_pair is None:
-                    raise RuntimeError(missing_preview)
-                sidecar = load_sidecar(processed.source.sidecar_path, expected_source=processed.source_stamp)
-                session = BrowsedSource(processed.source, processed.loaded_pair,
-                                        processed.source_stamp, processed.state, sidecar)
-                return self._prepare_session_preview(session, bounds, token, mode)
-
-            self._start_worker("analysis", self._t("alignment_running"), job)
+            self._start_single_analysis()
         return "break"
+
+    def _start_single_analysis(self, *, geometry=None):
+        source = self.current.source
+        options = replace(self._processing_options(keep_loaded_pair=True, restart_alignment=True),
+                          save_sidecar=False, geometry=geometry,
+                          expected_source_stamp=self.current.source_stamp if geometry is not None else None,
+                          parallel_features=batch_worker_count(self.current.loaded_pair) > 1)
+        bounds = self._preview_bounds()
+        mode = self._effective_preview_mode()
+        missing_preview = self._t("internal_preview_error")
+
+        def job(token, _progress):
+            processed = process_source(source, options, cancellation=token)
+            if processed.loaded_pair is None:
+                raise RuntimeError(missing_preview)
+            sidecar = load_sidecar(processed.source.sidecar_path, expected_source=processed.source_stamp)
+            session = BrowsedSource(processed.source, processed.loaded_pair,
+                                    processed.source_stamp, processed.state, sidecar)
+            return self._prepare_session_preview(session, bounds, token, mode)
+
+        self._start_worker("analysis", self._t("alignment_running"), job)
 
     def _start_batch_run(self) -> None:
         if not self.sources:
@@ -2726,6 +2753,8 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self._start_worker("batch", text, job)
 
     def save_current_result(self, event=None):
+        if self._geometry_draft is not None:
+            return self._commit_geometry_draft() if event is not None else "break"
         if self.current is None or self.batch_mode or self.busy_state != "idle":
             return "break"
         if not self._flush_state_save(explicit=True):
@@ -3025,7 +3054,13 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
                     return None
             except (AttributeError, tk.TclError):
                 pass
-            if getattr(event, 'keysym', '') in {'F1', 'F11'}:
+            key = getattr(event, 'keysym', '').lower()
+            if self._geometry_draft is not None and key and key not in {
+                'a', 'g', 'h', 'x', 'f1', 'f11', 'escape', 'return', 'kp_enter',
+                'left', 'right', 'up', 'down',
+            }:
+                return "break"
+            if key in {'f1', 'f11'}:
                 self._release_inline_editor_focus()
             return callback(event)
         return dispatch
@@ -3054,6 +3089,8 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         for key in ('c', 'C'):
             bind(f'<KeyPress-{key}>', self._on_look_key_press)
             bind(f'<KeyRelease-{key}>', self._on_look_key_release)
+        for key in ('h', 'H'):
+            bind_all(f'<KeyPress-{key}>', self._begin_geometry_draft)
         for key in ('x', 'X'):
             bind_all(f'<KeyPress-{key}>', self._on_x)
             bind_all(f'<KeyRelease-{key}>', lambda e: self._release_shortcut_key('x'))
@@ -3163,6 +3200,8 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         return 1
 
     def _on_arrow(self, direction: str, event=None):
+        if self._geometry_draft is not None:
+            return self._step_geometry_draft(direction)
         if 'c' in getattr(self, '_shortcut_keys_down', ()):
             self._look_key_used = True
             pending = self._detail_arrow_releases.pop(direction, None)
@@ -3203,6 +3242,8 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         return "break"
 
     def _on_alt_arrow(self, direction: str, _event=None):
+        if self._geometry_draft is not None:
+            return "break"
         if self._handle_detail_arrow(direction):
             return "break"
         if self.current is None or self.busy_state != "idle":
@@ -3514,6 +3555,9 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             return 'break'
         if self._shortcut_help_window is not None and self._shortcut_help_window.winfo_exists():
             self._close_shortcuts_help()
+            return "break"
+        if self._take_geometry_draft() is not None:
+            self._refresh_preview()
             return "break"
         tool = getattr(self, '_measure_tool_var', None)
         if tool is not None and tool.get():

@@ -14,6 +14,9 @@ Justage und Beschnitt
   Strg + R                 Manuelle Bearbeitung zurücksetzen
   Alt + Pfeiltaste         Ausschnitt verschieben
   Strg + Shift + ↑/↓       Beschnittzoom
+  H                        Horizont und Perspektive
+  Im H-Modus               ←/→ Horizont, ↑/↓ Perspektive
+  Enter / Esc im H-Modus   Neu justieren / verwerfen
 
 Ansicht und Vollbild
   Strg + Mausrad           Ansichtszoom um den Mauszeiger
@@ -64,6 +67,9 @@ Alignment and crop
   Ctrl + R                 Reset manual editing
   Alt + Arrow              Move crop
   Ctrl + Shift + ↑/↓       Crop zoom
+  H                        Horizon and perspective
+  In H mode                ←/→ horizon, ↑/↓ perspective
+  Enter / Esc in H mode    Realign / discard
 
 View and fullscreen
   Ctrl + Mouse wheel       View zoom around the pointer

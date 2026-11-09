@@ -307,6 +307,44 @@ def check_visible_shortcuts(app):
     help_label.event_generate('<Button-1>')
     pump(app, lambda: app._shortcut_help_window is None)
 
+    assert app._flush_state_save()
+    sidecar = app.current.source.sidecar_path
+    previous = sidecar.read_bytes()
+    previous_geometry = app.current.state.geometry
+    app.preview_frame.focus_force()
+    pump(app, lambda: app.focus_get() is app.preview_frame)
+    app._zoom_inspection(1.5)
+    previous_scale = app._inspection_view.scale
+    assert previous_scale is not None
+    key('<KeyPress-h>')
+    draft = app._geometry_draft
+    assert draft is not None and draft.mode == 'Farbig'
+    key('<KeyPress-Right>')
+    key('<KeyRelease-Right>')
+    key('<KeyPress-Up>')
+    key('<KeyRelease-Up>')
+    assert draft.adjustment.roll_tenths == previous_geometry.roll_tenths + 1
+    assert draft.adjustment.perspective == previous_geometry.perspective + 1
+    assert draft.preview.left.shape == draft.preview.right.shape
+    key('<KeyPress-x>')
+    key('<KeyRelease-x>')
+    assert draft.mode == 'Kreuzblick' and draft.image.width == 2 * draft.preview.left.shape[1]
+    key('<KeyPress-x>')
+    key('<KeyRelease-x>')
+    key('<Escape>')
+    assert app._geometry_draft is None
+    assert sidecar.read_bytes() == previous and app._inspection_view.scale == previous_scale
+
+    key('<KeyPress-h>')
+    key('<KeyPress-Up>')
+    key('<KeyRelease-Up>')
+    adjustment = app._geometry_draft.adjustment
+    key('<Return>')
+    pump(app, lambda: app.busy_state == 'idle')
+    assert app._geometry_draft is None and app.current.state.geometry == adjustment
+    assert app._inspection_view.scale == previous_scale
+    assert json.loads(sidecar.read_text('utf-8'))['geometry'] == asdict(adjustment)
+
 
 def check_favorite_filter(app, first, middle, last):
     label = app.favorite_filter_label

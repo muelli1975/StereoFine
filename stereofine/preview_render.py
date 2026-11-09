@@ -91,9 +91,10 @@ def build_preview_base_from_oriented_pair(
     original_aspect = left.shape[1] / max(1, left.shape[0])
     left, right, scale = resize_pair_for_preview(left, right, max_width, max_height)
 
-    if state.alignment.valid and state.alignment.correction:
-        correction = scale_correction_for_preview(state.alignment.correction, scale)
-        left, right = warp_pair_symmetric(left, right, correction)
+    if state.geometry.active or (state.alignment.valid and state.alignment.correction):
+        correction = scale_correction_for_preview(
+            state.alignment.correction if state.alignment.valid else None, scale)
+        left, right = warp_pair_symmetric(left, right, correction, geometry=state.geometry)
 
     return PreviewBasePair(
         np.ascontiguousarray(left),
@@ -127,7 +128,7 @@ def build_preview_base(
 
 def preview_geometry_key(state):
     from .render import _stable_digest
-    return _stable_digest((asdict(state.input_transform),
+    return _stable_digest((asdict(state.input_transform), state.geometry.to_dict(),
                            reproducible_alignment_correction(state.alignment.correction)))
 
 
@@ -208,6 +209,7 @@ def render_preview_from_base(
         from .render import _stable_digest
         basis = state.color.basis or {}
         compatible = (basis.get('input_transform') == asdict(state.input_transform)
+                      and basis.get('geometry', {}) == state.geometry.to_dict()
                       and basis.get('alignment_correction_sha256') == _stable_digest(
                           reproducible_alignment_correction(state.alignment.correction) or {}))
         if state.color.method == COLOR_METHOD and (state.color.valid or compatible):

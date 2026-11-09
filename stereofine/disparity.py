@@ -472,6 +472,8 @@ def render_pair_for_disparity_analysis_from_arrays(
     crop_pan_y_permille: int = 0,
     input_aspect_ratio: float | None = None,
     return_aligned_shape: bool = False,
+    *,
+    geometry=None,
 ) -> (tuple[np.ndarray | None, np.ndarray | None] |
       tuple[np.ndarray | None, np.ndarray | None, tuple[int, int] | None]):
     """Render the corrected pair for dense Nah/Fern analysis.
@@ -486,8 +488,8 @@ def render_pair_for_disparity_analysis_from_arrays(
     if left is None or right is None:
         return (None, None, None) if return_aligned_shape else (None, None)
 
-    if correction is not None:
-        left, right = _warp_pair_symmetric_simple(left, right, correction)
+    if correction is not None or (geometry is not None and geometry.active):
+        left, right = _warp_pair_symmetric_simple(left, right, correction, geometry=geometry)
     else:
         left, right, _changed = center_crop_to_common_size(left, right)
 

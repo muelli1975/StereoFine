@@ -44,6 +44,7 @@ def native_geometry_key(session):
     state = session.state
     return (id(session), _stable_digest({
         'input': asdict(state.input_transform),
+        'geometry': state.geometry.to_dict(),
         # Fresh analysis also keeps diagnostics that .sfin deliberately drops.
         # Cache identity must use the same reproducible geometry as the sidecar;
         # otherwise adopting an unchanged export discards the fitted master view.
@@ -318,7 +319,9 @@ class NativePreviewMixin:
             if len(self._native_views) > 6 and self._native_views[6] is not None:
                 self._preview_base = self._native_views[6]
                 self._preview_base_session_id = id(self.current)
-        if self.detail_active:
+        if getattr(self, '_geometry_draft', None) is not None:
+            self._update_preview_display()
+        elif self.detail_active:
             if not native:
                 self._request_native_preview(immediate=True)
                 return True

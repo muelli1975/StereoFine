@@ -847,6 +847,9 @@ def _warp_pair_symmetric_simple(
     left: np.ndarray,
     right: np.ndarray,
     correction: dict | None,
+    *,
+    geometry=None,
+    preview=False,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Apply the complete symmetric StereoFine geometry with one resample/eye.
 
@@ -856,8 +859,10 @@ def _warp_pair_symmetric_simple(
     per half-image. This preserves the established geometry while avoiding
     cumulative interpolation loss.
     """
-    if not correction:
+    has_geometry = geometry is not None and geometry.active
+    if not correction and not has_geometry:
         return center_crop_to_common_size(left, right)[:2]
+    correction = correction or {}
 
     try:
         import cv2
@@ -900,6 +905,7 @@ def _warp_pair_symmetric_simple(
         and abs(trapez_a) <= 1e-12
         and abs(trapez_b) <= 1e-12
         and not has_y_residual
+        and not has_geometry
     ):
         return left_base, right_base
 
@@ -912,6 +918,11 @@ def _warp_pair_symmetric_simple(
     m_right = _affine_from_center_params(w, h, rotation / 2.0, half_scale, 0.0, dy / 2.0)
     inv_left = cv2.invertAffineTransform(m_left).astype(np.float64)
     inv_right = cv2.invertAffineTransform(m_right).astype(np.float64)
+    if has_geometry:
+        from .manual_geometry import geometry_matrix
+        inv_geometry = np.linalg.inv(geometry_matrix((h, w), geometry))
+        inv_left = inv_geometry @ np.vstack((inv_left, [0., 0., 1.]))
+        inv_right = inv_geometry @ np.vstack((inv_right, [0., 0., 1.]))
 
     def composed_map(side: str) -> tuple[np.ndarray, np.ndarray]:
         # Start at the final destination grid and walk backwards through the
@@ -958,28 +969,21 @@ def _warp_pair_symmetric_simple(
         inv = inv_left if side == "left" else inv_right
         src_x = inv[0, 0] * qx + inv[0, 1] * qy + inv[0, 2]
         src_y = inv[1, 0] * qx + inv[1, 1] * qy + inv[1, 2]
+        if has_geometry:
+            weight = inv[2, 0] * qx + inv[2, 1] * qy + inv[2, 2]
+            src_x /= weight
+            src_y /= weight
         return src_x.astype(np.float32), src_y.astype(np.float32)
 
     left_map_x, left_map_y = composed_map("left")
     right_map_x, right_map_y = composed_map("right")
 
-    # A single high-quality interpolation per master image.
-    left_warped = cv2.remap(
-        left_base,
-        left_map_x,
-        left_map_y,
-        interpolation=cv2.INTER_LANCZOS4,
-        borderMode=cv2.BORDER_CONSTANT,
-        borderValue=(0, 0, 0),
-    )
-    right_warped = cv2.remap(
-        right_base,
-        right_map_x,
-        right_map_y,
-        interpolation=cv2.INTER_LANCZOS4,
-        borderMode=cv2.BORDER_CONSTANT,
-        borderValue=(0, 0, 0),
-    )
+    # A single interpolation per eye. Replicate the filter's edge samples
+    # for manual geometry, then discard all output pixels outside the sources.
+    interpolation = cv2.INTER_LINEAR if preview else cv2.INTER_LANCZOS4
+    border = cv2.BORDER_REPLICATE if has_geometry else cv2.BORDER_CONSTANT
+    left_warped = cv2.remap(left_base, left_map_x, left_map_y, interpolation, borderMode=border)
+    right_warped = cv2.remap(right_base, right_map_x, right_map_y, interpolation, borderMode=border)
 
     # Determine the common fully valid area directly from the composed master
     # maps. This replaces the repeatedly resampled binary masks of the old path.
@@ -1001,6 +1005,8 @@ def _warp_pair_symmetric_simple(
     )
     crop_box = _largest_all_valid_rectangle(left_valid & right_valid)
     if crop_box is None:
+        if has_geometry:
+            raise ValueError("Kein gemeinsamer gültiger Ausschnitt.")
         return center_crop_to_common_size(left_warped, right_warped)[:2]
 
     x0, y0, x1, y1 = crop_box
@@ -1013,9 +1019,12 @@ def warp_pair_symmetric(
     left: np.ndarray,
     right: np.ndarray,
     correction: dict | None,
+    *,
+    geometry=None,
+    preview=False,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Public rendering entry point for the validated StereoFine correction payload."""
-    return _warp_pair_symmetric_simple(left, right, correction)
+    """Render the validated stereo geometry and optional common input correction."""
+    return _warp_pair_symmetric_simple(left, right, correction, geometry=geometry, preview=preview)
 
 
 def _transform_points_by_center_params(points: np.ndarray, image_shape: tuple[int, int], rotation_deg: float, scale: float, center_dx: float, center_dy: float) -> np.ndarray:
@@ -1521,6 +1530,7 @@ def analyze_pair_features(
     max_width: int,
     *,
     parallel_detection: bool = False,
+    geometry=None,
 ) -> dict:
     """Select a stereo-safe correction using shared spatial holdout evidence.
 
@@ -1536,6 +1546,10 @@ def analyze_pair_features(
     import time
     started = time.perf_counter()
     left_gray, right_gray, analysis_scale = resize_pair_for_analysis(left, right, max_width)
+    mask = None
+    if geometry is not None and geometry.active:
+        from .manual_geometry import prepare_geometry_analysis
+        left_gray, right_gray, mask = prepare_geometry_analysis(left_gray, right_gray, geometry)
     resized_at = time.perf_counter()
 
     method_upper = method.upper()
@@ -1555,12 +1569,12 @@ def analyze_pair_features(
         from concurrent.futures import ThreadPoolExecutor
 
         with ThreadPoolExecutor(max_workers=1, thread_name_prefix='StereoFine-features') as pool:
-            right_features = pool.submit(create_detector().detectAndCompute, right_gray, None)
-            kp_left, desc_left = detector.detectAndCompute(left_gray, None)
+            right_features = pool.submit(create_detector().detectAndCompute, right_gray, mask)
+            kp_left, desc_left = detector.detectAndCompute(left_gray, mask)
             kp_right, desc_right = right_features.result()
     else:
-        kp_left, desc_left = detector.detectAndCompute(left_gray, None)
-        kp_right, desc_right = detector.detectAndCompute(right_gray, None)
+        kp_left, desc_left = detector.detectAndCompute(left_gray, mask)
+        kp_right, desc_right = detector.detectAndCompute(right_gray, mask)
     detected_at = time.perf_counter()
 
     if desc_left is None or desc_right is None or len(kp_left) < 4 or len(kp_right) < 4:

@@ -95,6 +95,7 @@ class LookControlsMixin:
                                                              self.show_folder_settings)
         self.folder_settings_button.grid(row=row, column=0, sticky='ew', padx=(42,20), pady=(0,12)); row += 1
         self._lock_widgets.append(self.folder_settings_button)
+        attach_tooltip(self.folder_settings_button, self._t('folder_apply_tooltip'))
         self._sync_look_display()
         self._refresh_look_controls()
         return row

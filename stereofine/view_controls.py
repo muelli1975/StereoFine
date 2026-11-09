@@ -125,7 +125,8 @@ class ViewControlsMixin:
         return self._zoom_inspection(1.2 if direction > 0 else 1/1.2, event)
 
     def _zoom_inspection(self, factor, event=None):
-        if self.current is None or self.busy_state != 'idle' or self.detail_active:
+        if (self.current is None or self.busy_state != 'idle' or self.detail_active
+                or getattr(self, '_geometry_draft', None) is not None):
             return 'break'
         size = self._view_image_size()
         if size is None:
@@ -220,7 +221,8 @@ class ViewControlsMixin:
         return 'break'
 
     def _on_view_context(self, event):
-        if self.current is None or self.busy_state != 'idle':
+        if (self.current is None or self.busy_state != 'idle'
+                or getattr(self, '_geometry_draft', None) is not None):
             return 'break'
         self.preview_frame.focus_set()
         previous = getattr(self, '_view_context_menu', None)

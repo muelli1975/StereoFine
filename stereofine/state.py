@@ -9,6 +9,7 @@ from .config import (
     normalize_orientation_code,
 )
 from .sidecar import SidecarDocument
+from .manual_geometry import GeometryAdjustment
 from .framing import framed_edges_permille
 
 
@@ -275,6 +276,7 @@ class PairState:
     exposure: float = 0.0
     warnings: list[str] = field(default_factory=list)
     preference_fields: list[str] | None = None
+    geometry: GeometryAdjustment = field(default_factory=GeometryAdjustment)
 
     @property
     def auto_offset_x_px(self) -> int:
@@ -459,6 +461,7 @@ class PairState:
             color=color,
             look=look,
             exposure=self.exposure,
+            geometry=self.geometry.to_dict(),
         )
 
     @classmethod
@@ -493,6 +496,7 @@ class PairState:
             color=filtered(ColorState, document.color),
             look=filtered(LookState, document.look).normalize(),
             exposure=document.exposure,
+            geometry=GeometryAdjustment.from_dict(document.geometry),
         )
         state.floating_window.normalize()
         return state

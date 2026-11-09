@@ -22,6 +22,7 @@ from .disparity import (
 )
 from .framing import AutoNearGeometry, compute_auto_near_framing
 from .geometry import apply_orientation, center_crop_to_common_size
+from .manual_geometry import GeometryAdjustment
 from .inputs import LoadedStereoPair, master_to_uint8
 from .models import AnalysisRecord, SourceStamp
 from .preferences import inherit_missing_preferences, with_series_input
@@ -66,6 +67,7 @@ class ProcessingOptions:
     expected_source_stamp: SourceStamp | None = None
     read_series_input: bool = True
     parallel_features: bool = False
+    geometry: GeometryAdjustment | None = None
 
 
 @dataclass
@@ -154,6 +156,7 @@ def _alignment_basis(state: PairState, method: str) -> dict[str, Any]:
         "input_transform": asdict(state.input_transform),
         "method": str(method).upper(),
         "max_width": int(ALIGNMENT_ANALYSIS_MAX_WIDTH),
+        **({"geometry": state.geometry.to_dict()} if state.geometry.active else {}),
     }
 
 
@@ -166,6 +169,7 @@ def _disparity_basis(state: PairState) -> dict[str, Any]:
         "pan_x_permille": int(state.framing.pan_x_permille),
         "pan_y_permille": int(state.framing.pan_y_permille),
         "max_width": int(DISPARITY_ANALYSIS_MAX_WIDTH),
+        **({"geometry": state.geometry.to_dict()} if state.geometry.active else {}),
     }
 
 
@@ -313,7 +317,7 @@ def _alignment_cache_usable(
     basis: dict[str, Any],
     options: ProcessingOptions,
 ) -> bool:
-    if options.force_alignment or options.restart_alignment:
+    if options.force_alignment or options.restart_alignment or options.geometry is not None:
         return False
     return (
         load_result.alignment_cache_valid
@@ -374,7 +378,9 @@ def process_source(
     # retained.
     if not load_result.color_cache_valid:
         state.color.valid = False
-    if options.restart_alignment:
+    if options.geometry is not None:
+        state.geometry = options.geometry
+    if options.restart_alignment or options.geometry is not None:
         # Modify only the worker's local state. A failed/cancelled run must not
         # erase the saved edits or replace the currently displayed session.
         state.manual.reset()
@@ -399,6 +405,8 @@ def process_source(
     if not alignment_from_cache:
         token.raise_if_cancelled()
         detect_options = {'parallel_detection': True} if options.parallel_features else {}
+        if state.geometry.active:
+            detect_options['geometry'] = state.geometry
         result = analyze_pair_features(left_proxy, right_proxy, method, ALIGNMENT_ANALYSIS_MAX_WIDTH,
                                        **detect_options)
         token.raise_if_cancelled()
@@ -439,6 +447,7 @@ def process_source(
             crop_pan_y_permille=state.framing.pan_y_permille,
             input_aspect_ratio=input_aspect,
             return_aligned_shape=True,
+            **({"geometry": state.geometry} if state.geometry.active else {}),
         )
         if dleft is None or dright is None:
             result = {"ready": False, "status": "error", "message": "Kein vollständiges Bildpaar für Deviation-Analyse."}

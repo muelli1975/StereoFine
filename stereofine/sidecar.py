@@ -48,12 +48,15 @@ class SidecarDocument:
     color: dict[str, Any] = field(default_factory=dict)
     look: dict[str, Any] = field(default_factory=dict)
     exposure: float = 0.0
+    geometry: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
         exposure = data.pop("exposure")
         if exposure:
             data["photo"] = {"exposure": exposure}
+        if self.geometry and data["pipeline"].get("alignment") == ALIGNMENT_PIPELINE_VERSION:
+            data["pipeline"]["alignment"] = _GEOMETRY_ALIGNMENT_VERSION
         data["schema_version"] = SIDECAR_SCHEMA_VERSION
         return {key: value for key, value in data.items() if value}
 
@@ -75,6 +78,7 @@ class SidecarDocument:
             color=dict(data.get("color") or {}),
             look=dict(data.get("look") or {}),
             exposure=normalize_exposure(dict(data.get("photo") or {}).get("exposure", 0.0)),
+            geometry=dict(data.get("geometry") or {}),
         )
 
 
@@ -144,10 +148,15 @@ def source_matches(saved: dict[str, Any], expected: SourceStamp, *, allow_transp
     )
 
 
-def pipeline_mismatches(saved: dict[str, Any]) -> tuple[str, ...]:
+# Older StereoFine versions must invalidate an alignment expressed in
+# manually corrected coordinates even though neutral geometry is compatible.
+_GEOMETRY_ALIGNMENT_VERSION = ALIGNMENT_PIPELINE_VERSION + "-geometry-1"
+
+
+def pipeline_mismatches(saved: dict[str, Any], *, geometry=False) -> tuple[str, ...]:
     expected = {
         "input": INPUT_PIPELINE_VERSION,
-        "alignment": ALIGNMENT_PIPELINE_VERSION,
+        "alignment": _GEOMETRY_ALIGNMENT_VERSION if geometry else ALIGNMENT_PIPELINE_VERSION,
         "disparity": DISPARITY_PIPELINE_VERSION,
         "color": COLOR_PIPELINE_VERSION,
     }
@@ -189,7 +198,7 @@ def load_sidecar(path: Path, expected_source: SourceStamp | None = None) -> Side
         doc.disparity = {}
         doc.color.pop("parameters", None)
         doc.color.pop("valid", None)
-    mismatches = pipeline_mismatches(doc.pipeline)
+    mismatches = pipeline_mismatches(doc.pipeline, geometry=bool(doc.geometry))
     if not doc.input_state and "input" not in mismatches:
         # Reusable geometry must be tied to a saved orientation.
         mismatches = ("input", *mismatches)

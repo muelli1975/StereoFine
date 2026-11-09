@@ -65,6 +65,7 @@ def _color_basis(state: PairState, left: np.ndarray, right: np.ndarray) -> dict[
         "pan_y_permille": int(state.framing.pan_y_permille),
         "shape": [int(left.shape[0]), int(left.shape[1]), 3],
         "dtype": str(left.dtype),
+        **({"geometry": state.geometry.to_dict()} if state.geometry.active else {}),
     }
 
 
@@ -104,7 +105,7 @@ def render_final_pair(
     """Render the current reproducible StereoFine pair from master data.
 
     Order is deliberate:
-      input orientation -> automatic geometry -> auto+manual x/y -> crop/framing
+      input orientation -> manual and automatic geometry -> auto+manual x/y -> crop/framing
       -> optional symmetric color match -> optional floating-window masks.
 
     Color never feeds back into registration/disparity. Floating-window masks are
@@ -115,7 +116,7 @@ def render_final_pair(
         left, right = _oriented_pair(loaded, state)
         # "Original" is the oriented source, before alignment/overlap.
         input_aspect = left.shape[1] / max(1, left.shape[0])
-        left, right = warp_pair_symmetric(left, right, state.alignment.correction)
+        left, right = warp_pair_symmetric(left, right, state.alignment.correction, geometry=state.geometry)
         if retain_aligned and left.nbytes + right.nbytes <= 160 * 1024 ** 2:
             aligned_pair = left, right, input_aspect
     else:
