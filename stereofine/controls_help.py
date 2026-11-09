@@ -47,8 +47,8 @@ Vorschau und Hilfe
   C                        LUT ein-/ausschalten
   C halten + ←/→           LUT einschalten, dann durch Looks blättern
   C halten + ↑/↓           LUT-Stärke um 5 Prozentpunkte ändern
-  Umschalt + Mausrad       Bildbearbeitungsregler über Schiene oder Griff verstellen
-  Doppelklick              Bildbearbeitungsregler auf Standardwert zurücksetzen
+  Umschalt + Mausrad       Regler über Schiene oder Griff verstellen
+  Doppelklick              Regler auf Standardwert zurücksetzen
   G                        Gitter durchschalten
   Shift + G                Gitter aus
   Esc                      Menü, Hilfe oder Messmodus schließen. Sonst bei Zoom die Ansicht einpassen oder bei eingepasster Ansicht das Vollbild verlassen.

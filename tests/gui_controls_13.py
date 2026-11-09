@@ -648,8 +648,8 @@ def main():
                         'Kontextmenü öffnen (Disparitätsmesser bei Anaglyphen)',
                         'LUT ein-/ausschalten', 'LUT einschalten, dann durch Looks blättern',
                         'LUT-Stärke um 5 Prozentpunkte ändern',
-                        'Bildbearbeitungsregler über Schiene oder Griff verstellen',
-                        'Bildbearbeitungsregler auf Standardwert zurücksetzen',
+                        'Regler über Schiene oder Griff verstellen',
+                        'Regler auf Standardwert zurücksetzen',
                     } <= labels
                 else:
                     assert {
