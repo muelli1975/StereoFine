@@ -366,6 +366,8 @@ def check_favorite_filter(app, first, middle, last):
     assert label.cget('text_color') == gui.GOLD_LIGHT
     assert app.sources == [first, middle, last] and not app.favorites_only.get()
     assert app.next_button.cget('state') == 'disabled'
+    app._drop_prefetch()
+    app._previous_views = None
     app.previous_source()
     assert app.busy_state == 'load'
     assert label.cget('text_color') == gui.GOLD_LIGHT
