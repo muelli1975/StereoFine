@@ -1,4 +1,4 @@
-"""Use Shift-wheel only over an enabled image editing slider."""
+"""Mouse gestures scoped to an enabled image editing slider."""
 
 
 def bind_slider_wheel(slider, enabled, step):
@@ -26,7 +26,29 @@ def bind_slider_wheel(slider, enabled, step):
         nonlocal remainder
         remainder = 0
 
-    slider.bind('<Shift-MouseWheel>', scroll)
-    slider.bind('<Shift-Button-4>', lambda event: scroll(event, 1))
-    slider.bind('<Shift-Button-5>', lambda event: scroll(event, -1))
+    slider.bind('<MouseWheel>', scroll)
+    slider.bind('<Button-4>', lambda event: scroll(event, 1))
+    slider.bind('<Button-5>', lambda event: scroll(event, -1))
     slider.bind('<Leave>', reset)
+
+
+def bind_slider_reset(slider, enabled, reset):
+    resetting = False
+
+    def double_click(_event):
+        nonlocal resetting
+        resetting = enabled()
+        if resetting:
+            return 'break'
+
+    def release(_event):
+        nonlocal resetting
+        if resetting:
+            resetting = False
+            if enabled():
+                reset()
+            return 'break'
+
+    # Motion before the second release can still change the slider value.
+    slider.bind('<Double-Button-1>', double_click)
+    slider.bind('<ButtonRelease-1>', release)

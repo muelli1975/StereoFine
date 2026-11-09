@@ -14,7 +14,7 @@ from .output_naming import suffix_label
 from .state import LookState
 from .exposure import normalize_exposure
 from .i18n import format_exposure
-from .slider_wheel import bind_slider_wheel
+from .slider_wheel import bind_slider_reset, bind_slider_wheel
 from .theme import BORDER, CONTROL_RADIUS, GOLD_DARK, GOLD_LIGHT, SECONDARY_BG, TEXT_PRIMARY, TEXT_DISABLED
 
 
@@ -82,7 +82,10 @@ class LookControlsMixin:
             variable=self.look_strength, command=self._on_look_strength,
             fg_color=BORDER, progress_color=GOLD_DARK, button_color=GOLD_LIGHT,
             button_hover_color=GOLD_LIGHT)
-        bind_slider_wheel(self.look_slider, self._can_step_look_strength, self._step_look_strength)
+        bind_slider_wheel(self.look_slider, self._can_step_look_strength,
+                          self._image_control_command(self._step_look_strength))
+        bind_slider_reset(self.look_slider, self._can_step_look_strength,
+                          lambda: self._on_look_strength(100))
         self.look_slider.grid(row=row,column=0,sticky='ew',padx=(42,20),pady=(0,12));row += 1
         self._lock_widgets.append(self.look_slider)
         for widget in (self.look_strength_label, self.look_slider):
@@ -116,9 +119,11 @@ class LookControlsMixin:
             corner_radius=CONTROL_RADIUS, font=self._font(12))
         self._exposure_entry.grid(row=0, column=2, sticky='e', pady=2)
         bind_slider_wheel(self._exposure_slider, self._can_edit_exposure,
-                          lambda ticks: self._nudge_exposure(ticks * .1))
-        self._exposure_slider.bind('<Double-Button-1>', lambda event: self._set_exposure(0))
-        self._exposure_entry.bind('<Return>', lambda event: self._commit_exposure_entry(True))
+                          self._image_control_command(lambda ticks: self._nudge_exposure(ticks * .1)))
+        bind_slider_reset(self._exposure_slider, self._can_edit_exposure, lambda: self._set_exposure(0))
+        for sequence in ('<Return>', '<KP_Enter>', '<Tab>', '<Shift-Tab>', '<ISO_Left_Tab>'):
+            self._exposure_entry.bind(sequence, lambda event: self._commit_exposure_entry(True))
+        self._exposure_entry.bind('<FocusIn>', lambda event: self._reset_keyboard_modes())
         self._exposure_entry.bind('<FocusOut>', lambda event: self._commit_exposure_entry(False))
         self._exposure_entry.bind('<Escape>', lambda event: self._reset_exposure_entry())
         self._exposure_entry.bind('<Up>', lambda event: self._nudge_exposure(.01))
@@ -172,7 +177,7 @@ class LookControlsMixin:
                 self._set_exposure(value)
         if release:
             self.preview_frame.focus_set()
-        return 'break'
+            return 'break'
 
     def _reset_exposure_entry(self):
         self._sync_exposure_value()

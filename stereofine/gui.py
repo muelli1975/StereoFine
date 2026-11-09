@@ -1520,20 +1520,29 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         if menu is not None and self.focus_get() is menu._entry:
             self.focus_set()
 
+    def _inline_editor(self, widget):
+        if widget is None:
+            return False
+        return any(widget is getattr(getattr(self, name, None), "_entry", None)
+                   for name in ("sbs_suffix_menu", "_exposure_entry"))
+
+    def _release_inline_editor_focus(self):
+        if self._inline_editor(self.focus_get()):
+            self.focus_set()
+
     def _image_control_command(self, command):
         if command is None:
             return None
         def dispatch(*args, **kwargs):
             # Release before opening a dialog, so Tk cannot restore the editor
             # as the dialog's previous focus when it closes.
-            self._release_sbs_suffix_focus()
+            self._release_inline_editor_focus()
             return command(*args, **kwargs)
         return dispatch
 
     def _on_control_pointer(self, event) -> None:
-        menu = getattr(self, "sbs_suffix_menu", None)
-        if menu is not None and event.widget is not menu._entry:
-            self._release_sbs_suffix_focus()
+        if not self._inline_editor(event.widget):
+            self._release_inline_editor_focus()
 
     def _on_export_options_changed(self) -> None:
         self._commit_sbs_suffix()
@@ -2706,7 +2715,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
                 self._prefetch_neighbor()
             else:
                 play_ready_sound(asset_path("ready.wav"))
-            self._release_sbs_suffix_focus()
+            self._release_inline_editor_focus()
             return
 
         if kind in {"batch", "save"} and isinstance(payload, BatchRunResult):
@@ -2846,7 +2855,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             except (AttributeError, tk.TclError):
                 pass
             if getattr(event, 'keysym', '') in {'F1', 'F11'}:
-                self._release_sbs_suffix_focus()
+                self._release_inline_editor_focus()
             return callback(event)
         return dispatch
 

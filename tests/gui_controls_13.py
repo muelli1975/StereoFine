@@ -50,16 +50,15 @@ def check_visible_shortcuts(app):
         key('<KeyRelease-c>')
         pump(app, lambda: 'c' not in app._shortcut_keys_down)
 
-    def wheel(direction, *, shift=True, delta=None):
-        canvas = app.look_slider._canvas
+    def wheel(direction, *, widget=None, delta=None):
+        widget = app.look_slider._canvas if widget is None else widget
         platform = app.tk.call('tk', 'windowingsystem')
-        modifier = 'Shift-' if shift else ''
         if platform == 'x11':
             button = 4 if direction > 0 else 5
-            canvas.event_generate(f'<{modifier}Button-{button}>')
+            widget.event_generate(f'<Button-{button}>')
         else:
             notch = 120 if platform == 'win32' else 1
-            canvas.event_generate(f'<{modifier}MouseWheel>', delta=direction * (delta or notch))
+            widget.event_generate('<MouseWheel>', delta=direction * (delta or notch))
         pump(app)
 
     if not app.look_enabled.get():
@@ -104,7 +103,7 @@ def check_visible_shortcuts(app):
     assert app._look_notice and app._look_notice_text() == 'LUT: Blue Ice · 43 %'
     assert asdict(app.current.state.manual) == manual_before
 
-    wheel(1, shift=False)
+    wheel(1, widget=app.look_strength_label._label)
     assert app.current.state.look.strength == .43
     if sys.platform == 'win32':
         wheel(1, delta=60)
@@ -138,8 +137,41 @@ def check_visible_shortcuts(app):
     assert app._flush_state_save()
     saved_photo = json.loads(app.current.source.sidecar_path.read_text('utf-8'))['photo']
     assert saved_photo == {'exposure': .4}
-    app._set_exposure(0)
+    wheel(1, widget=exposure._canvas)
+    assert app.current.state.exposure == .5
+    wheel(-1, widget=exposure._canvas)
+    assert app.current.state.exposure == .4
+
+    entry = app._exposure_entry._entry
+    for sequence in ('<KeyPress-Return>', '<KeyPress-KP_Enter>', '<KeyPress-Tab>', '<Shift-KeyPress-Tab>'):
+        entry.focus_force()
+        pump(app, lambda: app.focus_get() is entry)
+        value.set('0,37')
+        entry.event_generate(sequence)
+        pump(app, lambda: app.focus_get() is not entry)
+        assert app.current.state.exposure == .37
+
+    entry.focus_force()
+    pump(app, lambda: app.focus_get() is entry)
+    value.set('0,42')
+    app.preview_label._label.event_generate('<ButtonPress-1>')
+    pump(app, lambda: app.focus_get() is not entry)
+    assert app.current.state.exposure == .42
+
+    def reset_slider(slider):
+        canvas = slider._canvas
+        x, y = canvas.winfo_width() * 3 // 4, canvas.winfo_height() // 2
+        for offset in (0, 80):
+            canvas.event_generate('<ButtonPress-1>', x=x, y=y, time=500 + offset)
+            canvas.event_generate('<ButtonRelease-1>', x=x, y=y, time=520 + offset)
+        pump(app)
+
+    reset_slider(exposure)
     assert app.current.state.exposure == 0
+    reset_slider(app.look_slider)
+    assert app.current.state.look.strength == 1.0
+    app._on_look_strength(43)
+    app.preview_frame.focus_force()
 
     click_time = 1000
 
@@ -441,7 +473,8 @@ def main():
                         'Kontextmenü öffnen (Disparitätsmesser bei Anaglyphen)',
                         'LUT ein-/ausschalten', 'Vorherigen/nächsten LUT-Look wählen',
                         'LUT-Stärke um 5 Prozentpunkte ändern',
-                        'Bildbearbeitungsregler unter dem Mauszeiger verstellen',
+                        'Bildbearbeitungsregler über Schiene oder Griff verstellen',
+                        'Bildbearbeitungsregler auf Standardwert zurücksetzen',
                     } <= labels
                 else:
                     assert {
@@ -452,7 +485,8 @@ def main():
                         'Open context menu (disparity meter in anaglyph views)',
                         'Toggle LUT', 'Select previous/next LUT look',
                         'Adjust LUT strength by 5 percentage points',
-                        'Adjust the image editing slider under the pointer',
+                        'Adjust the image editing slider over its track or handle',
+                        'Reset an image editing slider to its default',
                     } <= labels
                 width, height = window.initial_window_size
                 assert window.initial_content_height + 100*window.scale <= height
