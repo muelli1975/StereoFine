@@ -2649,7 +2649,10 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         # while work is running. Progress is shown by preview/status/spinner.
         _ = button_text
         self._refresh_control_states()
-        self._start_activity(delay=BROWSE_ACTIVITY_DELAY_MS if kind == "load" else 0)
+        if kind == "load":
+            self._start_activity(delay=BROWSE_ACTIVITY_DELAY_MS)
+        else:
+            self._start_activity()
         job = self.worker.start(function, name=f"StereoFine-{kind}")
         self.current_job_id = job.job_id
 
