@@ -10,6 +10,31 @@ from stereofine.near_point import confirm_near_edge
 
 
 class FarPointTests(unittest.TestCase):
+    def test_recovered_far_marker_tracks_the_revised_measurement(self):
+        near = dict(left=[.7, .8], right=[.703, .8], target_permille=-3.0, tentative=False)
+        old_far = dict(left=[.04, .12], right=[.058, .12], target_permille=-18.0, tentative=True)
+        verified_far = dict(left=[.2, .35], right=[.21612, .35], target_permille=-16.12, tentative=False)
+        initial = dict(ready=True, uncertain_reasons=['far_edge_unconfirmed'],
+                       near_confirmation=dict(confirmed=True, unsupported_extreme=False),
+                       far_confirmation=dict(maximum_supported_px=None), analysis_width=1000,
+                       analysis_height=500, low_edge_permille=-18.0, high_edge_permille=-3.0,
+                       deviation_permille=15.0, endpoints=dict(markers={'near': near, 'far': old_far}))
+        evidence = dict(endpoints_confirmed=True, observed_span_permille=12.82, endpoints={
+            'near': dict(confirmed=True, edge_permille=-3.3),
+            'far': dict(confirmed=True, edge_permille=-16.12, marker=verified_far),
+        })
+        pair = np.zeros((1000, 2000, 3), dtype=np.uint8)
+        with patch('stereofine.disparity._analyze_horizontal_disparity',
+                   side_effect=[initial, dict(ready=True)]), patch(
+                       'stereofine.range_evidence.measure_range_evidence', side_effect=[evidence, evidence]):
+            result = analyze_horizontal_disparity(pair, pair, 1000)
+        self.assertTrue(result['range_recovery']['accepted'])
+        self.assertAlmostEqual(result['low_edge_permille'], -16.62)
+        self.assertEqual(result['endpoints']['markers']['near'], near)
+        far = result['endpoints']['markers']['far']
+        self.assertEqual(far['left'], verified_far['left'])
+        self.assertEqual(far['target_permille'], result['low_edge_permille'])
+
     @staticmethod
     def scene():
         rng = np.random.default_rng(914)

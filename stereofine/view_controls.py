@@ -10,7 +10,7 @@ from pathlib import Path
 import customtkinter as ctk
 from PIL import Image, ImageDraw, ImageFont
 
-from .endpoints import current_markers, crop_geometry
+from .endpoints import ENDPOINT_MARKER_VERSION, current_markers, crop_geometry
 from .inspection import InspectionView, image_point, measured_deviation
 from .look_controls import preview_look
 from .native_preview import detail_texture_key, native_key, native_geometry_key, preview_image
@@ -93,7 +93,7 @@ class ViewControlsMixin:
         option = getattr(self, 'show_deviation_points', None)
         return bool(option is not None and option.get() and self.current is not None
                     and self.current.state.disparity.valid
-                    and self.current.state.disparity.endpoints.get('version', 0) < 2)
+                    and self.current.state.disparity.endpoints.get('version', 0) < ENDPOINT_MARKER_VERSION)
 
     def _view_image_size(self):
         if self.current is None:

@@ -148,10 +148,14 @@ def analyze_horizontal_disparity(left_rgb, right_rgb, max_width=2000) -> dict:
         audit['reason'] = 'control_endpoints_disagree'
         return result
     margin = .5*1000/aw
-    native_far = min(e['endpoints']['far']['edge_permille'] for e in [first, second])
-    native_near = first['endpoints']['near']['edge_permille']
+    far_evidence = min((e['endpoints']['far'] for e in (first, second)),
+                       key=lambda endpoint: endpoint['edge_permille'])
+    near_evidence = first['endpoints']['near']
     if not control_near_unconfirmed:
-        native_near = max(native_near, second['endpoints']['near']['edge_permille'])
+        near_evidence = max(near_evidence, second['endpoints']['near'],
+                            key=lambda endpoint: endpoint['edge_permille'])
+    native_far = far_evidence['edge_permille']
+    native_near = near_evidence['edge_permille']
     old_far_support = result['far_confirmation']['maximum_supported_px']
     if old_far_support is not None and native_far > -old_far_support*1000/aw + 1000/aw:
         audit['reason'] = 'unresolved_original_far_support'
@@ -160,8 +164,17 @@ def analyze_horizontal_disparity(left_rgb, right_rgb, max_width=2000) -> dict:
     high = result['high_edge_permille']
     # As in existing near confirmation, do not move a good baseline for a
     # subpixel fluctuation. Newly supported nearer surfaces retain the reserve.
+    recovered_markers = [('far', far_evidence, low)]
     if native_near > high+margin:
         high = native_near+margin
+        recovered_markers.append(('near', near_evidence, high))
+    markers = result.get('endpoints', {}).get('markers', {})
+    for name, endpoint, target in recovered_markers:
+        marker = endpoint.get('marker')
+        if marker is not None:
+            markers[name] = dict(marker, target_permille=target)
+        elif name in markers and markers[name]['target_permille'] != target:
+            del markers[name]
     shrunk = low > result['low_edge_permille']+1e-9
     result['low_edge_permille'], result['high_edge_permille'] = low, high
     result['deviation_permille'] = high-low
@@ -413,8 +426,7 @@ def _analyze_horizontal_disparity(
     traffic, status = classification['traffic'], classification['status']
 
     from .endpoints import locate_endpoints
-    endpoints = locate_endpoints(disp_l_raw, confidence_mask, near_confirmation,
-                                 far_confirmation, low_edge, high_edge)
+    endpoints = locate_endpoints((h, w), near_confirmation, far_confirmation, low_edge, high_edge)
 
     return {
         "ready": True,

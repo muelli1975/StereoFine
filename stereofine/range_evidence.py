@@ -8,6 +8,7 @@ from __future__ import annotations
 import numpy as np
 
 from .disparity import _resize_pair_for_disparity, _rgb_to_luma_uint8
+from .endpoints import normalized_marker
 from .near_point import verify_patch, supported_near_edge
 from .near_point_recovery import native_patch_checks
 
@@ -128,7 +129,15 @@ def measure_range_evidence(left, right, max_width=1500, dense=None, *, include_d
             if (analysis['maximum_supported_px'] is not None
                     and analysis['maximum_supported_px'] > maximum+1.):
                 reasons.append('unresolved_more_extreme_analysis_surface')
-        endpoints[name] = dict(confirmed=not reasons, reasons=reasons,
+        marker = None
+        if not reasons:
+            point = max(native['supported_matches'], key=lambda p: p['disparity_px'])
+            x = point['x'] if sign == 1 else w - 1 - point['x']
+            d = sign * point['disparity_px']
+            if 0 <= x - d < w:
+                marker = normalized_marker(x, point['y'], d, w, h, tentative=False,
+                                           target_permille=d * 1000 / w)
+        endpoints[name] = dict(confirmed=not reasons, reasons=reasons, marker=marker,
             edge_permille=None if maximum is None else sign*maximum*1000/w,
             analysis_supported_points=analysis['supported_points'],
             native_checked=len(ranked), native_verified=len(checks),

@@ -223,16 +223,11 @@ class PreferenceTests(unittest.TestCase):
 
 
 class EndpointTests(unittest.TestCase):
-    def test_unconfirmed_verifier_cannot_override_closer_depth_evidence(self):
-        d = np.zeros((20, 100), np.float32)
-        confidence = np.zeros_like(d, bool)
-        d[8, 30], d[12, 60] = -2.2, -8.4
-        confidence[8, 30] = confidence[12, 60] = True
-        bad_near = dict(confirmed=False, verified_points=[dict(x=60, y=12, disparity_px=-8.4)])
-        bad_far = dict(confirmed=False, verified_points=[dict(x=69, y=8, disparity_px=2.2)])
-        result = locate_endpoints(d, confidence, bad_near, bad_far, -84., -22.)
-        self.assertAlmostEqual(result['markers']['near']['left'][0], .305)
-        self.assertAlmostEqual(result['markers']['far']['left'][0], .605)
+    def test_unconfirmed_points_do_not_get_markers(self):
+        near = dict(confirmed=False, verified_points=[dict(x=60, y=12, disparity_px=-8.4)])
+        far = dict(confirmed=False, verified_points=[dict(x=69, y=8, disparity_px=2.2)])
+        result = locate_endpoints((20, 100), near, far, -84.0, -22.0)
+        self.assertEqual(result['markers'], {})
 
     def test_status_and_marker_values_are_identical_in_both_languages(self):
         state = PairState()

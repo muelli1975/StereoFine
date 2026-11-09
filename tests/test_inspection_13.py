@@ -4,6 +4,7 @@ import numpy as np
 
 from stereofine.inspection import InspectionView,image_point,measured_deviation
 from stereofine.endpoints import locate_endpoints,to_master,current_markers
+from stereofine.near_point import supported_near_edge
 from stereofine.state import PairState
 
 
@@ -47,14 +48,9 @@ class InspectionTests(unittest.TestCase):
         self.assertEqual(current_markers(state),{})
 
     def test_far_evidence_is_unreflected_before_drawing(self):
-        disparity=np.full((60,100),4,np.float32)
-        # Give the unverified point an equal disparity error and an earlier
-        # x-coordinate than either verified point.
-        confidence=np.zeros_like(disparity,bool)
-        confidence[20,55]=True
-        near=dict(confirmed=True,verified_points=[dict(x=70,y=20,disparity_px=4)])
-        far=dict(confirmed=True,verified_points=[dict(x=20,y=20,disparity_px=-4)])
-        data=locate_endpoints(disparity,confidence,near,far,40,40)
+        near = supported_near_edge([dict(x=70, y=y, disparity_px=4.0) for y in (20, 28)], 4.0, 100)
+        far = supported_near_edge([dict(x=20, y=y, disparity_px=-4.0) for y in (20, 28)], -4.0, 100)
+        data = locate_endpoints((60, 100), near, far, 40.0, 40.0)
         self.assertAlmostEqual(data['markers']['far']['left'][0],.795)
         self.assertAlmostEqual(data['markers']['far']['right'][0],.755)
         self.assertFalse(data['markers']['far']['tentative'])

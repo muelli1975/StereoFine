@@ -7,12 +7,41 @@ import cv2
 import numpy as np
 
 from stereofine.disparity import analyze_horizontal_disparity
+from stereofine.endpoints import current_markers, locate_endpoints, to_master
 from stereofine.framing import compute_auto_near_framing
 from stereofine.geometry import crop_shifted_pair_to_overlap
 from stereofine.near_point import supported_near_edge, verify_patch
+from stereofine.state import PairState
 
 
 class NearPointTests(unittest.TestCase):
+    def test_marker_prefers_spatially_supported_matches_near_the_measurement(self):
+        width, height = 1000, 180
+        near = supported_near_edge([
+            dict(x=400, y=130, disparity_px=32.0),
+            dict(x=410, y=132, disparity_px=32.0),
+            dict(x=720, y=22, disparity_px=32.5),
+        ], 32.5, width)
+        self.assertTrue(near['confirmed'])
+        endpoints = locate_endpoints((height, width), near, {}, -20.0, near['edge_permille'])
+        marker = endpoints['markers']['near']
+        self.assertGreater(marker['left'][1], 0.7)
+        self.assertFalse(marker['tentative'])
+        self.assertEqual(marker['target_permille'], 32.5)
+
+        state = PairState()
+        state.disparity.valid = True
+        state.disparity.endpoints = to_master(endpoints, state, (height, width), width / height)
+        self.assertIn('near', current_markers(state))
+        state.disparity.endpoints['version'] = 2
+        self.assertEqual(current_markers(state), {})
+
+        unconfirmed = supported_near_edge([dict(x=720, y=22, disparity_px=32.5)], 32.5, width)
+        empty = locate_endpoints((height, width), unconfirmed, {}, -20.0, 32.5)
+        state.disparity.endpoints = to_master(empty, state, (height, width), width / height)
+        self.assertGreater(state.disparity.endpoints['version'], 2)
+        self.assertEqual(current_markers(state), {})
+
     def test_single_extreme_does_not_override_corroborated_surface(self):
         points = [dict(x=100, y=100, disparity_px=10.), dict(x=110, y=100, disparity_px=10.),
                   dict(x=400, y=300, disparity_px=100.)]
