@@ -149,6 +149,34 @@ def check_visible_shortcuts(app):
     assert app.current.state.exposure == .4
 
     entry = app._exposure_entry._entry
+    app._set_exposure(0)
+    entry.focus_force()
+    pump(app, lambda: app.focus_get() is entry)
+    manual = asdict(app.current.state.manual)
+    for typed, sequence, expected in (
+        ('0,50', '<KeyPress-Up>', .51),
+        ('0.50', '<KeyPress-Down>', .49),
+        ('', '<KeyPress-Up>', .49),
+        ('nan', '<KeyPress-Down>', .49),
+        ('2,00', '<KeyPress-Up>', 2.0),
+        ('-2,00', '<KeyPress-Down>', -2.0),
+    ):
+        value.set(typed)
+        entry.event_generate(sequence)
+        pump(app)
+        assert app.current.state.exposure == expected, (typed, sequence, expected)
+        assert abs(exposure.get() - expected) < .001
+        assert float(value.get().replace(',', '.')) == expected
+        assert app.focus_get() is entry
+        assert asdict(app.current.state.manual) == manual
+
+    value.set('0,90')
+    entry.event_generate('<KeyPress-Escape>')
+    pump(app)
+    assert app.focus_get() is not entry
+    assert app.current.state.exposure == -2.0
+    assert float(value.get().replace(',', '.')) == -2.0
+
     for sequence in ('<KeyPress-Return>', '<KeyPress-Tab>', '<Shift-KeyPress-Tab>'):
         entry.focus_force()
         pump(app, lambda: app.focus_get() is entry)

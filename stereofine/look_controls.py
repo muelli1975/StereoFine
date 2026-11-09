@@ -1,6 +1,7 @@
 """Compact LUT controls and the program-defaults action."""
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from tkinter import filedialog, messagebox
 
@@ -126,8 +127,8 @@ class LookControlsMixin:
         self._exposure_entry.bind('<FocusIn>', lambda event: self._reset_keyboard_modes())
         self._exposure_entry.bind('<FocusOut>', lambda event: self._commit_exposure_entry(False))
         self._exposure_entry.bind('<Escape>', lambda event: self._reset_exposure_entry())
-        self._exposure_entry.bind('<Up>', lambda event: self._nudge_exposure(.01))
-        self._exposure_entry.bind('<Down>', lambda event: self._nudge_exposure(-.01))
+        self._exposure_entry.bind('<Up>', lambda event: self._commit_exposure_entry(False, step=.01))
+        self._exposure_entry.bind('<Down>', lambda event: self._commit_exposure_entry(False, step=-.01))
         attach_tooltip(label, self._t('exposure_tooltip'))
         self._sync_exposure_controls()
         return row + 1
@@ -167,16 +168,19 @@ class LookControlsMixin:
             self._set_exposure(self.current.state.exposure + change)
         return 'break'
 
-    def _commit_exposure_entry(self, release):
+    def _commit_exposure_entry(self, release, *, step=0.0):
         if self._can_edit_exposure():
             try:
                 value = float(self._exposure_text.get().replace(',', '.'))
+                if not math.isfinite(value):
+                    raise ValueError('Exposure must be finite')
             except ValueError:
                 self._sync_exposure_value()
             else:
-                self._set_exposure(value)
+                self._set_exposure(value + step)
         if release:
             self.focus_set()
+        if release or step:
             return 'break'
 
     def _reset_exposure_entry(self):
