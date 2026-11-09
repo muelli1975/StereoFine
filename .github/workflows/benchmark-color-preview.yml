@@ -30,6 +30,7 @@ jobs:
         working-directory: app
         shell: pwsh
         run: |
+          New-Item -ItemType Directory -Force tools | Out-Null
           Copy-Item ../bench/tools/benchmark_cpu_batch.py tools/benchmark_cpu_batch.py
           Copy-Item ../bench/tools/benchmark_color_preview.py tools/benchmark_color_preview.py
           python -m tools.benchmark_color_preview
