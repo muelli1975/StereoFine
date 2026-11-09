@@ -16,6 +16,7 @@ import numpy as np
 from PIL import Image, ImageTk
 
 from stereofine import gui
+from stereofine.anaglyph import make_anaglyph
 from stereofine.session import browse_source
 from stereofine.settings import AppSettings
 from stereofine.native_preview import native_key, detail_box, fit_display_pair
@@ -195,7 +196,7 @@ def save_case(app, root, name, timing, mode, tiff=False, detail=False, fresh=Fal
                 mode_now = app._effective_preview_mode()
                 expected_view = (np.concatenate([expected[1], expected[0]], axis=1)
                                  if mode_now == 'Kreuzblick' else
-                                 gui.make_anaglyph(*expected, gray=mode_now == 'Graustufen'))
+                                 make_anaglyph(*expected, gray=mode_now == 'Graustufen'))
                 np.testing.assert_array_equal(np.asarray(app._preview_pil), expected_view)
             result = dict(case=name, timing=timing, mode=mode, tiff=tiff, detail=detail,
                 freshly_aligned_in_this_session=fresh, geometry_identity_unchanged=True,
@@ -228,7 +229,7 @@ def pan_checks(app):
             pump(app, lambda: app._detail_texture_cache is not None
                  and app._detail_texture_cache[0] == app._detail_texture_signature())
             mixing_calls = []
-            mixer = gui.make_anaglyph
+            mixer = make_anaglyph
             def forbidden(*args, **kwargs):
                 mixing_calls.append(True)
                 return mixer(*args, **kwargs)
