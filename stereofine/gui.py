@@ -2311,7 +2311,8 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
                     or self._native_views_need_resize()):
                 self._request_native_preview()
             return
-        if not start_image and session is self.current and self._inspection_view.active:
+        if (not start_image and session is self.current
+                and getattr(self, "_inspection_view", None) is not None and self._inspection_view.active):
             self._request_native_preview(immediate=True)
             return
         base = self._ensure_preview_base(session, start_image=start_image)
