@@ -72,7 +72,9 @@ TEXTS: dict[str, dict[str, str]] = {
         "look_apply": "LUT anwenden",
         "look_strength": "Stärke: {value} %",
         "exposure": "Belichtung",
-        "exposure_tooltip": "Helligkeit beider Halbbilder von −2 bis +2 EV.",
+        "exposure_tooltip": "Belichtung beider Halbbilder von −2 bis +2 EV.",
+        "look_strength_tooltip": "C halten und mit ↑/↓ die LUT-Stärke in 5-Prozentpunkt-Schritten ändern.",
+        "zoom_tooltip": "Ansichtszoom mit Strg + Mausrad vergrößert die Vorschau. Beschnittzoom mit Strg + Umschalt + ↑/↓ ändert den Ausschnitt für den Export.",
         "look_notice": "LUT: {name}",
         "look_notice_off": "LUT aus",
         "look_group_film": "Farbfilm & Kameralooks",
@@ -233,7 +235,9 @@ TEXTS: dict[str, dict[str, str]] = {
         "look_apply": "Apply LUT",
         "look_strength": "Strength: {value} %",
         "exposure": "Exposure",
-        "exposure_tooltip": "Adjust both eyes from −2 to +2 EV.",
+        "exposure_tooltip": "Adjust exposure for both eyes from −2 to +2 EV.",
+        "look_strength_tooltip": "Hold C and press ↑/↓ to change LUT strength in 5-percentage-point steps.",
+        "zoom_tooltip": "View zoom with Ctrl + mouse wheel magnifies the preview. Crop zoom with Ctrl + Shift + ↑/↓ changes the crop used for export.",
         "look_notice": "LUT: {name}",
         "look_notice_off": "LUT off",
         "look_group_film": "Color Film & Camera Looks",
@@ -568,7 +572,7 @@ def grid_spacing_code(label: str) -> str:
 
 
 TEXTS['de'].update({
-    'look_tooltip': 'Mit LUTs lassen sich Filmsimulationen und Filmlooks anwenden. Sie verändern Farben, Helligkeit und Kontrast; die Wirkung lässt sich über die Stärke dosieren. Zum Beurteilen der Farben die Kreuzblick-Vorschau verwenden, da Anaglyphen die Farbwiedergabe verändern.',
+    'look_tooltip': 'Mit LUTs lassen sich Filmsimulationen und Filmlooks anwenden. Sie verändern Farben, Helligkeit und Kontrast. Halte C und blättere mit ←/→ durch die Looks. Mit X wechselst du zur Farbkontrolle in den Kreuzblick und zurück.',
     'folder_apply': 'Für Ordner übernehmen…',
     'folder_commit': 'Übernehmen',
     'folder_count': '{count} erkannte Stereobilder',
@@ -583,7 +587,7 @@ TEXTS['de'].update({
     'series_input_saved': 'Ordnerausrichtung gespeichert.',
 })
 TEXTS['en'].update({
-    'look_tooltip': 'LUTs apply film simulations and film looks. They change colour, brightness and contrast; adjust their effect with Strength. Use the cross-view preview to judge colours, as anaglyphs alter colour reproduction.',
+    'look_tooltip': 'LUTs apply film simulations and film looks. They change colour, brightness and contrast. Hold C and press ←/→ to browse looks. Press X to switch to cross-view to judge colours and press it again to return.',
     'folder_apply': 'Apply to folder…',
     'folder_commit': 'Apply',
     'folder_count': '{count} recognised stereo images',
