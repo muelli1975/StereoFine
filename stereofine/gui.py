@@ -1836,6 +1836,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         token.raise_if_cancelled()
         session = browse_source(source, defaults, decoded=decoded)
         loaded = session.loaded_pair
+        decoded = loaded, session.source_stamp
         decoded_bytes = loaded.left.nbytes + loaded.right.nbytes
         if decoded_bytes > budget:
             return signature, None, None, 0

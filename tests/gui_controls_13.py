@@ -10,6 +10,7 @@ import tempfile
 import time
 from types import SimpleNamespace
 from unittest.mock import patch
+import tkinter as tk
 
 import cv2
 import numpy as np
@@ -136,8 +137,9 @@ def check_visible_shortcuts(app):
     assert value.get() in ('+0.40', '+0,40')
     track = exposure._canvas
     assert track.itemcget('centered_progress', 'state') == 'normal'
-    start, _top, end, _bottom = track.coords('centered_progress')
-    assert abs(start - track.winfo_width()/2) < 2 and end > start
+    start, _top, end, _bottom = tk.Canvas.coords(track, 'centered_progress')
+    rail = track.bbox('inner_parts')
+    assert abs(start - (rail[0] + rail[2])/2) < 1 and end > start
     assert app._flush_state_save()
     saved_photo = json.loads(app.current.source.sidecar_path.read_text('utf-8'))['photo']
     assert saved_photo == {'exposure': .4}
