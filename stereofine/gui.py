@@ -273,6 +273,7 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
         self._prefetch_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix='StereoFine-preload')
         self._prefetched = []
         self._previous_decoded = None
+        self._previous_views = None
         self._browse_step = 1
         self._init_view_controls()
 
@@ -1738,7 +1739,7 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
         if self.current is not None and not self._flush_state_save(explicit=True):
             return
         self._drop_prefetch()
-        self._previous_decoded = None
+        self._previous_decoded = self._previous_views = None
         self._browse_step = 1
         self.sources = list(sources)
         self.source_index = target_index
@@ -1886,6 +1887,46 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
             # Fall back to the normal loader if speculative work failed.
             return None, None
 
+    def _remember_previous_view(self, source):
+        old = self.current
+        if old is None or old.source == source or old.source not in self.sources:
+            return
+        self._previous_decoded = self._previous_views = None
+        loaded = old.loaded_pair
+        size = loaded.left.nbytes + loaded.right.nbytes
+        if size > DECODED_CACHE_LIMIT:
+            return
+        self._previous_decoded = old.source, (loaded, old.source_stamp)
+        if not self._has_fitted_native_view():
+            return
+        views = self._native_views
+        base = views[6]
+        size += base.left.nbytes + base.right.nbytes
+        size += sum(eye.nbytes for pair in views[2].values() for eye in pair)
+        if size <= DECODED_CACHE_LIMIT:
+            # Keep the small fitted eyes and the reduced base. The native
+            # master and detail texture can be prepared after the return.
+            self._previous_views = (*views[:5], None, base, None)
+
+    def _previous_browse_preview(self, source, defaults, bounds, decoded):
+        views = self._previous_views
+        if views is None or views[4] != bounds:
+            return None
+        try:
+            session = browse_source(source, defaults, decoded=decoded, require_decoded=True)
+        except (OSError, ValueError):
+            return None
+        if session is None:
+            return None
+        key = native_key(session)
+        color = session.state.color
+        if key[0][1] != views[0][1] or color.strength != views[1]:
+            return None
+        fitted_color = views[3]
+        if color.valid and (color.basis != fitted_color.basis or color.parameters != fitted_color.parameters):
+            return None
+        return PreparedSessionPreview(session, (key, None, None, fitted_color, (key[0], *views[1:])))
+
     def _browse_defaults(self, source, *, inherit_look):
         defaults = self._source_defaults(source)
         look = LookState()
@@ -1936,17 +1977,18 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
             self._prefetched.remove(prefetch)
 
         decoded = cached[1] if cached and cached[0] == source else None
-        if prefetch is not None and prefetch.future.done():
+        prepared = self._previous_browse_preview(source, defaults, bounds, decoded) if decoded is not None else None
+        if prepared is None and prefetch is not None and prefetch.future.done():
             prefetched_decoded, prepared = self._prefetch_result(prefetch)
-            if prepared is not None:
-                if self._spinner_stop_job is not None:
-                    self.after_cancel(self._spinner_stop_job)
-                    self._finish_activity()
-                self._prepare_for_job("load")
-                self._adopt_session_preview("load", prepared)
-                return
             decoded = prefetched_decoded or decoded
             prefetch = None
+        if prepared is not None:
+            if self._spinner_stop_job is not None:
+                self.after_cancel(self._spinner_stop_job)
+                self._finish_activity()
+            self._prepare_for_job("load")
+            self._adopt_session_preview("load", prepared)
+            return
 
         def job(token, _progress):
             loaded = decoded
@@ -2746,7 +2788,7 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
         )
 
         self._drop_prefetch()
-        self._previous_decoded = None
+        self._previous_decoded = self._previous_views = None
         sources = tuple(self.sources)
 
         def job(token, progress):
@@ -2865,20 +2907,15 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
         return kind
 
     def _adopt_session_preview(self, kind, payload) -> None:
+        if kind == "load":
+            self._load_rollback_context = None
+            self._remember_previous_view(payload.session.source if isinstance(payload, PreparedSessionPreview)
+                                         else payload.source)
         fitted_frame = None
         if isinstance(payload, PreparedSessionPreview):
             fitted_frame = payload.fitted_frame
             self._install_session_preview(payload, preserve_inspection=kind == "analysis")
             payload = payload.session
-        if kind == "load":
-            self._load_rollback_context = None
-            old = self.current
-            if old is not None and old.source != payload.source and old.source in self.sources:
-                loaded = old.loaded_pair
-                if loaded.left.nbytes + loaded.right.nbytes <= DECODED_CACHE_LIMIT:
-                    self._previous_decoded = old.source, (loaded, old.source_stamp)
-                else:
-                    self._previous_decoded = None
         self.current = payload
         self._state_dirty = False
         self._state_dirty_can_create_sidecar = False

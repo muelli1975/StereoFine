@@ -713,6 +713,12 @@ def main():
             np.testing.assert_array_equal(np.asarray(app._preview_pil), np.asarray(prepared.fitted_frame.image))
             assert app.left_orientation.get() == app.right_orientation.get() == '180'
             assert app.current.state.look.preset_id == 'matrix'
+            with patch.object(app.worker, 'start', side_effect=AssertionError('warm return started a worker')):
+                app.previous_source()
+                assert app.busy_state == 'idle' and app.current.source == source
+                app.next_source()
+                assert app.busy_state == 'idle' and app.current.source == other
+            np.testing.assert_array_equal(np.asarray(app._preview_pil), np.asarray(prepared.fitted_frame.image))
             batch_options = ProcessingOptions(defaults=app._source_defaults(other), save_sidecar=False)
             inherited = process_source(other, batch_options).state.input_transform
             assert inherited.left_orientation == inherited.right_orientation == '180'

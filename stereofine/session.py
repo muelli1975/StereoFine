@@ -123,7 +123,7 @@ def preload_browsable_source(source, *, max_bytes=DECODED_CACHE_LIMIT):
 
 
 def browse_source(source: StereoSource, defaults: ProcessingDefaults = ProcessingDefaults(),
-                  *, decoded=None) -> BrowsedSource:
+                  *, decoded=None, require_decoded=False) -> BrowsedSource | None:
     """Load a source transactionally and restore sidecar state without analysis.
 
     This is the lightweight path used while browsing. A valid schema-3 sidecar
@@ -135,6 +135,8 @@ def browse_source(source: StereoSource, defaults: ProcessingDefaults = Processin
     if decoded is not None and build_source_stamp(source, decoded[0]) == decoded[1]:
         validate_source_files(source)
         loaded, stamp = decoded
+    elif require_decoded:
+        return None
     else:
         loaded, stamp = decode_browsable_source(source)
     sidecar = load_sidecar(source.sidecar_path, expected_source=stamp)
