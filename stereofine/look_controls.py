@@ -75,6 +75,7 @@ class LookControlsMixin:
             before_open=self._begin_look_menu, on_hover=self._on_look_hover,
             on_cancel=self._cancel_look_hover, dismiss_checkbox=self.look_checkbox,
             text_color_disabled=TEXT_DISABLED)
+        self._look_menu_cursor = self.look_menu.cget('cursor')
         self.look_menu.grid(row=row, column=0, sticky='ew', padx=(42,20), pady=(0,4)); row += 1
         self.look_strength_label = ctk.CTkLabel(parent, text='', text_color=TEXT_PRIMARY,
                                                font=self._font(13), anchor='w')
@@ -191,7 +192,8 @@ class LookControlsMixin:
             return
         enabled = self.busy_state == 'idle' and bool(self.look_enabled.get())
         color = TEXT_PRIMARY if enabled else TEXT_DISABLED
-        self.look_menu.configure(state='normal' if enabled else 'disabled', text_color=color)
+        self.look_menu.configure(state='normal' if enabled else 'disabled', text_color=color,
+                                 cursor=self._look_menu_cursor if enabled else '')
         if not enabled:
             self.look_menu.close_popup()
         self.folder_settings_button.configure(state='normal' if self.busy_state == 'idle' and self.current is not None else 'disabled')
