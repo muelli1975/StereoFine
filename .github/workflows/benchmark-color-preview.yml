@@ -18,7 +18,7 @@ jobs:
           path: bench
       - uses: actions/checkout@v4
         with:
-          ref: 579a31acb837b62c3ca477ade98d4eadfa17912f
+          ref: ae982703fb3223ea7b52ec67b3c50bdadd20873c
           path: app
       - uses: actions/setup-python@v5
         with:
@@ -26,16 +26,17 @@ jobs:
       - name: Install the pinned application dependencies
         working-directory: app
         run: python -m pip install -r requirements-lock.txt psutil==7.0.0
-      - name: Measure preview latency and color on stereo pairs
+      - name: Measure color fitting using the existing alignment matches
         working-directory: app
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force tools | Out-Null
           Copy-Item ../bench/tools/benchmark_cpu_batch.py tools/benchmark_cpu_batch.py
           Copy-Item ../bench/tools/benchmark_color_preview.py tools/benchmark_color_preview.py
-          python -m tools.benchmark_color_preview
+          Copy-Item ../bench/tools/benchmark_color_reuse.py tools/benchmark_color_reuse.py
+          python -m tools.benchmark_color_reuse
       - uses: actions/upload-artifact@v4
         with:
-          name: stereofine-color-preview-results
-          path: app/color-preview-results.json
+          name: stereofine-color-reuse-results
+          path: app/color-reuse-results.json
           if-no-files-found: error
