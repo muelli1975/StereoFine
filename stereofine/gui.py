@@ -450,16 +450,14 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self._lock_widgets.append(menu)
         return menu
 
-    def _section_title(self, parent, text: str, row: int) -> ctk.CTkLabel:
-        label = ctk.CTkLabel(
+    def _section_title(self, parent, text: str, row: int) -> None:
+        ctk.CTkLabel(
             parent,
             text=text,
             text_color=TEXT_PRIMARY,
             font=self._font(16, "bold"),
             anchor="w",
-        )
-        label.grid(row=row, column=0, sticky="ew", padx=20, pady=(20, 8))
-        return label
+        ).grid(row=row, column=0, sticky="ew", padx=20, pady=(20, 8))
 
     def _hint(self, parent, text: str, row: int, *, pady=(0, 10)) -> ctk.CTkLabel:
         label = ctk.CTkLabel(
@@ -707,8 +705,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         )
         self.output_path_label.grid(row=row, column=0, sticky="ew", padx=20, pady=(0, 8)); row += 1
 
-        preview_title = self._section_title(self.sidebar, self._t("preview"), row); row += 1
-        attach_tooltip(preview_title, self._t("zoom_tooltip"))
+        self._section_title(self.sidebar, self._t("preview"), row); row += 1
         preview_modes = ctk.CTkFrame(self.sidebar, fg_color="transparent")
         preview_modes.grid(row=row, column=0, sticky="ew", padx=20, pady=(0, 8)); row += 1
         preview_modes.grid_columnconfigure((0, 1, 2), weight=1)
