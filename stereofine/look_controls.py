@@ -12,6 +12,8 @@ from .tooltip import attach_tooltip
 from .preferences import mark_preference
 from .output_naming import suffix_label
 from .state import LookState
+from .photo import NEUTRAL_PHOTO, PhotoAdjustments
+from .slider_wheel import bind_slider_wheel
 from .theme import BORDER, GOLD_DARK, GOLD_LIGHT, TEXT_PRIMARY, TEXT_DISABLED
 
 
@@ -34,7 +36,7 @@ class LookControlsMixin:
         self._look_hover_job = None
         self._look_hover_state = None
         self._look_popup_generation = 0
-        self._look_wheel_remainder = 0
+        self._photo_expanded = False
         self._sync_look_display()
 
     def _current_look_option(self):
@@ -80,11 +82,7 @@ class LookControlsMixin:
             variable=self.look_strength, command=self._on_look_strength,
             fg_color=BORDER, progress_color=GOLD_DARK, button_color=GOLD_LIGHT,
             button_hover_color=GOLD_LIGHT)
-        self._look_wheel_windows = self.tk.call('tk', 'windowingsystem') == 'win32'
-        self.look_slider.bind('<Shift-MouseWheel>', self._on_look_strength_wheel)
-        self.look_slider.bind('<Shift-Button-4>', lambda event: self._on_look_strength_wheel(event, 1))
-        self.look_slider.bind('<Shift-Button-5>', lambda event: self._on_look_strength_wheel(event, -1))
-        self.look_slider.bind('<Leave>', self._reset_look_wheel)
+        bind_slider_wheel(self.look_slider, self._can_step_look_strength, self._step_look_strength)
         self.look_slider.grid(row=row,column=0,sticky='ew',padx=(42,20),pady=(0,12));row += 1
         self._lock_widgets.append(self.look_slider)
         self._look_tooltip_hides = [attach_tooltip(widget, lambda: self._t('look_tooltip'),
@@ -97,6 +95,118 @@ class LookControlsMixin:
         self._refresh_look_controls()
         return row
 
+    def _build_photo_controls(self, parent, row):
+        self._photo_widgets = {}
+        exposure = ctk.CTkFrame(parent, fg_color='transparent')
+        exposure.grid(row=row, column=0, sticky='ew', padx=20, pady=(0, 4))
+        self._build_photo_slider(exposure, 0, 'exposure', 2, .1)
+        self._photo_toggle = self._secondary_button(parent, '', self._toggle_photo_controls)
+        self._photo_toggle.grid(row=row + 1, column=0, sticky='ew', padx=20, pady=(0, 5))
+        self._photo_extra = ctk.CTkFrame(parent, fg_color='transparent')
+        self._photo_extra.grid(row=row + 2, column=0, sticky='ew', padx=20, pady=(0, 6))
+        for index, field in enumerate(('highlights', 'shadows', 'temperature', 'tint')):
+            self._build_photo_slider(self._photo_extra, index, field, 100, 5)
+        self._show_photo_controls()
+        self._sync_photo_controls()
+        return row + 3
+
+    def _build_photo_slider(self, parent, row, field, limit, step):
+        parent.grid_columnconfigure(1, weight=1)
+        label = ctk.CTkLabel(parent, text=self._t('photo_' + field), anchor='w',
+                             text_color=TEXT_PRIMARY, font=self._font(13), width=82)
+        label.grid(row=row, column=0, sticky='w', pady=2)
+        slider = ctk.CTkSlider(parent, from_=-limit, to=limit, width=90,
+            number_of_steps=400 if field == 'exposure' else 200,
+            command=lambda value: self._set_photo_value(field, value),
+            fg_color=BORDER, progress_color=BORDER, button_color=GOLD_LIGHT,
+            button_hover_color=GOLD_LIGHT)
+        slider.grid(row=row, column=1, sticky='ew', padx=(4, 7), pady=2)
+        text = ctk.StringVar(master=self)
+        entry = ctk.CTkEntry(parent, width=60, height=25, textvariable=text, justify='right',
+                             border_color=BORDER, font=self._font(12))
+        entry.grid(row=row, column=2, sticky='e', pady=2)
+        self._photo_widgets[field] = slider, entry, text
+        bind_slider_wheel(slider, self._can_edit_photo, lambda ticks: self._nudge_photo(field, ticks * step))
+        slider.bind('<Double-Button-1>', lambda event: self._reset_photo_value(field))
+        entry.bind('<Return>', lambda event: self._commit_photo_entry(field, True))
+        entry.bind('<FocusOut>', lambda event: self._commit_photo_entry(field, False))
+        entry.bind('<Escape>', lambda event: self._reset_photo_entry(field))
+        arrow_step = .01 if field == 'exposure' else 1
+        entry.bind('<Up>', lambda event: self._nudge_photo(field, arrow_step))
+        entry.bind('<Down>', lambda event: self._nudge_photo(field, -arrow_step))
+        attach_tooltip(label, self._t('photo_' + field + '_tooltip'))
+
+    def _can_edit_photo(self):
+        return self.busy_state == 'idle' and self.current is not None
+
+    def _show_photo_controls(self):
+        indicator = '▾' if self._photo_expanded else '▸'
+        self._photo_toggle.configure(text=f"{indicator}  {self._t('photo_more')}")
+        if self._photo_expanded:
+            self._photo_extra.grid()
+        else:
+            self._photo_extra.grid_remove()
+
+    def _toggle_photo_controls(self):
+        self._photo_expanded = not self._photo_expanded
+        self._show_photo_controls()
+
+    def _sync_photo_value(self, field):
+        photo = self.current.state.photo if self.current is not None else NEUTRAL_PHOTO
+        value = getattr(photo, field)
+        slider, _entry, text = self._photo_widgets[field]
+        slider.set(value)
+        formatted = f'{value:+.2f}' if field == 'exposure' and value else f'{value:+d}' if value else '0'
+        text.set(formatted.replace('.', ',') if self.settings.language == 'de' else formatted)
+
+    def _sync_photo_controls(self):
+        for field in self._photo_widgets:
+            self._sync_photo_value(field)
+        self._refresh_photo_controls()
+
+    def _refresh_photo_controls(self):
+        state = 'normal' if self._can_edit_photo() else 'disabled'
+        for slider, entry, _text in self._photo_widgets.values():
+            slider.configure(state=state, button_color=GOLD_LIGHT if state == 'normal' else TEXT_DISABLED)
+            entry.configure(state=state)
+
+    def _set_photo_value(self, field, value):
+        if self._can_edit_photo():
+            current = self.current.state.photo
+            values = vars(current).copy()
+            values[field] = value
+            self.current.state.photo = PhotoAdjustments.from_values(values)
+            self._sync_photo_value(field)
+            if self.current.state.photo != current:
+                self._schedule_state_save()
+                self._refresh_preview()
+        return 'break'
+
+    def _nudge_photo(self, field, change):
+        if self._can_edit_photo():
+            self._set_photo_value(field, getattr(self.current.state.photo, field) + change)
+        return 'break'
+
+    def _reset_photo_value(self, field):
+        return self._set_photo_value(field, 0)
+
+    def _commit_photo_entry(self, field, release):
+        if self._can_edit_photo():
+            try:
+                value = float(self._photo_widgets[field][2].get().replace(',', '.'))
+            except ValueError:
+                self._sync_photo_value(field)
+            else:
+                self._set_photo_value(field, value)
+        if release:
+            self.preview_frame.focus_set()
+        return 'break'
+
+    def _reset_photo_entry(self, field):
+        self._sync_photo_value(field)
+        self.preview_frame.focus_set()
+        return 'break'
+
     def _refresh_look_controls(self):
         if not hasattr(self, 'look_menu'):
             return
@@ -105,7 +215,6 @@ class LookControlsMixin:
         self.look_menu.configure(state='normal' if enabled else 'disabled', text_color=color)
         if not enabled:
             self.look_menu.close_popup()
-            self._reset_look_wheel()
         self.folder_settings_button.configure(state='normal' if self.busy_state == 'idle' and self.current is not None else 'disabled')
         self.look_strength_label.configure(text=self._t('look_strength',value=round(self.look_strength.get())),
                                             text_color=color)
@@ -231,24 +340,6 @@ class LookControlsMixin:
         strength = max(0, min(100, current + 5 * steps))
         if strength != current:
             self._on_look_strength(strength)
-
-    def _reset_look_wheel(self, _event=None):
-        self._look_wheel_remainder = 0
-
-    def _on_look_strength_wheel(self, event, steps=None):
-        if not self._can_step_look_strength():
-            return None
-        if steps is None:
-            delta = event.delta
-            if self._look_wheel_windows:
-                # Windows can deliver partial notches from high-resolution wheels.
-                delta += self._look_wheel_remainder
-                steps = int(delta / 120)
-                self._look_wheel_remainder = delta - 120 * steps
-            else:
-                steps = (delta > 0) - (delta < 0)
-        self._step_look_strength(steps)
-        return 'break'
 
     def _apply_look_change(self, *, persist=True):
         if self.busy_state != 'idle':

@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field, replace
+import os
 from pathlib import Path
+import sys
+from threading import Lock, local
 from typing import Callable, Iterable
 
 import numpy as np
@@ -25,6 +29,35 @@ BATCH_PREVIEW_MAX_WIDTH = 960
 BATCH_PREVIEW_MAX_HEIGHT = 640
 
 
+def _available_memory():
+    if sys.platform == 'win32':
+        import ctypes
+
+        class MemoryStatus(ctypes.Structure):
+            _fields_ = [('size', ctypes.c_uint32), ('load', ctypes.c_uint32),
+                        ('total', ctypes.c_uint64), ('available', ctypes.c_uint64),
+                        ('other', ctypes.c_uint64 * 5)]
+
+        status = MemoryStatus()
+        status.size = ctypes.sizeof(status)
+        return status.available if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)) else None
+    try:
+        return os.sysconf('SC_AVPHYS_PAGES') * os.sysconf('SC_PAGE_SIZE')
+    except (AttributeError, OSError, ValueError):
+        return None
+
+
+def batch_worker_count(loaded):
+    cpus = len(os.sched_getaffinity(0)) if hasattr(os, 'sched_getaffinity') else (os.cpu_count() or 1)
+    limit = min(4, cpus) if sys.platform == 'win32' else min(3, max(1, cpus // 2))
+    available = _available_memory()
+    if not available or available < 2 * 1024 ** 3:
+        return 1
+    pair_bytes = loaded.left.nbytes + loaded.right.nbytes
+    per_worker = max(640 * 1024 ** 2, pair_bytes * 9)
+    return max(1, min(limit, available // (2 * per_worker)))
+
+
 @dataclass(frozen=True)
 class BatchRunOptions:
     processing: ProcessingOptions = ProcessingOptions()
@@ -40,6 +73,7 @@ class BatchRunOptions:
     append_deviation_to_filename: bool = False
     save_anaglyph: bool = True
     sbs_suffix: str = "_sbs"
+    analysis_workers: int = 1
 
 
 @dataclass
@@ -118,6 +152,17 @@ def run_batch(
     """
 
     source_list = list(sources)
+    workers = max(1, min(4, options.analysis_workers, len(source_list)))
+    if workers == 1 or len(set(source_list)) != len(source_list):
+        return _run_batch(source_list, options, cancellation, progress, None, 1)
+    pool = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="StereoFine-analysis")
+    try:
+        return _run_batch(source_list, options, cancellation, progress, pool, workers)
+    finally:
+        pool.shutdown(wait=True, cancel_futures=True)
+
+
+def _run_batch(source_list, options, cancellation, progress, pool, workers):
     if not options.analysis_only:
         validate_sbs_suffix(options.sbs_suffix)
     validate_source_names(source_list, check_outputs=not options.analysis_only)
@@ -125,7 +170,6 @@ def run_batch(
     result = BatchRunResult(language=options.language)
     records: list[AnalysisRecord] = []
     path_guard = OutputPathGuard(path for source in source_list for path in (source.left_path, source.right_path))
-    directory_index = SourceDirectoryIndex()
 
     # Build the batch preview from the already existing analysis proxies.
     # Normal image export retains only the current master pair and drops
@@ -137,6 +181,24 @@ def run_batch(
         preview_max_height=BATCH_PREVIEW_MAX_HEIGHT if options.analysis_only else None,
     )
     series_options = {}
+    series_lock = Lock()
+    thread_state = local()
+    pending = {}
+
+    def analyze(source):
+        if cancellation is not None:
+            cancellation.raise_if_cancelled()
+        with series_lock:
+            root = source.input_root
+            if root not in series_options:
+                series_options[root] = replace(process_options,
+                    defaults=with_series_input(process_options.defaults, source), read_series_input=False,
+                    save_sidecar=process_options.save_sidecar and pool is None)
+            source_options = series_options[root]
+        if not hasattr(thread_state, 'directory_index'):
+            thread_state.directory_index = SourceDirectoryIndex()
+        return process_source(source, source_options, cancellation=cancellation,
+                              directory_index=thread_state.directory_index)
 
     for index, source in enumerate(source_list, start=1):
         if cancellation is not None:
@@ -144,12 +206,18 @@ def run_batch(
         if progress:
             progress(BatchProgress(index, total, source.display_name, "analysis"))
         try:
-            root = source.input_root
-            if root not in series_options:
-                series_options[root] = replace(process_options,
-                    defaults=with_series_input(process_options.defaults, source), read_series_input=False)
-            processed = process_source(source, series_options[root], cancellation=cancellation,
-                                       directory_index=directory_index)
+            if pool is None:
+                processed = analyze(source)
+            else:
+                for position in range(index, min(total + 1, index + workers)):
+                    if position not in pending:
+                        pending[position] = pool.submit(analyze, source_list[position - 1])
+                processed = pending.pop(index).result()
+                if cancellation is not None:
+                    cancellation.raise_if_cancelled()
+                if process_options.save_sidecar:
+                    save_sidecar(source.sidecar_path, processed.state.to_sidecar(
+                        source=source_stamp_to_dict(processed.source_stamp)))
             item = BatchRunItem(processed=processed)
             if progress:
                 progress(BatchProgress(index, total, source.display_name, "measured",

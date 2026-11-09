@@ -18,9 +18,9 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def archive_spec(candidate, commit, system, machine):
+def archive_spec(candidate, commit, system, machine, version="1.3"):
     if not candidate:
-        return f'StereoFine_1.3-dev_{commit[:8]}_{system}_{machine}', 'zip'
+        return f'StereoFine_{version}-dev_{commit[:8]}_{system}_{machine}', 'zip'
     if system == 'Windows' and machine.lower() in {'amd64', 'x86_64'}:
         return 'StereoFine_1.3_Windows_x64', 'zip'
     if system == 'Linux' and machine.lower() in {'amd64', 'x86_64'}:
@@ -31,8 +31,7 @@ def archive_spec(candidate, commit, system, machine):
     raise ValueError(f'Unsupported release target: {system}/{machine}')
 
 
-def require_candidate_version(root):
-    # Check both displayed versions before downloading or building anything.
+def application_version(root):
     import ast
     values = {}
     for statement in ast.parse((root/'stereofine/config.py').read_text('utf-8')).body:
@@ -40,8 +39,13 @@ def require_candidate_version(root):
             for target in statement.targets:
                 if isinstance(target, ast.Name) and target.id == 'APP_VERSION':
                     values[target.id] = ast.literal_eval(statement.value)
+    return values.get('APP_VERSION')
+
+
+def require_candidate_version(root):
+    # Check both displayed versions before downloading or building anything.
     info = (root/'version_info.txt').read_text('utf-8')
-    if (values.get('APP_VERSION') != '1.3'
+    if (application_version(root) != '1.3'
             or "StringStruct('FileVersion', '1.3')" not in info
             or "StringStruct('ProductVersion', '1.3')" not in info
             or 'flags=0x0,' not in info):
@@ -62,6 +66,7 @@ def main():
     args = parser.parse_args()
     if args.candidate:
         require_candidate_version(ROOT)
+    version = application_version(ROOT)
     build_kind = 'candidate' if args.candidate else 'development'
     if args.reuse_native_tools:
         cms_name = ('lcms2.dll' if sys.platform == 'win32' else
@@ -106,7 +111,11 @@ def main():
         target = tools_root/path.name
         if path.is_dir(): shutil.copytree(path, target)
         else: shutil.copy2(path, target)
-    for name in ('README_DE.md', 'README_EN.md', 'LICENSE.txt', 'THIRD_PARTY_NOTICES.md', 'RELEASE_NOTES_1.3.md'):
+    documents = ['README_DE.md', 'README_EN.md', 'LICENSE.txt', 'THIRD_PARTY_NOTICES.md']
+    release_notes = f'RELEASE_NOTES_{version}.md'
+    if (ROOT/release_notes).is_file():
+        documents.append(release_notes)
+    for name in documents:
         shutil.copy2(ROOT/name, package/name)
     shutil.copytree(ROOT/'licenses', package/'licenses')
     python_license = next((path for path in (
@@ -137,10 +146,10 @@ def main():
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
     marker = 'BUILD_INFO.txt' if args.candidate else 'DEVELOPMENT_BUILD.txt'
     (package/marker).write_text(
-        f'StereoFine 1.3\nCommit: {commit}\nPlatform: {platform.system()} {platform.machine()}\n'
+        f'StereoFine {version}\nCommit: {commit}\nPlatform: {platform.system()} {platform.machine()}\n'
         'Build checks and SHA-256 manifest accompany the release.\n', 'utf-8')
     label = {'win32': 'Windows', 'darwin': 'macOS'}.get(sys.platform, 'Linux')
-    name, archive_format = archive_spec(args.candidate, commit, label, platform.machine())
+    name, archive_format = archive_spec(args.candidate, commit, label, platform.machine(), version)
     output = ROOT/'release'; output.mkdir(exist_ok=True)
     if args.candidate and sys.platform == 'darwin':
         archive = output/(name+'.zip')

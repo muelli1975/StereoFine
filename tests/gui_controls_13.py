@@ -113,6 +113,27 @@ def check_visible_shortcuts(app):
     assert app.current.state.look.strength == .43
     assert app.focus_get() is app.preview_frame
 
+    app.preview_mode.set('Graustufen')
+    app._on_preview_mode_changed()
+    key('<KeyPress-x>')
+    key('<KeyRelease-x>')
+    assert app.preview_mode.get() == 'Kreuzblick'
+    key('<KeyPress-x>')
+    key('<KeyRelease-x>')
+    assert app.preview_mode.get() == 'Graustufen'
+    app.preview_mode.set('Farbig')
+    app._on_preview_mode_changed()
+
+    exposure, _entry, value = app._photo_widgets['exposure']
+    app._set_photo_value('exposure', .4)
+    assert abs(exposure.get() - .4) < .001
+    assert value.get() in ('+0.40', '+0,40')
+    assert app._flush_state_save()
+    saved_photo = json.loads(app.current.source.sidecar_path.read_text('utf-8'))['photo']
+    assert saved_photo == {'exposure': .4}
+    app._reset_photo_value('exposure')
+    assert app.current.state.photo.exposure == 0
+
     click_time = 1000
 
     def double_click():
@@ -445,7 +466,7 @@ def main():
             app.show_folder_settings()
             dialog = app._folder_dialog
             assert len(dialog.sources) == 2
-            assert set(dialog.selection) == {'aspect', 'look', 'color'}
+            assert set(dialog.selection) == {'aspect', 'look', 'color', 'white_balance'}
             assert not any(value.get() for value in dialog.selection.values())
             assert dialog.apply_button.cget('state') == 'disabled'
             dialog.update_idletasks()

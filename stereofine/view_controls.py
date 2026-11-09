@@ -296,21 +296,9 @@ class ViewControlsMixin:
         texture = self._detail_texture_cache
         cached = texture is not None and texture[0] == self._detail_texture_signature()
         if not cached:
-            # The worker prepares the exact native, graded and masked texture.
-            # Retain the last visible frame until it is ready; never run a full
-            # native LUT/anaglyph conversion on the UI thread.
             self._request_detail_texture()
             return
-        if cached:
-            if mode == 'Kreuzblick':
-                x, y, x1, y1 = box
-                eyes = [texture[1].resize(display, Image.Resampling.LANCZOS, box=box),
-                        texture[1].resize(display, Image.Resampling.LANCZOS,
-                                          box=(x+size[0], y, x1+size[0], y1))]
-                image = Image.new('RGB', (display[0]*2, display[1]))
-                image.paste(eyes[0], (0, 0)); image.paste(eyes[1], (display[0], 0))
-            else:
-                image = texture[1].resize(display, Image.Resampling.LANCZOS, box=box)
+        image = texture[1].copy()
         grid_scale = display[0]/(box[2]-box[0]), display[1]/(box[3]-box[1])
         if self.grid_mode.get() != 'Aus' and not self.measure_cross_active:
             if mode == 'Kreuzblick':

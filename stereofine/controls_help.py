@@ -39,6 +39,7 @@ Schwebendes Scheinfenster
 
 Vorschau und Hilfe
   A                        Farbig/Graustufen/Kreuzblick
+  X                        Kreuzblick / letzte Anaglyphenansicht
   C                        LUT ein-/ausschalten
   C halten + ←/→           Vorherigen/nächsten LUT-Look wählen
   C halten + ↑/↓           LUT-Stärke um 5 Prozentpunkte ändern
@@ -87,6 +88,7 @@ Floating Window
 
 Preview and help
   A                        Color/Grayscale/Cross-view
+  X                        Cross-view / last anaglyph view
   C                        Toggle LUT
   Hold C + ←/→             Select previous/next LUT look
   Hold C + ↑/↓             Adjust LUT strength by 5 percentage points

@@ -9,8 +9,11 @@ from .models import FileStamp, SourceStamp
 from .preferences import inherit_missing_preferences, with_series_input
 from .processing import ProcessingDefaults
 from .sidecar import SidecarLoadResult, SidecarStatus, load_sidecar, save_sidecar, source_matches, source_stamp_to_dict
-from .sources import StereoSource, build_source_stamp, load_source, source_from_pair, source_from_stereo_file
+from .sources import (StereoSource, build_source_stamp, load_source, source_from_pair,
+                      source_from_stereo_file, validate_source_files)
 from .state import InputTransformState, PairState
+
+DECODED_CACHE_LIMIT = 160 * 1024 ** 2
 
 
 @dataclass
@@ -76,7 +79,37 @@ def _apply_defaults(state: PairState, defaults: ProcessingDefaults) -> None:
                            defaults.look_path, defaults.look_strength).normalize()
 
 
-def browse_source(source: StereoSource, defaults: ProcessingDefaults = ProcessingDefaults()) -> BrowsedSource:
+def decode_browsable_source(source):
+    loaded = load_source(source)
+    return loaded, build_source_stamp(source, loaded)
+
+
+def preload_browsable_source(source):
+    from PIL import Image
+
+    estimate = 0
+    for path in dict.fromkeys((source.left_path, source.right_path)):
+        with Image.open(path) as header:
+            bytes_per_pixel = 3 if header.format in {'JPEG', 'MPO', 'BMP', 'WEBP'} else 6
+            if header.format == 'PNG':
+                # The bit depth follows the width and height in the PNG IHDR.
+                with path.open('rb') as file:
+                    file.seek(24)
+                    if file.read(1) in {b'\x01', b'\x02', b'\x04', b'\x08'}:
+                        bytes_per_pixel = 3
+            elif header.format == 'TIFF':
+                bits = header.tag_v2.get(258, (1,))
+                if max(bits if isinstance(bits, tuple) else (bits,)) <= 8:
+                    bytes_per_pixel = 3
+            views = 2 if source.kind == 'mpo' else 1
+            estimate += header.width * header.height * bytes_per_pixel * views
+    if estimate <= DECODED_CACHE_LIMIT:
+        return decode_browsable_source(source)
+    return None
+
+
+def browse_source(source: StereoSource, defaults: ProcessingDefaults = ProcessingDefaults(),
+                  *, decoded=None) -> BrowsedSource:
     """Load a source transactionally and restore sidecar state without analysis.
 
     This is the lightweight path used while browsing. A valid schema-3 sidecar
@@ -85,8 +118,11 @@ def browse_source(source: StereoSource, defaults: ProcessingDefaults = Processin
     """
 
     defaults = with_series_input(defaults, source)
-    loaded = load_source(source)
-    stamp = build_source_stamp(source, loaded)
+    if decoded is not None and build_source_stamp(source, decoded[0]) == decoded[1]:
+        validate_source_files(source)
+        loaded, stamp = decoded
+    else:
+        loaded, stamp = decode_browsable_source(source)
     sidecar = load_sidecar(source.sidecar_path, expected_source=stamp)
 
     if sidecar.document is not None and sidecar.status == SidecarStatus.VALID:

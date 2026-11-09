@@ -46,6 +46,7 @@ class SidecarDocument:
     disparity: dict[str, Any] = field(default_factory=dict)
     color: dict[str, Any] = field(default_factory=dict)
     look: dict[str, Any] = field(default_factory=dict)
+    photo: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
@@ -69,6 +70,7 @@ class SidecarDocument:
             disparity=dict(data.get("disparity") or {}),
             color=dict(data.get("color") or {}),
             look=dict(data.get("look") or {}),
+            photo=dict(data.get("photo") or {}),
         )
 
 

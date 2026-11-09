@@ -23,6 +23,8 @@ from .render import _stable_digest, render_final_pair, match_final_pair_color
 from .state import reproducible_alignment_correction
 from .worker import WorkerManager, WorkerMessageKind
 from .look_controls import preview_look
+from .photo import NEUTRAL_PHOTO, apply_photo_look
+from .viewport_render import render_viewport
 
 MEASURE_REPEAT_MS = 16
 MEASURE_HOLD_DELAY_MS = 200
@@ -63,24 +65,30 @@ def fit_display_pair(left, right, bounds):
                  for eye in (left, right))
 
 
-def detail_texture_key(key, window, mode, look=None):
+def detail_texture_key(key, window, mode, look=None, photo=NEUTRAL_PHOTO, viewport=None):
     from .looks import look_signature
-    return key, tuple(asdict(window).items()), mode, look_signature(look)
+    return key, tuple(asdict(window).items()), mode, look_signature(look), photo, viewport
 
 
-def prepare_detail_texture(key, left, right, window, mode, token, look=None):
+def prepare_detail_texture(key, left, right, window, mode, token, look=None, photo=NEUTRAL_PHOTO, viewport=None):
     token.raise_if_cancelled()
-    from .looks import apply_pair_look
-    left, right = apply_pair_look(left, right, look)
+    signature = detail_texture_key(key, window, mode, look, photo, viewport)
+    if viewport is not None:
+        image = render_viewport(left, right, window, mode, viewport,
+                                lambda a, b: apply_photo_look(a, b, photo, look))
+        token.raise_if_cancelled()
+        return signature, image
+    left, right = apply_photo_look(left, right, photo, look)
     a, b = apply_floating_window_masks(left, right, window.left_permille,
         window.right_permille, window.top_permille, window.bottom_permille)
     pixels = (np.concatenate([b, a], axis=1) if mode == 'Kreuzblick' else
               make_anaglyph(a, b, gray=mode == 'Graustufen'))
     token.raise_if_cancelled()
-    return detail_texture_key(key, window, mode, look), Image.fromarray(pixels)
+    return signature, Image.fromarray(pixels)
 
 
-def prepare_native_preview(loaded, state, key, bounds, token, mode='Farbig', *, preview_base=None):
+def prepare_native_preview(loaded, state, key, bounds, token, mode='Farbig', *, preview_base=None,
+                           aligned_pair=None):
     """Prepare both fitted views from one master crop, retaining one native pair.
 
     Only the small fitted variants are kept for instant colour toggles. Native
@@ -90,9 +98,11 @@ def prepare_native_preview(loaded, state, key, bounds, token, mode='Farbig', *, 
     if (preview_base is not None and (preview_base.source_token != id(loaded)
             or preview_base.geometry_key != preview_geometry_key(state))):
         preview_base = None
+        aligned_pair = None
     working_bounds = (min(1600, max(320, bounds[0])), min(1000, max(240, bounds[1])))
     left, right, info = render_final_pair(loaded, state, apply_color=False, apply_floating_window=False,
-                                         preview_bounds=working_bounds if preview_base is None else None)
+                                         preview_bounds=working_bounds if preview_base is None else None,
+                                         aligned_pair=aligned_pair, retain_aligned=True)
     if preview_base is None:
         preview_base = info.preview_base
     token.raise_if_cancelled()
@@ -110,7 +120,7 @@ def prepare_native_preview(loaded, state, key, bounds, token, mode='Farbig', *, 
     # Publish the fitted result first. The separate detail worker warms its
     # texture afterwards; normal editing never waits for a full-size anaglyph.
     views = (key[0], state.color.strength, {False: plain_fit, True: matched_fit}, state.color,
-             bounds, None, preview_base)
+             bounds, None, preview_base, info.aligned_pair)
     return key, *native, state.color, views
 
 
@@ -207,14 +217,17 @@ class NativePreviewMixin:
                 fitted = fit_display_pair(*cached[1:], bounds)
                 token.raise_if_cancelled()
                 base = old_views[6] if old_views is not None and len(old_views) > 6 else None
+                aligned_pair = old_views[7] if old_views is not None and len(old_views) > 7 else None
                 views = (key[0], state.color.strength, {state.color.enabled: fitted}, state.color,
-                         bounds, None, base)
+                         bounds, None, base, aligned_pair)
                 return *cached, state.color, views
         else:
-            base = (self._preview_base if getattr(self, '_preview_base_session_id', None) == id(self.current)
-                    else None)
+            same_session = old_views is not None and old_views[0][0] == id(self.current)
+            base = old_views[6] if same_session and len(old_views) > 6 else None
+            aligned_pair = old_views[7] if same_session and len(old_views) > 7 else None
             def render(token, _progress):
-                return prepare_native_preview(loaded, state, key, bounds, token, mode, preview_base=base)
+                return prepare_native_preview(loaded, state, key, bounds, token, mode,
+                                              preview_base=base, aligned_pair=aligned_pair)
 
         self._native_running_key = key
         self._native_job_id = self._native_worker.start(render, name='StereoFine-native-preview').job_id
@@ -342,15 +355,22 @@ class NativePreviewMixin:
         self._mode_release_ids[mode] = self.after_idle(released)
 
     def _mask_preview_pair(self, left, right, **kwargs):
-        from .looks import apply_pair_look
-        left, right = apply_pair_look(left, right, preview_look(self))
+        left, right = apply_photo_look(left, right, self.current.state.photo, preview_look(self))
         fw = self.current.state.floating_window
         return apply_floating_window_masks(left, right, fw.left_permille, fw.right_permille,
                                            fw.top_permille, fw.bottom_permille, **kwargs)
 
+    def _inspection_texture_viewport(self):
+        view = getattr(self, '_inspection_view', None)
+        if self.detail_active or view is None or not view.active or self._native_cache is None:
+            return None
+        height, width = self._native_cache[1].shape[:2]
+        return view.layout((width, height), self._view_viewport())
+
     def _detail_texture_signature(self):
         return detail_texture_key(native_key(self.current), self.current.state.floating_window,
-                                  self._effective_preview_mode(), preview_look(self))
+                                  self._effective_preview_mode(), preview_look(self),
+                                  self.current.state.photo, self._inspection_texture_viewport())
 
     def _request_detail_texture(self):
         if self._detail_texture_cache is not None and self._detail_texture_cache[0] == self._detail_texture_signature():
@@ -365,12 +385,16 @@ class NativePreviewMixin:
                 or self._native_cache[0] != native_key(self.current) or self._detail_texture_job_id):
             return
         key, left, right = self._native_cache
+        viewport = self._inspection_texture_viewport()
+        if viewport is None and not self.detail_active and left.shape[0] * left.shape[1] > 2_000_000:
+            return
         window = deepcopy(self.current.state.floating_window)
         mode = self._effective_preview_mode()
         look = deepcopy(preview_look(self))
-        self._detail_texture_running_key = detail_texture_key(key, window, mode, look)
+        photo = self.current.state.photo
+        self._detail_texture_running_key = detail_texture_key(key, window, mode, look, photo, viewport)
         def render(token, _progress):
-            return prepare_detail_texture(key, left, right, window, mode, token, look)
+            return prepare_detail_texture(key, left, right, window, mode, token, look, photo, viewport)
         self._detail_texture_job_id = self._detail_texture_worker.start(render,
             name='StereoFine-detail-texture').job_id
         self._detail_texture_poll_id = self.after(16, self._poll_detail_texture)

@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ReleaseHygieneTests(unittest.TestCase):
     def test_public_version_agrees_with_windows_metadata(self):
-        self.assertEqual(APP_VERSION, '1.3')
+        self.assertEqual(APP_VERSION, '1.4')
         text = (ROOT/'version_info.txt').read_text(encoding='utf-8')
         for field in ['FileVersion', 'ProductVersion']:
             self.assertIn(f"StringStruct('{field}', '{APP_VERSION}')", text)

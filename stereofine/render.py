@@ -7,6 +7,8 @@ from typing import Any
 
 import numpy as np
 
+from .photo import NEUTRAL_PHOTO, apply_photo_look
+
 from .alignment import warp_pair_symmetric
 from .color_transfer import COLOR_METHOD, SymmetricColorTransfer, apply_symmetric_color_transfer, fit_symmetric_color_transfer
 from .config import CROP_ZOOM_LEVELS
@@ -32,6 +34,7 @@ class RenderInfo:
     aligned_shape: tuple[int, int] | None = None
     output_icc_profile: bytes | None = None
     input_aspect: float | None = None
+    aligned_pair: Any = None
 
 
 def _stable_digest(value: Any) -> str:
@@ -95,6 +98,8 @@ def render_final_pair(
     apply_color: bool = True,
     apply_floating_window: bool = True,
     preview_bounds: tuple[int, int] | None = None,
+    aligned_pair=None,
+    retain_aligned: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, RenderInfo]:
     """Render the current reproducible StereoFine pair from master data.
 
@@ -106,11 +111,15 @@ def render_final_pair(
     last because they are presentation masks, not scene content.
     """
 
-    left, right = _oriented_pair(loaded, state)
-    # "Original" refers to the oriented source, as it does in preview and
-    # disparity analysis, before alignment/overlap remove any border pixels.
-    input_aspect = left.shape[1] / max(1, left.shape[0])
-    left, right = warp_pair_symmetric(left, right, state.alignment.correction)
+    if aligned_pair is None:
+        left, right = _oriented_pair(loaded, state)
+        # "Original" is the oriented source, before alignment/overlap.
+        input_aspect = left.shape[1] / max(1, left.shape[0])
+        left, right = warp_pair_symmetric(left, right, state.alignment.correction)
+        if retain_aligned and left.nbytes + right.nbytes <= 160 * 1024 ** 2:
+            aligned_pair = left, right, input_aspect
+    else:
+        left, right, input_aspect = aligned_pair
     aligned_shape = left.shape[:2]
     preview_base = None
     if preview_bounds is not None:
@@ -150,13 +159,12 @@ def render_final_pair(
         color_applied = True
 
     output_profile = loaded.icc_profile
-    if apply_color and state.look.enabled and state.look.strength > 0:
+    if apply_color and (state.photo != NEUTRAL_PHOTO or (state.look.enabled and state.look.strength > 0)):
         from .color_profiles import transform_rgb
-        from .looks import apply_pair_look
         # LUTs operate on display-referred sRGB, before presentation masks.
         left = transform_rgb(left, output_profile)
         right = transform_rgb(right, output_profile)
-        left, right = apply_pair_look(left, right, state.look)
+        left, right = apply_photo_look(left, right, state.photo, state.look)
         output_profile = None  # None is the established sRGB contract.
 
     if apply_floating_window:
@@ -179,5 +187,6 @@ def render_final_pair(
         aligned_shape=aligned_shape,
         output_icc_profile=output_profile,
         input_aspect=input_aspect,
+        aligned_pair=aligned_pair,
     )
 

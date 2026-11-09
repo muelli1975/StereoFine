@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import queue
+from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from dataclasses import asdict, dataclass, replace
 import re
@@ -18,7 +19,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageTk
 
 from .anaglyph import make_anaglyph
-from .batch import BatchRunOptions, BatchRunResult, run_batch
+from .batch import BatchRunOptions, BatchRunResult, batch_worker_count, run_batch
 from .config import (
     APP_NAME,
     APP_VERSION,
@@ -55,8 +56,10 @@ from .preferences import save_series_input
 from .processing import ProcessingDefaults, ProcessingOptions, process_source
 from .resources import asset_path
 from .session import (
+    DECODED_CACHE_LIMIT,
     BrowsedSource,
     browse_source,
+    preload_browsable_source,
     is_saved_favorite,
     save_browsed_state,
     source_from_selected_pair_image,
@@ -244,6 +247,10 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.favorites_only = ctk.BooleanVar(value=False)
         self.float_lr_symmetric = ctk.BooleanVar(value=False)
         self._init_look_controls()
+        self._prefetch_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix='StereoFine-preload')
+        self._prefetched = None
+        self._previous_decoded = None
+        self._browse_step = 1
         self._init_view_controls()
 
         self.measure_cross_active = False
@@ -618,6 +625,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
 
         self.color_match_box = self._checkbox(self.sidebar, self._t("color_match"), self.color_match_enabled, self._on_color_match_changed)
         self.color_match_box.grid(row=row, column=0, sticky="w", padx=20, pady=(0, 8)); row += 1
+        row = self._build_photo_controls(self.sidebar, row)
         row = self._build_look_controls(self.sidebar, row)
 
         self.tiff_sbs_box = self._checkbox(
@@ -1326,6 +1334,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self._update_grid_control_state()
         self._update_favorite_star()
         self._refresh_look_controls()
+        self._refresh_photo_controls()
 
     def _update_start_button_text(self) -> None:
         if self.busy_state != "idle":
@@ -1686,6 +1695,9 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         )
         if self.current is not None and not self._flush_state_save(explicit=True):
             return
+        self._drop_prefetch()
+        self._previous_decoded = None
+        self._browse_step = 1
         self.sources = list(sources)
         self.source_index = target_index
         self._favorite_indices = None
@@ -1711,6 +1723,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         if self.busy_state == 'idle':
             index = self._navigation_index(step)
             if index is not None and self._flush_state_save(explicit=True):
+                self._browse_step = step
                 self._load_source_index(index, inherit_look=True)
         return 'break'
 
@@ -1719,6 +1732,24 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
 
     def next_source(self, event=None):
         return self._navigate_source(1)
+
+    def _drop_prefetch(self):
+        if self._prefetched is not None:
+            self._prefetched[1].cancel()
+            self._prefetched = None
+
+    def _prefetch_neighbor(self):
+        self._drop_prefetch()
+        index = self._navigation_index(self._browse_step)
+        if index is None or self.current is None:
+            return
+        loaded = self.current.loaded_pair
+        if loaded.left.nbytes + loaded.right.nbytes > DECODED_CACHE_LIMIT:
+            return
+        source = self.sources[index]
+        if source.kind == 'heif' or (self._previous_decoded and source == self._previous_decoded[0]):
+            return
+        self._prefetched = source, self._prefetch_pool.submit(preload_browsable_source, source)
 
     def _load_source_index(
         self,
@@ -1756,8 +1787,23 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         bounds = self._preview_bounds()
         mode = self._effective_preview_mode()
 
+        cached = self._previous_decoded
+        future = self._prefetched[1] if self._prefetched and source == self._prefetched[0] else None
+        if future is not None:
+            self._prefetched = None
+        else:
+            self._drop_prefetch()
+
         def job(token, _progress):
-            session = browse_source(source, defaults)
+            decoded = cached[1] if cached and cached[0] == source else None
+            if decoded is None and future is not None:
+                try:
+                    decoded = future.result()
+                except Exception:
+                    pass  # Let the normal loader report any persistent error.
+            token.raise_if_cancelled()
+            session = (browse_source(source, defaults, decoded=decoded) if decoded is not None
+                       else browse_source(source, defaults))
             return self._prepare_session_preview(session, bounds, token, mode)
 
         self._start_worker("load", self._t("loading"), job)
@@ -1828,6 +1874,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.output_aspect.set(state.framing.aspect)
         self.color_match_enabled.set(state.color.enabled)
         self._sync_look_from_current()
+        self._sync_photo_controls()
         self._sync_localized_display_vars()
         # Analysis method is a processing preference, not a per-image GUI
         # default. The status area still shows the method used by this sidecar.
@@ -2264,6 +2311,9 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
                     or self._native_views_need_resize()):
                 self._request_native_preview()
             return
+        if not start_image and session is self.current and self._inspection_view.active:
+            self._request_native_preview(immediate=True)
+            return
         base = self._ensure_preview_base(session, start_image=start_image)
         state = session.state
         if getattr(self, '_look_hover_state', None) is not None and session is self.current:
@@ -2477,6 +2527,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             return
         options = BatchRunOptions(
             processing=self._processing_options(keep_loaded_pair=False, use_batch_defaults=True),
+            analysis_workers=batch_worker_count(self.current.loaded_pair),
             analysis_only=bool(self.analysis_only.get()),
             favorites_only=bool(self.favorites_only.get()),
             output_folder=output_folder,
@@ -2490,8 +2541,12 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             append_deviation_to_filename=bool(self.append_deviation_to_filename.get()),
         )
 
+        self._drop_prefetch()
+        self._previous_decoded = None
+        sources = tuple(self.sources)
+
         def job(token, progress):
-            return run_batch(self.sources, options, cancellation=token, progress=progress)
+            return run_batch(sources, options, cancellation=token, progress=progress)
 
         text = self._t("analysis_running") if self.analysis_only.get() else self._t("batch_running")
         self._start_worker("batch", text, job)
@@ -2630,6 +2685,13 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         if kind in {"load", "analysis"} and isinstance(payload, BrowsedSource):
             if kind == "load":
                 self._load_rollback_context = None
+                old = self.current
+                if old is not None and old.source != payload.source and old.source in self.sources:
+                    loaded = old.loaded_pair
+                    if loaded.left.nbytes + loaded.right.nbytes <= DECODED_CACHE_LIMIT:
+                        self._previous_decoded = old.source, (loaded, old.source_stamp)
+                    else:
+                        self._previous_decoded = None
             self.current = payload
             self._state_dirty = False
             self._state_dirty_can_create_sidecar = False
@@ -2639,6 +2701,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             self._refresh_control_states()
             if kind == "load":
                 self._schedule_disparity_refresh()
+                self._prefetch_neighbor()
             else:
                 play_ready_sound(asset_path("ready.wav"))
             self._release_sbs_suffix_focus()
@@ -2809,6 +2872,9 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         for key in ('c', 'C'):
             bind(f'<KeyPress-{key}>', self._on_look_key_press)
             bind(f'<KeyRelease-{key}>', self._on_look_key_release)
+        for key in ('x', 'X'):
+            bind_all(f'<KeyPress-{key}>', self._on_x)
+            bind_all(f'<KeyRelease-{key}>', lambda e: self._release_shortcut_key('x'))
         bind_all("<f>", self._on_f)
         bind_all("<F>", self._on_f)
         bind_all("<KeyRelease-f>", lambda e: self._release_shortcut_key("f"))
@@ -3020,6 +3086,13 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.preview_mode.set(modes[(modes.index(self.preview_mode.get()) + 1) % len(modes)])
         self._on_preview_mode_changed()
         return "break"
+
+    def _on_x(self, event=None):
+        if self.busy_state == 'idle' and self._claim_shortcut_key('x', event):
+            mode = self._last_anaglyph_preview_mode if self.preview_mode.get() == 'Kreuzblick' else 'Kreuzblick'
+            self.preview_mode.set(mode)
+            self._on_preview_mode_changed()
+        return 'break'
 
     def _on_f(self, event=None):
         if self.busy_state != "idle" or not self._claim_shortcut_key("f", event):
@@ -3329,6 +3402,10 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self._persist_settings()
         self.destroy()
 
+    def destroy(self):
+        self._prefetch_pool.shutdown(wait=False, cancel_futures=True)
+        super().destroy()
+
 
     def report_callback_exception(self, exc_type, exc, tb):
         log_failure("Tk callback", exc, detail="".join(traceback.format_exception(exc_type, exc, tb)))
@@ -3337,6 +3414,9 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
 
 def run() -> None:
     try:
+        import cv2
+
+        cv2.setNumThreads(min(cv2.getNumThreads(), 4 if sys.platform == 'win32' else 8))
         app = StereoFineApp()
         app.mainloop()
     except Exception as exc:

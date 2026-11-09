@@ -11,6 +11,7 @@ import tempfile
 from .config import SIDECAR_SCHEMA_VERSION
 from .diagnostics import log_event, log_failure
 from .models import FileStamp
+from .photo import PhotoAdjustments
 from .sidecar import SidecarDocument
 from .sources import validate_source_names
 from .state import LookState
@@ -21,11 +22,13 @@ class FolderChoices:
     aspect: str | None = None
     look: LookState | None = None
     color_enabled: bool | None = None
+    white_balance: tuple[int, int] | None = None
 
     @property
     def selected(self):
         return {name for name, value in (('aspect', self.aspect), ('look', self.look),
-                                         ('color', self.color_enabled)) if value is not None}
+                                         ('color', self.color_enabled),
+                                         ('white_balance', self.white_balance)) if value is not None}
 
 
 @dataclass
@@ -85,6 +88,18 @@ def _patch_preferences(raw, choices):
             result['look'] = asdict(deepcopy(choices.look).normalize())
         else:
             result.pop('look', None)
+    if choices.white_balance is not None:
+        temperature, tint = choices.white_balance
+        balance = PhotoAdjustments.from_values({'temperature': temperature, 'tint': tint})
+        photo = result.setdefault('photo', {})
+        for name in ('temperature', 'tint'):
+            value = getattr(balance, name)
+            if value:
+                photo[name] = value
+            else:
+                photo.pop(name, None)
+        if not photo:
+            result.pop('photo')
     return result
 
 

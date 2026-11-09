@@ -164,13 +164,16 @@ class SourceDirectoryIndex:
         validate_unique_image_stems(matches)
 
 
-def load_source(source: StereoSource, *, directory_index: SourceDirectoryIndex | None = None) -> LoadedStereoPair:
-    """Load a discovered StereoSource transactionally into master arrays."""
-    # Also cover single-file/API entry points and files added after discovery.
+def validate_source_files(source: StereoSource, directory_index: SourceDirectoryIndex | None = None) -> None:
     index = directory_index or SourceDirectoryIndex()
     for path in dict.fromkeys((source.left_path, source.right_path)):
         is_supported = is_image_file if source.kind == "pair" else is_stereo_single_file
         index.validate(path, is_supported)
+
+
+def load_source(source: StereoSource, *, directory_index: SourceDirectoryIndex | None = None) -> LoadedStereoPair:
+    """Load a discovered StereoSource transactionally into master arrays."""
+    validate_source_files(source, directory_index)
     if source.kind == "pair":
         return load_pair(source.left_path, source.right_path)
     if source.kind == "mpo":

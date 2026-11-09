@@ -1,0 +1,19 @@
+name: StereoFine 1.4 Windows test build
+
+on:
+  push:
+    branches: [development/1.4]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stereofine-1.4-windows-test
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    uses: ./.github/workflows/validate-development.yml
+    with:
+      windows_only: true
