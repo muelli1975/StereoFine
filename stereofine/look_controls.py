@@ -246,7 +246,12 @@ class LookControlsMixin:
         return applied
 
     def _cycle_look(self, step):
-        if self.current is None or self.busy_state != 'idle' or not self.look_enabled.get():
+        if self.current is None or self.busy_state != 'idle':
+            return
+        if not self.look_enabled.get():
+            self.look_checkbox.toggle()
+            if self.look_enabled.get():
+                self._show_look_notice()
             return
         entries = builtin_looks()
         if not entries:

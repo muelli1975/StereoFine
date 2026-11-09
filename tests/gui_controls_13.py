@@ -83,13 +83,30 @@ def check_visible_shortcuts(app):
     key('<KeyPress-c>')
     key('<KeyPress-Left>')
     key('<KeyRelease-Left>')
+    assert app.current.state.look.enabled and app.current.state.look.preset_id == 'blue_ice'
+    assert app.current.state.look.strength == .43
+    assert app._look_notice and app._look_notice_text() == 'LUT: Blue Ice · 43 %'
     key('<KeyRelease-c>')
     pump(app, lambda: 'c' not in app._shortcut_keys_down)
-    assert not app.current.state.look.enabled and app.current.state.look.preset_id == 'blue_ice'
-    assert asdict(app.current.state.manual) == manual_before
+    assert app.current.state.look.enabled
+
     tap_c()
-    assert app.current.state.look.enabled and app.current.state.look.strength == .43
+    assert not app.current.state.look.enabled
+    key('<KeyPress-c>')
+    key('<KeyPress-Right>')
+    key('<KeyRelease-Right>')
+    assert app.current.state.look.enabled and app.current.state.look.preset_id == 'blue_ice'
+    key('<KeyPress-Left>')
+    key('<KeyRelease-Left>')
+    assert app.current.state.look.preset_id == 'blue_house'
+    key('<KeyPress-Right>')
+    key('<KeyRelease-Right>')
+    key('<KeyRelease-c>')
+    pump(app, lambda: 'c' not in app._shortcut_keys_down)
+    assert app.current.state.look.enabled and app.current.state.look.preset_id == 'blue_ice'
+    assert app.current.state.look.strength == .43
     assert app._look_notice and app._look_notice_text() == 'LUT: Blue Ice · 43 %'
+    assert asdict(app.current.state.manual) == manual_before
 
     key('<KeyPress-c>')
     key('<KeyPress-Up>')
@@ -363,7 +380,7 @@ def main():
             assert app.look_menu.cget('values')[-2:] == ['Sam Kolder', 'Import (.cube, .png)']
             assert app.look_choice.get() == app.look_menu.cget('values')[0]
             assert not app.current.state.look.enabled
-            app.look_checkbox.toggle()
+            app._cycle_look(-1)
             assert app.current.state.look.enabled and app.current.state.look.preset_id == builtin_looks()[0]['id']
             app._cycle_look(-1)
             assert app.current.state.look.preset_id == builtin_looks()[-1]['id']
@@ -518,7 +535,7 @@ def main():
                         'Menü, Hilfe oder Messmodus schließen. Sonst bei Zoom die Ansicht einpassen '
                         'oder bei eingepasster Ansicht das Vollbild verlassen.',
                         'Kontextmenü öffnen (Disparitätsmesser bei Anaglyphen)',
-                        'LUT ein-/ausschalten', 'Vorherigen/nächsten LUT-Look wählen',
+                        'LUT ein-/ausschalten', 'LUT einschalten, dann durch Looks blättern',
                         'LUT-Stärke um 5 Prozentpunkte ändern',
                         'Bildbearbeitungsregler über Schiene oder Griff verstellen',
                         'Bildbearbeitungsregler auf Standardwert zurücksetzen',
@@ -530,7 +547,7 @@ def main():
                         'Close the menu, help or measurement mode. Otherwise fit the zoomed view, '
                         'or exit fullscreen if already fitted.',
                         'Open context menu (disparity meter in anaglyph views)',
-                        'Toggle LUT', 'Select previous/next LUT look',
+                        'Toggle LUT', 'Enable LUT, then browse looks',
                         'Adjust LUT strength by 5 percentage points',
                         'Adjust the image editing slider over its track or handle',
                         'Reset an image editing slider to its default',

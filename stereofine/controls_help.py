@@ -41,7 +41,7 @@ Vorschau und Hilfe
   A                        Farbig/Graustufen/Kreuzblick
   X                        Kreuzblick / letzte Anaglyphenansicht
   C                        LUT ein-/ausschalten
-  C halten + ←/→           Vorherigen/nächsten LUT-Look wählen
+  C halten + ←/→           LUT einschalten, dann durch Looks blättern
   C halten + ↑/↓           LUT-Stärke um 5 Prozentpunkte ändern
   Mausrad                  Bildbearbeitungsregler über Schiene oder Griff verstellen
   Doppelklick              Bildbearbeitungsregler auf Standardwert zurücksetzen
@@ -91,7 +91,7 @@ Preview and help
   A                        Color/Grayscale/Cross-view
   X                        Cross-view / last anaglyph view
   C                        Toggle LUT
-  Hold C + ←/→             Select previous/next LUT look
+  Hold C + ←/→             Enable LUT, then browse looks
   Hold C + ↑/↓             Adjust LUT strength by 5 percentage points
   Mouse wheel              Adjust the image editing slider over its track or handle
   Double click             Reset an image editing slider to its default
