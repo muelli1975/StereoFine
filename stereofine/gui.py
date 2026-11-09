@@ -2766,7 +2766,7 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
             return self._prepare_session_preview(session, bounds, token, mode)
 
         self._start_worker("analysis", self._t("alignment_running"), job,
-                           show_calculation=geometry is not None and not reset_manual_edits)
+                           show_calculation=geometry is not None)
 
     def _start_batch_run(self) -> None:
         if not self.sources:

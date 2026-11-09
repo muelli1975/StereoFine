@@ -392,8 +392,10 @@ def check_visible_shortcuts(app):
     app._schedule_state_save()
     app.preview_frame.event_generate('<Control-KeyPress-r>')
     assert app.current_job_kind == 'analysis'
+    assert status.cget('text') == app._t('status_calculating')
     key('<KeyRelease-r>')
     pump(app, lambda: app.busy_state == 'idle')
+    assert status.cget('text') != app._t('status_calculating')
     assert not app.current.state.geometry.active
     assert app.current.state.framing.crop_zoom_index == 0
     assert app._inspection_view.scale == previous_scale
