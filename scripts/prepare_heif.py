@@ -12,9 +12,14 @@ import urllib.request
 
 
 def download_source(entry):
-    for attempt in range(3):
+    # The release-assets API supplies the same archive through an independent
+    # redirect. Keep the upstream URL as a fallback and always verify the pin.
+    upstream = entry['url']
+    asset = entry.get('asset_url', upstream)
+    for attempt, url in enumerate((asset, upstream, asset)):
         try:
-            with urllib.request.urlopen(entry['url'], timeout=60) as response:
+            request = urllib.request.Request(url, headers={'Accept': 'application/octet-stream'})
+            with urllib.request.urlopen(request, timeout=60) as response:
                 data = response.read()
             if len(data) == entry['size'] and hashlib.sha256(data).hexdigest() == entry['sha256']:
                 return data
