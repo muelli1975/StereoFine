@@ -7,7 +7,7 @@ from typing import Any
 
 import numpy as np
 
-from .photo import NEUTRAL_PHOTO, apply_photo_look
+from .exposure import apply_exposure_and_look
 
 from .alignment import warp_pair_symmetric
 from .color_transfer import COLOR_METHOD, SymmetricColorTransfer, apply_symmetric_color_transfer, fit_symmetric_color_transfer
@@ -159,12 +159,12 @@ def render_final_pair(
         color_applied = True
 
     output_profile = loaded.icc_profile
-    if apply_color and (state.photo != NEUTRAL_PHOTO or (state.look.enabled and state.look.strength > 0)):
+    if apply_color and (state.exposure or (state.look.enabled and state.look.strength > 0)):
         from .color_profiles import transform_rgb
         # LUTs operate on display-referred sRGB, before presentation masks.
         left = transform_rgb(left, output_profile)
         right = transform_rgb(right, output_profile)
-        left, right = apply_photo_look(left, right, state.photo, state.look)
+        left, right = apply_exposure_and_look(left, right, state.exposure, state.look)
         output_profile = None  # None is the established sRGB contract.
 
     if apply_floating_window:

@@ -15,6 +15,7 @@ from .config import (
     INPUT_PIPELINE_VERSION,
     SIDECAR_SCHEMA_VERSION,
 )
+from .exposure import normalize_exposure
 from .models import FileStamp, SourceStamp
 
 
@@ -46,10 +47,13 @@ class SidecarDocument:
     disparity: dict[str, Any] = field(default_factory=dict)
     color: dict[str, Any] = field(default_factory=dict)
     look: dict[str, Any] = field(default_factory=dict)
-    photo: dict[str, Any] = field(default_factory=dict)
+    exposure: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
+        exposure = data.pop("exposure")
+        if exposure:
+            data["photo"] = {"exposure": exposure}
         data["schema_version"] = SIDECAR_SCHEMA_VERSION
         return {key: value for key, value in data.items() if value}
 
@@ -70,7 +74,7 @@ class SidecarDocument:
             disparity=dict(data.get("disparity") or {}),
             color=dict(data.get("color") or {}),
             look=dict(data.get("look") or {}),
-            photo=dict(data.get("photo") or {}),
+            exposure=normalize_exposure(dict(data.get("photo") or {}).get("exposure", 0.0)),
         )
 
 

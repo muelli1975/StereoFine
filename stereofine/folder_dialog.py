@@ -7,7 +7,7 @@ import customtkinter as ctk
 
 from .config import APP_NAME
 from .folder_settings import FolderChoices, FolderProgress, apply_folder_preferences
-from .i18n import aspect_label
+from .i18n import aspect_label, format_exposure
 from .looks import builtin_looks, look_label
 from .sources import discover_pair_sources, discover_stereo_file_sources
 from .theme import APP_BG, SECONDARY_BG, BORDER, HOVER_BG, TEXT_PRIMARY, TEXT_SECONDARY, GOLD_DARK, GOLD_LIGHT
@@ -25,12 +25,11 @@ class FolderSettingsDialog(ctk.CTkToplevel):
         self.protocol('WM_DELETE_WINDOW', self.cancel)
         self.bind('<Escape>', lambda e: self.cancel())
         self.bind('<Return>', lambda e: self.start())
-        self.selection = {key: ctk.BooleanVar(value=False) for key in ('aspect', 'look', 'color', 'white_balance')}
+        self.selection = {key: ctk.BooleanVar(value=False) for key in ('aspect', 'look', 'color', 'exposure')}
         self.aspect = app.output_aspect.get()
         self.look = deepcopy(app._current_look_option())
         self.color_enabled = bool(app.color_match_enabled.get())
-        photo = app.current.state.photo
-        self.white_balance = photo.temperature, photo.tint
+        self.exposure = app.current.state.exposure
         frame = ctk.CTkFrame(self, fg_color=SECONDARY_BG, corner_radius=8)
         frame.pack(fill='both', expand=True, padx=18, pady=18)
         frame.grid_columnconfigure(1, weight=1)
@@ -50,8 +49,8 @@ class FolderSettingsDialog(ctk.CTkToplevel):
         values = [('aspect', app._t('aspect_ratio'), aspect_label(self.aspect, app.settings.language)),
                   ('look', app._t('look_apply'), look_value),
                   ('color', app._t('color_match'), switch(self.color_enabled)),
-                  ('white_balance', app._t('photo_white_balance'),
-                   f"{app._t('photo_temperature')} {photo.temperature:+d} · {app._t('photo_tint')} {photo.tint:+d}")]
+                  ('exposure', app._t('exposure'),
+                   f'{format_exposure(self.exposure, app.settings.language)} EV')]
         self.checkboxes = []
         for row, (key, title, value) in enumerate(values, 2):
             box = ctk.CTkCheckBox(frame, text=title, variable=self.selection[key], command=self._changed,
@@ -106,7 +105,7 @@ class FolderSettingsDialog(ctk.CTkToplevel):
         choices = FolderChoices(self.aspect if self.selection['aspect'].get() else None,
             deepcopy(self.look) if self.selection['look'].get() else None,
             self.color_enabled if self.selection['color'].get() else None,
-            self.white_balance if self.selection['white_balance'].get() else None)
+            self.exposure if self.selection['exposure'].get() else None)
         self.running = True
         for box in self.checkboxes:
             self.app._set_checkbox_enabled(box, False)

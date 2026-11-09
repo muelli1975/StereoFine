@@ -222,8 +222,8 @@ def render_preview_from_base(
     left = transform_rgb(left, base.icc_profile)
     right = transform_rgb(right, base.icc_profile)
     if apply_color:
-        from .photo import apply_photo_look
-        left, right = apply_photo_look(left, right, state.photo, state.look)
+        from .exposure import apply_exposure_and_look
+        left, right = apply_exposure_and_look(left, right, state.exposure, state.look)
 
     if apply_floating_window:
         fw = state.floating_window.normalize()

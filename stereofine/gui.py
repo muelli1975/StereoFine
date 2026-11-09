@@ -625,7 +625,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
 
         self.color_match_box = self._checkbox(self.sidebar, self._t("color_match"), self.color_match_enabled, self._on_color_match_changed)
         self.color_match_box.grid(row=row, column=0, sticky="w", padx=20, pady=(0, 8)); row += 1
-        row = self._build_photo_controls(self.sidebar, row)
+        row = self._build_exposure_controls(self.sidebar, row)
         row = self._build_look_controls(self.sidebar, row)
 
         self.tiff_sbs_box = self._checkbox(
@@ -1334,7 +1334,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self._update_grid_control_state()
         self._update_favorite_star()
         self._refresh_look_controls()
-        self._refresh_photo_controls()
+        self._refresh_exposure_controls()
 
     def _update_start_button_text(self) -> None:
         if self.busy_state != "idle":
@@ -1874,7 +1874,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.output_aspect.set(state.framing.aspect)
         self.color_match_enabled.set(state.color.enabled)
         self._sync_look_from_current()
-        self._sync_photo_controls()
+        self._sync_exposure_controls()
         self._sync_localized_display_vars()
         # Analysis method is a processing preference, not a per-image GUI
         # default. The status area still shows the method used by this sidecar.

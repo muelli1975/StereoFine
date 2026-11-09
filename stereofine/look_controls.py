@@ -12,9 +12,10 @@ from .tooltip import attach_tooltip
 from .preferences import mark_preference
 from .output_naming import suffix_label
 from .state import LookState
-from .photo import NEUTRAL_PHOTO, PhotoAdjustments
+from .exposure import normalize_exposure
+from .i18n import format_exposure
 from .slider_wheel import bind_slider_wheel
-from .theme import BORDER, GOLD_DARK, GOLD_LIGHT, TEXT_PRIMARY, TEXT_DISABLED
+from .theme import BORDER, CONTROL_RADIUS, GOLD_DARK, GOLD_LIGHT, SECONDARY_BG, TEXT_PRIMARY, TEXT_DISABLED
 
 
 def preview_look(app):
@@ -36,7 +37,6 @@ class LookControlsMixin:
         self._look_hover_job = None
         self._look_hover_state = None
         self._look_popup_generation = 0
-        self._photo_expanded = False
         self._sync_look_display()
 
     def _current_look_option(self):
@@ -95,115 +95,85 @@ class LookControlsMixin:
         self._refresh_look_controls()
         return row
 
-    def _build_photo_controls(self, parent, row):
-        self._photo_widgets = {}
-        exposure = ctk.CTkFrame(parent, fg_color='transparent')
-        exposure.grid(row=row, column=0, sticky='ew', padx=20, pady=(0, 4))
-        self._build_photo_slider(exposure, 0, 'exposure', 2, .1)
-        self._photo_toggle = self._secondary_button(parent, '', self._toggle_photo_controls)
-        self._photo_toggle.grid(row=row + 1, column=0, sticky='ew', padx=20, pady=(0, 5))
-        self._photo_extra = ctk.CTkFrame(parent, fg_color='transparent')
-        self._photo_extra.grid(row=row + 2, column=0, sticky='ew', padx=20, pady=(0, 6))
-        for index, field in enumerate(('highlights', 'shadows', 'temperature', 'tint')):
-            self._build_photo_slider(self._photo_extra, index, field, 100, 5)
-        self._show_photo_controls()
-        self._sync_photo_controls()
-        return row + 3
-
-    def _build_photo_slider(self, parent, row, field, limit, step):
-        parent.grid_columnconfigure(1, weight=1)
-        label = ctk.CTkLabel(parent, text=self._t('photo_' + field), anchor='w',
+    def _build_exposure_controls(self, parent, row):
+        frame = ctk.CTkFrame(parent, fg_color='transparent')
+        frame.grid(row=row, column=0, sticky='ew', padx=20, pady=(0, 4))
+        frame.grid_columnconfigure(1, weight=1)
+        label = ctk.CTkLabel(frame, text=self._t('exposure'), anchor='w',
                              text_color=TEXT_PRIMARY, font=self._font(13), width=82)
-        label.grid(row=row, column=0, sticky='w', pady=2)
-        slider = ctk.CTkSlider(parent, from_=-limit, to=limit, width=90,
-            number_of_steps=400 if field == 'exposure' else 200,
-            command=lambda value: self._set_photo_value(field, value),
+        label.grid(row=0, column=0, sticky='w', pady=2)
+        self._exposure_slider = ctk.CTkSlider(
+            frame, from_=-2, to=2, width=90, number_of_steps=400, command=self._set_exposure,
             fg_color=BORDER, progress_color=BORDER, button_color=GOLD_LIGHT,
             button_hover_color=GOLD_LIGHT)
-        slider.grid(row=row, column=1, sticky='ew', padx=(4, 7), pady=2)
-        text = ctk.StringVar(master=self)
-        entry = ctk.CTkEntry(parent, width=60, height=25, textvariable=text, justify='right',
-                             border_color=BORDER, font=self._font(12))
-        entry.grid(row=row, column=2, sticky='e', pady=2)
-        self._photo_widgets[field] = slider, entry, text
-        bind_slider_wheel(slider, self._can_edit_photo, lambda ticks: self._nudge_photo(field, ticks * step))
-        slider.bind('<Double-Button-1>', lambda event: self._reset_photo_value(field))
-        entry.bind('<Return>', lambda event: self._commit_photo_entry(field, True))
-        entry.bind('<FocusOut>', lambda event: self._commit_photo_entry(field, False))
-        entry.bind('<Escape>', lambda event: self._reset_photo_entry(field))
-        arrow_step = .01 if field == 'exposure' else 1
-        entry.bind('<Up>', lambda event: self._nudge_photo(field, arrow_step))
-        entry.bind('<Down>', lambda event: self._nudge_photo(field, -arrow_step))
-        attach_tooltip(label, self._t('photo_' + field + '_tooltip'))
+        self._exposure_slider.grid(row=0, column=1, sticky='ew', padx=(4, 7), pady=2)
+        self._exposure_text = ctk.StringVar(master=self)
+        self._exposure_entry = ctk.CTkEntry(
+            frame, width=60, height=25, textvariable=self._exposure_text, justify='right',
+            fg_color=SECONDARY_BG, border_color=BORDER, text_color=TEXT_PRIMARY,
+            corner_radius=CONTROL_RADIUS, font=self._font(12))
+        self._exposure_entry.grid(row=0, column=2, sticky='e', pady=2)
+        bind_slider_wheel(self._exposure_slider, self._can_edit_exposure,
+                          lambda ticks: self._nudge_exposure(ticks * .1))
+        self._exposure_slider.bind('<Double-Button-1>', lambda event: self._set_exposure(0))
+        self._exposure_entry.bind('<Return>', lambda event: self._commit_exposure_entry(True))
+        self._exposure_entry.bind('<FocusOut>', lambda event: self._commit_exposure_entry(False))
+        self._exposure_entry.bind('<Escape>', lambda event: self._reset_exposure_entry())
+        self._exposure_entry.bind('<Up>', lambda event: self._nudge_exposure(.01))
+        self._exposure_entry.bind('<Down>', lambda event: self._nudge_exposure(-.01))
+        attach_tooltip(label, self._t('exposure_tooltip'))
+        self._sync_exposure_controls()
+        return row + 1
 
-    def _can_edit_photo(self):
+    def _can_edit_exposure(self):
         return self.busy_state == 'idle' and self.current is not None
 
-    def _show_photo_controls(self):
-        indicator = '▾' if self._photo_expanded else '▸'
-        self._photo_toggle.configure(text=f"{indicator}  {self._t('photo_more')}")
-        if self._photo_expanded:
-            self._photo_extra.grid()
-        else:
-            self._photo_extra.grid_remove()
+    def _sync_exposure_value(self):
+        value = self.current.state.exposure if self.current is not None else 0.0
+        self._exposure_slider.set(value)
+        self._exposure_text.set(format_exposure(value, self.settings.language))
 
-    def _toggle_photo_controls(self):
-        self._photo_expanded = not self._photo_expanded
-        self._show_photo_controls()
+    def _sync_exposure_controls(self):
+        self._sync_exposure_value()
+        self._refresh_exposure_controls()
 
-    def _sync_photo_value(self, field):
-        photo = self.current.state.photo if self.current is not None else NEUTRAL_PHOTO
-        value = getattr(photo, field)
-        slider, _entry, text = self._photo_widgets[field]
-        slider.set(value)
-        formatted = f'{value:+.2f}' if field == 'exposure' and value else f'{value:+d}' if value else '0'
-        text.set(formatted.replace('.', ',') if self.settings.language == 'de' else formatted)
+    def _refresh_exposure_controls(self):
+        enabled = self._can_edit_exposure()
+        state = 'normal' if enabled else 'disabled'
+        self._exposure_slider.configure(state=state, button_color=GOLD_LIGHT if enabled else TEXT_DISABLED)
+        self._exposure_entry.configure(state=state, text_color=TEXT_PRIMARY if enabled else TEXT_DISABLED)
 
-    def _sync_photo_controls(self):
-        for field in self._photo_widgets:
-            self._sync_photo_value(field)
-        self._refresh_photo_controls()
-
-    def _refresh_photo_controls(self):
-        state = 'normal' if self._can_edit_photo() else 'disabled'
-        for slider, entry, _text in self._photo_widgets.values():
-            slider.configure(state=state, button_color=GOLD_LIGHT if state == 'normal' else TEXT_DISABLED)
-            entry.configure(state=state)
-
-    def _set_photo_value(self, field, value):
-        if self._can_edit_photo():
-            current = self.current.state.photo
-            values = vars(current).copy()
-            values[field] = value
-            self.current.state.photo = PhotoAdjustments.from_values(values)
-            self._sync_photo_value(field)
-            if self.current.state.photo != current:
+    def _set_exposure(self, value):
+        if self._can_edit_exposure():
+            current = self.current.state
+            exposure = normalize_exposure(value)
+            changed = exposure != current.exposure
+            current.exposure = exposure
+            self._sync_exposure_value()
+            if changed:
                 self._schedule_state_save()
                 self._refresh_preview()
         return 'break'
 
-    def _nudge_photo(self, field, change):
-        if self._can_edit_photo():
-            self._set_photo_value(field, getattr(self.current.state.photo, field) + change)
+    def _nudge_exposure(self, change):
+        if self._can_edit_exposure():
+            self._set_exposure(self.current.state.exposure + change)
         return 'break'
 
-    def _reset_photo_value(self, field):
-        return self._set_photo_value(field, 0)
-
-    def _commit_photo_entry(self, field, release):
-        if self._can_edit_photo():
+    def _commit_exposure_entry(self, release):
+        if self._can_edit_exposure():
             try:
-                value = float(self._photo_widgets[field][2].get().replace(',', '.'))
+                value = float(self._exposure_text.get().replace(',', '.'))
             except ValueError:
-                self._sync_photo_value(field)
+                self._sync_exposure_value()
             else:
-                self._set_photo_value(field, value)
+                self._set_exposure(value)
         if release:
             self.preview_frame.focus_set()
         return 'break'
 
-    def _reset_photo_entry(self, field):
-        self._sync_photo_value(field)
+    def _reset_exposure_entry(self):
+        self._sync_exposure_value()
         self.preview_frame.focus_set()
         return 'break'
 

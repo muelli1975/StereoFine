@@ -11,7 +11,7 @@ import tempfile
 from .config import SIDECAR_SCHEMA_VERSION
 from .diagnostics import log_event, log_failure
 from .models import FileStamp
-from .photo import PhotoAdjustments
+from .exposure import normalize_exposure
 from .sidecar import SidecarDocument
 from .sources import validate_source_names
 from .state import LookState
@@ -22,13 +22,13 @@ class FolderChoices:
     aspect: str | None = None
     look: LookState | None = None
     color_enabled: bool | None = None
-    white_balance: tuple[int, int] | None = None
+    exposure: float | None = None
 
     @property
     def selected(self):
         return {name for name, value in (('aspect', self.aspect), ('look', self.look),
                                          ('color', self.color_enabled),
-                                         ('white_balance', self.white_balance)) if value is not None}
+                                         ('exposure', self.exposure)) if value is not None}
 
 
 @dataclass
@@ -66,7 +66,8 @@ def _verify_source(saved, header):
 
 def _patch_preferences(raw, choices):
     result = deepcopy(raw)
-    if not SidecarDocument.from_dict(raw).input_state:
+    document = SidecarDocument.from_dict(raw)
+    if not document.input_state:
         result.pop('input_state', None)
     for field in ('app', 'preference_fields', 'settings_only', 'input_override'):
         result.pop(field, None)
@@ -88,18 +89,13 @@ def _patch_preferences(raw, choices):
             result['look'] = asdict(deepcopy(choices.look).normalize())
         else:
             result.pop('look', None)
-    if choices.white_balance is not None:
-        temperature, tint = choices.white_balance
-        balance = PhotoAdjustments.from_values({'temperature': temperature, 'tint': tint})
-        photo = result.setdefault('photo', {})
-        for name in ('temperature', 'tint'):
-            value = getattr(balance, name)
-            if value:
-                photo[name] = value
-            else:
-                photo.pop(name, None)
-        if not photo:
-            result.pop('photo')
+    exposure = document.exposure
+    if choices.exposure is not None:
+        exposure = normalize_exposure(choices.exposure)
+    if exposure:
+        result['photo'] = {'exposure': exposure}
+    else:
+        result.pop('photo', None)
     return result
 
 

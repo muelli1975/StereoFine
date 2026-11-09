@@ -9,7 +9,6 @@ from .config import (
     normalize_orientation_code,
 )
 from .sidecar import SidecarDocument
-from .photo import PhotoAdjustments
 from .framing import framed_edges_permille
 
 
@@ -273,7 +272,7 @@ class PairState:
     disparity: DisparityState = field(default_factory=DisparityState)
     color: ColorState = field(default_factory=ColorState)
     look: LookState = field(default_factory=LookState)
-    photo: PhotoAdjustments = field(default_factory=PhotoAdjustments)
+    exposure: float = 0.0
     warnings: list[str] = field(default_factory=list)
     preference_fields: list[str] | None = None
 
@@ -459,7 +458,7 @@ class PairState:
             disparity=disparity if self.disparity != DisparityState() else {},
             color=color,
             look=look,
-            photo={key: value for key, value in asdict(self.photo).items() if value},
+            exposure=self.exposure,
         )
 
     @classmethod
@@ -493,7 +492,7 @@ class PairState:
             disparity=filtered(DisparityState, document.disparity),
             color=filtered(ColorState, document.color),
             look=filtered(LookState, document.look).normalize(),
-            photo=PhotoAdjustments.from_values(document.photo),
+            exposure=document.exposure,
         )
         state.floating_window.normalize()
         return state

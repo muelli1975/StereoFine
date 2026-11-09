@@ -71,18 +71,8 @@ TEXTS: dict[str, dict[str, str]] = {
         "help_footer": "F1 · Bedienhilfe",
         "look_apply": "LUT anwenden",
         "look_strength": "Stärke: {value} %",
-        "photo_exposure": "Belichtung",
-        "photo_highlights": "Lichter",
-        "photo_shadows": "Tiefen",
-        "photo_temperature": "Temperatur",
-        "photo_tint": "Tönung",
-        "photo_more": "Weitere Korrekturen",
-        "photo_white_balance": "Weißabgleich",
-        "photo_exposure_tooltip": "Helligkeit beider Halbbilder von −2 bis +2 EV.",
-        "photo_highlights_tooltip": "Helle Tonwerte abdunkeln oder aufhellen.",
-        "photo_shadows_tooltip": "Dunkle Tonwerte abdunkeln oder aufhellen.",
-        "photo_temperature_tooltip": "Links kühler, rechts wärmer.",
-        "photo_tint_tooltip": "Links grüner, rechts magentafarbener.",
+        "exposure": "Belichtung",
+        "exposure_tooltip": "Helligkeit beider Halbbilder von −2 bis +2 EV.",
         "look_notice": "LUT: {name}",
         "look_notice_off": "LUT aus",
         "look_group_film": "Farbfilm & Kameralooks",
@@ -242,18 +232,8 @@ TEXTS: dict[str, dict[str, str]] = {
         "help_footer": "F1 · Controls",
         "look_apply": "Apply LUT",
         "look_strength": "Strength: {value} %",
-        "photo_exposure": "Exposure",
-        "photo_highlights": "Highlights",
-        "photo_shadows": "Shadows",
-        "photo_temperature": "Temperature",
-        "photo_tint": "Tint",
-        "photo_more": "More adjustments",
-        "photo_white_balance": "White balance",
-        "photo_exposure_tooltip": "Adjust both eyes from −2 to +2 EV.",
-        "photo_highlights_tooltip": "Darken or brighten the light tones.",
-        "photo_shadows_tooltip": "Darken or brighten the dark tones.",
-        "photo_temperature_tooltip": "Left is cooler, right is warmer.",
-        "photo_tint_tooltip": "Left adds green, right adds magenta.",
+        "exposure": "Exposure",
+        "exposure_tooltip": "Adjust both eyes from −2 to +2 EV.",
         "look_notice": "LUT: {name}",
         "look_notice_off": "LUT off",
         "look_group_film": "Color Film & Camera Looks",
@@ -528,6 +508,11 @@ def language_code(label: str) -> str:
     return {"Deutsch": "de", "English": "en"}.get(label, "de")
 
 
+def format_exposure(value: float, language: str) -> str:
+    formatted = f'{value:+.2f}' if value else '0'
+    return formatted.replace('.', ',') if language == 'de' else formatted
+
+
 def aspect_label(code: str, language: str) -> str:
     code = {"Maximal": "maximum", "Maximum": "maximum", "Original": "original"}.get(code, code)
     if code == "maximum":
@@ -588,7 +573,7 @@ TEXTS['de'].update({
     'folder_commit': 'Übernehmen',
     'folder_count': '{count} erkannte Stereobilder',
     'folder_on': 'Ein', 'folder_off': 'Aus',
-    'folder_scope': 'Nur die markierten Einstellungen werden gespeichert. Bilder werden dabei nicht neu justiert oder exportiert.',
+    'folder_scope': 'Markierte Werte ersetzen die entsprechenden Einstellungen im Ordner.',
     'folder_progress': 'Einstellungen übernehmen: {index} von {total} Bildern',
     'folder_done': 'Ordner: {updated} geändert · {unchanged} unverändert · {failed} Fehler',
     'folder_cancelled': 'Abgebrochen.',
@@ -603,7 +588,7 @@ TEXTS['en'].update({
     'folder_commit': 'Apply',
     'folder_count': '{count} recognised stereo images',
     'folder_on': 'On', 'folder_off': 'Off',
-    'folder_scope': 'Only checked settings will be saved. Images are not realigned or exported.',
+    'folder_scope': 'Checked values replace the corresponding settings in the folder.',
     'folder_progress': 'Applying settings: {index} of {total} images',
     'folder_done': 'Folder: {updated} updated · {unchanged} unchanged · {failed} errors',
     'folder_cancelled': 'Cancelled.',

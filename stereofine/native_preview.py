@@ -23,7 +23,7 @@ from .render import _stable_digest, render_final_pair, match_final_pair_color
 from .state import reproducible_alignment_correction
 from .worker import WorkerManager, WorkerMessageKind
 from .look_controls import preview_look
-from .photo import NEUTRAL_PHOTO, apply_photo_look
+from .exposure import apply_exposure_and_look
 from .viewport_render import render_viewport
 
 MEASURE_REPEAT_MS = 16
@@ -65,20 +65,20 @@ def fit_display_pair(left, right, bounds):
                  for eye in (left, right))
 
 
-def detail_texture_key(key, window, mode, look=None, photo=NEUTRAL_PHOTO, viewport=None):
+def detail_texture_key(key, window, mode, look=None, exposure=0.0, viewport=None):
     from .looks import look_signature
-    return key, tuple(asdict(window).items()), mode, look_signature(look), photo, viewport
+    return key, tuple(asdict(window).items()), mode, look_signature(look), exposure, viewport
 
 
-def prepare_detail_texture(key, left, right, window, mode, token, look=None, photo=NEUTRAL_PHOTO, viewport=None):
+def prepare_detail_texture(key, left, right, window, mode, token, look=None, exposure=0.0, viewport=None):
     token.raise_if_cancelled()
-    signature = detail_texture_key(key, window, mode, look, photo, viewport)
+    signature = detail_texture_key(key, window, mode, look, exposure, viewport)
     if viewport is not None:
         image = render_viewport(left, right, window, mode, viewport,
-                                lambda a, b: apply_photo_look(a, b, photo, look))
+                                lambda a, b: apply_exposure_and_look(a, b, exposure, look))
         token.raise_if_cancelled()
         return signature, image
-    left, right = apply_photo_look(left, right, photo, look)
+    left, right = apply_exposure_and_look(left, right, exposure, look)
     a, b = apply_floating_window_masks(left, right, window.left_permille,
         window.right_permille, window.top_permille, window.bottom_permille)
     pixels = (np.concatenate([b, a], axis=1) if mode == 'Kreuzblick' else
@@ -355,7 +355,7 @@ class NativePreviewMixin:
         self._mode_release_ids[mode] = self.after_idle(released)
 
     def _mask_preview_pair(self, left, right, **kwargs):
-        left, right = apply_photo_look(left, right, self.current.state.photo, preview_look(self))
+        left, right = apply_exposure_and_look(left, right, self.current.state.exposure, preview_look(self))
         fw = self.current.state.floating_window
         return apply_floating_window_masks(left, right, fw.left_permille, fw.right_permille,
                                            fw.top_permille, fw.bottom_permille, **kwargs)
@@ -370,7 +370,7 @@ class NativePreviewMixin:
     def _detail_texture_signature(self):
         return detail_texture_key(native_key(self.current), self.current.state.floating_window,
                                   self._effective_preview_mode(), preview_look(self),
-                                  self.current.state.photo, self._inspection_texture_viewport())
+                                  self.current.state.exposure, self._inspection_texture_viewport())
 
     def _request_detail_texture(self):
         if self._detail_texture_cache is not None and self._detail_texture_cache[0] == self._detail_texture_signature():
@@ -391,10 +391,10 @@ class NativePreviewMixin:
         window = deepcopy(self.current.state.floating_window)
         mode = self._effective_preview_mode()
         look = deepcopy(preview_look(self))
-        photo = self.current.state.photo
-        self._detail_texture_running_key = detail_texture_key(key, window, mode, look, photo, viewport)
+        exposure = self.current.state.exposure
+        self._detail_texture_running_key = detail_texture_key(key, window, mode, look, exposure, viewport)
         def render(token, _progress):
-            return prepare_detail_texture(key, left, right, window, mode, token, look, photo, viewport)
+            return prepare_detail_texture(key, left, right, window, mode, token, look, exposure, viewport)
         self._detail_texture_job_id = self._detail_texture_worker.start(render,
             name='StereoFine-detail-texture').job_id
         self._detail_texture_poll_id = self.after(16, self._poll_detail_texture)
