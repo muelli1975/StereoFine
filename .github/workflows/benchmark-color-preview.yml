@@ -1,0 +1,40 @@
+name: StereoFine 1.4 color preview experiment
+on:
+  push:
+    branches: [benchmark/color-preview-1.4]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  measure:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: bench
+      - uses: actions/checkout@v4
+        with:
+          ref: 579a31acb837b62c3ca477ade98d4eadfa17912f
+          path: app
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - name: Install the pinned application dependencies
+        working-directory: app
+        run: python -m pip install -r requirements-lock.txt psutil==7.0.0
+      - name: Measure preview latency and color on stereo pairs
+        working-directory: app
+        shell: pwsh
+        run: |
+          Copy-Item ../bench/tools/benchmark_cpu_batch.py tools/benchmark_cpu_batch.py
+          Copy-Item ../bench/tools/benchmark_color_preview.py tools/benchmark_color_preview.py
+          python -m tools.benchmark_color_preview
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stereofine-color-preview-results
+          path: app/color-preview-results.json
+          if-no-files-found: error
