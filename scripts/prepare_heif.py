@@ -7,7 +7,23 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import time
 import urllib.request
+
+
+def download_source(entry):
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(entry['url'], timeout=60) as response:
+                data = response.read()
+            if len(data) == entry['size'] and hashlib.sha256(data).hexdigest() == entry['sha256']:
+                return data
+            raise ValueError('HEIF corresponding source checksum mismatch: '+entry['file'])
+        except OSError:
+            if attempt == 2:
+                raise
+            print('Retrying HEIF source:', entry['file'], flush=True)
+            time.sleep(2 ** (attempt + 1))
 
 
 def main():
@@ -27,8 +43,8 @@ def main():
     for entry in pins['sources']:
         archive = sources/entry['file']
         if not archive.exists():
-            with urllib.request.urlopen(entry['url'], timeout=60) as response:
-                archive.write_bytes(response.read())
+            print('Downloading HEIF source:', entry['file'], flush=True)
+            archive.write_bytes(download_source(entry))
         if archive.stat().st_size != entry['size'] or hashlib.sha256(archive.read_bytes()).hexdigest() != entry['sha256']:
             raise ValueError('HEIF corresponding source checksum mismatch: '+entry['file'])
         # Read notices without unpacking paths or duplicating source trees.
