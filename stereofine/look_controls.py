@@ -14,7 +14,7 @@ from .output_naming import suffix_label
 from .state import LookState
 from .exposure import normalize_exposure
 from .i18n import format_exposure
-from .slider_wheel import bind_slider_reset, bind_slider_wheel
+from .slider_wheel import CenteredSlider, bind_slider_reset, bind_slider_wheel
 from .theme import BORDER, CONTROL_RADIUS, GOLD_DARK, GOLD_LIGHT, SECONDARY_BG, TEXT_PRIMARY, TEXT_DISABLED
 
 
@@ -107,7 +107,7 @@ class LookControlsMixin:
         label = ctk.CTkLabel(frame, text=self._t('exposure'), anchor='w',
                              text_color=TEXT_PRIMARY, font=self._font(13), width=82)
         label.grid(row=0, column=0, sticky='w', pady=2)
-        self._exposure_slider = ctk.CTkSlider(
+        self._exposure_slider = CenteredSlider(
             frame, from_=-2, to=2, width=90, number_of_steps=400, command=self._set_exposure,
             fg_color=BORDER, progress_color=BORDER, button_color=GOLD_LIGHT,
             button_hover_color=GOLD_LIGHT)
@@ -176,7 +176,7 @@ class LookControlsMixin:
             else:
                 self._set_exposure(value)
         if release:
-            self.preview_frame.focus_set()
+            self.focus_set()
             return 'break'
 
     def _reset_exposure_entry(self):

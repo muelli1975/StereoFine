@@ -9,7 +9,7 @@ import customtkinter as ctk
 from .controls_help import HELP_TEXT_DE, HELP_TEXT_EN
 from .hover_menu import ModalScrollableFrame, work_area
 from .theme import (
-    APP_BG, PANEL_BG, SECONDARY_BG, BORDER, HOVER_BG, GOLD_LIGHT, TEXT_PRIMARY, TEXT_SECONDARY,
+    APP_BG, PANEL_BG, SECONDARY_BG, BORDER, HOVER_BG, GOLD_LIGHT, TEXT_PRIMARY,
     restore_dark_titlebar,
 )
 
@@ -127,20 +127,17 @@ class ControlsGuide(ctk.CTkToplevel):
                 panel.grid_columnconfigure(0, minsize=140)
                 panel.grid_columnconfigure(1, weight=1)
                 self.panels.append(panel)
-                for col, key in enumerate(('help_key_column', 'help_action_column')):
-                    ctk.CTkLabel(panel, text=self.app._t(key), text_color=TEXT_SECONDARY,
-                        font=self.app._font(11, 'bold'), anchor='e' if col == 0 else 'w').grid(
-                            row=0, column=col, sticky='ew', padx=10, pady=(8, 5))
-                row = 1
+                row = 0
                 for title, entries in groups:
-                    if row > 1:
+                    title_top = 8 if row == 0 else 1
+                    if row > 0:
                         ctk.CTkFrame(panel, height=1, fg_color=BORDER, corner_radius=0).grid(
                             row=row, column=0, columnspan=2, sticky='ew', padx=10, pady=(7, 6))
                         row += 1
                     ctk.CTkLabel(panel, text=title, text_color=TEXT_PRIMARY,
                         font=self.app._font(13, 'bold'), wraplength=column_width-24,
                         justify='left', anchor='w').grid(row=row, column=0, columnspan=2,
-                                                        sticky='ew', padx=10, pady=(1, 5))
+                                                        sticky='ew', padx=10, pady=(title_top, 5))
                     row += 1
                     for key, action in entries:
                         ctk.CTkLabel(panel, text=key, text_color=GOLD_LIGHT,

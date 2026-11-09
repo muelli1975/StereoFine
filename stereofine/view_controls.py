@@ -1,20 +1,21 @@
 """Mouse inspection, measured image coordinates, and preview-only overlays."""
 from __future__ import annotations
 
+from copy import deepcopy
 import sys
 import tkinter as tk
 from functools import lru_cache
 from pathlib import Path
 
 import customtkinter as ctk
-import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from .anaglyph import make_anaglyph
 from .endpoints import current_markers, crop_geometry
 from .inspection import InspectionView, image_point, measured_deviation
-from .native_preview import native_key, native_geometry_key
+from .look_controls import preview_look
+from .native_preview import detail_texture_key, native_key, native_geometry_key, preview_image
 from .preview import draw_grid_overlay, draw_measure_cross_overlay
+from .preview_render import render_preview_from_base
 from .numbers import endpoint_values
 from .label_layout import place_labels
 
@@ -41,6 +42,7 @@ class ViewControlsMixin:
         self._view_source_box = None
         self._view_native_size = None
         self._view_pan_pointer = None
+        self._inspection_proxy = None
         self._fit_notice_job = None
         self._fit_notice = False
         self._look_notice_job = None
@@ -141,6 +143,8 @@ class ViewControlsMixin:
         if event is not None and factor < 1 and not was_active:
             return 'break'
         self._fit_notice = False
+        if not was_active and self._preview_pil is not None:
+            self._inspection_proxy = (self._inspection_proxy_key(self._effective_preview_mode()), self._preview_pil)
         self._inspection_view.zoom(factor, size, self._view_viewport(), anchor)
         if was_active and not self._inspection_view.active:
             return self._fit_inspection(wheel=event is not None)
@@ -157,7 +161,7 @@ class ViewControlsMixin:
         self._fit_notice = bool(notice and self.current is not None)
         self._fit_notice_job = self.after(1000 if wheel else 2000, self._clear_fit_notice) if self._fit_notice else None
         if not self._apply_native_preview():
-            self._update_preview_display()
+            self._refresh_preview()
         return 'break'
 
     def _clear_fit_notice(self):
@@ -186,6 +190,7 @@ class ViewControlsMixin:
         if not hasattr(self, '_inspection_view'):
             self._inspection_view = InspectionView()
         self._inspection_view.reset()
+        self._inspection_proxy = None
         self._fit_notice = False
         if getattr(self, '_look_notice_job', None) is not None:
             self.after_cancel(self._look_notice_job)
@@ -289,20 +294,72 @@ class ViewControlsMixin:
             self._point_measure_hover = image_point(xy, self._preview_display_size, self._view_source_box)
             self._update_preview_display()
 
+    def _inspection_proxy_key(self, mode):
+        state = self.current.state
+        return detail_texture_key(native_key(self.current), state.floating_window, mode,
+                                  preview_look(self), state.exposure)
+
+    def _inspection_proxy_frame(self, mode):
+        key = self._inspection_proxy_key(mode)
+        cached = getattr(self, '_inspection_proxy', None)
+        if cached is not None and cached[0] == key:
+            return cached[1]
+        state = self.current.state
+        if self._has_fitted_native_view():
+            left, right = self._native_views[2][state.color.enabled]
+            left, right = self._mask_preview_pair(left, right)
+        else:
+            if preview_look(self) is not state.look:
+                state = deepcopy(state)
+                state.look = preview_look(self)
+            pair = render_preview_from_base(self._ensure_preview_base(self.current), state,
+                                            bounds=self._preview_bounds())
+            left, right = pair.left, pair.right
+        image = preview_image(left, right, mode)
+        self._inspection_proxy = key, image
+        return image
+
     def _show_inspection_preview(self):
-        if self.current is None or self._native_cache is None or self._native_cache[0] != native_key(self.current):
-            self._request_native_preview(immediate=True)
+        if self.current is None:
             return
-        _, left, right = self._native_cache
-        size = left.shape[1], left.shape[0]
-        box, display = self._inspection_view.layout(size, self._view_viewport())
+        native = self._native_cache is not None and self._native_cache[0] == native_key(self.current)
         mode = self._effective_preview_mode()
         texture = self._detail_texture_cache
-        cached = texture is not None and texture[0] == self._detail_texture_signature()
-        if not cached:
-            self._request_detail_texture()
-            return
-        image = texture[1].copy()
+        cached = native and texture is not None and texture[0] == self._detail_texture_signature()
+        if cached:
+            size = self._view_image_size()
+            box, display = self._inspection_view.layout(size, self._view_viewport())
+            image = texture[1].copy()
+        else:
+            if native:
+                self._request_detail_texture()
+            else:
+                self._request_native_preview(immediate=True)
+            proxy = self._inspection_proxy_frame(mode)
+            size = self._view_image_size()
+            if size is None:
+                return
+            box, display = self._inspection_view.layout(size, self._view_viewport())
+            image = self._resize_inspection_proxy(proxy, box, size, display, mode)
+
+        self._decorate_inspection_preview(image, box, size, display, mode)
+
+    @staticmethod
+    def _resize_inspection_proxy(proxy, box, size, display, mode):
+        eye_width = proxy.width // 2 if mode == 'Kreuzblick' else proxy.width
+        x0, y0, x1, y1 = box
+        source_box = (x0 * eye_width / size[0], y0 * proxy.height / size[1],
+                      x1 * eye_width / size[0], y1 * proxy.height / size[1])
+        if mode != 'Kreuzblick':
+            return proxy.resize(display, Image.Resampling.BILINEAR, box=source_box)
+        frame = Image.new('RGB', (display[0] * 2, display[1]))
+        for eye in (0, 1):
+            x = eye * eye_width
+            eye_box = (source_box[0] + x, source_box[1], source_box[2] + x, source_box[3])
+            frame.paste(proxy.resize(display, Image.Resampling.BILINEAR, box=eye_box), (eye * display[0], 0))
+        return frame
+
+    def _decorate_inspection_preview(self, image, box, size, display, mode):
         grid_scale = display[0]/(box[2]-box[0]), display[1]/(box[3]-box[1])
         if self.grid_mode.get() != 'Aus' and not self.measure_cross_active:
             if mode == 'Kreuzblick':

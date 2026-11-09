@@ -98,7 +98,7 @@ def browse_file_signature(source: StereoSource):
     return tuple(signature)
 
 
-def preload_browsable_source(source):
+def preload_browsable_source(source, *, max_bytes=DECODED_CACHE_LIMIT):
     from PIL import Image
 
     estimate = 0
@@ -117,7 +117,7 @@ def preload_browsable_source(source):
                     bytes_per_pixel = 3
             views = 2 if source.kind == 'mpo' else 1
             estimate += header.width * header.height * bytes_per_pixel * views
-    if estimate <= DECODED_CACHE_LIMIT:
+    if estimate <= max_bytes:
         return decode_browsable_source(source)
     return None
 

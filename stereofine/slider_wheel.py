@@ -1,4 +1,34 @@
-"""Mouse gestures scoped to an enabled image editing slider."""
+"""Shared slider gestures and the centered track for exposure."""
+
+import customtkinter as ctk
+
+from .theme import GOLD_DARK
+
+
+class CenteredSlider(ctk.CTkSlider):
+    """Colour the track from the neutral midpoint to the current grip."""
+
+    def _draw(self, no_color_updates=False):
+        super()._draw(no_color_updates)
+        tag = 'centered_progress'
+        canvas = self._canvas
+        if self.cget('state') == 'disabled' or self.get() == 0:
+            canvas.itemconfigure(tag, state='hidden')
+            return
+        grip = canvas.bbox('slider_parts')
+        rail = canvas.bbox('inner_parts')
+        if grip is None or rail is None:
+            return
+        midpoint = (rail[0] + rail[2]) / 2
+        grip_center = (grip[0] + grip[2]) / 2
+        coords = (min(midpoint, grip_center), max(0, rail[1]),
+                  max(midpoint, grip_center), min(self._apply_widget_scaling(self._current_height), rail[3]))
+        if canvas.find_withtag(tag):
+            canvas.coords(tag, *coords)
+            canvas.itemconfigure(tag, state='normal')
+        else:
+            canvas.create_rectangle(*coords, fill=GOLD_DARK, width=0, state='normal', tags=(tag,))
+        canvas.tag_lower(tag, 'slider_parts')
 
 
 def bind_slider_wheel(slider, enabled, step):
@@ -26,10 +56,11 @@ def bind_slider_wheel(slider, enabled, step):
         nonlocal remainder
         remainder = 0
 
-    slider.bind('<MouseWheel>', scroll)
-    slider.bind('<Button-4>', lambda event: scroll(event, 1))
-    slider.bind('<Button-5>', lambda event: scroll(event, -1))
-    slider.bind('<Leave>', reset)
+    canvas = slider._canvas
+    canvas.bind('<MouseWheel>', scroll)
+    canvas.bind('<Button-4>', lambda event: scroll(event, 1))
+    canvas.bind('<Button-5>', lambda event: scroll(event, -1))
+    canvas.bind('<Leave>', reset, add='+')
 
 
 def bind_slider_reset(slider, enabled, reset):

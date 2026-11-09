@@ -268,7 +268,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.float_lr_symmetric = ctk.BooleanVar(value=False)
         self._init_look_controls()
         self._prefetch_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix='StereoFine-preload')
-        self._prefetched = None
+        self._prefetched = []
         self._previous_decoded = None
         self._browse_step = 1
         self._init_view_controls()
@@ -1740,10 +1740,12 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             rollback_context=rollback,
         )
 
-    def _navigation_index(self, step):
-        if self.source_index is None:
+    def _navigation_index(self, step, *, from_index=None):
+        if from_index is None:
+            from_index = self.source_index
+        if from_index is None:
             return None
-        start = self.source_index + step
+        start = from_index + step
         favorites = getattr(self, '_favorite_indices', None)
         if favorites is None:
             return start if 0 <= start < len(self.sources) else None
@@ -1765,38 +1767,78 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         return self._navigate_source(1)
 
     def _drop_prefetch(self):
-        if self._prefetched is not None:
-            self._prefetched.token.cancel()
-            self._prefetched.future.cancel()
-            self._prefetched = None
+        for item in self._prefetched:
+            item.token.cancel()
+            item.future.cancel()
+        self._prefetched.clear()
 
     def _prefetch_neighbor(self):
-        self._drop_prefetch()
         index = self._navigation_index(self._browse_step)
         if index is None or self.current is None:
+            self._drop_prefetch()
             return
         loaded = self.current.loaded_pair
         if loaded.left.nbytes + loaded.right.nbytes > DECODED_CACHE_LIMIT:
+            self._drop_prefetch()
             return
-        source = self.sources[index]
-        if source.kind == 'heif' or (self._previous_decoded and source == self._previous_decoded[0]):
-            return
-        defaults = self._browse_defaults(source, inherit_look=True)
-        bounds = self._preview_bounds()
-        mode = self._effective_preview_mode()
-        token = CancellationToken()
-        future = self._prefetch_pool.submit(self._prepare_neighbor, source, defaults, bounds, mode, token)
-        self._prefetched = PreviewPrefetch(source, defaults, bounds, mode, token, future)
+        indices = (index, self._navigation_index(self._browse_step, from_index=index))
+        bounds, mode = self._preview_bounds(), self._effective_preview_mode()
+        targets = []
+        for index in indices:
+            if index is None:
+                continue
+            source = self.sources[index]
+            if source.kind == 'heif' or (self._previous_decoded and source == self._previous_decoded[0]):
+                continue
+            defaults = self._browse_defaults(source, inherit_look=True)
+            targets.append((source, defaults, bounds, mode))
+
+        reusable = {}
+        for item in self._prefetched:
+            key = item.source, item.defaults, item.bounds, item.mode
+            if key in targets:
+                if not item.future.done():
+                    reusable[key] = item
+                    continue
+                try:
+                    if item.future.result()[2] is not None:
+                        reusable[key] = item
+                        continue
+                except Exception:
+                    pass  # A failed speculative job must not affect navigation.
+            item.token.cancel()
+            item.future.cancel()
+
+        self._prefetched = []
+        for source, defaults, bounds, mode in targets:
+            key = source, defaults, bounds, mode
+            item = reusable.get(key)
+            if item is None:
+                prior = self._prefetched[-1].future if self._prefetched else None
+                token = CancellationToken()
+                future = self._prefetch_pool.submit(self._prepare_neighbor, *key, token, prior)
+                item = PreviewPrefetch(*key, token, future)
+            self._prefetched.append(item)
 
     @classmethod
-    def _prepare_neighbor(cls, source, defaults, bounds, mode, token):
+    def _prepare_neighbor(cls, source, defaults, bounds, mode, token, prior=None):
         token.raise_if_cancelled()
+        budget = DECODED_CACHE_LIMIT
+        if prior is not None:
+            try:
+                budget -= prior.result()[3]
+            except Exception:
+                pass
         signature = browse_file_signature(source)
-        decoded = preload_browsable_source(source)
+        decoded = preload_browsable_source(source, max_bytes=budget)
         if decoded is None:
-            return signature, None, None
+            return signature, None, None, 0
         token.raise_if_cancelled()
         session = browse_source(source, defaults, decoded=decoded)
+        loaded = session.loaded_pair
+        decoded_bytes = loaded.left.nbytes + loaded.right.nbytes
+        if decoded_bytes > budget:
+            return signature, None, None, 0
         prepared = cls._prepare_session_preview(session, bounds, token, mode)
         native = prepared.native_result
         views = native[4]
@@ -1804,14 +1846,19 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         frame = FittedBrowseFrame(left, right, preview_image(left, right, mode), mode)
         token.raise_if_cancelled()
 
-        # Keep the exact fitted view when retaining a second native master and
-        # alignment buffers would exceed the existing browse cache budget.
-        loaded = session.loaded_pair
+        base = views[6]
+        fits = tuple(eye for pair in views[2].values() for eye in pair)
+        fitted_bytes = (decoded_bytes + sum(eye.nbytes for eye in (base.left, base.right, left, right, *fits))
+                        + frame.image.width * frame.image.height * 4)
+        if fitted_bytes > budget:
+            return signature, decoded, None, decoded_bytes
+        # Retain the native master only when both neighbors fit the browse cache budget.
         aligned = views[7][:2] if views[7] is not None else ()
-        full_size = sum(eye.nbytes for eye in (loaded.left, loaded.right, *native[1:3], *aligned))
-        if full_size > DECODED_CACHE_LIMIT:
+        full_bytes = fitted_bytes + sum(eye.nbytes for eye in (*native[1:3], *aligned))
+        if full_bytes > budget:
             native = (native[0], None, None, native[3], (*views[:7], None))
-        return signature, decoded, PreparedSessionPreview(session, native, frame)
+            full_bytes = fitted_bytes
+        return signature, decoded, PreparedSessionPreview(session, native, frame), full_bytes
 
     def _browse_defaults(self, source, *, inherit_look):
         defaults = self._source_defaults(source)
@@ -1853,13 +1900,13 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         mode = self._effective_preview_mode()
 
         cached = self._previous_decoded
-        prefetch = self._prefetched
-        if (prefetch is not None and
-                (prefetch.source, prefetch.defaults, prefetch.bounds, prefetch.mode) == (source, defaults, bounds, mode)):
-            self._prefetched = None
-        else:
+        key = source, defaults, bounds, mode
+        prefetch = next((item for item in self._prefetched
+                         if (item.source, item.defaults, item.bounds, item.mode) == key), None)
+        if prefetch is None:
             self._drop_prefetch()
-            prefetch = None
+        else:
+            self._prefetched.remove(prefetch)
 
         def job(token, _progress):
             decoded = cached[1] if cached and cached[0] == source else None
@@ -1871,7 +1918,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
                     wait((prefetch.future,), timeout=.05)
                 token.raise_if_cancelled()
                 try:
-                    signature, decoded, prepared = prefetch.future.result()
+                    signature, decoded, prepared, _size = prefetch.future.result()
                     if prepared is not None and signature == browse_file_signature(source):
                         return prepared
                 except Exception:
@@ -2384,7 +2431,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
                 return
         if (not start_image and session is self.current
                 and getattr(self, "_inspection_view", None) is not None and self._inspection_view.active):
-            self._request_native_preview(immediate=True)
+            self._show_inspection_preview()
             return
         base = self._ensure_preview_base(session, start_image=start_image)
         state = session.state

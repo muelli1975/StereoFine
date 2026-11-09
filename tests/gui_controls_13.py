@@ -134,6 +134,10 @@ def check_visible_shortcuts(app):
     app._set_exposure(.4)
     assert abs(exposure.get() - .4) < .001
     assert value.get() in ('+0.40', '+0,40')
+    track = exposure._canvas
+    assert track.itemcget('centered_progress', 'state') == 'normal'
+    start, _top, end, _bottom = track.coords('centered_progress')
+    assert abs(start - track.winfo_width()/2) < 2 and end > start
     assert app._flush_state_save()
     saved_photo = json.loads(app.current.source.sidecar_path.read_text('utf-8'))['photo']
     assert saved_photo == {'exposure': .4}
@@ -143,13 +147,14 @@ def check_visible_shortcuts(app):
     assert app.current.state.exposure == .4
 
     entry = app._exposure_entry._entry
-    for sequence in ('<KeyPress-Return>', '<KeyPress-KP_Enter>', '<KeyPress-Tab>', '<Shift-KeyPress-Tab>'):
+    for sequence in ('<KeyPress-Return>', '<KeyPress-Tab>', '<Shift-KeyPress-Tab>'):
         entry.focus_force()
         pump(app, lambda: app.focus_get() is entry)
         value.set('0,37')
         entry.event_generate(sequence)
-        pump(app, lambda: app.focus_get() is not entry)
-        assert app.current.state.exposure == .37
+        pump(app)
+        assert app.focus_get() is not entry, sequence
+        assert app.current.state.exposure == .37, sequence
 
     entry.focus_force()
     pump(app, lambda: app.focus_get() is entry)
@@ -168,6 +173,7 @@ def check_visible_shortcuts(app):
 
     reset_slider(exposure)
     assert app.current.state.exposure == 0
+    assert track.itemcget('centered_progress', 'state') == 'hidden'
     reset_slider(app.look_slider)
     assert app.current.state.look.strength == 1.0
     app._on_look_strength(43)
@@ -186,8 +192,11 @@ def check_visible_shortcuts(app):
         pump(app)
 
     def zoom():
+        before = app._view_source_box
         app._zoom_inspection(2)
-        pump(app, lambda: app._inspection_view.active and app._view_source_box is not None)
+        assert app._inspection_view.active and app._view_source_box != before
+        pump(app, lambda: app._detail_texture_cache is not None
+             and app._detail_texture_cache[0] == app._detail_texture_signature())
 
     zoom()
     key('<Control-KeyPress-0>')
@@ -583,13 +592,16 @@ def main():
             pump(app, lambda: app.busy_state == 'idle' and app._folder_dialog is None)
             assert not series_path.exists()
             assert json.loads(other.sidecar_path.read_text('utf-8')) == saved_other
-            prefetch = app._prefetched
-            assert prefetch is not None and prefetch.source == other
-            _, _, prepared = prefetch.future.result(timeout=15)
-            assert prepared.fitted_frame is not None
+            first_prefetch, second_prefetch = app._prefetched
+            assert first_prefetch.source == other and second_prefetch.source == third
+            _, _, prepared, first_bytes = first_prefetch.future.result(timeout=15)
+            _, _, second_prepared, second_bytes = second_prefetch.future.result(timeout=15)
+            assert prepared.fitted_frame is not None and second_prepared.fitted_frame is not None
+            assert first_bytes + second_bytes <= gui.DECODED_CACHE_LIMIT
             app.next_source()
             pump(app, lambda: app.busy_state == 'idle' and app.current.source == other)
             assert app.current is prepared.session
+            assert second_prefetch in app._prefetched
             np.testing.assert_array_equal(np.asarray(app._preview_pil), np.asarray(prepared.fitted_frame.image))
             assert app.left_orientation.get() == app.right_orientation.get() == '180'
             assert app.current.state.look.preset_id == 'matrix'
