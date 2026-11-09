@@ -6,7 +6,7 @@ from pathlib import Path
 
 from .inputs import LoadedStereoPair, find_pair_for_image
 from .models import FileStamp, SourceStamp
-from .preferences import inherit_missing_preferences, with_series_input
+from .preferences import inherit_missing_preferences, series_input_path, with_series_input
 from .processing import ProcessingDefaults
 from .sidecar import SidecarLoadResult, SidecarStatus, load_sidecar, save_sidecar, source_matches, source_stamp_to_dict
 from .sources import (StereoSource, build_source_stamp, load_source, source_from_pair,
@@ -82,6 +82,20 @@ def _apply_defaults(state: PairState, defaults: ProcessingDefaults) -> None:
 def decode_browsable_source(source):
     loaded = load_source(source)
     return loaded, build_source_stamp(source, loaded)
+
+
+def browse_file_signature(source: StereoSource):
+    """Identify the inputs and preferences used by a speculative preview."""
+    signature = []
+    paths = (source.left_path, source.right_path, source.sidecar_path, series_input_path(source))
+    for path in dict.fromkeys(paths):
+        try:
+            stamp = path.stat()
+        except FileNotFoundError:
+            signature.append(None)
+        else:
+            signature.append((stamp.st_size, stamp.st_mtime_ns, stamp.st_ctime_ns, stamp.st_ino))
+    return tuple(signature)
 
 
 def preload_browsable_source(source):

@@ -583,8 +583,14 @@ def main():
             pump(app, lambda: app.busy_state == 'idle' and app._folder_dialog is None)
             assert not series_path.exists()
             assert json.loads(other.sidecar_path.read_text('utf-8')) == saved_other
+            prefetch = app._prefetched
+            assert prefetch is not None and prefetch.source == other
+            _, _, prepared = prefetch.future.result(timeout=15)
+            assert prepared.fitted_frame is not None
             app.next_source()
             pump(app, lambda: app.busy_state == 'idle' and app.current.source == other)
+            assert app.current is prepared.session
+            np.testing.assert_array_equal(np.asarray(app._preview_pil), np.asarray(prepared.fitted_frame.image))
             assert app.left_orientation.get() == app.right_orientation.get() == '180'
             assert app.current.state.look.preset_id == 'matrix'
             batch_options = ProcessingOptions(defaults=app._source_defaults(other), save_sidecar=False)

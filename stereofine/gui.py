@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 import queue
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor, wait
 from copy import deepcopy
 from dataclasses import asdict, dataclass, replace
 import re
@@ -18,7 +18,6 @@ import customtkinter as ctk
 import numpy as np
 from PIL import Image, ImageDraw, ImageTk
 
-from .anaglyph import make_anaglyph
 from .batch import BatchRunOptions, BatchRunResult, batch_worker_count, run_batch
 from .config import (
     APP_NAME,
@@ -46,7 +45,8 @@ from .notifications import play_ready_sound
 from .look_controls import LookControlsMixin
 from .view_controls import ViewControlsMixin
 from .output_naming import suffix_label, suffix_labels, suffix_value, validate_sbs_suffix
-from .native_preview import (NativePreviewMixin, native_key, prepare_native_preview, pan_speed, MEASURE_REPEAT_MS,
+from .native_preview import (NativePreviewMixin, mask_preview_pair, native_key, prepare_native_preview,
+    preview_image, pan_speed, MEASURE_REPEAT_MS,
     MEASURE_HOLD_DELAY_MS, MEASURE_START_SPEED_PX_PER_SEC, MEASURE_MAX_SPEED_PX_PER_SEC,
     MEASURE_ACCEL_TIME_SEC, MEASURE_MAX_DT_SEC)
 from .tooltip import attach_tooltip
@@ -58,6 +58,7 @@ from .resources import asset_path
 from .session import (
     DECODED_CACHE_LIMIT,
     BrowsedSource,
+    browse_file_signature,
     browse_source,
     preload_browsable_source,
     is_saved_favorite,
@@ -97,7 +98,7 @@ from .theme import (
     TRAFFIC_RED,
     preview_border_px,
 )
-from .worker import WorkerManager, WorkerMessageKind
+from .worker import CancellationToken, WorkerManager, WorkerMessageKind
 
 WINDOW_WIDTH = 1400
 WINDOW_HEIGHT = 850
@@ -117,9 +118,28 @@ ACTIVITY_SPINNER_BG = (24, 24, 24)
 
 
 @dataclass(frozen=True)
+class FittedBrowseFrame:
+    left: np.ndarray
+    right: np.ndarray
+    image: Image.Image
+    mode: str
+
+
+@dataclass(frozen=True)
 class PreparedSessionPreview:
     session: BrowsedSource
     native_result: tuple
+    fitted_frame: FittedBrowseFrame | None = None
+
+
+@dataclass(frozen=True)
+class PreviewPrefetch:
+    source: StereoSource
+    defaults: ProcessingDefaults
+    bounds: tuple[int, int]
+    mode: str
+    token: CancellationToken
+    future: Future
 
 
 def _render_activity_spinner_frame(frame_index: int) -> Image.Image:
@@ -1527,7 +1547,9 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
                    for name in ("sbs_suffix_menu", "_exposure_entry"))
 
     def _release_inline_editor_focus(self):
-        if self._inline_editor(self.focus_get()):
+        self._release_sbs_suffix_focus()
+        entry = getattr(getattr(self, "_exposure_entry", None), "_entry", None)
+        if entry is not None and self.focus_get() is entry:
             self.focus_set()
 
     def _image_control_command(self, command):
@@ -1744,7 +1766,8 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
 
     def _drop_prefetch(self):
         if self._prefetched is not None:
-            self._prefetched[1].cancel()
+            self._prefetched.token.cancel()
+            self._prefetched.future.cancel()
             self._prefetched = None
 
     def _prefetch_neighbor(self):
@@ -1758,7 +1781,45 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         source = self.sources[index]
         if source.kind == 'heif' or (self._previous_decoded and source == self._previous_decoded[0]):
             return
-        self._prefetched = source, self._prefetch_pool.submit(preload_browsable_source, source)
+        defaults = self._browse_defaults(source, inherit_look=True)
+        bounds = self._preview_bounds()
+        mode = self._effective_preview_mode()
+        token = CancellationToken()
+        future = self._prefetch_pool.submit(self._prepare_neighbor, source, defaults, bounds, mode, token)
+        self._prefetched = PreviewPrefetch(source, defaults, bounds, mode, token, future)
+
+    @classmethod
+    def _prepare_neighbor(cls, source, defaults, bounds, mode, token):
+        token.raise_if_cancelled()
+        signature = browse_file_signature(source)
+        decoded = preload_browsable_source(source)
+        if decoded is None:
+            return signature, None, None
+        token.raise_if_cancelled()
+        session = browse_source(source, defaults, decoded=decoded)
+        prepared = cls._prepare_session_preview(session, bounds, token, mode)
+        native = prepared.native_result
+        views = native[4]
+        left, right = mask_preview_pair(*views[2][session.state.color.enabled], session.state, session.state.look)
+        frame = FittedBrowseFrame(left, right, preview_image(left, right, mode), mode)
+        token.raise_if_cancelled()
+
+        # Keep the exact fitted view when retaining a second native master and
+        # alignment buffers would exceed the existing browse cache budget.
+        loaded = session.loaded_pair
+        aligned = views[7][:2] if views[7] is not None else ()
+        full_size = sum(eye.nbytes for eye in (loaded.left, loaded.right, *native[1:3], *aligned))
+        if full_size > DECODED_CACHE_LIMIT:
+            native = (native[0], None, None, native[3], (*views[:7], None))
+        return signature, decoded, PreparedSessionPreview(session, native, frame)
+
+    def _browse_defaults(self, source, *, inherit_look):
+        defaults = self._source_defaults(source)
+        look = LookState()
+        if inherit_look and self.current is not None and self.current.source.input_root == source.input_root:
+            look = self.current.state.look
+        return replace(defaults, look_enabled=look.enabled, look_preset_id=look.preset_id,
+                       look_path=look.path, look_strength=look.strength)
 
     def _load_source_index(
         self,
@@ -1787,32 +1848,36 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.measure_cross_y = None
         self._stop_measure_repeat()
 
-        defaults = self._source_defaults(source)
-        look = LookState()
-        if inherit_look and self.current is not None and self.current.source.input_root == source.input_root:
-            look = self.current.state.look
-        defaults = replace(defaults, look_enabled=look.enabled, look_preset_id=look.preset_id,
-                           look_path=look.path, look_strength=look.strength)
+        defaults = self._browse_defaults(source, inherit_look=inherit_look)
         bounds = self._preview_bounds()
         mode = self._effective_preview_mode()
 
         cached = self._previous_decoded
-        future = self._prefetched[1] if self._prefetched and source == self._prefetched[0] else None
-        if future is not None:
+        prefetch = self._prefetched
+        if (prefetch is not None and
+                (prefetch.source, prefetch.defaults, prefetch.bounds, prefetch.mode) == (source, defaults, bounds, mode)):
             self._prefetched = None
         else:
             self._drop_prefetch()
+            prefetch = None
 
         def job(token, _progress):
             decoded = cached[1] if cached and cached[0] == source else None
-            if decoded is None and future is not None:
+            if prefetch is not None:
+                while not prefetch.future.done():
+                    if token.cancelled:
+                        prefetch.token.cancel()
+                        token.raise_if_cancelled()
+                    wait((prefetch.future,), timeout=.05)
+                token.raise_if_cancelled()
                 try:
-                    decoded = future.result()
+                    signature, decoded, prepared = prefetch.future.result()
+                    if prepared is not None and signature == browse_file_signature(source):
+                        return prepared
                 except Exception:
                     pass  # Let the normal loader report any persistent error.
             token.raise_if_cancelled()
-            session = (browse_source(source, defaults, decoded=decoded) if decoded is not None
-                       else browse_source(source, defaults))
+            session = browse_source(source, defaults, decoded=decoded)
             return self._prepare_session_preview(session, bounds, token, mode)
 
         self._start_worker("load", self._t("loading"), job)
@@ -1841,7 +1906,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             self._native_after_id = None
         self._detail_session_id = id(prepared.session)
         self._detail_center = None
-        self._native_cache = prepared.native_result[:3]
+        self._native_cache = prepared.native_result[:3] if prepared.native_result[1] is not None else None
         self._native_views = prepared.native_result[4]
         self._native_fit_cache = None
         self._native_failed_key = None
@@ -2305,21 +2370,18 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         # contains the Floating-Window masks.  Build the anaglyph from that
         # authoritative pair using StereoFine's current colorimetric mixer.
         mode = self._effective_preview_mode()
-        gray = mode == "Graustufen"
-        self._preview_pil = Image.fromarray(
-            (np.concatenate([self._preview_right_current, self._preview_left_current], axis=1)
-             if mode == "Kreuzblick" else
-             make_anaglyph(self._preview_left_current, self._preview_right_current, gray=gray)),
-            "RGB",
-        )
+        self._preview_pil = preview_image(self._preview_left_current, self._preview_right_current, mode)
         self._update_preview_display()
 
-    def _render_session_preview(self, session: BrowsedSource, *, start_image: bool = False) -> None:
-        if not start_image and session is self.current and self._apply_native_preview():
-            if (self._native_cache is None or self._native_cache[0] != native_key(session)
-                    or self._native_views_need_resize()):
-                self._request_native_preview()
-            return
+    def _render_session_preview(self, session: BrowsedSource, *, start_image: bool = False, fitted_frame=None) -> None:
+        if not start_image and session is self.current:
+            applied = (self._apply_native_preview() if fitted_frame is None else
+                       self._apply_native_preview(fitted_frame=fitted_frame))
+            if applied:
+                if (self._native_cache is None or self._native_cache[0] != native_key(session)
+                        or self._native_views_need_resize()):
+                    self._request_native_preview()
+                return
         if (not start_image and session is self.current
                 and getattr(self, "_inspection_view", None) is not None and self._inspection_view.active):
             self._request_native_preview(immediate=True)
@@ -2403,12 +2465,15 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.preview_label.configure(text="", image=new_image)
         self._preview_ctk_image = new_image
 
-    def _refresh_preview(self, *, rebuild_base: bool = False) -> None:
+    def _refresh_preview(self, *, rebuild_base: bool = False, fitted_frame=None) -> None:
         if rebuild_base:
             self._invalidate_preview_base()
         if self.current is not None:
             try:
-                self._render_session_preview(self.current)
+                if fitted_frame is None:
+                    self._render_session_preview(self.current)
+                else:
+                    self._render_session_preview(self.current, fitted_frame=fitted_frame)
             except Exception as exc:
                 self.preview_label.configure(text=self._t("preview_error", text=self.tr.message(str(exc))), text_color=TEXT_PRIMARY, image=None)
         else:
@@ -2690,7 +2755,9 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
                 messagebox.showerror(APP_NAME, self._t('state_save_failed', text=str(exc)))
                 self._refresh_preview()
                 return
+        fitted_frame = None
         if isinstance(payload, PreparedSessionPreview):
+            fitted_frame = payload.fitted_frame
             self._install_session_preview(payload)
             payload = payload.session
         if kind in {"load", "analysis"} and isinstance(payload, BrowsedSource):
@@ -2707,7 +2774,10 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             self._state_dirty = False
             self._state_dirty_can_create_sidecar = False
             self._sync_vars_from_current()
-            self._refresh_preview()
+            if fitted_frame is None:
+                self._refresh_preview()
+            else:
+                self._refresh_preview(fitted_frame=fitted_frame)
             self._render_status()
             self._refresh_control_states()
             if kind == "load":
@@ -3415,6 +3485,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
 
     def destroy(self):
         # A running decoder can still hold a source file open on Windows.
+        self._drop_prefetch()
         self._prefetch_pool.shutdown(wait=True, cancel_futures=True)
         super().destroy()
 

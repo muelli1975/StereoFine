@@ -70,6 +70,19 @@ def detail_texture_key(key, window, mode, look=None, exposure=0.0, viewport=None
     return key, tuple(asdict(window).items()), mode, look_signature(look), exposure, viewport
 
 
+def preview_image(left, right, mode):
+    pixels = (np.concatenate([right, left], axis=1) if mode == 'Kreuzblick' else
+              make_anaglyph(left, right, gray=mode == 'Graustufen'))
+    return Image.fromarray(pixels, 'RGB')
+
+
+def mask_preview_pair(left, right, state, look, **kwargs):
+    left, right = apply_exposure_and_look(left, right, state.exposure, look)
+    fw = state.floating_window
+    return apply_floating_window_masks(left, right, fw.left_permille, fw.right_permille,
+                                       fw.top_permille, fw.bottom_permille, **kwargs)
+
+
 def prepare_detail_texture(key, left, right, window, mode, token, look=None, exposure=0.0, viewport=None):
     token.raise_if_cancelled()
     signature = detail_texture_key(key, window, mode, look, exposure, viewport)
@@ -279,7 +292,7 @@ class NativePreviewMixin:
     def _native_views_need_resize(self):
         return self._has_fitted_native_view() and self._native_views[4] != self._preview_bounds()
 
-    def _apply_native_preview(self):
+    def _apply_native_preview(self, *, fitted_frame=None):
         if self.current is None:
             return False
         fitted = self._has_fitted_native_view()
@@ -315,9 +328,16 @@ class NativePreviewMixin:
         else:
             if fitted and (not native or not self._native_views_need_resize()):
                 a, b = self._native_views[2][self.current.state.color.enabled]
-                self._preview_left_current, self._preview_right_current = self._mask_preview_pair(a, b)
                 self._preview_pair_shape = (a.shape[1], a.shape[0])
-                self._build_preview_anaglyph()
+                if (fitted_frame is not None and fitted_frame.mode == self._effective_preview_mode()
+                        and not self._native_views_need_resize()):
+                    self._preview_left_current = fitted_frame.left
+                    self._preview_right_current = fitted_frame.right
+                    self._preview_pil = fitted_frame.image
+                    self._update_preview_display()
+                else:
+                    self._preview_left_current, self._preview_right_current = self._mask_preview_pair(a, b)
+                    self._build_preview_anaglyph()
                 if native:
                     self._request_detail_texture()
                 return True
@@ -355,10 +375,7 @@ class NativePreviewMixin:
         self._mode_release_ids[mode] = self.after_idle(released)
 
     def _mask_preview_pair(self, left, right, **kwargs):
-        left, right = apply_exposure_and_look(left, right, self.current.state.exposure, preview_look(self))
-        fw = self.current.state.floating_window
-        return apply_floating_window_masks(left, right, fw.left_permille, fw.right_permille,
-                                           fw.top_permille, fw.bottom_permille, **kwargs)
+        return mask_preview_pair(left, right, self.current.state, preview_look(self), **kwargs)
 
     def _inspection_texture_viewport(self):
         view = getattr(self, '_inspection_view', None)
