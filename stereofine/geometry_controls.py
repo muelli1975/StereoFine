@@ -62,7 +62,7 @@ class GeometryControlsMixin:
                 def update():
                     draft.redraw = None
                     self._update_preview_display()
-                draft.redraw = self.after_idle(update)
+                draft.redraw = self.after(8, update)
         return 'break'
 
     def _take_geometry_draft(self):

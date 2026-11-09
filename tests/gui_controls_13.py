@@ -325,6 +325,7 @@ def check_visible_shortcuts(app):
     key('<KeyRelease-Up>')
     assert draft.adjustment.roll_tenths == previous_geometry.roll_tenths + 1
     assert draft.adjustment.perspective == previous_geometry.perspective + 1
+    pump(app, lambda: draft.preview is not None and draft.redraw is None)
     assert draft.preview.left.shape == draft.preview.right.shape
     key('<KeyPress-x>')
     key('<KeyRelease-x>')
