@@ -346,6 +346,26 @@ def check_visible_shortcuts(app):
     assert app._inspection_view.scale == previous_scale
     assert json.loads(sidecar.read_text('utf-8'))['geometry'] == asdict(adjustment)
 
+    previous = sidecar.read_bytes()
+    key('<KeyPress-h>')
+    key('<Control-KeyPress-r>')
+    key('<KeyRelease-r>')
+    assert not app._geometry_draft.adjustment.active
+    assert app.current.state.geometry == adjustment
+    key('<Escape>')
+    assert sidecar.read_bytes() == previous
+
+    app.current.state.framing.crop_zoom_index = 1
+    app._schedule_state_save()
+    app.preview_frame.event_generate('<Control-KeyPress-r>')
+    assert app.current_job_kind == 'analysis'
+    key('<KeyRelease-r>')
+    pump(app, lambda: app.busy_state == 'idle')
+    assert not app.current.state.geometry.active
+    assert app.current.state.framing.crop_zoom_index == 0
+    assert app._inspection_view.scale == previous_scale
+    assert 'geometry' not in json.loads(sidecar.read_text('utf-8'))
+
 
 def check_favorite_filter(app, first, middle, last):
     label = app.favorite_filter_label

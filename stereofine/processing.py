@@ -68,6 +68,7 @@ class ProcessingOptions:
     read_series_input: bool = True
     parallel_features: bool = False
     geometry: GeometryAdjustment | None = None
+    reset_manual_edits: bool = False
 
 
 @dataclass
@@ -378,6 +379,8 @@ def process_source(
     # retained.
     if not load_result.color_cache_valid:
         state.color.valid = False
+    if options.reset_manual_edits:
+        state.reset_manual_to_auto()
     if options.geometry is not None:
         state.geometry = options.geometry
     if options.restart_alignment or options.geometry is not None:

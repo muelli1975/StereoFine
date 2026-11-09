@@ -31,6 +31,7 @@ from .config import (
 from .diagnostics import configure_logging, log_failure
 from .geometry import crop_shifted_pair_to_overlap, framing_crop_geometry, clamp_offset_for_size
 from .geometry_controls import GeometryControlsMixin
+from .manual_geometry import GeometryAdjustment
 from .i18n import (
     Translator,
     aspect_code,
@@ -2267,6 +2268,10 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
     def reset_manual_to_auto(self) -> None:
         if self.current is None or self.busy_state != "idle":
             return
+        if self.current.state.geometry.active:
+            if self._flush_state_save(explicit=True):
+                self._start_single_analysis(geometry=GeometryAdjustment(), reset_manual_edits=True)
+            return
         self.current.state.reset_manual_to_auto()
         self._schedule_disparity_refresh()
         self._schedule_state_save(immediate=True)
@@ -2735,10 +2740,10 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
             self._start_single_analysis()
         return "break"
 
-    def _start_single_analysis(self, *, geometry=None):
+    def _start_single_analysis(self, *, geometry=None, reset_manual_edits: bool = False):
         source = self.current.source
         options = replace(self._processing_options(keep_loaded_pair=True, restart_alignment=True),
-                          save_sidecar=False, geometry=geometry,
+                          save_sidecar=False, geometry=geometry, reset_manual_edits=reset_manual_edits,
                           expected_source_stamp=self.current.source_stamp if geometry is not None else None,
                           parallel_features=batch_worker_count(self.current.loaded_pair) > 1)
         bounds = self._preview_bounds()
@@ -3096,7 +3101,7 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
                 pass
             key = getattr(event, 'keysym', '').lower()
             if self._geometry_draft is not None and key and key not in {
-                'a', 'g', 'h', 'x', 'f1', 'f11', 'escape', 'return', 'kp_enter',
+                'a', 'g', 'h', 'r', 'x', 'f1', 'f11', 'escape', 'return', 'kp_enter',
                 'left', 'right', 'up', 'down',
             }:
                 return "break"
@@ -3301,7 +3306,11 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
     def _on_ctrl_r(self, event=None):
         if self.busy_state != "idle" or not self._claim_shortcut_key("ctrl-r", event):
             return "break"
-        self.reset_manual_to_auto()
+        if self._geometry_draft is not None:
+            self._geometry_draft.adjustment = GeometryAdjustment()
+            self._refresh_preview()
+        else:
+            self.reset_manual_to_auto()
         return "break"
 
     def _claim_shortcut_key(self, key: str, event=None) -> bool:
@@ -3413,7 +3422,7 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
             if edge == "right":
                 return self._on_ctrl_r(event)
             return "break"
-        if self.busy_state == "idle" and self.current is not None:
+        if self._geometry_draft is None and self.busy_state == "idle" and self.current is not None:
             self._floating_key_edge = edge
         return "break"
 
