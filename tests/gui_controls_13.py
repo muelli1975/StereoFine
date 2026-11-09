@@ -667,9 +667,9 @@ def main():
             _, _, second_prepared, second_bytes = second_prefetch.future.result(timeout=15)
             assert prepared.fitted_frame is not None and second_prepared.fitted_frame is not None
             assert first_bytes + second_bytes <= gui.DECODED_CACHE_LIMIT
-            app.next_source()
-            pump(app, lambda: app.busy_state == 'idle' and app.current.source == other)
-            assert app.current is prepared.session
+            with patch.object(app.worker, 'start', side_effect=AssertionError('warm browse started a worker')):
+                app.next_source()
+            assert app.busy_state == 'idle' and app.current is prepared.session
             assert second_prefetch in app._prefetched
             np.testing.assert_array_equal(np.asarray(app._preview_pil), np.asarray(prepared.fitted_frame.image))
             assert app.left_orientation.get() == app.right_orientation.get() == '180'

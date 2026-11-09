@@ -43,6 +43,7 @@ from .i18n import (
 )
 from .notifications import play_ready_sound
 from .look_controls import LookControlsMixin
+from .looks import look_signature
 from .view_controls import ViewControlsMixin
 from .output_naming import suffix_label, suffix_labels, suffix_value, validate_sbs_suffix
 from .native_preview import (NativePreviewMixin, mask_preview_pair, native_key, prepare_native_preview,
@@ -112,6 +113,7 @@ ACTIVITY_SPINNER_FRAME_COUNT = 60
 ACTIVITY_FRAME_MS = 16
 ACTIVITY_SPINNER_PERIOD_SEC = 1.0
 ACTIVITY_MIN_VISIBLE_MS = 200
+BROWSE_ACTIVITY_DELAY_MS = 140
 ACTIVITY_SPINNER_TRACK = (74, 62, 38)
 ACTIVITY_SPINNER_ARC = (198, 169, 94)
 ACTIVITY_SPINNER_BG = (24, 24, 24)
@@ -1381,13 +1383,20 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         for frame_index in range(frame_count):
             self._spinner_frames.append(ImageTk.PhotoImage(_render_activity_spinner_frame(frame_index)))
 
-    def _start_activity(self) -> None:
+    def _start_activity(self, *, delay=0) -> None:
         if self._spinner_stop_job:
-            try:
-                self.after_cancel(self._spinner_stop_job)
-            except Exception:
-                pass
+            self.after_cancel(self._spinner_stop_job)
             self._spinner_stop_job = None
+        if self._spinner_job:
+            self.after_cancel(self._spinner_job)
+            self._spinner_job = None
+        if delay:
+            self.activity_canvas.delete("all")
+            self._busy_started_at = None
+            self._spinner_job = self.after(delay, self._start_activity)
+            return
+        if self.busy_state == "idle":
+            return
         self._build_spinner_frames()
         self._busy_started_at = time.perf_counter()
         self._spinner_frame_index = 0
@@ -1829,12 +1838,13 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
                 budget -= prior.result()[3]
             except Exception:
                 pass
-        signature = browse_file_signature(source)
+        input_signature = browse_file_signature(source)
         decoded = preload_browsable_source(source, max_bytes=budget)
         if decoded is None:
-            return signature, None, None, 0
+            return None, None, None, 0
         token.raise_if_cancelled()
         session = browse_source(source, defaults, decoded=decoded)
+        signature = input_signature, look_signature(session.state.look)
         loaded = session.loaded_pair
         decoded = loaded, session.source_stamp
         decoded_bytes = loaded.left.nbytes + loaded.right.nbytes
@@ -1860,6 +1870,19 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             native = (native[0], None, None, native[3], (*views[:7], None))
             full_bytes = fitted_bytes
         return signature, decoded, PreparedSessionPreview(session, native, frame), full_bytes
+
+    @staticmethod
+    def _prefetch_result(prefetch):
+        try:
+            signature, decoded, prepared, _size = prefetch.future.result()
+            if prepared is not None:
+                current = (browse_file_signature(prefetch.source), look_signature(prepared.session.state.look))
+                if signature == current:
+                    return decoded, prepared
+            return decoded, None
+        except Exception:
+            # Fall back to the normal loader if speculative work failed.
+            return None, None
 
     def _browse_defaults(self, source, *, inherit_look):
         defaults = self._source_defaults(source)
@@ -1909,8 +1932,18 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         else:
             self._prefetched.remove(prefetch)
 
+        decoded = cached[1] if cached and cached[0] == source else None
+        if prefetch is not None and prefetch.future.done():
+            prefetched_decoded, prepared = self._prefetch_result(prefetch)
+            if prepared is not None:
+                self._prepare_for_job("load")
+                self._adopt_session_preview("load", prepared)
+                return
+            decoded = prefetched_decoded or decoded
+            prefetch = None
+
         def job(token, _progress):
-            decoded = cached[1] if cached and cached[0] == source else None
+            loaded = decoded
             if prefetch is not None:
                 while not prefetch.future.done():
                     if token.cancelled:
@@ -1918,14 +1951,12 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
                         token.raise_if_cancelled()
                     wait((prefetch.future,), timeout=.05)
                 token.raise_if_cancelled()
-                try:
-                    signature, decoded, prepared, _size = prefetch.future.result()
-                    if prepared is not None and signature == browse_file_signature(source):
-                        return prepared
-                except Exception:
-                    pass  # Let the normal loader report any persistent error.
+                prefetched_decoded, prepared = self._prefetch_result(prefetch)
+                if prepared is not None:
+                    return prepared
+                loaded = prefetched_decoded or loaded
             token.raise_if_cancelled()
-            session = browse_source(source, defaults, decoded=decoded)
+            session = browse_source(source, defaults, decoded=loaded)
             return self._prepare_session_preview(session, bounds, token, mode)
 
         self._start_worker("load", self._t("loading"), job)
@@ -1945,8 +1976,21 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         native = (key, *native[1:4], (key[0], *native[4][1:]))
         return PreparedSessionPreview(session, native)
 
-    def _install_session_preview(self, prepared) -> None:
+    def _install_session_preview(self, prepared, *, preserve_inspection=False) -> None:
+        view = getattr(self, '_inspection_view', None)
+        previous_size = self._view_image_size() if preserve_inspection and view is not None and view.active else None
+        previous_scale, previous_center = (view.scale, view.center) if previous_size else (None, None)
         self._reset_view_for_source()
+        left = prepared.native_result[1]
+        if previous_size and left is not None:
+            size = left.shape[1], left.shape[0]
+            viewport = self._view_viewport()
+            if previous_scale > view.fit_scale(size, viewport):
+                view.scale = previous_scale
+                if previous_center is not None:
+                    view.center = (previous_center[0] * size[0] / previous_size[0],
+                                   previous_center[1] * size[1] / previous_size[1])
+                view.layout(size, viewport)
         # Adopt one complete result. The first visible frame already has the
         # master crop; no reduced proxy is replaced after the ready signal.
         if self._native_after_id is not None:
@@ -2582,9 +2626,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
     # ------------------------------------------------------------------
     # Worker jobs / processing / export
     # ------------------------------------------------------------------
-    def _start_worker(self, kind: str, button_text: str, function) -> None:
-        if self.busy_state != "idle":
-            return
+    def _prepare_for_job(self, kind: str) -> None:
         if 'c' in getattr(self, '_shortcut_keys_down', ()):
             self._cancel_mode_release('look')
             self._release_shortcut_key('c')
@@ -2594,6 +2636,11 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         else:
             self._end_detail_preview()
         self._cancel_disparity_refresh()
+
+    def _start_worker(self, kind: str, button_text: str, function) -> None:
+        if self.busy_state != "idle":
+            return
+        self._prepare_for_job(kind)
         self.busy_state = kind
         self.current_job_kind = kind
         self._render_status()
@@ -2602,7 +2649,7 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         # while work is running. Progress is shown by preview/status/spinner.
         _ = button_text
         self._refresh_control_states()
-        self._start_activity()
+        self._start_activity(delay=BROWSE_ACTIVITY_DELAY_MS if kind == "load" else 0)
         job = self.worker.start(function, name=f"StereoFine-{kind}")
         self.current_job_id = job.job_id
 
@@ -2782,6 +2829,38 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self._stop_activity()
         return kind
 
+    def _adopt_session_preview(self, kind, payload) -> None:
+        fitted_frame = None
+        if isinstance(payload, PreparedSessionPreview):
+            fitted_frame = payload.fitted_frame
+            self._install_session_preview(payload, preserve_inspection=kind == "analysis")
+            payload = payload.session
+        if kind == "load":
+            self._load_rollback_context = None
+            old = self.current
+            if old is not None and old.source != payload.source and old.source in self.sources:
+                loaded = old.loaded_pair
+                if loaded.left.nbytes + loaded.right.nbytes <= DECODED_CACHE_LIMIT:
+                    self._previous_decoded = old.source, (loaded, old.source_stamp)
+                else:
+                    self._previous_decoded = None
+        self.current = payload
+        self._state_dirty = False
+        self._state_dirty_can_create_sidecar = False
+        self._sync_vars_from_current()
+        if fitted_frame is None:
+            self._refresh_preview()
+        else:
+            self._refresh_preview(fitted_frame=fitted_frame)
+        self._render_status()
+        self._refresh_control_states()
+        if kind == "load":
+            self._schedule_disparity_refresh()
+            self._prefetch_neighbor()
+        else:
+            play_ready_sound(asset_path("ready.wav"))
+        self._release_inline_editor_focus()
+
     def _finish_worker_success(self, payload: Any) -> None:
         kind = self._finish_busy_common()
         if kind == 'folder_settings':
@@ -2803,37 +2882,8 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
                 messagebox.showerror(APP_NAME, self._t('state_save_failed', text=str(exc)))
                 self._refresh_preview()
                 return
-        fitted_frame = None
-        if isinstance(payload, PreparedSessionPreview):
-            fitted_frame = payload.fitted_frame
-            self._install_session_preview(payload)
-            payload = payload.session
-        if kind in {"load", "analysis"} and isinstance(payload, BrowsedSource):
-            if kind == "load":
-                self._load_rollback_context = None
-                old = self.current
-                if old is not None and old.source != payload.source and old.source in self.sources:
-                    loaded = old.loaded_pair
-                    if loaded.left.nbytes + loaded.right.nbytes <= DECODED_CACHE_LIMIT:
-                        self._previous_decoded = old.source, (loaded, old.source_stamp)
-                    else:
-                        self._previous_decoded = None
-            self.current = payload
-            self._state_dirty = False
-            self._state_dirty_can_create_sidecar = False
-            self._sync_vars_from_current()
-            if fitted_frame is None:
-                self._refresh_preview()
-            else:
-                self._refresh_preview(fitted_frame=fitted_frame)
-            self._render_status()
-            self._refresh_control_states()
-            if kind == "load":
-                self._schedule_disparity_refresh()
-                self._prefetch_neighbor()
-            else:
-                play_ready_sound(asset_path("ready.wav"))
-            self._release_inline_editor_focus()
+        if kind in {"load", "analysis"} and isinstance(payload, (PreparedSessionPreview, BrowsedSource)):
+            self._adopt_session_preview(kind, payload)
             return
 
         if kind in {"batch", "save"} and isinstance(payload, BatchRunResult):
