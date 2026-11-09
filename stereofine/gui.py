@@ -214,6 +214,7 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
         self.current_job_id: str | None = None
         self.current_job_kind: str | None = None
         self.busy_state = "idle"
+        self._show_calculation_status = False
         self._busy_started_at: float | None = None
         self._spinner_job: str | None = None
         self._spinner_stop_job: str | None = None
@@ -1157,7 +1158,9 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
 
         normal_items = [item for item in deviation.rows if item.role == "normal"] if deviation else []
         measurement_pending = self.current is not None and (
-            self._measurement_after_id is not None or self._measurement_job_id is not None
+            self._show_calculation_status
+            or self._measurement_after_id is not None
+            or self._measurement_job_id is not None
         )
         labels["near_far"].configure(
             text_color=GOLD_LIGHT if measurement_pending else TEXT_PRIMARY,
@@ -2711,12 +2714,13 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
             self._end_detail_preview()
         self._cancel_disparity_refresh()
 
-    def _start_worker(self, kind: str, button_text: str, function) -> None:
+    def _start_worker(self, kind: str, button_text: str, function, *, show_calculation: bool = False) -> None:
         if self.busy_state != "idle":
             return
         self._prepare_for_job(kind)
         self.busy_state = kind
         self.current_job_kind = kind
+        self._show_calculation_status = show_calculation
         self._render_status()
         # ``button_text`` is retained for call-site clarity/history, but the
         # primary action itself is always the active cancellation affordance
@@ -2760,7 +2764,8 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
                                     processed.source_stamp, processed.state, sidecar)
             return self._prepare_session_preview(session, bounds, token, mode)
 
-        self._start_worker("analysis", self._t("alignment_running"), job)
+        self._start_worker("analysis", self._t("alignment_running"), job,
+                           show_calculation=geometry is not None and not reset_manual_edits)
 
     def _start_batch_run(self) -> None:
         if not self.sources:
@@ -2903,6 +2908,9 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
         self.current_job_id = None
         self.current_job_kind = None
         self.busy_state = "idle"
+        if self._show_calculation_status:
+            self._show_calculation_status = False
+            self._render_status()
         if kind == "batch":
             self._batch_progress_index = None
             self._batch_progress_total = None

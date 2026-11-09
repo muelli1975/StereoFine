@@ -365,8 +365,11 @@ def check_visible_shortcuts(app):
     key('<KeyPress-Up>')
     key('<KeyRelease-Up>')
     adjustment = app._geometry_draft.adjustment
-    key('<Return>')
+    app.preview_frame.event_generate('<Return>')
+    status = app._status_line_widgets['near_far']
+    assert status.cget('text') == app._t('status_calculating')
     pump(app, lambda: app.busy_state == 'idle')
+    assert status.cget('text') != app._t('status_calculating')
     assert app._geometry_draft is None and app.current.state.geometry == adjustment
     assert app._inspection_view.scale == previous_scale
     assert json.loads(sidecar.read_text('utf-8'))['geometry'] == asdict(adjustment)
