@@ -1,9 +1,9 @@
-name: Prepare StereoFine 1.3 candidates
+name: Prepare StereoFine 1.4 candidates
 
 on:
   workflow_dispatch:
   push:
-    branches: [development/1.3, release/1.3]
+    branches: [development/1.4]
 
 permissions:
   contents: read
@@ -30,7 +30,7 @@ jobs:
           python-version: '3.12.10'
       - uses: actions/download-artifact@v4
         with:
-          pattern: StereoFine-1.3-candidate-*
+          pattern: StereoFine-candidate-*
           path: release
           merge-multiple: true
       - name: Verify complete candidate set and write checksums
@@ -39,36 +39,8 @@ jobs:
           python scripts/verify_release_packages.py release > release/ARCHIVE_CHECKS.jsonl
       - uses: actions/upload-artifact@v4
         with:
-          name: StereoFine-1.3-candidate-checksums
+          name: StereoFine-1.4-candidate-checksums
           path: |
             release/SHA256SUMS.txt
             release/ARCHIVE_CHECKS.jsonl
           if-no-files-found: error
-
-  publish-1-3:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/release/1.3' && github.repository == 'muelli1975/StereoFine'
-    needs: checksums
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: StereoFine-1.3-candidate-*
-          path: release
-          merge-multiple: true
-      - name: Publish verified StereoFine 1.3 packages
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          (cd release && sha256sum -c SHA256SUMS.txt)
-          gh release create v1.3 --target "$GITHUB_SHA" --title 'StereoFine 1.3' \
-            --notes-file RELEASE_NOTES_1.3.md --latest \
-            release/StereoFine_1.3_Windows_x64.zip \
-            release/StereoFine_1.3_Linux_x64.tar.gz \
-            release/StereoFine_1.3_macOS_AppleSilicon.zip \
-            release/StereoFine_1.3_macOS_Intel.zip \
-            release/SHA256SUMS.txt

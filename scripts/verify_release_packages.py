@@ -15,10 +15,10 @@ else:
     from package_source import ROOT, committed_sources
 
 PACKAGES = {
-    'StereoFine_1.3_Windows_x64.zip': 'windows',
-    'StereoFine_1.3_Linux_x64.tar.gz': 'linux',
-    'StereoFine_1.3_macOS_AppleSilicon.zip': 'arm64',
-    'StereoFine_1.3_macOS_Intel.zip': 'intel',
+    'StereoFine_1.4_Windows_x64.zip': 'windows',
+    'StereoFine_1.4_Linux_x64.tar.gz': 'linux',
+    'StereoFine_1.4_macOS_AppleSilicon.zip': 'arm64',
+    'StereoFine_1.4_macOS_Intel.zip': 'intel',
 }
 ASSETS = {'stereofine.jpg', 'stereofine.ico', 'stereofine.icns', 'ready.wav'}
 def verify_archive(path: Path, platform: str, expected: dict[str, bytes]) -> dict:
@@ -71,9 +71,9 @@ def verify_archive(path: Path, platform: str, expected: dict[str, bytes]) -> dic
         if '/tools/' in name and name.endswith('/Image/ExifTool.pm'):
             body = read()
             exif_version = b"$VERSION = '13.59'" in body or b'$VERSION = "13.59"' in body
-        if name == 'StereoFine/RELEASE_NOTES_1.3.md':
+        if name == 'StereoFine/RELEASE_NOTES_1.4.md':
             # Windows checkout text uses CRLF; canonical Source stays byte-exact.
-            notes = read().replace(b'\r\n', b'\n') == expected['RELEASE_NOTES_1.3.md'].replace(b'\r\n', b'\n')
+            notes = read().replace(b'\r\n', b'\n') == expected['RELEASE_NOTES_1.4.md'].replace(b'\r\n', b'\n')
 
     if path.name.endswith('.tar.gz'):
         with tarfile.open(path, 'r|gz') as archive:
@@ -112,7 +112,7 @@ def verify_archive(path: Path, platform: str, expected: dict[str, bytes]) -> dic
 
 def main(folder: Path) -> None:
     if not set(PACKAGES).issubset({p.name for p in folder.iterdir()}):
-        raise RuntimeError('Expected all four native 1.3 packages')
+        raise RuntimeError('Expected all four native 1.4 packages')
     commit, expected = committed_sources()
     expected['SOURCE_COMMIT.txt'] = (commit + '\n').encode()
     for name, platform in PACKAGES.items():

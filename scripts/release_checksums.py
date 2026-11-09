@@ -6,10 +6,10 @@ from pathlib import Path
 import sys
 
 ARCHIVES = (
-    'StereoFine_1.3_Windows_x64.zip',
-    'StereoFine_1.3_Linux_x64.tar.gz',
-    'StereoFine_1.3_macOS_AppleSilicon.zip',
-    'StereoFine_1.3_macOS_Intel.zip',
+    'StereoFine_1.4_Windows_x64.zip',
+    'StereoFine_1.4_Linux_x64.tar.gz',
+    'StereoFine_1.4_macOS_AppleSilicon.zip',
+    'StereoFine_1.4_macOS_Intel.zip',
 )
 
 

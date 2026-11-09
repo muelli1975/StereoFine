@@ -18,7 +18,7 @@ class ReleaseHygieneTests(unittest.TestCase):
         text = (ROOT/'version_info.txt').read_text(encoding='utf-8')
         for field in ['FileVersion', 'ProductVersion']:
             self.assertIn(f"StringStruct('{field}', '{APP_VERSION}')", text)
-        self.assertIn('flags=0x0,' if APP_VERSION == '1.3' else 'flags=0x2,', text)
+        self.assertIn('flags=0x0,', text)
 
     def test_release_files_exist(self):
         required = [

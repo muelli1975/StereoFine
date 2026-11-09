@@ -18,16 +18,16 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def archive_spec(candidate, commit, system, machine, version="1.3"):
+def archive_spec(candidate, commit, system, machine, version="1.4"):
     if not candidate:
         return f'StereoFine_{version}-dev_{commit[:8]}_{system}_{machine}', 'zip'
     if system == 'Windows' and machine.lower() in {'amd64', 'x86_64'}:
-        return 'StereoFine_1.3_Windows_x64', 'zip'
+        return 'StereoFine_1.4_Windows_x64', 'zip'
     if system == 'Linux' and machine.lower() in {'amd64', 'x86_64'}:
-        return 'StereoFine_1.3_Linux_x64', 'gztar'
+        return 'StereoFine_1.4_Linux_x64', 'gztar'
     if system == 'macOS' and machine.lower() in {'arm64', 'aarch64', 'x86_64'}:
         architecture = 'Intel' if machine.lower() == 'x86_64' else 'AppleSilicon'
-        return f'StereoFine_1.3_macOS_{architecture}', 'zip'
+        return f'StereoFine_1.4_macOS_{architecture}', 'zip'
     raise ValueError(f'Unsupported release target: {system}/{machine}')
 
 
@@ -45,11 +45,11 @@ def application_version(root):
 def require_candidate_version(root):
     # Check both displayed versions before downloading or building anything.
     info = (root/'version_info.txt').read_text('utf-8')
-    if (application_version(root) != '1.3'
-            or "StringStruct('FileVersion', '1.3')" not in info
-            or "StringStruct('ProductVersion', '1.3')" not in info
+    if (application_version(root) != '1.4'
+            or "StringStruct('FileVersion', '1.4')" not in info
+            or "StringStruct('ProductVersion', '1.4')" not in info
             or 'flags=0x0,' not in info):
-        raise RuntimeError('Final candidates require APP_VERSION and Windows metadata set to 1.3 without prerelease flags.')
+        raise RuntimeError('Final candidates require APP_VERSION and Windows metadata set to 1.4 without prerelease flags.')
 
 
 def run(*arguments):
@@ -61,7 +61,7 @@ def main():
     parser.add_argument('--skip-helper-build', action='store_true')
     parser.add_argument('--reuse-native-tools', action='store_true',
                         help='Reuse an already prepared complete native tools tree')
-    parser.add_argument('--candidate', action='store_true', help='Require final 1.3 metadata; build without publishing')
+    parser.add_argument('--candidate', action='store_true', help='Require final 1.4 metadata; build without publishing')
     parser.add_argument('--fixtures', type=Path, default=ROOT/'tests/fixtures/heif')
     args = parser.parse_args()
     if args.candidate:
@@ -131,7 +131,7 @@ def main():
     if args.candidate and sys.platform == 'darwin':
         info = package/'StereoFine.app/Contents/Info.plist'
         data = plistlib.loads(info.read_bytes())
-        data.update(CFBundleShortVersionString='1.3', CFBundleVersion='1.3.0',
+        data.update(CFBundleShortVersionString='1.4', CFBundleVersion='1.4.0',
                     CFBundleIdentifier='org.stereotools.stereofine')
         info.write_bytes(plistlib.dumps(data))
         run('codesign', '--force', '--deep', '--sign', '-', package/'StereoFine.app')

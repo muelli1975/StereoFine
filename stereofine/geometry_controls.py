@@ -37,6 +37,7 @@ class GeometryControlsMixin:
             return 'break'
         self._reset_keyboard_modes()
         self._end_point_measurement()
+        self._view_pan_pointer = None
         self.preview_frame.focus_set()
         left, right = _oriented_pair(self.current.loaded_pair, self.current.state)
         aspect = left.shape[1] / left.shape[0]

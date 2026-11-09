@@ -1939,6 +1939,9 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
         if prefetch is not None and prefetch.future.done():
             prefetched_decoded, prepared = self._prefetch_result(prefetch)
             if prepared is not None:
+                if self._spinner_stop_job is not None:
+                    self.after_cancel(self._spinner_stop_job)
+                    self._finish_activity()
                 self._prepare_for_job("load")
                 self._adopt_session_preview("load", prepared)
                 return

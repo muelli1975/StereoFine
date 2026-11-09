@@ -153,7 +153,7 @@ class ViewControlsMixin:
         return 'break'
 
     def _fit_inspection(self, _event=None, *, notice=True, wheel=False):
-        if self.busy_state != 'idle':
+        if self.busy_state != 'idle' or getattr(self, '_geometry_draft', None) is not None:
             return 'break'
         self._inspection_view.reset()
         self._view_pan_pointer = None
@@ -201,7 +201,8 @@ class ViewControlsMixin:
         self._end_point_measurement()
 
     def _on_view_pan_start(self, event):
-        if self.busy_state == 'idle' and self._inspection_view.active and not self.detail_active:
+        if (self.busy_state == 'idle' and self._inspection_view.active and not self.detail_active
+                and getattr(self, '_geometry_draft', None) is None):
             self.preview_frame.focus_set()
             self._view_pan_pointer = event.x_root, event.y_root
         return 'break'
