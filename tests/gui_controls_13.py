@@ -51,15 +51,16 @@ def check_visible_shortcuts(app):
         key('<KeyRelease-c>')
         pump(app, lambda: 'c' not in app._shortcut_keys_down)
 
-    def wheel(direction, *, widget=None, delta=None):
+    def wheel(direction, *, widget=None, delta=None, shift=True):
         widget = app.look_slider._canvas if widget is None else widget
         platform = app.tk.call('tk', 'windowingsystem')
+        state = 0x0001 if shift else 0
         if platform == 'x11':
             button = 4 if direction > 0 else 5
-            widget.event_generate(f'<Button-{button}>')
+            widget.event_generate(f'<Button-{button}>', state=state)
         else:
             notch = 120 if platform == 'win32' else 1
-            widget.event_generate('<MouseWheel>', delta=direction * (delta or notch))
+            widget.event_generate('<MouseWheel>', delta=direction * (delta or notch), state=state)
         pump(app)
 
     if not app.look_enabled.get():
@@ -122,8 +123,11 @@ def check_visible_shortcuts(app):
     assert asdict(app.current.state.manual) == manual_before
 
     wheel(1, widget=app.look_strength_label._label)
+    wheel(1, shift=False)
     assert app.current.state.look.strength == .43
     if sys.platform == 'win32':
+        wheel(1, delta=60)
+        wheel(1, shift=False)
         wheel(1, delta=60)
         assert app.current.state.look.strength == .43
         wheel(1, delta=60)
@@ -160,6 +164,8 @@ def check_visible_shortcuts(app):
     assert app._flush_state_save()
     saved_photo = json.loads(app.current.source.sidecar_path.read_text('utf-8'))['photo']
     assert saved_photo == {'exposure': .4}
+    wheel(1, widget=exposure._canvas, shift=False)
+    assert app.current.state.exposure == .4
     wheel(1, widget=exposure._canvas)
     assert app.current.state.exposure == .5
     wheel(-1, widget=exposure._canvas)

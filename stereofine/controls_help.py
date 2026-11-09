@@ -43,7 +43,7 @@ Vorschau und Hilfe
   C                        LUT ein-/ausschalten
   C halten + ←/→           LUT einschalten, dann durch Looks blättern
   C halten + ↑/↓           LUT-Stärke um 5 Prozentpunkte ändern
-  Mausrad                  Bildbearbeitungsregler über Schiene oder Griff verstellen
+  Umschalt + Mausrad       Bildbearbeitungsregler über Schiene oder Griff verstellen
   Doppelklick              Bildbearbeitungsregler auf Standardwert zurücksetzen
   G                        Gitter durchschalten
   Shift + G                Gitter aus
@@ -93,7 +93,7 @@ Preview and help
   C                        Toggle LUT
   Hold C + ←/→             Enable LUT, then browse looks
   Hold C + ↑/↓             Adjust LUT strength by 5 percentage points
-  Mouse wheel              Adjust the image editing slider over its track or handle
+  Shift + Mouse wheel      Adjust the image editing slider over its track or handle
   Double click             Reset an image editing slider to its default
   G                        Cycle grid
   Shift + G                Grid off

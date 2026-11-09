@@ -5,6 +5,9 @@ import customtkinter as ctk
 from .theme import GOLD_DARK
 
 
+SHIFT_MASK = 0x0001
+
+
 class CenteredSlider(ctk.CTkSlider):
     """Colour the track from the neutral midpoint to the current grip."""
 
@@ -37,7 +40,7 @@ def bind_slider_wheel(slider, enabled, step):
 
     def scroll(event, ticks=None):
         nonlocal remainder
-        if not enabled():
+        if not event.state & SHIFT_MASK or not enabled():
             remainder = 0
             return None
         if ticks is None:
