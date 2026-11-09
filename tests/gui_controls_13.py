@@ -74,9 +74,10 @@ def check_visible_shortcuts(app):
     pump(app, lambda: 'c' not in app._shortcut_keys_down)
     assert app.current.state.look.enabled and app.current.state.look.preset_id == 'blue_ice'
     assert app.current.state.look.strength == .43 and app.look_menu.popup is None
-    assert app._look_notice == 'LUT: Blue Ice'
+    assert app._look_notice and app._look_notice_text() == 'LUT: Blue Ice · 43 %'
     tap_c()
-    assert not app.current.state.look.enabled and app._look_notice == app._t('look_notice_off')
+    assert not app.current.state.look.enabled
+    assert app._look_notice and app._look_notice_text() == app._t('look_notice_off')
     wheel(1)
     assert app.current.state.look.strength == .43
     key('<KeyPress-c>')
@@ -88,16 +89,19 @@ def check_visible_shortcuts(app):
     assert asdict(app.current.state.manual) == manual_before
     tap_c()
     assert app.current.state.look.enabled and app.current.state.look.strength == .43
+    assert app._look_notice and app._look_notice_text() == 'LUT: Blue Ice · 43 %'
 
     key('<KeyPress-c>')
     key('<KeyPress-Up>')
     key('<KeyRelease-Up>')
     assert app.current.state.look.strength == .48
+    assert app._look_notice and app._look_notice_text() == 'LUT: Blue Ice · 48 %'
     key('<KeyPress-Down>')
     key('<KeyRelease-Down>')
     key('<KeyRelease-c>')
     pump(app, lambda: 'c' not in app._shortcut_keys_down)
     assert app.current.state.look.enabled and app.current.state.look.strength == .43
+    assert app._look_notice and app._look_notice_text() == 'LUT: Blue Ice · 43 %'
     assert asdict(app.current.state.manual) == manual_before
 
     wheel(1, shift=False)

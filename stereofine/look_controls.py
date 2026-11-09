@@ -299,7 +299,7 @@ class LookControlsMixin:
 
     def _on_look_strength(self, value):
         self.look_strength.set(round(float(value)))
-        self._apply_look_change(persist=False)
+        return self._apply_look_change(persist=False)
 
     def _can_step_look_strength(self):
         return (self.current is not None and self.busy_state == 'idle'
@@ -307,11 +307,10 @@ class LookControlsMixin:
 
     def _step_look_strength(self, steps):
         if not steps or not self._can_step_look_strength():
-            return
+            return False
         current = self.look_strength.get()
         strength = max(0, min(100, current + 5 * steps))
-        if strength != current:
-            self._on_look_strength(strength)
+        return strength != current and self._on_look_strength(strength)
 
     def _apply_look_change(self, *, persist=True):
         if self.busy_state != 'idle':

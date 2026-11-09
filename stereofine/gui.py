@@ -2991,8 +2991,8 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
             self._detail_arrows_down.add(direction)
             if direction in {'left', 'right'}:
                 self._cycle_look(-1 if direction == 'left' else 1)
-            else:
-                self._step_look_strength(1 if direction == 'up' else -1)
+            elif self._step_look_strength(1 if direction == 'up' else -1):
+                self._show_look_notice()
             return 'break'
         if self._handle_detail_arrow(direction):
             return "break"
