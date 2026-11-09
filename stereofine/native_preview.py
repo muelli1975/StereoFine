@@ -319,7 +319,8 @@ class NativePreviewMixin:
             if len(self._native_views) > 6 and self._native_views[6] is not None:
                 self._preview_base = self._native_views[6]
                 self._preview_base_session_id = id(self.current)
-        if getattr(self, '_geometry_draft', None) is not None:
+        draft = getattr(self, '_geometry_draft', None)
+        if draft is not None and draft.adjustment != self.current.state.geometry:
             self._update_preview_display()
         elif self.detail_active:
             if not native:

@@ -314,6 +314,10 @@ def check_visible_shortcuts(app):
     previous_geometry = app.current.state.geometry
     app.preview_frame.focus_force()
     pump(app, lambda: app.focus_get() is app.preview_frame)
+    def release_h():
+        key('<KeyRelease-h>')
+        pump(app, lambda: 'h' not in app._shortcut_keys_down)
+
     def press_h_without_preview_shift():
         before = app._preview_ctk_image.cget('light_image')
         with patch('stereofine.geometry_controls.overlay_text', wraps=overlay_text) as draw:
@@ -329,12 +333,12 @@ def check_visible_shortcuts(app):
     draft = press_h_without_preview_shift()
     key('<KeyPress-h>')
     assert app._geometry_draft is draft
-    key('<KeyRelease-h>')
+    release_h()
     key('<KeyPress-Right>')
     key('<KeyRelease-Right>')
     assert draft.adjustment != previous_geometry
     key('<KeyPress-h>')
-    key('<KeyRelease-h>')
+    release_h()
     assert app._geometry_draft is None and app.current.state.geometry == previous_geometry
     assert sidecar.read_bytes() == previous
 
@@ -342,7 +346,7 @@ def check_visible_shortcuts(app):
     previous_scale = app._inspection_view.scale
     assert previous_scale is not None
     draft = press_h_without_preview_shift()
-    key('<KeyRelease-h>')
+    release_h()
     key('<KeyPress-Right>')
     key('<KeyRelease-Right>')
     key('<KeyPress-Up>')
@@ -361,7 +365,7 @@ def check_visible_shortcuts(app):
     assert sidecar.read_bytes() == previous and app._inspection_view.scale == previous_scale
 
     key('<KeyPress-h>')
-    key('<KeyRelease-h>')
+    release_h()
     key('<KeyPress-Up>')
     key('<KeyRelease-Up>')
     adjustment = app._geometry_draft.adjustment
@@ -376,7 +380,7 @@ def check_visible_shortcuts(app):
 
     previous = sidecar.read_bytes()
     key('<KeyPress-h>')
-    key('<KeyRelease-h>')
+    release_h()
     key('<Control-KeyPress-r>')
     key('<KeyRelease-r>')
     assert not app._geometry_draft.adjustment.active

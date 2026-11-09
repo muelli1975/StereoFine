@@ -380,8 +380,9 @@ class ViewControlsMixin:
                                                reference_width=size[0]*display[0]/(box[2]-box[0]))
             self._measure_display_size = image.size
         image = self._decorate_view(image, box, size)
-        if self._geometry_draft is not None:
-            image = self._decorate_geometry_draft(image, self._geometry_draft)
+        draft = getattr(self, '_geometry_draft', None)
+        if draft is not None:
+            image = self._decorate_geometry_draft(image, draft)
         self._preview_display_size = image.size
         scaling = self.preview_label._get_widget_scaling()
         photo = ctk.CTkImage(light_image=image, dark_image=image,

@@ -2633,8 +2633,9 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
             self._invalidate_preview_base()
         if self._geometry_draft is not None:
             self._geometry_draft.preview = self._geometry_draft.image = None
-            self._update_preview_display()
-            return
+            if self._geometry_draft_has_changes():
+                self._update_preview_display()
+                return
         if self.current is not None:
             try:
                 if fitted_frame is None:
