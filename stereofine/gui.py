@@ -2494,7 +2494,8 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         else:
             source = self.current.source
             options = replace(self._processing_options(keep_loaded_pair=True, restart_alignment=True),
-                              save_sidecar=False)
+                              save_sidecar=False,
+                              parallel_features=batch_worker_count(self.current.loaded_pair) > 1)
             bounds = self._preview_bounds()
             mode = self._effective_preview_mode()
             missing_preview = self._t("internal_preview_error")

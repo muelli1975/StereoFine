@@ -65,6 +65,7 @@ class ProcessingOptions:
     # A single-image save must reproduce the source currently shown in the GUI.
     expected_source_stamp: SourceStamp | None = None
     read_series_input: bool = True
+    parallel_features: bool = False
 
 
 @dataclass
@@ -397,7 +398,9 @@ def process_source(
     alignment_from_cache = _alignment_cache_usable(load_result, state, alignment_basis, options)
     if not alignment_from_cache:
         token.raise_if_cancelled()
-        result = analyze_pair_features(left_proxy, right_proxy, method, ALIGNMENT_ANALYSIS_MAX_WIDTH)
+        detect_options = {'parallel_detection': True} if options.parallel_features else {}
+        result = analyze_pair_features(left_proxy, right_proxy, method, ALIGNMENT_ANALYSIS_MAX_WIDTH,
+                                       **detect_options)
         token.raise_if_cancelled()
         _store_alignment_result(state, result, alignment_basis)
 

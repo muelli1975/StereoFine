@@ -176,6 +176,7 @@ def _run_batch(source_list, options, cancellation, progress, pool, workers):
     # it immediately afterwards; analysis-only never retains the master pair.
     process_options = replace(
         options.processing,
+        parallel_features=False,
         keep_loaded_pair=not options.analysis_only,
         preview_max_width=BATCH_PREVIEW_MAX_WIDTH if options.analysis_only else None,
         preview_max_height=BATCH_PREVIEW_MAX_HEIGHT if options.analysis_only else None,

@@ -1519,6 +1519,8 @@ def analyze_pair_features(
     right: np.ndarray,
     method: str,
     max_width: int,
+    *,
+    parallel_detection: bool = False,
 ) -> dict:
     """Select a stereo-safe correction using shared spatial holdout evidence.
 
@@ -1538,18 +1540,27 @@ def analyze_pair_features(
 
     method_upper = method.upper()
     if method_upper == "AKAZE":
-        detector = cv2.AKAZE_create()
+        create_detector = cv2.AKAZE_create
         norm_type = cv2.NORM_HAMMING
     elif method_upper == "SIFT":
         if not hasattr(cv2, "SIFT_create"):
             raise RuntimeError("SIFT ist in dieser OpenCV-Version nicht verfügbar.")
-        detector = cv2.SIFT_create()
+        create_detector = cv2.SIFT_create
         norm_type = cv2.NORM_L2
     else:
         raise RuntimeError(f"Unbekanntes Analyseverfahren: {method}")
 
-    kp_left, desc_left = detector.detectAndCompute(left_gray, None)
-    kp_right, desc_right = detector.detectAndCompute(right_gray, None)
+    detector = create_detector()
+    if parallel_detection:
+        from concurrent.futures import ThreadPoolExecutor
+
+        with ThreadPoolExecutor(max_workers=1, thread_name_prefix='StereoFine-features') as pool:
+            right_features = pool.submit(create_detector().detectAndCompute, right_gray, None)
+            kp_left, desc_left = detector.detectAndCompute(left_gray, None)
+            kp_right, desc_right = right_features.result()
+    else:
+        kp_left, desc_left = detector.detectAndCompute(left_gray, None)
+        kp_right, desc_right = detector.detectAndCompute(right_gray, None)
     detected_at = time.perf_counter()
 
     if desc_left is None or desc_right is None or len(kp_left) < 4 or len(kp_right) < 4:
