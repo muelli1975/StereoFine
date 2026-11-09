@@ -50,6 +50,18 @@ def check_visible_shortcuts(app):
         key('<KeyRelease-c>')
         pump(app, lambda: 'c' not in app._shortcut_keys_down)
 
+    def wheel(direction, *, shift=True, delta=None):
+        canvas = app.look_slider._canvas
+        platform = app.tk.call('tk', 'windowingsystem')
+        modifier = 'Shift-' if shift else ''
+        if platform == 'x11':
+            button = 4 if direction > 0 else 5
+            canvas.event_generate(f'<{modifier}Button-{button}>')
+        else:
+            notch = 120 if platform == 'win32' else 1
+            canvas.event_generate(f'<{modifier}MouseWheel>', delta=direction * (delta or notch))
+        pump(app)
+
     if not app.look_enabled.get():
         tap_c()
     app._on_look_selected('Blue House')
@@ -65,6 +77,8 @@ def check_visible_shortcuts(app):
     assert app._look_notice == 'LUT: Blue Ice'
     tap_c()
     assert not app.current.state.look.enabled and app._look_notice == app._t('look_notice_off')
+    wheel(1)
+    assert app.current.state.look.strength == .43
     key('<KeyPress-c>')
     key('<KeyPress-Left>')
     key('<KeyRelease-Left>')
@@ -74,6 +88,30 @@ def check_visible_shortcuts(app):
     assert asdict(app.current.state.manual) == manual_before
     tap_c()
     assert app.current.state.look.enabled and app.current.state.look.strength == .43
+
+    key('<KeyPress-c>')
+    key('<KeyPress-Up>')
+    key('<KeyRelease-Up>')
+    assert app.current.state.look.strength == .48
+    key('<KeyPress-Down>')
+    key('<KeyRelease-Down>')
+    key('<KeyRelease-c>')
+    pump(app, lambda: 'c' not in app._shortcut_keys_down)
+    assert app.current.state.look.enabled and app.current.state.look.strength == .43
+    assert asdict(app.current.state.manual) == manual_before
+
+    wheel(1, shift=False)
+    assert app.current.state.look.strength == .43
+    if sys.platform == 'win32':
+        wheel(1, delta=60)
+        assert app.current.state.look.strength == .43
+        wheel(1, delta=60)
+    else:
+        wheel(1)
+    assert app.current.state.look.strength == .48
+    wheel(-1)
+    assert app.current.state.look.strength == .43
+    assert app.focus_get() is app.preview_frame
 
     click_time = 1000
 
@@ -374,6 +412,8 @@ def main():
                         'oder bei eingepasster Ansicht das Vollbild verlassen.',
                         'Kontextmenü öffnen (Disparitätsmesser bei Anaglyphen)',
                         'LUT ein-/ausschalten', 'Vorherigen/nächsten LUT-Look wählen',
+                        'LUT-Stärke um 5 Prozentpunkte ändern',
+                        'Bildbearbeitungsregler unter dem Mauszeiger verstellen',
                     } <= labels
                 else:
                     assert {
@@ -383,6 +423,8 @@ def main():
                         'or exit fullscreen if already fitted.',
                         'Open context menu (disparity meter in anaglyph views)',
                         'Toggle LUT', 'Select previous/next LUT look',
+                        'Adjust LUT strength by 5 percentage points',
+                        'Adjust the image editing slider under the pointer',
                     } <= labels
                 width, height = window.initial_window_size
                 assert window.initial_content_height + 100*window.scale <= height

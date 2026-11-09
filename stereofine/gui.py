@@ -2915,13 +2915,16 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         return 1
 
     def _on_arrow(self, direction: str, event=None):
-        if direction in {'left', 'right'} and 'c' in getattr(self, '_shortcut_keys_down', ()):
+        if 'c' in getattr(self, '_shortcut_keys_down', ()):
             self._look_key_used = True
             pending = self._detail_arrow_releases.pop(direction, None)
             if pending is not None:
                 self.after_cancel(pending)
             self._detail_arrows_down.add(direction)
-            self._cycle_look(-1 if direction == 'left' else 1)
+            if direction in {'left', 'right'}:
+                self._cycle_look(-1 if direction == 'left' else 1)
+            else:
+                self._step_look_strength(1 if direction == 'up' else -1)
             return 'break'
         if self._handle_detail_arrow(direction):
             return "break"

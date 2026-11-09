@@ -34,6 +34,7 @@ class LookControlsMixin:
         self._look_hover_job = None
         self._look_hover_state = None
         self._look_popup_generation = 0
+        self._look_wheel_remainder = 0
         self._sync_look_display()
 
     def _current_look_option(self):
@@ -79,6 +80,11 @@ class LookControlsMixin:
             variable=self.look_strength, command=self._on_look_strength,
             fg_color=BORDER, progress_color=GOLD_DARK, button_color=GOLD_LIGHT,
             button_hover_color=GOLD_LIGHT)
+        self._look_wheel_windows = self.tk.call('tk', 'windowingsystem') == 'win32'
+        self.look_slider.bind('<Shift-MouseWheel>', self._on_look_strength_wheel)
+        self.look_slider.bind('<Shift-Button-4>', lambda event: self._on_look_strength_wheel(event, 1))
+        self.look_slider.bind('<Shift-Button-5>', lambda event: self._on_look_strength_wheel(event, -1))
+        self.look_slider.bind('<Leave>', self._reset_look_wheel)
         self.look_slider.grid(row=row,column=0,sticky='ew',padx=(42,20),pady=(0,12));row += 1
         self._lock_widgets.append(self.look_slider)
         self._look_tooltip_hides = [attach_tooltip(widget, lambda: self._t('look_tooltip'),
@@ -99,6 +105,7 @@ class LookControlsMixin:
         self.look_menu.configure(state='normal' if enabled else 'disabled', text_color=color)
         if not enabled:
             self.look_menu.close_popup()
+            self._reset_look_wheel()
         self.folder_settings_button.configure(state='normal' if self.busy_state == 'idle' and self.current is not None else 'disabled')
         self.look_strength_label.configure(text=self._t('look_strength',value=round(self.look_strength.get())),
                                             text_color=color)
@@ -212,6 +219,36 @@ class LookControlsMixin:
     def _on_look_strength(self, value):
         self.look_strength.set(round(float(value)))
         self._apply_look_change(persist=False)
+
+    def _can_step_look_strength(self):
+        return (self.current is not None and self.busy_state == 'idle'
+                and self.look_enabled.get() and self.look_menu.popup is None)
+
+    def _step_look_strength(self, steps):
+        if not steps or not self._can_step_look_strength():
+            return
+        current = self.look_strength.get()
+        strength = max(0, min(100, current + 5 * steps))
+        if strength != current:
+            self._on_look_strength(strength)
+
+    def _reset_look_wheel(self, _event=None):
+        self._look_wheel_remainder = 0
+
+    def _on_look_strength_wheel(self, event, steps=None):
+        if not self._can_step_look_strength():
+            return None
+        if steps is None:
+            delta = event.delta
+            if self._look_wheel_windows:
+                # Windows can deliver partial notches from high-resolution wheels.
+                delta += self._look_wheel_remainder
+                steps = int(delta / 120)
+                self._look_wheel_remainder = delta - 120 * steps
+            else:
+                steps = (delta > 0) - (delta < 0)
+        self._step_look_strength(steps)
+        return 'break'
 
     def _apply_look_change(self, *, persist=True):
         if self.busy_state != 'idle':

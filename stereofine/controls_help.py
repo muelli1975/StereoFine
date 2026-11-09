@@ -41,6 +41,8 @@ Vorschau und Hilfe
   A                        Farbig/Graustufen/Kreuzblick
   C                        LUT ein-/ausschalten
   C halten + ←/→           Vorherigen/nächsten LUT-Look wählen
+  C halten + ↑/↓           LUT-Stärke um 5 Prozentpunkte ändern
+  Umschalt + Mausrad       Bildbearbeitungsregler unter dem Mauszeiger verstellen
   G                        Gitter durchschalten
   Shift + G                Gitter aus
   Esc                      Menü, Hilfe oder Messmodus schließen. Sonst bei Zoom die Ansicht einpassen oder bei eingepasster Ansicht das Vollbild verlassen.
@@ -87,6 +89,8 @@ Preview and help
   A                        Color/Grayscale/Cross-view
   C                        Toggle LUT
   Hold C + ←/→             Select previous/next LUT look
+  Hold C + ↑/↓             Adjust LUT strength by 5 percentage points
+  Shift + Mouse wheel      Adjust the image editing slider under the pointer
   G                        Cycle grid
   Shift + G                Grid off
   Esc                      Close the menu, help or measurement mode. Otherwise fit the zoomed view, or exit fullscreen if already fitted.
