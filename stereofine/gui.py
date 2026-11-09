@@ -3477,17 +3477,13 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
     def _on_f1(self, event=None):
         if self.busy_state != "idle" or not self._claim_shortcut_key("f1", event):
             return "break"
-        if self._shortcut_help_window is not None and self._shortcut_help_window.winfo_exists():
-            self._close_shortcuts_help()
-            return "break"
         return self.show_shortcuts_help(event)
 
     def show_shortcuts_help(self, _event=None):
         if self.busy_state != 'idle':
             return 'break'
         if self._shortcut_help_window is not None and self._shortcut_help_window.winfo_exists():
-            self._shortcut_help_window.lift()
-            self._shortcut_help_window.focus_set()
+            self._close_shortcuts_help()
             return 'break'
         self.look_menu.close_popup()
         from .controls_guide import ControlsGuide

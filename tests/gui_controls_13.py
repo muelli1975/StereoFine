@@ -297,7 +297,15 @@ def check_visible_shortcuts(app):
         from tests.gui_final_update import windows_theme
 
         assert windows_theme(window) == 1
-    app._close_shortcuts_help()
+    help_label = app.help_footer_label._label
+    help_label.event_generate('<Button-1>')
+    pump(app, lambda: app._shortcut_help_window is None)
+    help_label.event_generate('<Button-1>')
+    window = app._shortcut_help_window
+    assert window is not None
+    pump(app, lambda: window.winfo_viewable() and window._reveal_job is None)
+    help_label.event_generate('<Button-1>')
+    pump(app, lambda: app._shortcut_help_window is None)
 
 
 def check_favorite_filter(app, first, middle, last):

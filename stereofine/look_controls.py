@@ -89,8 +89,6 @@ class LookControlsMixin:
                           lambda: self._on_look_strength(100))
         self.look_slider.grid(row=row,column=0,sticky='ew',padx=(42,20),pady=(0,12));row += 1
         self._lock_widgets.append(self.look_slider)
-        for widget in (self.look_strength_label, self.look_slider):
-            attach_tooltip(widget, self._t('look_strength_tooltip'))
         self._look_tooltip_hides = [attach_tooltip(widget, lambda: self._t('look_tooltip'),
             enabled=lambda: self.look_menu.popup is None) for widget in (self.look_checkbox, self.look_menu)]
         self.folder_settings_button = self._secondary_button(parent, self._t('folder_apply'),
