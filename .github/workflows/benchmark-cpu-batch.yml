@@ -21,7 +21,7 @@ jobs:
           path: bench
       - uses: actions/checkout@v4
         with:
-          ref: 0743180d98c2cac4fca8672cfa01a422acf9821d
+          ref: 1e11daa85e46abbca12ad9fd0f22a405e6d4d58f
           path: app
       - uses: actions/setup-python@v5
         with:

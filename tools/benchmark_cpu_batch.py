@@ -253,6 +253,7 @@ def measure_browsing(sources):
             forward = move(target, app.next_source)
             reverse = move(source, app.previous_source)
             assert not cold['direct'] and forward['direct'] == fitted
+            assert reverse['direct'], 'previous fitted image used the load worker'
             measurements.append({'target': target.base_name, 'fitted': fitted,
                                  'cold': cold, 'forward': forward, 'reverse': reverse})
     finally:
