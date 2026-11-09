@@ -1,6 +1,8 @@
-# StereoFine 1.3
+# StereoFine 1.4
 
-[Downloads und SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.3) · [English](README.md) · [Änderungen](RELEASE_NOTES_1.3.md)
+[Downloads und SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.4) · [English](README.md) · [Änderungen](RELEASE_NOTES_1.4.md)
+
+**Version 1.4.** Horizont und stürzende Linien mit `H` korrigieren. StereoFine behält den Ansichtszoom nach der Neujustage bei, bereitet benachbarte Vorschauen im Hintergrund vor und kann im Stapel mehrere Paare parallel analysieren. Die Belichtung lässt sich von −2 bis +2 EV einstellen.
 
 **Version 1.3:** Ansichtszoom per Maus und Tastatur, Nah-/Fernpunkte, ein Disparitätsmesser mit zwei Klicks, 50 LUT-Looks in sechs Gruppen und Import eigener .cube-/HaldCLUT-.png-Dateien mit Stärke-Regler.
 
@@ -22,16 +24,16 @@ StereoFine arbeitet vollständig lokal: kein Konto, keine Cloud, kein Tracking u
 
 | Plattform | Archiv |
 | --- | --- |
-| Windows x64 | [StereoFine_1.3_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_Windows_x64.zip) |
-| Linux x64 | [StereoFine_1.3_Linux_x64.tar.gz](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_Linux_x64.tar.gz) |
-| macOS Apple Silicon | [StereoFine_1.3_macOS_AppleSilicon.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_macOS_AppleSilicon.zip) |
-| macOS Intel | [StereoFine_1.3_macOS_Intel.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_macOS_Intel.zip) |
+| Windows x64 | [StereoFine_1.4_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.4/StereoFine_1.4_Windows_x64.zip) |
+| Linux x64 | [StereoFine_1.4_Linux_x64.tar.gz](https://github.com/muelli1975/StereoFine/releases/download/v1.4/StereoFine_1.4_Linux_x64.tar.gz) |
+| macOS Apple Silicon | [StereoFine_1.4_macOS_AppleSilicon.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.4/StereoFine_1.4_macOS_AppleSilicon.zip) |
+| macOS Intel | [StereoFine_1.4_macOS_Intel.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.4/StereoFine_1.4_macOS_Intel.zip) |
 
-[SHA-256-Prüfsummen](https://github.com/muelli1975/StereoFine/releases/download/v1.3/SHA256SUMS.txt). Vor dem Start das gesamte Archiv entpacken. Unter macOS `StereoFine.app`, unter Linux `StereoFine` starten.
+[SHA-256-Prüfsummen](https://github.com/muelli1975/StereoFine/releases/download/v1.4/SHA256SUMS.txt). Vor dem Start das gesamte Archiv entpacken. Unter macOS `StereoFine.app`, unter Linux `StereoFine` starten.
 
 Das Windows-Paket ist portabel:
 
-1. [StereoFine_1.3_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_Windows_x64.zip) herunterladen und das Archiv vollständig in einen normalen beschreibbaren Ordner entpacken.
+1. [StereoFine_1.4_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.4/StereoFine_1.4_Windows_x64.zip) herunterladen und das Archiv vollständig in einen normalen beschreibbaren Ordner entpacken.
 2. Den entpackten Ordner `StereoFine` öffnen und `StereoFine.exe` starten.
 3. Den Programmordner zusammenlassen; `tools`, `_internal` und die übrigen mitgelieferten Dateien gehören zur Anwendung.
 
@@ -214,7 +216,8 @@ Soweit möglich kopiert StereoFine Metadaten mit dem gebündelten ExifTool. Prev
 - Pfeiltasten – horizontal/vertikal um 1 px verschieben
 - `Shift` + Pfeiltaste – 5 px
 - `Strg` + Pfeiltaste – 10 px
-- `Strg+R` – zurück zur Auto-Justage inklusive 3‰-Rahmung
+- `Strg+R` – manuelle Bearbeitungen zurücksetzen. Wird eine Horizont- oder Perspektivkorrektur entfernt, justiert StereoFine das Paar neu.
+- `H` – Horizont mit `←/→` und Perspektive mit `↑/↓` korrigieren. `Enter` übernimmt die Korrektur und startet die Neujustage. `Esc` verwirft die Vorschaukorrektur.
 
 ### Ausschnitt
 
@@ -229,6 +232,7 @@ Soweit möglich kopiert StereoFine Metadaten mit dem gebündelten ExifTool. Prev
 ### Vorschau
 
 - `A` – Farbig, Graustufen und Kreuzblick in der Vorschau durchschalten
+- `X` – zwischen Kreuzblick und der letzten Anaglyphenansicht wechseln
 - `G` – Gitter durchschalten
 - `Shift+G` – Gitter aus
 - `Z` halten – native 100-%-Ansicht; `Z` + Pfeiltasten verschiebt sie bei kurzem Antippen fein und beim Halten flüssig mit Beschleunigung wie beim Messkreuz
@@ -245,13 +249,15 @@ Soweit möglich kopiert StereoFine Metadaten mit dem gebündelten ExifTool. Prev
 - `F1` – Bedienhilfe
 - `Esc` - zuerst Menü, Hilfe oder Messmodus schließen, danach Ansicht einpassen, danach Vollbild verlassen
 
-## LUT-Looks
+## Belichtung und LUT-Looks
+
+**Belichtung** korrigiert beide Halbbilder des aktuellen Paars um −2 bis +2 EV. **Umschalt** halten und mit dem Mausrad über dem jeweiligen Regler die Belichtung oder LUT-Stärke ändern. Mit gehaltenem **C** wechselt **Links/Rechts** reihum durch die LUTs und **Oben/Unten** ändert die Stärke in Schritten von fünf Prozentpunkten.
 
 Unter der symmetrischen Farbangleichung aktiviert **LUT anwenden** den gewählten Look. Der Stärke-Regler reicht von 0 bis 100 %. **Import (.cube, .png)** lädt eine eigene 3D-Cube-Datei oder quadratische HaldCLUT-PNG mit 8/16 Bit. Auswahl, Stärke und eigener Dateipfad werden in der bildbezogenen `.sfin` gespeichert; eigene LUT-Dateien müssen an diesem Pfad verfügbar bleiben. Beide Halbbilder erhalten denselben Look. Die Farbverarbeitung erfolgt vor Scheinfenstermasken und Anaglyphenbildung.
 
 Beim Überfahren eines Looks erscheint die Vorschau. Ein Klick übernimmt den Look, Esc behält die vorherige Auswahl bei. Zum Beurteilen der Farben eignet sich der Kreuzblick. Aktiviere das jeweilige Häkchen, um einen LUT-Look oder eine eigene SBS-Endung zu verwenden.
 
-**Für Ordner übernehmen…** zeigt den Eingabeordner und die Anzahl erkannter Stereobilder. Seitenverhältnis, LUT samt Stärke und symmetrische Farbangleichung lassen sich unabhängig auswählen. StereoFine schreibt die gewählten Einstellungen in die Bilddateien mit Endung `.sfin`. Der Dialog zeigt den Fortschritt. Bei Abbruch bleiben bereits gespeicherte Änderungen erhalten. Gespeicherte Bildwerte haben Vorrang vor den Programmvorgaben. Fehlende Einstellungen folgen den aktuellen Vorgaben.
+**Für Ordner übernehmen…** zeigt den Eingabeordner und die Anzahl erkannter Stereobilder. Seitenverhältnis, LUT samt Stärke, symmetrische Farbangleichung und Belichtung lassen sich unabhängig auswählen. StereoFine schreibt die gewählten Einstellungen in die Bilddateien mit Endung `.sfin`. Der Dialog zeigt den Fortschritt. Bei Abbruch bleiben bereits gespeicherte Änderungen erhalten. Gespeicherte Bildwerte haben Vorrang vor den Programmvorgaben. Fehlende Einstellungen folgen den aktuellen Vorgaben.
 
 Unter **Ausrichtung** legt **Als Ordnerausrichtung speichern** Drehung, Spiegelung und L/R-Tausch des aktuellen Bildes als Ordnervorgabe in `_stereofine/orientation.json` ab. Ein Bild mit eigener Ausrichtung behält seine Einstellung.
 

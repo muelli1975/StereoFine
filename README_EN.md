@@ -1,6 +1,8 @@
-# StereoFine 1.3
+# StereoFine 1.4
 
-[Downloads and SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.3) · [Deutsch](README_DE.md) · [Changes](RELEASE_NOTES_1.3.md)
+[Downloads and SHA-256](https://github.com/muelli1975/StereoFine/releases/tag/v1.4) · [Deutsch](README_DE.md) · [Changes](RELEASE_NOTES_1.4.md)
+
+**Version 1.4.** Straighten the horizon and correct vertical perspective with `H`. StereoFine retains inspection zoom after realignment, prepares neighbouring previews in the background and can analyse several pairs at once in a batch. Exposure is adjustable from −2 to +2 EV.
 
 **Version 1.3:** Mouse and keyboard view zoom, near/far markers, a two-click disparity meter, and 50 LUT looks in six groups with custom .cube/HaldCLUT .png import and adjustable strength.
 
@@ -22,16 +24,16 @@ StereoFine works completely locally: no account, no cloud, no tracking and no au
 
 | Platform | Archive |
 | --- | --- |
-| Windows x64 | [StereoFine_1.3_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_Windows_x64.zip) |
-| Linux x64 | [StereoFine_1.3_Linux_x64.tar.gz](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_Linux_x64.tar.gz) |
-| macOS Apple Silicon | [StereoFine_1.3_macOS_AppleSilicon.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_macOS_AppleSilicon.zip) |
-| macOS Intel | [StereoFine_1.3_macOS_Intel.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_macOS_Intel.zip) |
+| Windows x64 | [StereoFine_1.4_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.4/StereoFine_1.4_Windows_x64.zip) |
+| Linux x64 | [StereoFine_1.4_Linux_x64.tar.gz](https://github.com/muelli1975/StereoFine/releases/download/v1.4/StereoFine_1.4_Linux_x64.tar.gz) |
+| macOS Apple Silicon | [StereoFine_1.4_macOS_AppleSilicon.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.4/StereoFine_1.4_macOS_AppleSilicon.zip) |
+| macOS Intel | [StereoFine_1.4_macOS_Intel.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.4/StereoFine_1.4_macOS_Intel.zip) |
 
-[SHA-256 checksums](https://github.com/muelli1975/StereoFine/releases/download/v1.3/SHA256SUMS.txt). Extract the entire archive before starting the application. On macOS open `StereoFine.app`; on Linux start `StereoFine`.
+[SHA-256 checksums](https://github.com/muelli1975/StereoFine/releases/download/v1.4/SHA256SUMS.txt). Extract the entire archive before starting the application. On macOS open `StereoFine.app`; on Linux start `StereoFine`.
 
 The Windows package is portable:
 
-1. Download [StereoFine_1.3_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.3/StereoFine_1.3_Windows_x64.zip) and extract the complete archive into a normal writable folder.
+1. Download [StereoFine_1.4_Windows_x64.zip](https://github.com/muelli1975/StereoFine/releases/download/v1.4/StereoFine_1.4_Windows_x64.zip) and extract the complete archive into a normal writable folder.
 2. Open the extracted `StereoFine` folder and start `StereoFine.exe`.
 3. Keep the application folder together; `tools`, `_internal` and the other supplied files belong to the application.
 
@@ -211,7 +213,8 @@ Where possible, StereoFine copies metadata using the bundled ExifTool. Preview, 
 - Arrow keys – shift horizontally/vertically by 1 px
 - `Shift` + Arrow – 5 px
 - `Ctrl` + Arrow – 10 px
-- `Ctrl+R` – restore automatic alignment including 3‰ framing
+- `Ctrl+R` – reset manual edits and realign if a horizon or perspective correction was removed
+- `H` – correct horizon and perspective. Use `←/→` for the horizon and `↑/↓` for perspective. `Enter` applies the correction and realigns the pair. `Esc` discards the draft.
 
 ### Crop
 
@@ -226,6 +229,7 @@ Where possible, StereoFine copies metadata using the bundled ExifTool. Preview, 
 ### Preview
 
 - `A` – cycle Color, Grayscale and Cross-view previews
+- `X` – switch between cross-view and the last anaglyph preview
 - `G` – cycle grid
 - `Shift+G` – grid off
 - hold `Z` – native 100% view; `Z` + Arrow keys pans with fine taps and smooth acceleration when held, like the measurement cross
@@ -242,13 +246,15 @@ Where possible, StereoFine copies metadata using the bundled ExifTool. Preview, 
 - `F1` – Controls guide
 - `Esc` - close the menu, help or measurement mode first, then fit a magnified view, then leave fullscreen
 
-## LUT looks
+## Exposure and LUT looks
+
+**Exposure** adjusts both eyes of the current pair by −2 to +2 EV. Hold **Shift** while scrolling over the slider to adjust exposure or LUT strength. Hold **C** and use **Left/Right** to cycle through LUTs or **Up/Down** to adjust LUT strength in five-percentage-point steps.
 
 Below symmetric colour matching, **Apply LUT** enables the selected look. Strength ranges from 0 to 100%. **Import (.cube, .png)** loads a custom 3D Cube file or square 8/16-bit HaldCLUT PNG. The per-image `.sfin` stores selection, strength and the custom file path; custom LUT files must remain available at that path. Both eyes receive the same look, before floating-window masks and anaglyph conversion.
 
 Hover over a look to preview it, click to apply it, or press Esc to keep the previous selection. Use Cross-view to judge colours. Enable the corresponding checkbox to use the LUT or the custom SBS suffix.
 
-**Apply to folder…** lists the input folder and the number of recognised stereo images. Select any combination of aspect ratio, LUT including strength, and symmetric colour matching. StereoFine writes those choices to the image settings files. The dialog shows progress, and cancelling keeps completed updates. Individual image settings take precedence over program defaults. Missing settings follow the current defaults.
+**Apply to folder…** lists the input folder and the number of recognised stereo images. Select any combination of aspect ratio, LUT including strength, symmetric colour matching and exposure. StereoFine writes those choices to the image settings files. The dialog shows progress, and cancelling keeps completed updates. Individual image settings take precedence over program defaults. Missing settings follow the current defaults.
 
 Under **Alignment**, **Save as folder orientation** stores the current image's rotation, mirroring and eye order as the folder default in `_stereofine/orientation.json`. An image with its own orientation keeps it.
 
