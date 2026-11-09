@@ -42,6 +42,13 @@ MODES = {
     "parallel-1cv": (2, 1),
     "parallel-2cv": (2, 2),
     "parallel-4cv": (2, 4),
+    "parallel-8cv": (2, 8),
+    "workers3-2cv": (3, 2),
+    "workers3-4cv": (3, 4),
+    "workers3-8cv": (3, 8),
+    "workers4-1cv": (4, 1),
+    "workers4-2cv": (4, 2),
+    "workers4-4cv": (4, 4),
 }
 MAKE = "StereoFine Benchmark"
 
@@ -95,12 +102,13 @@ def prepare(root):
 
 
 class OrderedAnalysis:
-    """Hold at most two pairs, including the one currently being exported."""
+    """Bound retained pairs, including the one currently being exported."""
 
-    def __init__(self, sources, pool, analyze):
+    def __init__(self, sources, pool, analyze, lookahead):
         self.sources = sources
         self.pool = pool
         self.analyze = analyze
+        self.lookahead = lookahead
         self.pending = {}
         self.thread_state = local()
 
@@ -120,10 +128,9 @@ class OrderedAnalysis:
     def __call__(self, source, options, *, cancellation, directory_index):
         cancellation.raise_if_cancelled()
         index = self.sources.index(source)
-        if source not in self.pending:
-            self._submit(index, options, cancellation)
-        if index + 1 < len(self.sources):
-            self._submit(index + 1, options, cancellation)
+        for position in range(index, min(index + self.lookahead, len(self.sources))):
+            if self.sources[position] not in self.pending:
+                self._submit(position, options, cancellation)
         processed = self.pending.pop(source).result()
         cancellation.raise_if_cancelled()
         if options.save_sidecar:
@@ -196,7 +203,7 @@ def run(root, output, mode, cancel=False, *, sources=None):
         analyze = timer("process_source", batch.process_source)
         if workers > 1:
             pool = stack.enter_context(ThreadPoolExecutor(max_workers=workers))
-            analyze = OrderedAnalysis(sources, pool, analyze)
+            analyze = OrderedAnalysis(sources, pool, analyze, workers)
         stack.enter_context(patch.object(batch, "process_source", analyze))
         start = perf_counter()
         cpu = psutil.Process().cpu_times()
