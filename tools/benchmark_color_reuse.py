@@ -182,11 +182,23 @@ def choose(raw, points, baseline):
                    train_tiles=train_tiles, validation_tiles=validation_tiles,
                    tone_span=round(tone_span, 2))
     transfers = {'original': None, 'current': baseline}
-    if (train.sum() < 24 or validation.sum() < 20 or train_tiles < 6
-            or validation_tiles < 5 or tone_span < 32):
+    validation_samples = tuple(eye[validation] for eye in samples)
+    enough_for_fit = (train.sum() >= 24 and validation.sum() >= 20 and train_tiles >= 6
+                      and validation_tiles >= 5 and tone_span >= 32)
+    if not enough_for_fit:
+        # A lower evidence threshold is suitable for protecting an already
+        # consistent pair. Fitting a new curve still requires full coverage.
+        if validation.sum() >= 12 and validation_tiles >= 5:
+            original = error_rows(validation_samples, None)
+            current = error_rows(validation_samples, baseline)
+            cells = gx[validation] + GRID[0] * gy[validation]
+            margins = [np.median((current - original)[cells == cell]) for cell in np.unique(cells)]
+            details['low_support_validation'] = dict(original=round(float(np.median(original)), 3),
+                                                     current=round(float(np.median(current)), 3))
+            if np.median(original) <= 1. and np.mean(np.asarray(margins) > .75) >= .75:
+                return 'original', transfers, details, samples, group
         return 'current', transfers, details, samples, group
     transfers['reuse'] = fit_symmetric_color_transfer(*packed(tuple(eye[train] for eye in samples)))
-    validation_samples = tuple(eye[validation] for eye in samples)
     validation_rows = {name: error_rows(validation_samples, transfer)
                        for name, transfer in transfers.items()}
     details['validation_error'] = {name: round(float(np.median(rows)), 3)
@@ -233,13 +245,12 @@ def verify_render(processed, state, raw, transfer):
     reference = apply_symmetric_color_transfer(*raw, transfer, strength=state.color.strength)
     export = render_final_pair(reloaded.loaded_pair, deepcopy(cached), apply_floating_window=False)
     assert all(np.array_equal(a, b) for a, b in zip(reference, export[:2], strict=True))
-    if not state.geometry.active:
-        sidecar = load_sidecar(source.sidecar_path, expected_source=processed.source_stamp)
-        session = BrowsedSource(source, reloaded.loaded_pair, reloaded.source_stamp, cached, sidecar)
-        preview = prepare_native_preview(session.loaded_pair, deepcopy(cached), native_key(session),
-                                         (960, 640), CancellationToken())
-        display = tuple(master_to_uint8(transform_rgb(eye, loaded.icc_profile)) for eye in reference)
-        assert all(np.array_equal(a, b) for a, b in zip(display, preview[1:3], strict=True))
+    sidecar = load_sidecar(source.sidecar_path, expected_source=processed.source_stamp)
+    session = BrowsedSource(source, reloaded.loaded_pair, reloaded.source_stamp, cached, sidecar)
+    preview = prepare_native_preview(session.loaded_pair, deepcopy(cached), native_key(session),
+                                     (960, 640), CancellationToken())
+    display = tuple(master_to_uint8(transform_rgb(eye, loaded.icc_profile)) for eye in reference)
+    assert all(np.array_equal(a, b) for a, b in zip(display, preview[1:3], strict=True))
     source.sidecar_path.unlink()
 
 
@@ -301,10 +312,18 @@ def benchmark(label, source, method, known=None, geometry=None, verify=False):
 
 def synthetic_sources(root):
     for name, pair, known in synthetic_pairs():
-        left, right = [root / f'{name}_{eye}.png' for eye in ('L', 'R')]
-        for path, eye in zip((left, right), pair, strict=True):
-            Image.fromarray(eye).save(path)
-        yield name, source_from_pair(left, right, root), known
+        yield make_synthetic(root, name, pair, known)
+        if name == 'known_occlusion':
+            left, right = pair
+            cast = np.rint(np.clip(right * [1.13, .92, .80] + [11, 3, 5], 0, 255)).astype(np.uint8)
+            yield make_synthetic(root, 'known_cast_and_occlusion', (left, cast), known)
+
+
+def make_synthetic(root, name, pair, known):
+    left, right = [root / f'{name}_{eye}.png' for eye in ('L', 'R')]
+    for path, eye in zip((left, right), pair, strict=True):
+        Image.fromarray(eye).save(path)
+    return name, source_from_pair(left, right, root), known
 
 
 def main():
