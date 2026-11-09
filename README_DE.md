@@ -217,7 +217,7 @@ Soweit möglich kopiert StereoFine Metadaten mit dem gebündelten ExifTool. Prev
 - `Shift` + Pfeiltaste – 5 px
 - `Strg` + Pfeiltaste – 10 px
 - `Strg+R` – manuelle Bearbeitungen zurücksetzen. Wird eine Horizont- oder Perspektivkorrektur entfernt, justiert StereoFine das Paar neu.
-- `H` – Horizont mit `←/→` und Perspektive mit `↑/↓` korrigieren. `Enter` übernimmt die Korrektur und startet die Neujustage. `Esc` verwirft die Vorschaukorrektur.
+- `H` – Horizont mit `←/→` und Perspektive mit `↑/↓` korrigieren. `Enter` übernimmt die Korrektur und startet die Neujustage. `Esc` oder ein erneutes `H` verwirft die Vorschaukorrektur.
 
 ### Ausschnitt
 

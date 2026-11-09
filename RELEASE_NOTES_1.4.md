@@ -1,9 +1,8 @@
 # StereoFine 1.4
 
-- Straighten the horizon and correct vertical perspective with **H** in the current stereo preview. Use the arrow keys to adjust, **Enter** to realign the pair, and **Esc** to discard the draft. **Ctrl+R** resets a saved correction and realigns the pair.
-- Retain inspection zoom when realigning the current pair.
-- Prepare neighbouring previews in both directions while browsing.
-- Analyse several pairs in parallel in batch mode when resources allow.
-- Adjust exposure from **−2 to +2 EV** per pair or apply the current exposure to a folder.
-- Press **X** to switch between cross-view and the last anaglyph preview. Hold **C** with **Left/Right** to browse LUTs in a loop or with **Up/Down** to adjust strength in five-percentage-point steps.
-- Hold **Shift** to adjust exposure and LUT strength with the mouse wheel.
+- **Faster browsing.** StereoFine prepares the previous and next previews in the background so you can move through a folder more quickly in either direction.
+- **Faster batch processing.** StereoFine can analyse several stereo pairs in parallel. In a Linux benchmark with fresh analysis and JPEG export, median batch time fell from 19.9 to 15.1 seconds (24% less time), with identical measurements and JPEGs.
+- **Exposure correction.** Adjust both eyes together from −2 to +2 EV. Apply the adjustment to one stereo pair or to a whole folder. The source files are preserved.
+- **Horizon and vertical perspective.** Press **H** to straighten the horizon or correct converging verticals in the stereo preview. The on-screen hint shows how to apply with **Enter** or discard with **Esc** or **H**. Applying the correction realigns the pair and retains your inspection zoom.
+- **Preview and LUT controls.** Switch directly between cross-view and your last anaglyph view, and browse LUTs or adjust their strength from the keyboard.
+- **Measurement cross.** Scale ticks and labels now clip correctly at the preview edge, including in a zoomed view.

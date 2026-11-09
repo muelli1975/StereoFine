@@ -433,7 +433,7 @@ class NativePreviewMixin:
                         if self.detail_active:
                             self._show_detail_preview()
                         elif getattr(self, '_inspection_view', None) is not None and self._inspection_view.active:
-                            self._show_inspection_preview()
+                            self._update_preview_display()
                 elif message.kind == WorkerMessageKind.ERROR:
                     from .diagnostics import log_failure
                     log_failure("Detail preview", message.payload['exception'],

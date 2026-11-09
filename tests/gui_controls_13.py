@@ -22,6 +22,7 @@ from stereofine.looks import builtin_looks
 from stereofine.processing import ProcessingOptions, process_source
 from stereofine.settings import load_settings
 from stereofine.sources import source_from_pair
+from stereofine.view_controls import overlay_text
 
 
 def pump(app, predicate=lambda: True, timeout=45):
@@ -313,12 +314,35 @@ def check_visible_shortcuts(app):
     previous_geometry = app.current.state.geometry
     app.preview_frame.focus_force()
     pump(app, lambda: app.focus_get() is app.preview_frame)
+    def press_h_without_preview_shift():
+        before = app._preview_ctk_image.cget('light_image')
+        with patch('stereofine.geometry_controls.overlay_text', wraps=overlay_text) as draw:
+            app.preview_frame.event_generate('<KeyPress-h>')
+        draft = app._geometry_draft
+        assert draft is not None and draft.preview is None
+        after = app._preview_ctk_image.cget('light_image')
+        assert before.size == after.size and before.height > 80
+        np.testing.assert_array_equal(np.asarray(before)[80:], np.asarray(after)[80:])
+        assert draw.call_args.args[2].replace('\n', ' · ') == 'Enter applies · Esc or H discards'
+        return draft
+
+    draft = press_h_without_preview_shift()
+    key('<KeyPress-h>')
+    assert app._geometry_draft is draft
+    key('<KeyRelease-h>')
+    key('<KeyPress-Right>')
+    key('<KeyRelease-Right>')
+    assert draft.adjustment != previous_geometry
+    key('<KeyPress-h>')
+    key('<KeyRelease-h>')
+    assert app._geometry_draft is None and app.current.state.geometry == previous_geometry
+    assert sidecar.read_bytes() == previous
+
     app._zoom_inspection(1.5)
     previous_scale = app._inspection_view.scale
     assert previous_scale is not None
-    key('<KeyPress-h>')
-    draft = app._geometry_draft
-    assert draft is not None and draft.mode == 'Farbig'
+    draft = press_h_without_preview_shift()
+    key('<KeyRelease-h>')
     key('<KeyPress-Right>')
     key('<KeyRelease-Right>')
     key('<KeyPress-Up>')
@@ -326,7 +350,7 @@ def check_visible_shortcuts(app):
     assert draft.adjustment.roll_tenths == previous_geometry.roll_tenths + 1
     assert draft.adjustment.perspective == previous_geometry.perspective + 1
     pump(app, lambda: draft.preview is not None and draft.redraw is None)
-    assert draft.preview.left.shape == draft.preview.right.shape
+    assert draft.mode == 'Farbig' and draft.preview.left.shape == draft.preview.right.shape
     key('<KeyPress-x>')
     key('<KeyRelease-x>')
     assert draft.mode == 'Kreuzblick' and draft.image.width == 2 * draft.preview.left.shape[1]
@@ -337,6 +361,7 @@ def check_visible_shortcuts(app):
     assert sidecar.read_bytes() == previous and app._inspection_view.scale == previous_scale
 
     key('<KeyPress-h>')
+    key('<KeyRelease-h>')
     key('<KeyPress-Up>')
     key('<KeyRelease-Up>')
     adjustment = app._geometry_draft.adjustment
@@ -348,6 +373,7 @@ def check_visible_shortcuts(app):
 
     previous = sidecar.read_bytes()
     key('<KeyPress-h>')
+    key('<KeyRelease-h>')
     key('<Control-KeyPress-r>')
     key('<KeyRelease-r>')
     assert not app._geometry_draft.adjustment.active
@@ -605,6 +631,7 @@ def main():
                 labels = {label.cget('text') for label in window.actions}
                 if language == 'de':
                     assert {
+                        'Übernehmen und neu justieren', 'Verwerfen',
                         'Ansicht einpassen',
                         'Ansicht einpassen (bei Ansichtszoom, außerhalb des Messmodus)',
                         'Menü, Hilfe oder Messmodus schließen. Sonst bei Zoom die Ansicht einpassen '
@@ -617,6 +644,7 @@ def main():
                     } <= labels
                 else:
                     assert {
+                        'Apply and realign', 'Discard',
                         'Fit view',
                         'Fit view (when zoomed, outside measurement mode)',
                         'Close the menu, help or measurement mode. Otherwise fit the zoomed view, '

@@ -16,7 +16,8 @@ Justage und Beschnitt
   Strg + Shift + ↑/↓       Beschnittzoom
   H                        Horizont und Perspektive
   Im H-Modus               ←/→ Horizont, ↑/↓ Perspektive
-  Enter / Esc im H-Modus   Neu justieren / verwerfen
+  Enter im H-Modus         Übernehmen und neu justieren
+  Esc oder H im H-Modus    Verwerfen
 
 Ansicht und Vollbild
   Strg + Mausrad           Ansichtszoom um den Mauszeiger
@@ -69,7 +70,8 @@ Alignment and crop
   Ctrl + Shift + ↑/↓       Crop zoom
   H                        Horizon and perspective
   In H mode                ←/→ horizon, ↑/↓ perspective
-  Enter / Esc in H mode    Realign / discard
+  Enter in H mode          Apply and realign
+  Esc or H in H mode       Discard
 
 View and fullscreen
   Ctrl + Mouse wheel       View zoom around the pointer

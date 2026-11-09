@@ -31,11 +31,15 @@ class GeometryDraft:
 class GeometryControlsMixin:
     _geometry_draft: GeometryDraft | None = None
 
-    def _begin_geometry_draft(self, _event=None):
-        if (self.current is None or self.busy_state != 'idle'
-                or self._geometry_draft is not None or self.look_menu.popup is not None):
+    def _toggle_geometry_draft(self, event=None):
+        self._cancel_mode_release('geometry')
+        if not self._claim_shortcut_key('h', event) or self._discard_geometry_draft():
+            return 'break'
+        if self.current is None or self.busy_state != 'idle' or self.look_menu.popup is not None:
             return 'break'
         self._reset_keyboard_modes()
+        # Resetting the keyboard modes also clears the current H press.
+        self._claim_shortcut_key('h', event)
         self._end_point_measurement()
         self._view_pan_pointer = None
         self.preview_frame.focus_set()
@@ -45,6 +49,14 @@ class GeometryControlsMixin:
         self._geometry_draft = GeometryDraft(left, right, scale, aspect, self.current.state.geometry)
         self._update_preview_display()
         return 'break'
+
+    def _on_geometry_key_release(self, _event=None):
+        self._release_key_mode('geometry', lambda: self._release_shortcut_key('h'))
+        return 'break'
+
+    def _geometry_draft_has_changes(self):
+        draft = self._geometry_draft
+        return draft is not None and draft.adjustment != self.current.state.geometry
 
     def _step_geometry_draft(self, direction):
         draft = self._geometry_draft
@@ -73,6 +85,12 @@ class GeometryControlsMixin:
             self._block_mode_arrows()
             self._geometry_draft = None
         return draft
+
+    def _discard_geometry_draft(self):
+        if self._take_geometry_draft() is None:
+            return False
+        self._refresh_preview()
+        return True
 
     def _commit_geometry_draft(self):
         draft = self._geometry_draft
@@ -106,6 +124,13 @@ class GeometryControlsMixin:
             roll = roll.replace('.', ',')
         label = self._t('geometry_notice', roll=roll, perspective=f'{draft.adjustment.perspective:+d}')
         image = image.copy()
-        font = overlay_font(max(11, min(16, image.width // 24)))
-        overlay_text(ImageDraw.Draw(image, 'RGBA'), (10, 8), label, font)
+        size = max(11, min(16, image.width // 24))
+        font = overlay_font(size)
+        draw = ImageDraw.Draw(image, 'RGBA')
+        overlay_text(draw, (10, 8), label, font)
+        hints = (self._t('geometry_apply_hint'), self._t('geometry_discard_hint'))
+        hint = ' · '.join(hints)
+        if draw.textlength(hint, font=font) > image.width - 24:
+            hint = '\n'.join(hints)
+        overlay_text(draw, (10, size + 12), hint, font)
         return image

@@ -2559,7 +2559,8 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
         the measurement cross.
         """
         draft = self._geometry_draft
-        if draft is None:
+        draft_changed = self._geometry_draft_has_changes()
+        if not draft_changed:
             if self.detail_active:
                 self._show_detail_preview()
                 return
@@ -2609,12 +2610,12 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
         else:
             self._preview_display_size = display_size
 
-        if draft is not None:
-            image = self._decorate_geometry_draft(image, draft)
-        else:
+        if not draft_changed:
             native_size = self._view_image_size()
             if self.current is not None and native_size is not None:
                 image = self._decorate_view(image,(0,0,*native_size),native_size)
+        if draft is not None:
+            image = self._decorate_geometry_draft(image, draft)
 
         border = preview_border_px(display_size[0])
         self.preview_label.grid_configure(padx=border, pady=border)
@@ -2652,7 +2653,7 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
             self._end_point_measurement()
         if self.preview_mode.get() != "Kreuzblick":
             self._last_anaglyph_preview_mode = self.preview_mode.get()
-        if self._geometry_draft is not None:
+        if self._geometry_draft_has_changes():
             self._update_preview_display()
         elif self._preview_left_current is not None and self._preview_right_current is not None:
             self._build_preview_anaglyph()
@@ -3135,7 +3136,8 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
             bind(f'<KeyPress-{key}>', self._on_look_key_press)
             bind(f'<KeyRelease-{key}>', self._on_look_key_release)
         for key in ('h', 'H'):
-            bind_all(f'<KeyPress-{key}>', self._begin_geometry_draft)
+            bind_all(f'<KeyPress-{key}>', self._toggle_geometry_draft)
+            bind_all(f'<KeyRelease-{key}>', self._on_geometry_key_release)
         for key in ('x', 'X'):
             bind_all(f'<KeyPress-{key}>', self._on_x)
             bind_all(f'<KeyRelease-{key}>', lambda e: self._release_shortcut_key('x'))
@@ -3605,8 +3607,7 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
         if self._shortcut_help_window is not None and self._shortcut_help_window.winfo_exists():
             self._close_shortcuts_help()
             return "break"
-        if self._take_geometry_draft() is not None:
-            self._refresh_preview()
+        if self._discard_geometry_draft():
             return "break"
         tool = getattr(self, '_measure_tool_var', None)
         if tool is not None and tool.get():

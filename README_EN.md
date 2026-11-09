@@ -214,7 +214,7 @@ Where possible, StereoFine copies metadata using the bundled ExifTool. Preview, 
 - `Shift` + Arrow – 5 px
 - `Ctrl` + Arrow – 10 px
 - `Ctrl+R` – reset manual edits and realign if a horizon or perspective correction was removed
-- `H` – correct horizon and perspective. Use `←/→` for the horizon and `↑/↓` for perspective. `Enter` applies the correction and realigns the pair. `Esc` discards the draft.
+- `H` – correct horizon and perspective. Use `←/→` for the horizon and `↑/↓` for perspective. `Enter` applies the correction and realigns the pair. Press `Esc` or press `H` again to discard the draft.
 
 ### Crop
 
