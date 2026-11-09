@@ -19,7 +19,7 @@ def background(width, height):
 
 class MeasurementOverlayTests(unittest.TestCase):
     def test_measurement_cross_matches_selected_style_at_center_and_edges(self):
-        # Reference: previous renderer at cc46f8b with comparison style B.
+        # Selected style B, with the scale clipped to the viewport at edges.
         cases = json.loads((Path(__file__).parent/'fixtures/measurement_overlay_reference.json').read_text())
         for case in cases:
             with self.subTest(case=case):
@@ -29,6 +29,19 @@ class MeasurementOverlayTests(unittest.TestCase):
                                                      reference_width=case['reference_width'])
                 self.assertEqual(hashlib.sha256(result.tobytes()).hexdigest(), case['sha256'])
                 self.assertEqual(source.tobytes(), before)
+
+    def test_offscreen_scale_marks_and_labels_are_clipped_at_fit_and_detail_sizes(self):
+        width, height, padding = 200, 140, 400
+        y = height // 2
+        viewport = Image.new('RGB', (width, height))
+        extended = Image.new('RGB', (width + 2 * padding, height))
+        for reference_width, x in ((width, 2), (width, width - 3), (4000, 40), (4000, width - 41)):
+            with self.subTest(reference_width=reference_width, x=x):
+                actual = draw_measure_cross_overlay(viewport, x, y, reference_width=reference_width)
+                full = draw_measure_cross_overlay(extended, x + padding, y, reference_width=reference_width)
+                # Exclude the two-pixel antialiasing boundary of the horizontal axis.
+                self.assertEqual(actual.crop((3, 0, width - 3, height)).tobytes(),
+                                 full.crop((padding + 3, 0, padding + width - 3, height)).tobytes())
 
     def test_alpha_compositing_is_limited_to_the_small_measurement_region(self):
         source = background(1000, 700)

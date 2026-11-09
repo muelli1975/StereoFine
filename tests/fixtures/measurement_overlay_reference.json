@@ -21,7 +21,7 @@
       0
     ],
     "reference_width": null,
-    "sha256": "8b597e0fb44844589bd488d82e7a74fc5442b4d65177b65fcf44200899e25fe9"
+    "sha256": "d975f1e47d86561270294e29558853942d67ada4e1965cf1c216982407b9329a"
   },
   {
     "size": [
@@ -33,7 +33,7 @@
       699
     ],
     "reference_width": null,
-    "sha256": "711ec3ad8e491615e94dc1f89ad4efb603b9236ce545f90d49e53cba5fee47e8"
+    "sha256": "4a6decbb55336ff67094d268a704cbbd31be5b93bf104fb877a5414c63ed9a74"
   },
   {
     "size": [
@@ -45,7 +45,7 @@
       400
     ],
     "reference_width": null,
-    "sha256": "ed718d682b9cbeaa66fed8780f387e6cbfe86b91edc9ca7b4ed578f29b8f1519"
+    "sha256": "12f755c7a2d4a8907eee9a2c22f38b085ebf2740d67ad4dc22ba25a67b74b697"
   },
   {
     "size": [
@@ -57,7 +57,7 @@
       -60
     ],
     "reference_width": null,
-    "sha256": "c496584c176725319ef2194b3523b09f8e858c4934884df2484e7615991aebab"
+    "sha256": "5b97266882c5d5ba6f91f23fa5796bff9405b715cf4a304221abdb5d0029557c"
   },
   {
     "size": [
@@ -81,7 +81,7 @@
       0
     ],
     "reference_width": null,
-    "sha256": "97ad2a9fbdc7a400e9259f0d154b695aa0e6090495e0aba383b485a1aa3314b8"
+    "sha256": "57c2ebcc2a41c3e8900e97deedaf67574d70787b6162edabada290d28b44ebd1"
   },
   {
     "size": [
@@ -93,7 +93,7 @@
       12
     ],
     "reference_width": 500,
-    "sha256": "c4b5c4b69dce4d90fc76c9b0a7aeb134aa7318ad8f1896d65b8dda466c520056"
+    "sha256": "b1984cf7d62c46d1dd93e447ba57304621e80a60638e6e280ec6680a66f22bc4"
   },
   {
     "size": [
@@ -105,7 +105,7 @@
       900.25
     ],
     "reference_width": 6000,
-    "sha256": "bd025b6ef01a98d3ab4c4dee10ae72e3192fa126c6f44610a8783d3e5ffb9cc0"
+    "sha256": "4b8cd5b9aee218c3b5a9492eed60f32ee1ff6e2e747a67870894a4ec580c270c"
   },
   {
     "size": [
@@ -129,7 +129,7 @@
       14
     ],
     "reference_width": 500,
-    "sha256": "54d8bd17f63b9fee130f11d7e2e0d0a712a48b184daf0a61c5a9d0410fd16c5c"
+    "sha256": "dd64dbacaf4b81b79b292e133e13749d477412b5a7675ba7b1692df3477982ca"
   },
   {
     "size": [
@@ -141,6 +141,6 @@
       1
     ],
     "reference_width": null,
-    "sha256": "4b2c5b8170c321c854a46f7172680250b81eff273e5f8253af0f3d7609c1cd67"
+    "sha256": "352bc6f1c0d31ddc9cf7d12969d0604448a9354dd78c55077afbcdbedf07283a"
   }
 ]

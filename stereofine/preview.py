@@ -126,43 +126,21 @@ def draw_measure_cross_overlay(
     shadow = MEASURE_CROSS_SHADOW_RGBA
     main = (255, 255, 255, 215)
 
-    def clamp_point(px: int | float, py: int | float) -> tuple[int, int]:
-        return (
-            int(max(0, min(width - 1, round(float(px))))),
-            int(max(0, min(height - 1, round(float(py))))),
-        )
-
     def line_layer(pt1, pt2, color, thickness: int):
-        cv2.line(
-            overlay,
-            clamp_point(pt1[0], pt1[1]),
-            clamp_point(pt2[0], pt2[1]),
-            color,
-            thickness=thickness,
-            lineType=cv2.LINE_AA,
-        )
+        cv2.line(overlay, pt1, pt2, color, thickness=thickness, lineType=cv2.LINE_AA)
 
-    def text_layer(label: str, org, color, scale: float = 0.42, thickness: int = 1):
-        ox, oy = clamp_point(org[0], org[1])
-        cv2.putText(
-            overlay,
-            str(label),
-            (ox, oy),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            scale,
-            color,
-            thickness,
-            cv2.LINE_AA,
-        )
+    def text_layer(label: str, origin, color, scale: float = 0.42, thickness: int = 1):
+        cv2.putText(overlay, label, origin, cv2.FONT_HERSHEY_SIMPLEX, scale,
+                    color, thickness, cv2.LINE_AA)
 
-    x0, y0 = clamp_point(x - outer, y)
-    x1, y1 = clamp_point(x + outer, y)
-    vx0, vy0 = clamp_point(x, y - outer)
-    vx1, vy1 = clamp_point(x, y + outer)
+    # OpenCV clips the drawing at the viewport. Keep the positions of ticks
+    # and labels so offscreen marks do not get stacked at the viewport edges.
+    x0, x1 = x - outer, x + outer
+    y0, y1 = y - outer, y + outer
 
     # Shadow pass.  The axes intentionally stop at the last 50‰ mark.
-    line_layer((x0, y0), (x1, y1), shadow, 3)
-    line_layer((vx0, vy0), (vx1, vy1), shadow, 3)
+    line_layer((x0, y), (x1, y), shadow, 3)
+    line_layer((x, y0), (x, y1), shadow, 3)
 
     for radius in minor_radii:
         for sign in (-1, 1):
@@ -183,8 +161,8 @@ def draw_measure_cross_overlay(
         line_layer((x - 6, yy_bottom), (x + 6, yy_bottom), shadow, 2)
 
     # Main pass.
-    line_layer((x0, y0), (x1, y1), main, 1)
-    line_layer((vx0, vy0), (vx1, vy1), main, 1)
+    line_layer((x0, y), (x1, y), main, 1)
+    line_layer((x, y0), (x, y1), main, 1)
 
     for radius in minor_radii:
         for sign in (-1, 1):
