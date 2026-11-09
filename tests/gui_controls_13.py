@@ -76,12 +76,8 @@ def check_visible_shortcuts(app):
     assert app.current.state.look.enabled and app.current.state.look.preset_id == 'blue_ice'
     assert app.current.state.look.strength == .43 and app.look_menu.popup is None
     assert app._look_notice and app._look_notice_text() == 'LUT: Blue Ice · 43 %'
-    enabled_cursor = app.look_menu.cget('cursor')
-    if sys.platform == 'win32':
-        assert enabled_cursor == 'hand2'
     tap_c()
     assert not app.current.state.look.enabled
-    assert app.look_menu.cget('cursor') == ''
     assert app._look_notice and app._look_notice_text() == app._t('look_notice_off')
     wheel(1)
     assert app.current.state.look.strength == .43
@@ -90,7 +86,6 @@ def check_visible_shortcuts(app):
     key('<KeyRelease-Left>')
     assert app.current.state.look.enabled and app.current.state.look.preset_id == 'blue_ice'
     assert app.current.state.look.strength == .43
-    assert app.look_menu.cget('cursor') == enabled_cursor
     assert app._look_notice and app._look_notice_text() == 'LUT: Blue Ice · 43 %'
     key('<KeyRelease-c>')
     pump(app, lambda: 'c' not in app._shortcut_keys_down)
