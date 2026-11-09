@@ -1,25 +1,24 @@
-"""Measure the unmodified 1.3 batch with ordered, two-worker analysis lookahead."""
+"""Measure Windows browsing and one to four production batch analysis jobs."""
 from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
-from dataclasses import asdict, replace
+from dataclasses import asdict
 import hashlib
 from io import BytesIO
 import json
 import os
 from pathlib import Path
 import platform
-import resource
+import psutil
 import shutil
 from statistics import median
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
-from threading import Lock, local
-from time import perf_counter, sleep
+from threading import Lock
+from time import perf_counter, process_time, sleep
 from unittest.mock import patch
 from urllib.request import urlopen
 
@@ -28,7 +27,7 @@ from PIL import Image
 
 from stereofine import batch, export, processing
 from stereofine.metadata import find_exiftool_path
-from stereofine.sources import SourceDirectoryIndex, source_from_pair, source_from_stereo_file
+from stereofine.sources import source_from_pair, source_from_stereo_file
 from stereofine.worker import CancellationToken, JobCancelled
 
 RAW = "https://raw.githubusercontent.com"
@@ -42,11 +41,7 @@ SCENES = (
     ("Foundation", "lr-jpg", f"{FOUNDATION}/left.png", f"{FOUNDATION}/right.png"),
     ("DanceB", "sbs-jpg", f"{HIGH_RES}/0600_4_0641_1/im0.png", f"{HIGH_RES}/0600_4_0641_1/im1.png"),
 )
-MODES = {
-    "serial-default": (1, None),
-    "serial-2cv": (1, 2),
-    "parallel-2cv": (2, 2),
-}
+MODES = {f'{workers}-jobs': (workers, 2) for workers in range(1, 5)}
 MAKE = "StereoFine Benchmark"
 
 
@@ -98,47 +93,6 @@ def prepare(root):
     return dimensions
 
 
-class OrderedAnalysis:
-    """Hold at most two pairs, including the one currently being exported."""
-
-    def __init__(self, sources, pool, analyze):
-        self.sources = sources
-        self.pool = pool
-        self.analyze = analyze
-        self.pending = {}
-        self.thread_state = local()
-
-    def _submit(self, index, options, token):
-        source = self.sources[index]
-
-        def analyze():
-            if not hasattr(self.thread_state, "directory_index"):
-                self.thread_state.directory_index = SourceDirectoryIndex()
-            return self.analyze(
-                source, replace(options, save_sidecar=False), cancellation=token,
-                directory_index=self.thread_state.directory_index,
-            )
-
-        self.pending[source] = self.pool.submit(analyze)
-
-    def __call__(self, source, options, *, cancellation, directory_index):
-        cancellation.raise_if_cancelled()
-        index = self.sources.index(source)
-        if source not in self.pending:
-            self._submit(index, options, cancellation)
-        if index + 1 < len(self.sources):
-            self._submit(index + 1, options, cancellation)
-        processed = self.pending.pop(source).result()
-        cancellation.raise_if_cancelled()
-        if options.save_sidecar:
-            batch.save_sidecar(
-                source.sidecar_path, processed.state.to_sidecar(
-                    source=batch.source_stamp_to_dict(processed.source_stamp)
-                ),
-            )
-        return processed
-
-
 def output_signature(path):
     with path.open("rb") as stream:
         digest = hashlib.file_digest(stream, "sha256").hexdigest()
@@ -159,7 +113,7 @@ def run(root, output, mode, cancel=False):
     if cv_threads is not None:
         cv2.setNumThreads(cv_threads)
     sources = make_sources(root)
-    options = batch.BatchRunOptions(output_folder=output)
+    options = batch.BatchRunOptions(output_folder=output, analysis_workers=workers)
     timings = defaultdict(float)
     lock = Lock()
     events = []
@@ -191,13 +145,9 @@ def run(root, output, mode, cancel=False):
             (export, "copy_metadata_without_preview_or_orientation", "metadata"),
         ):
             stack.enter_context(patch.object(module, attr, timer(label, getattr(module, attr))))
-        analyze = timer("process_source", batch.process_source)
-        if workers > 1:
-            pool = stack.enter_context(ThreadPoolExecutor(max_workers=workers))
-            analyze = OrderedAnalysis(sources, pool, analyze)
-        stack.enter_context(patch.object(batch, "process_source", analyze))
+        stack.enter_context(patch.object(batch, "process_source", timer("process_source", batch.process_source)))
         start = perf_counter()
-        cpu = resource.getrusage(resource.RUSAGE_SELF)
+        cpu = process_time()
         try:
             result = batch.run_batch(sources, options, cancellation=token, progress=progress)
         except JobCancelled:
@@ -205,7 +155,7 @@ def run(root, output, mode, cancel=False):
                 raise
             result = None
     seconds = perf_counter() - start
-    usage = resource.getrusage(resource.RUSAGE_SELF)
+    usage = psutil.Process().memory_info()
     if cancel:
         assert result is None and token.cancelled
         assert len(list(output.rglob("*.jpg"))) == 2
@@ -231,8 +181,8 @@ def run(root, output, mode, cancel=False):
     expected = [(index, phase) for index in range(1, len(sources) + 1)
                 for phase in ("analysis", "measured", "export", "preview")]
     assert events == expected, events
-    return dict(seconds=seconds, cpu=(usage.ru_utime - cpu.ru_utime) + (usage.ru_stime - cpu.ru_stime),
-                peak_mib=usage.ru_maxrss / 1024, cv_threads=cv2.getNumThreads(),
+    return dict(seconds=seconds, cpu=process_time() - cpu,
+                peak_mib=usage.peak_wset / (1024 ** 2), cv_threads=cv2.getNumThreads(),
                 cache=cache, stages=timings, signature=signature)
 
 
@@ -270,6 +220,45 @@ def compare(reference, candidate):
     return dict(counts=counts, differences=details)
 
 
+def measure_browsing(sources):
+    from stereofine.gui import StereoFineApp
+    from tests.gui_controls_13 import pump
+
+    app = StereoFineApp()
+    app.withdraw()
+    measurements = []
+    try:
+        def select(index):
+            app._set_source_collection(sources, index, batch=True)
+            pump(app, lambda: app.busy_state == 'idle' and app.current.source == sources[index])
+
+        def move(target, step):
+            start = perf_counter()
+            step()
+            direct = app.current.source == target and app.busy_state == 'idle'
+            pump(app, lambda: app.busy_state == 'idle' and app.current.source == target)
+            assert app._preview_pil is not None
+            return {'ms': 1000 * (perf_counter() - start), 'direct': direct}
+
+        for index in range(len(sources) - 1):
+            source, target = sources[index:index + 2]
+            select(index)
+            app._drop_prefetch()
+            cold = move(target, app.next_source)
+            select(index)
+            job = next((item for item in app._prefetched if item.source == target), None)
+            fitted = job is not None and job.future.result(timeout=45)[2] is not None
+            forward = move(target, app.next_source)
+            reverse = move(source, app.previous_source)
+            assert not cold['direct'] and forward['direct'] == fitted
+            measurements.append({'target': target.base_name, 'fitted': fitted,
+                                 'cold': cold, 'forward': forward, 'reverse': reverse})
+    finally:
+        app._on_close()
+    print('BROWSING', json.dumps(measurements), flush=True)
+    return measurements
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--child", nargs=3)
@@ -281,10 +270,10 @@ def main():
         return
     assert find_exiftool_path(), "ExifTool is required for the timed export"
     hw = {
-        "cpu": platform.processor(), "cpus": len(os.sched_getaffinity(0)),
+        "cpu": platform.processor(), "cpus": os.cpu_count(),
         "opencv": cv2.__version__, "python": platform.python_version(),
         "platform": platform.platform(),
-        "exiftool": subprocess.check_output(["exiftool", "-ver"], text=True).strip(),
+        "exiftool": subprocess.check_output([str(find_exiftool_path()), "-ver"], text=True).strip(),
     }
     print("HOST", json.dumps(hw), flush=True)
     measurements = {}
@@ -294,11 +283,8 @@ def main():
         dims = prepare(root)
         sources = make_sources(root)
         cache_seed = None
-        orders = (
-            ("serial-default", "parallel-2cv", "serial-2cv"),
-            ("serial-2cv", "serial-default", "parallel-2cv"),
-            ("parallel-2cv", "serial-2cv", "serial-default"),
-        )
+        modes = tuple(MODES)
+        orders = tuple(modes[i:] + modes[:i] for i in range(3))
         for phase in ("fresh", "cached"):
             runs = {mode: [] for mode in MODES}
             for repetition, order in enumerate(orders, 1):
@@ -319,7 +305,7 @@ def main():
                     short = {k: v for k, v in summary.items() if k != "signature"}
                     print("RUN", phase, repetition, mode, json.dumps(short), flush=True)
                 for mode in MODES:
-                    comparison = compare(one_round["serial-default"], one_round[mode])
+                    comparison = compare(one_round["1-jobs"], one_round[mode])
                     comparisons[f"{phase}/{repetition}/{mode}"] = comparison
                     print("CHECK", phase, repetition, mode, json.dumps(comparison), flush=True)
             measurements[phase] = runs
@@ -327,11 +313,12 @@ def main():
         for source in sources:
             source.sidecar_path.unlink(missing_ok=True)
         output = Path(tmp) / "outputs"
-        cancel = child(root, output, "parallel-2cv", cancel=True)
+        cancel = child(root, output, "4-jobs", cancel=True)
         shutil.rmtree(output)
-        resumed = child(root, output, "parallel-2cv")
-        resume_check = compare(measurements["fresh"]["serial-default"][0], resumed)
+        resumed = child(root, output, "4-jobs")
+        resume_check = compare(measurements["fresh"]["1-jobs"][0], resumed)
         print("CANCEL_AND_RESTART", json.dumps([cancel, resumed["cache"], resume_check]), flush=True)
+        browsing = measure_browsing(sources)
     aggregates = {}
     for phase, modes in measurements.items():
         aggregates[phase] = {
@@ -348,7 +335,7 @@ def main():
     print("TOTALS", json.dumps(aggregates), flush=True)
     Path("cpu-batch-results.json").write_text(json.dumps(
         dict(host=hw, inputs=dims, measurements=measurements, comparisons=comparisons,
-             aggregates=aggregates, cancel=cancel, resumed=resumed, resume_check=resume_check),
+             aggregates=aggregates, cancel=cancel, resumed=resumed, resume_check=resume_check, browsing=browsing),
         indent=2, sort_keys=True,
     ) + "\n")
 
