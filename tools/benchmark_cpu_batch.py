@@ -246,6 +246,8 @@ def measure_browsing(sources):
             app._drop_prefetch()
             cold = move(target, app.next_source)
             select(index)
+            app._previous_decoded = None
+            app._prefetch_neighbor()
             job = next((item for item in app._prefetched if item.source == target), None)
             fitted = job is not None and job.future.result(timeout=45)[2] is not None
             forward = move(target, app.next_source)
@@ -263,6 +265,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--child", nargs=3)
     parser.add_argument("--cancel", action="store_true")
+    parser.add_argument("--browse-only", action="store_true")
     args = parser.parse_args()
     if args.child:
         root, output, mode = args.child
@@ -282,6 +285,11 @@ def main():
         root = Path(tmp) / "inputs"
         dims = prepare(root)
         sources = make_sources(root)
+        if args.browse_only:
+            child(root, Path(tmp) / "outputs", "1-jobs")
+            browsing = measure_browsing(sources)
+            Path("cpu-batch-results.json").write_text(json.dumps(dict(host=hw, inputs=dims, browsing=browsing), indent=2) + "\n")
+            return
         cache_seed = None
         modes = tuple(MODES)
         orders = tuple(modes[i:] + modes[:i] for i in range(3))

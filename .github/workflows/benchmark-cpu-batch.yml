@@ -1,4 +1,4 @@
-name: StereoFine 1.4 Windows performance benchmark
+name: StereoFine 1.4 Windows browsing benchmark
 
 on:
   push:
@@ -21,7 +21,7 @@ jobs:
           path: bench
       - uses: actions/checkout@v4
         with:
-          ref: 5f109a8d275c4f03562bc1000386a6c822fa783e
+          ref: 0743180d98c2cac4fca8672cfa01a422acf9821d
           path: app
       - uses: actions/setup-python@v5
         with:
@@ -42,14 +42,14 @@ jobs:
           if (-not $exe) { throw 'ExifTool executable not found' }
           Rename-Item -Force $exe.FullName 'exiftool.exe'
           & .\tools\exiftool.exe -ver
-      - name: Measure browsing and batch analysis with export
+      - name: Measure browsing with saved analyses
         working-directory: app
         shell: pwsh
         run: |
           Copy-Item ../bench/tools/benchmark_cpu_batch.py tools/benchmark_cpu_batch.py
-          python -m tools.benchmark_cpu_batch
+          python -m tools.benchmark_cpu_batch --browse-only
       - uses: actions/upload-artifact@v4
         with:
-          name: stereofine-windows-performance
+          name: stereofine-windows-browsing
           path: app/cpu-batch-results.json
           if-no-files-found: error
