@@ -3405,7 +3405,8 @@ class StereoFineApp(LookControlsMixin, ViewControlsMixin, NativePreviewMixin, ct
         self.destroy()
 
     def destroy(self):
-        self._prefetch_pool.shutdown(wait=False, cancel_futures=True)
+        # A running decoder can still hold a source file open on Windows.
+        self._prefetch_pool.shutdown(wait=True, cancel_futures=True)
         super().destroy()
 
 
