@@ -57,7 +57,8 @@ from .preview import PreviewImageCache, draw_grid_overlay, draw_measure_cross_ov
 from .preview_render import PreviewBasePair, build_preview_base, render_preview_from_base, preview_geometry_key
 from .preferences import save_series_input
 from .processing import ProcessingDefaults, ProcessingOptions, process_source
-from .resources import asset_path
+from .inputs import LoadedStereoPair, load_full_sbs
+from .resources import asset_path, start_image_bytes
 from .session import (
     DECODED_CACHE_LIMIT,
     BrowsedSource,
@@ -72,7 +73,7 @@ from .session import (
 from .settings import AppSettings, load_settings, save_settings
 from .sidecar import SidecarStatus, load_sidecar
 from .sources import StereoSource, discover_pair_sources, discover_stereo_file_sources
-from .state import InputTransformState, LookState
+from .state import InputTransformState, LookState, PairState
 from .status import build_status_sections, sidecar_status_text
 from .theme import (
     APP_BG,
@@ -935,7 +936,6 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
         else:
             state = self.current.state if self.current is not None else None
         if state is None:
-            from .state import PairState
             return PairState()
         return state
 
@@ -2469,11 +2469,11 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
 
     def _load_start_image(self) -> None:
         try:
-            source = source_from_selected_stereo_file(asset_path("stereofine.jpg"))
-            session = browse_source(source, ProcessingDefaults())
-            # Start image is branding only: never expose or persist its sidecar state.
+            loaded = load_full_sbs(Path("stereofine.jpg"), jpeg_data=start_image_bytes())
+            state = PairState()
             self._invalidate_preview_base()
-            self._render_session_preview(session, start_image=True)
+            base = self._build_fitted_preview_base(loaded, state)
+            self._display_base_preview(base, state, apply_adjustments=False)
         except Exception as exc:
             self.preview_label.configure(text=self._t("start_image_error", text=self.tr.message(str(exc))), text_color=TEXT_PRIMARY, image=None)
 
@@ -2496,19 +2496,21 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
             max(200, height - border_reserve * 2),
         )
 
-    def _ensure_preview_base(self, session: BrowsedSource, *, start_image: bool = False) -> PreviewBasePair:
+    def _build_fitted_preview_base(self, loaded: LoadedStereoPair, state: PairState) -> PreviewBasePair:
+        bound_w, bound_h = self._preview_bounds()
+        return build_preview_base(
+            loaded, state,
+            max_width=min(PREVIEW_RENDER_MAX_WIDTH, max(320, int(bound_w))),
+            max_height=min(PREVIEW_RENDER_MAX_HEIGHT, max(240, int(bound_h))),
+            apply_color=False,
+        )
+
+    def _ensure_preview_base(self, session: BrowsedSource) -> PreviewBasePair:
         session_id = id(session)
         if (self._preview_base is None or self._preview_base_session_id != session_id
                 or self._preview_base.source_token != id(session.loaded_pair)
                 or self._preview_base.geometry_key != preview_geometry_key(session.state)):
-            bound_w, bound_h = self._preview_bounds()
-            self._preview_base = build_preview_base(
-                session.loaded_pair,
-                session.state,
-                max_width=min(PREVIEW_RENDER_MAX_WIDTH, max(320, int(bound_w))),
-                max_height=min(PREVIEW_RENDER_MAX_HEIGHT, max(240, int(bound_h))),
-                apply_color=False,
-            )
+            self._preview_base = self._build_fitted_preview_base(session.loaded_pair, session.state)
             self._preview_base_session_id = session_id
         return self._preview_base
 
@@ -2523,8 +2525,8 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
         self._preview_pil = preview_image(self._preview_left_current, self._preview_right_current, mode)
         self._update_preview_display()
 
-    def _render_session_preview(self, session: BrowsedSource, *, start_image: bool = False, fitted_frame=None) -> None:
-        if not start_image and session is self.current:
+    def _render_session_preview(self, session: BrowsedSource, *, fitted_frame=None) -> None:
+        if session is self.current:
             applied = (self._apply_native_preview() if fitted_frame is None else
                        self._apply_native_preview(fitted_frame=fitted_frame))
             if applied:
@@ -2532,28 +2534,30 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
                         or self._native_views_need_resize()):
                     self._request_native_preview()
                 return
-        if (not start_image and session is self.current
+        if (session is self.current
                 and getattr(self, "_inspection_view", None) is not None and self._inspection_view.active):
             self._show_inspection_preview()
             return
-        base = self._ensure_preview_base(session, start_image=start_image)
+        base = self._ensure_preview_base(session)
         state = session.state
         if getattr(self, '_look_hover_state', None) is not None and session is self.current:
             state = deepcopy(state)
             state.look = deepcopy(self._look_hover_state)
+        self._display_base_preview(base, state, apply_adjustments=True)
+        self._request_native_preview()
+
+    def _display_base_preview(self, base: PreviewBasePair, state: PairState, *, apply_adjustments: bool) -> None:
         pair = render_preview_from_base(
             base,
             state,
-            apply_color=not start_image,
-            apply_floating_window=not start_image,
+            apply_color=apply_adjustments,
+            apply_floating_window=apply_adjustments,
             bounds=self._preview_bounds(),
         )
         self._preview_left_current = pair.left
         self._preview_right_current = pair.right
         self._preview_pair_shape = (pair.left.shape[1], pair.left.shape[0])
         self._build_preview_anaglyph()
-        if not start_image:
-            self._request_native_preview()
 
     def _update_preview_display(self, *, resampling=Image.Resampling.LANCZOS) -> None:
         """Scale the already rendered anaglyph to the current window only.
@@ -2773,13 +2777,24 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
             return
         if not self.analysis_only.get() and not self._commit_sbs_suffix(show_error=True):
             return
+        root = self.sources[0].input_root
+        paired = self.sources[0].kind == "pair"
+        discover = discover_pair_sources if paired else discover_stereo_file_sources
+        try:
+            sources = discover(root)
+        except Exception as exc:
+            messagebox.showerror(APP_NAME, self.tr.message(str(exc)))
+            return
+        if not sources:
+            messagebox.showerror(APP_NAME, self._t("no_pair_files" if paired else "no_stereo_files"))
+            return
         self._inspection_view.reset()
         self._end_point_measurement()
         self._batch_progress_index = None
         self._batch_progress_total = None
         self._batch_progress_source_name = None
         self._batch_progress_state = None
-        output_folder = None if self.analysis_only.get() else self._effective_output_folder(self.sources[0].input_root)
+        output_folder = None if self.analysis_only.get() else self._effective_output_folder(root)
         if not self.analysis_only.get() and output_folder is None:
             messagebox.showinfo(APP_NAME, self._t("select_output_folder"))
             return
@@ -2801,10 +2816,15 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
 
         self._drop_prefetch()
         self._previous_decoded = self._previous_views = None
-        sources = tuple(self.sources)
+        if sources != self.sources:
+            self.sources = sources
+            self.source_index = next((i for i, source in enumerate(sources) if source == self.current.source), None)
+            if self._favorite_indices is not None:
+                self._favorite_indices = {i for i, source in enumerate(sources) if is_saved_favorite(source)} or None
+        batch_sources = tuple(sources)
 
         def job(token, progress):
-            return run_batch(sources, options, cancellation=token, progress=progress)
+            return run_batch(batch_sources, options, cancellation=token, progress=progress)
 
         text = self._t("analysis_running") if self.analysis_only.get() else self._t("batch_running")
         self._start_worker("batch", text, job)
@@ -3032,8 +3052,13 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
                     # failed save just as the worker-error path does.
                     self._refresh_preview()
                 return
-            if self.source_index is not None and self.sources:
-                self._load_source_index(self.source_index, inherit_look=True)
+            if self.sources:
+                self._load_source_index(self._batch_return_index(), inherit_look=True)
+
+    def _batch_return_index(self) -> int:
+        if self.source_index is not None:
+            return self.source_index
+        return min(self._favorite_indices or {0})
 
     def _adopt_saved_result(self, payload: BatchRunResult) -> bool:
         if self.current is None or payload.failed or len(payload.items) != 1:
@@ -3068,6 +3093,8 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
             return
         if kind == "load":
             self._restore_load_rollback()
+        elif kind == "batch" and self.source_index is None and self.sources:
+            self._load_source_index(self._batch_return_index(), inherit_look=True)
         elif kind in {"batch", "save", "analysis"} and self.current is not None:
             # Resume a result completed during work, or request the latest
             # state again if its render was interrupted by the busy period.
@@ -3085,6 +3112,8 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
                 dialog.destroy(); self._folder_dialog = None
         if kind == "load":
             self._restore_load_rollback()
+        elif kind == "batch" and self.source_index is None and self.sources:
+            self._load_source_index(self._batch_return_index(), inherit_look=True)
         elif kind in {"batch", "save", "analysis"} and self.current is not None:
             self._refresh_preview()
             self._render_status()

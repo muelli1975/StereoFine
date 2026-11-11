@@ -1,0 +1,22 @@
+{
+  "repository": "muelli1975/StereoFine",
+  "tag": "v1.4",
+  "branch": "main",
+  "previous_tag": "a5db6669898ec473f080305e7766abf5753a5a7d",
+  "release_id": 439596926,
+  "notes_file": "RELEASE_NOTES_1.4.md",
+  "assets": {
+    "SHA256SUMS.txt": "sha256:8b14cab9f52d075f260850202192d95daa3252de0c764aa4186d5de8b0edb375",
+    "StereoFine_1.4_Linux_x64.tar.gz": "sha256:8533d467c6d290a9614ad46bffe31ef97174c6f97c691d0a6b287ca6572ee3f9",
+    "StereoFine_1.4_macOS_AppleSilicon.zip": "sha256:8f674ef4ef68f4d15305bdf014dda68db6b19fdb2d9865cb10871162dc52d1f8",
+    "StereoFine_1.4_macOS_Intel.zip": "sha256:d745d5d9b4d84e78c1b437eac6bf03d942265dd2b1a06c69f6673930ed87bb22",
+    "StereoFine_1.4_Windows_x64.zip": "sha256:8fe9a76904c3e17bfc9046feee98cb13dc789dded9bbfbc45777fefe410768e0"
+  },
+  "replace": [
+    "StereoFine_1.4_Linux_x64.tar.gz",
+    "StereoFine_1.4_macOS_AppleSilicon.zip",
+    "StereoFine_1.4_macOS_Intel.zip",
+    "StereoFine_1.4_Windows_x64.zip",
+    "SHA256SUMS.txt"
+  ]
+}

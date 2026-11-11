@@ -26,6 +26,14 @@ def asset_path(name: str) -> Path:
     return bundle_root() / "assets" / name
 
 
+def start_image_bytes() -> bytes:
+    if getattr(sys, 'frozen', False):
+        from _stereofine_start_image import JPEG_DATA
+
+        return JPEG_DATA
+    return asset_path('stereofine.jpg').read_bytes()
+
+
 def tool_path(name: str) -> Path:
     # In onedir builds tools are intentionally visible next to the executable.
     frozen_visible = writable_app_root() / "tools" / name

@@ -1,56 +1,52 @@
 """Located disparity evidence, independent of view zoom and presentation masks."""
 from __future__ import annotations
 
-import numpy as np
-
 from .config import CROP_ZOOM_LEVELS
 from .geometry import framing_crop_box, clamp_offset_for_size
 
+ENDPOINT_MARKER_VERSION = 3
 
-def locate_endpoints(disparity, confidence, near_confirmation, far_confirmation,
-                     low_edge, high_edge):
-    h, w = disparity.shape
+
+def normalized_marker(x, y, disparity_px, width, height, *, tentative, target_permille):
+    return dict(left=[(x + .5) / width, (y + .5) / height],
+                right=[(x - disparity_px + .5) / width, (y + .5) / height],
+                tentative=tentative, target_permille=target_permille)
+
+
+def locate_endpoints(analysis_shape, near_confirmation, far_confirmation, low_edge, high_edge):
+    h, w = analysis_shape
     candidates = {}
-    ys, xs = np.nonzero(confidence & np.isfinite(disparity))
-    dense = disparity[ys, xs]
     for name, confirmation, target in (
         ('near', near_confirmation, high_edge), ('far', far_confirmation, low_edge)):
+        if not confirmation.get('confirmed'):
+            continue
+        target_px = target * w / 1000
         points = []
-        for raw in confirmation.get('verified_points', []):
-            x, y, d = float(raw['x']), float(raw['y']), float(raw['disparity_px'])
+        for point in confirmation['supported_matches']:
+            x, y, d = float(point['x']), float(point['y']), float(point['disparity_px'])
             if name == 'far':
-                x, d = w-1-x, -d
-            if 0 <= x < w and 0 <= x-d < w and 0 <= y < h:
-                points.append((abs(d*1000/w-target), not confirmation.get('confirmed', False),
-                               x, y, d))
-        if len(dense):
-            distances = np.abs(dense*1000/w-target)
-            count = min(8, len(dense))
-            indices = np.argpartition(distances, count-1)[:count]
-            for index in indices:
-                x, y, d = float(xs[index]), float(ys[index]), float(dense[index])
-                if 0 <= x-d < w:
-                    points.append((float(distances[index]), True, x, y, d))
+                x, d = w - 1 - x, -d
+            distance = abs(d - target_px)
+            # The confirmation allows 1.5 analysis pixels. The reported
+            # edge may add half a pixel of reserve to a verified surface.
+            if distance <= 2.0 and 0 <= x < w and 0 <= x-d < w and 0 <= y < h:
+                points.append((distance, x, y, d))
         if points:
             candidates[name] = sorted(points)[:8]
+
     chosen = {name: values[0] for name, values in candidates.items()}
     if 'near' in candidates and 'far' in candidates:
-        ordered = [(n[0]+f[0], int(n[1])+int(f[1]), n, f)
-                   for n in candidates['near'] for f in candidates['far'] if n[4] >= f[4]]
+        ordered = [(n[0] + f[0], n, f) for n in candidates['near'] for f in candidates['far']
+                   if n[3] >= f[3]]
         if ordered:
-            _, _, chosen['near'], chosen['far'] = min(ordered)
+            _, chosen['near'], chosen['far'] = min(ordered)
         else:
-            # Contradictory verifier evidence must not reverse physical depth.
-            pair = sorted([chosen['near'], chosen['far']], key=lambda v: v[4])
-            chosen['far'], chosen['near'] = pair
-            chosen = {name: (point[0], True, *point[2:]) for name, point in chosen.items()}
-    markers = {}
-    for name, (_, tentative, x, y, d) in chosen.items():
-        markers[name] = dict(left=[(x+.5)/w, (y+.5)/h],
-                             right=[(x-d+.5)/w, (y+.5)/h],
-                             tentative=tentative,
-                             target_permille=high_edge if name == 'near' else low_edge)
-    return dict(version=2, coordinate_system='normalized_final_crop', markers=markers)
+            chosen.clear()
+
+    markers = {name: normalized_marker(x, y, d, w, h, tentative=False,
+                                       target_permille=high_edge if name == 'near' else low_edge)
+               for name, (_, x, y, d) in chosen.items()}
+    return dict(version=ENDPOINT_MARKER_VERSION, coordinate_system='normalized_final_crop', markers=markers)
 
 
 def crop_geometry(state, aligned_shape, input_aspect):
@@ -63,7 +59,7 @@ def crop_geometry(state, aligned_shape, input_aspect):
 
 
 def to_master(endpoints, state, aligned_shape, input_aspect):
-    if not endpoints.get('markers'):
+    if not endpoints:
         return {}
     dx, dy, box = crop_geometry(state, aligned_shape, input_aspect)
     x, y, x1, y1 = box
@@ -75,14 +71,15 @@ def to_master(endpoints, state, aligned_shape, input_aspect):
             px, py = marker[eye]
             item[eye] = [x+ox+px*(x1-x), y+oy+py*(y1-y)]
         markers[name] = item
-    return dict(version=2, coordinate_system='aligned_master', aligned_shape=list(aligned_shape[:2]),
+    return dict(version=ENDPOINT_MARKER_VERSION, coordinate_system='aligned_master', aligned_shape=list(aligned_shape[:2]),
                 input_aspect=float(input_aspect), markers=markers)
 
 
 def current_markers(state):
     evidence = state.disparity.endpoints
-    if (state.disparity.stale or not state.disparity.valid or
-            evidence.get('coordinate_system') != 'aligned_master'):
+    if (state.disparity.stale or not state.disparity.valid
+            or evidence.get('version', 0) < ENDPOINT_MARKER_VERSION
+            or evidence.get('coordinate_system') != 'aligned_master'):
         return {}
     dx, dy, box = crop_geometry(state, evidence['aligned_shape'], evidence['input_aspect'])
     x, y, x1, y1 = box

@@ -84,9 +84,12 @@ def main():
     snapshot = ROOT/f'build/{build_kind}-source'
     if snapshot.exists(): shutil.rmtree(snapshot)
     run(sys.executable, 'scripts/package_source.py', snapshot)
+    from embed_start_image import embed_start_image
+    embedded = embed_start_image(ROOT, ROOT/'build'/f'{build_kind}-embedded-start-image')
     arguments = [sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean', '--onedir',
                  '--windowed', '--name', 'StereoFine', '--collect-data', 'customtkinter',
                  '--exclude-module', 'pillow_heif', '--add-data', str(ROOT/'assets')+':assets',
+                 '--paths', str(embedded),
                  '--specpath', f'build/{build_kind}-spec']
     if sys.platform == 'win32': arguments += ['--icon', str(ROOT/'assets/stereofine.ico'), '--version-file', str(ROOT/'version_info.txt')]
     if sys.platform == 'darwin': arguments += ['--icon', str(ROOT/'assets/stereofine.icns')]
@@ -141,6 +144,9 @@ def main():
     run(executable, '--check-inputs', report, args.fixtures.resolve())
     checked = json.loads(report.read_text('utf-8'))
     if not checked['ok']: raise RuntimeError('Packaged inputs failed')
+    expected_image = hashlib.sha256((ROOT/'assets/stereofine.jpg').read_bytes()).hexdigest()
+    if checked['start_image']['sha256'] != expected_image:
+        raise RuntimeError('Embedded start image differs from the original JPEG')
     if not all(row.get('metadata_success', True) for row in checked['checks']):
         raise RuntimeError('Packaged metadata export failed')
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from io import BytesIO
 from pathlib import Path
 
 import cv2
@@ -123,8 +124,11 @@ def _decode_cv_image(path: Path) -> np.ndarray:
         encoded = np.fromfile(path, dtype=np.uint8)
     except OSError as exc:
         raise InputError(f"Bild konnte nicht gelesen werden: {path}") from exc
-    flags = cv2.IMREAD_UNCHANGED
-    decoded = cv2.imdecode(encoded, flags)
+    return _decode_cv_buffer(encoded, path)
+
+
+def _decode_cv_buffer(encoded: np.ndarray, path: Path) -> np.ndarray:
+    decoded = cv2.imdecode(encoded, cv2.IMREAD_UNCHANGED)
     if decoded is None:
         raise InputError(f"Nicht unterstützte oder beschädigte Bilddatei: {path}")
     return decoded
@@ -245,8 +249,16 @@ def load_pair(left_path: Path, right_path: Path) -> LoadedStereoPair:
     )
 
 
-def load_full_sbs(path: Path) -> LoadedStereoPair:
-    image = load_master_image(path)
+def load_full_sbs(path: Path, *, jpeg_data: bytes | None = None) -> LoadedStereoPair:
+    if jpeg_data is None:
+        image = load_master_image(path)
+        profile = master_profile(path)
+    else:
+        with Image.open(BytesIO(jpeg_data)) as header:
+            orientation = int(header.getexif().get(274, 1) or 1)
+            profile = header.info.get('icc_profile') or None
+        decoded = _decode_cv_buffer(np.frombuffer(jpeg_data, dtype=np.uint8), path)
+        image = _apply_exif_orientation_array(_to_rgb_keep_depth(decoded), orientation)
     h, w = image.shape[:2]
     if w < 2:
         raise InputError("Full-SBS-Datei ist zu schmal.")
@@ -262,7 +274,7 @@ def load_full_sbs(path: Path) -> LoadedStereoPair:
     return LoadedStereoPair(
         left, right, path, path, "full_sbs", left.shape[1], left.shape[0],
         left_size[0], left_size[1], right_size[0], right_size[1],
-        icc_profile=master_profile(path),
+        icc_profile=profile,
     )
 
 

@@ -59,6 +59,7 @@ def supported_near_edge(points: list[dict], baseline_px: float, width: int) -> d
         edge = maximum + .5
     return {"edge_permille": edge * 1000 / width, "supported_points": len(supported),
             "maximum_supported_px": maximum, "verified_points": points,
+            "supported_matches": supported,
             "confirmed": maximum is not None and maximum >= baseline_px - 1.5,
             "unsupported_extreme": any(p["disparity_px"] > edge + .5 for p in points if p not in supported),
             "method": "percentile_99_plus_reciprocal_patch_support"}

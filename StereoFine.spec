@@ -1,16 +1,21 @@
-# PyInstaller onedir specification for StereoFine 1.3.
+# PyInstaller onedir specification for StereoFine 1.4.
 # Build from a clean Windows x64 Python 3.12.10 environment.
 
+from pathlib import Path
+
 from PyInstaller.utils.hooks import collect_data_files
+from scripts.embed_start_image import embed_start_image
 
 block_cipher = None
 
+root = Path(SPECPATH)
+embedded = embed_start_image(root, root / 'build' / 'embedded-start-image')
 datas = collect_data_files("customtkinter")
 datas += [("assets", "assets")]
 
 a = Analysis(
     ["StereoFine.py"],
-    pathex=[],
+    pathex=[str(embedded)],
     binaries=[],
     datas=datas,
     hiddenimports=[],

@@ -10,13 +10,19 @@ import numpy as np
 from PIL import Image
 
 from .export import save_pair_outputs
-from .inputs import load_master_image
+from .inputs import load_full_sbs, load_master_image
 from .render import render_final_pair
+from .resources import start_image_bytes
 from .session import browse_source, save_browsed_state
 from .sources import load_source, source_from_stereo_file
 
 
 def check_inputs(destination: Path, fixtures: Path) -> None:
+    jpeg = start_image_bytes()
+    start_image = load_full_sbs(Path('stereofine.jpg'), jpeg_data=jpeg)
+    branding = {'sha256': hashlib.sha256(jpeg).hexdigest(),
+                'eye_size': [start_image.source_width, start_image.source_height]}
+    del jpeg, start_image
     checks = []
     with tempfile.TemporaryDirectory(prefix='sf-package-input-check-') as td:
         root = Path(td)
@@ -113,5 +119,6 @@ def check_inputs(destination: Path, fixtures: Path) -> None:
                                icc_profile=True,native_cms=True,cross_jpeg=True))
     import sys
     assert 'pillow_heif' not in sys.modules
-    destination.write_text(json.dumps({'ok': True, 'codec_isolated': True, 'checks': checks}, indent=2)+'\n', 'utf-8')
+    destination.write_text(json.dumps({'ok': True, 'codec_isolated': True, 'start_image': branding,
+                                       'checks': checks}, indent=2)+'\n', 'utf-8')
 

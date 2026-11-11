@@ -3,7 +3,7 @@ name: Prepare StereoFine 1.4 candidates
 on:
   workflow_dispatch:
   push:
-    branches: [development/1.4]
+    branches: [development/1.4, main]
 
 permissions:
   contents: read
@@ -14,6 +14,7 @@ concurrency:
 
 jobs:
   checked-platforms:
+    if: github.ref != 'refs/heads/main' || github.event.head_commit.message == 'Refresh StereoFine 1.4'
     uses: ./.github/workflows/validate-development.yml
     with:
       candidate: true
@@ -44,3 +45,31 @@ jobs:
             release/SHA256SUMS.txt
             release/ARCHIVE_CHECKS.jsonl
           if-no-files-found: error
+
+  publish-refresh:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Refresh StereoFine 1.4'
+    needs: checksums
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: StereoFine-candidate-*
+          path: release
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: StereoFine-1.4-candidate-checksums
+          path: release
+      - name: Refresh the existing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/publish_update.py --root release --config scripts/release_update_1.4.json
