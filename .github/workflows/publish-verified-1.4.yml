@@ -1,0 +1,57 @@
+name: Publish verified StereoFine 1.4 packages
+on:
+  push:
+    branches: [release/1.4-verified-packages]
+concurrency:
+  group: stereofine-candidate-refs/heads/main
+  cancel-in-progress: true
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish-verified:
+    runs-on: ubuntu-22.04
+    env:
+      UPDATE_SOURCE_SHA: 35e30c28fe3022e753e8c9c5f30becff24cfdd4f
+      VERIFIED_RUN: '43094037012'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 35e30c28fe3022e753e8c9c5f30becff24cfdd4f
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - name: Confirm successful package and application checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(gh api repos/$GITHUB_REPOSITORY/actions/runs/$VERIFIED_RUN --jq .head_sha)" = "$UPDATE_SOURCE_SHA"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$VERIFIED_RUN/jobs?per_page=50" > "$RUNNER_TEMP/verified-jobs.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          jobs = json.loads((Path(os.environ['RUNNER_TEMP'])/'verified-jobs.json').read_text())['jobs']
+          packages = [job for job in jobs if '/ Checked package (' in job['name']]
+          assert len(packages) == 4 and all(job['conclusion'] == 'success' for job in packages)
+          tests = [job for job in jobs if '/ Tests (' in job['name']]
+          assert len(tests) == 3 and all(
+              any(step['name'] == 'Application regression tests' and step['conclusion'] == 'success' for step in job['steps'])
+              and any(step['name'].startswith('Actual save pixels, image rectangles') and step['conclusion'] == 'success' for step in job['steps'])
+              for job in tests
+          )
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '43094037012'
+          github-token: ${{ github.token }}
+          pattern: StereoFine-candidate-*
+          path: release
+          merge-multiple: true
+      - name: Verify all archives and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/release_checksums.py release
+          python scripts/verify_release_packages.py release
+          python scripts/publish_update.py --root release --config scripts/release_update_1.4.json
