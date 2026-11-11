@@ -3,11 +3,11 @@ on:
   push:
     branches: [release/1.4-verified-packages]
 concurrency:
-  group: stereofine-candidate-refs/heads/main
+  group: stereofine-1.4-verified-publication
   cancel-in-progress: true
 permissions:
   contents: write
-  actions: read
+  actions: write
 jobs:
   publish-verified:
     runs-on: ubuntu-22.04
@@ -41,6 +41,22 @@ jobs:
               for job in tests
           )
           PY
+      - name: Stop the stalled diagnostic run before publishing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for run in "$VERIFIED_RUN" 43096442275; do
+            endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$run"
+            if [ "$(gh api "$endpoint" --jq .status)" != completed ]; then
+              gh api --method POST "$endpoint/force-cancel" ||
+                test "$(gh api "$endpoint" --jq .status)" = completed
+            fi
+            for attempt in {1..18}; do
+              [ "$(gh api "$endpoint" --jq .status)" = completed ] && break
+              sleep 5
+            done
+            test "$(gh api "$endpoint" --jq .status)" = completed
+          done
       - uses: actions/download-artifact@v4
         with:
           run-id: '43094037012'
