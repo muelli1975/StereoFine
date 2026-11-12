@@ -106,9 +106,9 @@ def main() -> None:
             tooltip_window = next(child for child in batch_pair_button.winfo_children() if isinstance(child, tk.Toplevel))
             tooltip_label = tooltip_window.winfo_children()[0]
             expected_tooltip = (
-                "Stapelordner wählen\nBei getrennten L- und R-Unterordnern den gemeinsamen Oberordner auswählen."
+                "Bei getrennten L- und R-Unterordnern den gemeinsamen Oberordner auswählen."
                 if test_language == "de" else
-                "Choose a batch folder\nFor separate L and R subfolders, choose their common parent folder."
+                "For separate L and R subfolders, choose their common parent folder."
             )
             assert tooltip_label.cget("text") == expected_tooltip
             batch_pair_button._canvas.event_generate("<Leave>")
