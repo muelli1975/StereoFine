@@ -11,4 +11,3 @@
 
 - **Near and far markers.** StereoFine shows a marker only when it can verify the position in both views. When the measured endpoint is refined, the marker follows the verified position.
 - **Batch folders.** StereoFine rescans the selected folder when a batch starts, including after a cancellation.
-- **Start image.** The original full-resolution stereo JPEG is embedded in the Windows, Linux and macOS executables.
