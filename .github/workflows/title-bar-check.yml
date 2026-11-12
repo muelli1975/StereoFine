@@ -1,16 +1,11 @@
 name: Verify StereoFine title bars
 
 on:
-  push:
-    branches: [shared-title-bars]
-    paths:
-      - 'stereofine/**'
-      - 'tests/gui_final_update.py'
-      - '.github/workflows/title-bar-check.yml'
   pull_request:
     paths:
       - 'stereofine/titlebar.py'
       - 'tests/gui_final_update.py'
+      - 'tests/gui_macos_title_bar.py'
       - '.github/workflows/title-bar-check.yml'
 
 permissions:
@@ -38,3 +33,16 @@ jobs:
           name: StereoFine-title-bar-check
           path: build/gui-final-update-win32.json
           if-no-files-found: error
+
+  macos-title-bar:
+    runs-on: macos-15
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+      - name: Check the native AppKit appearance
+        run: python -m tests.gui_macos_title_bar
