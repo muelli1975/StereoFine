@@ -1,0 +1,48 @@
+name: Edit the StereoFine 1.4 release notes
+on:
+  push:
+    branches: ['maintenance/1.4-notes-d2e9edf']
+    paths: ['.github/workflows/edit-1.4-release-notes.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  notes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Remove a single release-notes bullet
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import re
+          import subprocess
+
+          repo = os.environ['GITHUB_REPOSITORY']
+          assert repo == 'muelli1975/StereoFine'
+          url = f'repos/{repo}/releases/tags/v1.4'
+
+          def read_release():
+              release = json.loads(subprocess.check_output(['gh', 'api', url]))
+              assert release['id'] == 439596926 and not release['draft']
+              return release
+
+          before = read_release()
+          note = re.compile(r'^- \*\*Start image\.\*\* [^\r\n]*(?:\r?\n|$)', re.MULTILINE)
+          after, removed = note.subn('', before['body'])
+          assert removed <= 1
+          if removed:
+              assert read_release()['body'] == before['body']
+              subprocess.run(['gh', 'api', '--method', 'PATCH', '--silent',
+                              f"repos/{repo}/releases/{before['id']}", '--input', '-'],
+                             input=json.dumps({'body': after}), text=True, check=True)
+          verified = read_release()
+          assert verified['body'] == after
+          asset_keys = lambda release: [(a['id'], a['name'], a['digest']) for a in release['assets']]
+          assert asset_keys(verified) == asset_keys(before)
+          print('Verified the published release notes and download metadata.')
+          PY
