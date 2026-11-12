@@ -600,11 +600,17 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
         self.single_pair_button, self.single_sbs_button = self._two_button_row(
             self.sidebar, row, self._t("left_right"), self.choose_single_pair, self._t("full_sbs_mpo"), self.choose_single_stereo
         ); row += 1
+        single_file_tooltip = self._t("single_file_tooltip")
+        attach_tooltip(self.single_pair_button, single_file_tooltip)
+        attach_tooltip(self.single_sbs_button, single_file_tooltip)
+
         self._hint(self.sidebar, self._t("batch_processing"), row, pady=(4, 4)); row += 1
         self.batch_pair_button, self.batch_sbs_button = self._two_button_row(
             self.sidebar, row, self._t("left_right"), self.choose_batch_pair, self._t("full_sbs_mpo"), self.choose_batch_stereo
         ); row += 1
-        attach_tooltip(self.batch_pair_button, self._t("batch_pair_tooltip"))
+        batch_folder_tooltip = self._t("batch_folder_tooltip")
+        attach_tooltip(self.batch_pair_button, f"{batch_folder_tooltip}\n{self._t('batch_pair_tooltip')}")
+        attach_tooltip(self.batch_sbs_button, batch_folder_tooltip)
 
         self.analysis_only_box = self._checkbox(self.sidebar, self._t("analysis_only"), self.analysis_only, self._on_batch_mode_option_changed)
         self.analysis_only_box.grid(row=row, column=0, sticky="w", padx=20, pady=(2, 6)); row += 1
