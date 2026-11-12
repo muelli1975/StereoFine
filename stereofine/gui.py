@@ -18,6 +18,7 @@ import customtkinter as ctk
 import numpy as np
 from PIL import Image, ImageDraw, ImageTk
 
+from .titlebar import install_tk_titlebars
 from .batch import BatchRunOptions, BatchRunResult, batch_worker_count, run_batch
 from .config import (
     APP_NAME,
@@ -202,6 +203,7 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
         # No CustomTkinter color theme is used as a design source. Every visible
         # color below is explicitly defined by the shared Stereo-Tool standard.
         super().__init__()
+        install_tk_titlebars(self)
         configure_logging()
 
         self.settings: AppSettings = load_settings()

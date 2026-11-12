@@ -45,6 +45,36 @@ def windows_theme(app, *, set_light=False):
     raise AssertionError('No supported Windows titlebar theme attribute')
 
 
+def leave_and_check_caption(app, leave):
+    """Check that DWM accepts both explicit colors on the restored native window."""
+    if sys.platform != 'win32' or sys.getwindowsversion().build < 22000:
+        leave()
+        pump(app)
+        return False
+
+    import ctypes
+    from ctypes import wintypes
+    from stereofine import titlebar
+
+    ancestor, native_set, redraw = titlebar._windows_functions()
+    accepted = []
+
+    def checked_set(hwnd, attribute, value, size):
+        result = native_set(hwnd, attribute, value, size)
+        if result == 0 and attribute in (35, 36):
+            color = ctypes.cast(value, ctypes.POINTER(wintypes.DWORD)).contents.value
+            accepted.append((hwnd, attribute, color))
+        return result
+
+    with patch.object(titlebar, '_windows_functions', return_value=(ancestor, checked_set, redraw)):
+        leave()
+        pump(app)
+    hwnd = ancestor(app.winfo_id(), 2)
+    assert (hwnd, 35, 0x202020) in accepted, accepted
+    assert (hwnd, 36, 0xF2F2F2) in accepted, accepted
+    return True
+
+
 def main():
     gui.load_settings = lambda: AppSettings()
     gui.save_settings = lambda value: None
@@ -97,7 +127,7 @@ def main():
             app._on_f11()
 
         routes = [('button', app.fullscreen_button.invoke), ('f11', f11), ('escape', app._on_escape)]
-        titlebar_checks = []
+        titlebar_checks, fixed_caption_checks = [], []
         for name, leave in routes:
             if sys.platform == 'win32':
                 windows_theme(app, set_light=True)
@@ -105,8 +135,8 @@ def main():
             app.fullscreen_button.invoke()
             pump(app)
             assert app.fullscreen
-            leave()
-            pump(app)
+            if leave_and_check_caption(app, leave):
+                fixed_caption_checks.append(name)
             assert not app.fullscreen and not app.attributes('-fullscreen')
             if sys.platform == 'win32':
                 assert windows_theme(app) == 1, name
@@ -130,6 +160,7 @@ def main():
                 assert restore_dark_titlebar(app)
                 assert app.state() == before
         report.update(fullscreen_exit_routes=titlebar_checks,
+                      windows_fixed_caption_exit_routes=fixed_caption_checks,
                       rapid_fullscreen_toggle=True,
                       windows_dark_titlebar_verified=sys.platform == 'win32', ok=True)
         target = Path('build/gui-final-update-'+sys.platform+'.json')
