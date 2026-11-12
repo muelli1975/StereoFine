@@ -604,6 +604,7 @@ class StereoFineApp(GeometryControlsMixin, LookControlsMixin, ViewControlsMixin,
         self.batch_pair_button, self.batch_sbs_button = self._two_button_row(
             self.sidebar, row, self._t("left_right"), self.choose_batch_pair, self._t("full_sbs_mpo"), self.choose_batch_stereo
         ); row += 1
+        attach_tooltip(self.batch_pair_button, self._t("batch_pair_tooltip"))
 
         self.analysis_only_box = self._checkbox(self.sidebar, self._t("analysis_only"), self.analysis_only, self._on_batch_mode_option_changed)
         self.analysis_only_box.grid(row=row, column=0, sticky="w", padx=20, pady=(2, 6)); row += 1
