@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import tempfile
 import time
+import tkinter as tk
 from unittest.mock import patch
 from pathlib import Path
 
@@ -97,6 +98,22 @@ def main() -> None:
 
         app = gui.StereoFineApp()
         try:
+            app.update()
+            batch_pair_button = app.batch_pair_button
+            batch_pair_button._canvas.event_generate("<Enter>")
+            pump(app, lambda: any(isinstance(child, tk.Toplevel) and child.winfo_viewable()
+                                  for child in batch_pair_button.winfo_children()), timeout=3.0)
+            tooltip_window = next(child for child in batch_pair_button.winfo_children() if isinstance(child, tk.Toplevel))
+            tooltip_label = tooltip_window.winfo_children()[0]
+            expected_tooltip = (
+                "Stapelordner wählen\nBei getrennten L- und R-Unterordnern den gemeinsamen Oberordner auswählen."
+                if test_language == "de" else
+                "Choose a batch folder\nFor separate L and R subfolders, choose their common parent folder."
+            )
+            assert tooltip_label.cget("text") == expected_tooltip
+            batch_pair_button._canvas.event_generate("<Leave>")
+            assert not tooltip_window.winfo_exists()
+            print(f"Batch L/R tooltip verified in {test_language}")
             app.withdraw()
 
             # Mandatory single-input loading smoke: Full-SBS, MPO and L/R pair

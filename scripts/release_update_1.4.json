@@ -2,15 +2,15 @@
   "repository": "muelli1975/StereoFine",
   "tag": "v1.4",
   "branch": "main",
-  "previous_tag": "a5db6669898ec473f080305e7766abf5753a5a7d",
+  "previous_tag": "d2e9edfac48142bf2ec5fa1fa04e753b5fb317ec",
   "release_id": 439596926,
   "notes_file": "RELEASE_NOTES_1.4.md",
   "assets": {
-    "SHA256SUMS.txt": "sha256:8b14cab9f52d075f260850202192d95daa3252de0c764aa4186d5de8b0edb375",
-    "StereoFine_1.4_Linux_x64.tar.gz": "sha256:8533d467c6d290a9614ad46bffe31ef97174c6f97c691d0a6b287ca6572ee3f9",
-    "StereoFine_1.4_macOS_AppleSilicon.zip": "sha256:8f674ef4ef68f4d15305bdf014dda68db6b19fdb2d9865cb10871162dc52d1f8",
-    "StereoFine_1.4_macOS_Intel.zip": "sha256:d745d5d9b4d84e78c1b437eac6bf03d942265dd2b1a06c69f6673930ed87bb22",
-    "StereoFine_1.4_Windows_x64.zip": "sha256:8fe9a76904c3e17bfc9046feee98cb13dc789dded9bbfbc45777fefe410768e0"
+    "SHA256SUMS.txt": "sha256:0d70fbb4b90babec55651fdd922e58d1c32f791d712cf91749a42260e566ad4f",
+    "StereoFine_1.4_Linux_x64.tar.gz": "sha256:dc2a1f87d8328a2a3345a297e9f47280f08795d40da689de02ffdd33b8a7bcb0",
+    "StereoFine_1.4_macOS_AppleSilicon.zip": "sha256:6cf4ebed3f2d0895cfdfb444a45fa5a17d359b94a740a1231d625006169bd99c",
+    "StereoFine_1.4_macOS_Intel.zip": "sha256:baa7438111df10bd9730baf0ae35f05fdd151c43a74a232be91bd42a4630f38f",
+    "StereoFine_1.4_Windows_x64.zip": "sha256:ce30775863b2eb9aab7fcbf53d3e7f90923bab2dbecc2245e4d2654532be74ed"
   },
   "replace": [
     "StereoFine_1.4_Linux_x64.tar.gz",

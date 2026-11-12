@@ -11,3 +11,8 @@
 
 - **Near and far markers.** StereoFine shows a marker only when it can verify the position in both views. When the measured endpoint is refined, the marker follows the verified position.
 - **Batch folders.** StereoFine rescans the selected folder when a batch starts, including after a cancellation.
+- **Input tooltips.** The source buttons indicate whether they open an image or choose a batch folder. For separate `L` and `R` subfolders, choose their common parent folder.
+
+### Title bar maintenance update
+
+- Use a fixed dark title bar on Windows 11 and the native Dark Aqua appearance on macOS.
