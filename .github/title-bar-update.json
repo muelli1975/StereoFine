@@ -1,0 +1,22 @@
+{
+  "repository": "muelli1975/StereoFine",
+  "tag": "v1.4",
+  "branch": "main",
+  "previous_tag": "35e30c28fe3022e753e8c9c5f30becff24cfdd4f",
+  "release_id": 439596926,
+  "assets": {
+    "SHA256SUMS.txt": "sha256:92f15cbad54eb81264c91c03215ade03f1d45e1ee17963a3d18ca24b6d8d0aa3",
+    "StereoFine_1.4_Linux_x64.tar.gz": "sha256:dc2a1f87d8328a2a3345a297e9f47280f08795d40da689de02ffdd33b8a7bcb0",
+    "StereoFine_1.4_macOS_AppleSilicon.zip": "sha256:54a92ba55c3fa04e2e9e74a66c31f566c9eeee94a916146052a7dc5e37d5ec1a",
+    "StereoFine_1.4_macOS_Intel.zip": "sha256:8c0a4e5a6b7bcfb9345bd82f256a239a04922d6f71f326fe5f478c0052ebb336",
+    "StereoFine_1.4_Windows_x64.zip": "sha256:22f44b71c870097209cfbc9bf8b6d6502a8de1ffc3448160371800ac01438c43"
+  },
+  "replace": [
+    "SHA256SUMS.txt",
+    "StereoFine_1.4_macOS_AppleSilicon.zip",
+    "StereoFine_1.4_macOS_Intel.zip",
+    "StereoFine_1.4_Windows_x64.zip"
+  ],
+  "release_note": "### Title bar maintenance update\n\n- Use a fixed dark title bar on Windows 11 and the native Dark Aqua appearance on macOS.",
+  "checksums": "SHA256SUMS.txt"
+}

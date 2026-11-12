@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   checked-platforms:
-    if: github.ref != 'refs/heads/main' || github.event.head_commit.message == 'Refresh StereoFine 1.4'
+    if: github.ref != 'refs/heads/main' || github.event.head_commit.message == 'Refresh StereoFine 1.4' || github.event.head_commit.message == 'Refresh StereoFine 1.4 title bars'
     uses: ./.github/workflows/validate-development.yml
     with:
       candidate: true
@@ -73,3 +73,24 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python scripts/publish_update.py --root release --config scripts/release_update_1.4.json
+
+  publish-title-bar-update:
+    needs: checksums
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Refresh StereoFine 1.4 title bars'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: StereoFine-candidate-*
+          path: release-files
+          merge-multiple: true
+      - name: Update the existing release with the checked Windows and macOS packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/publish_title_bar_update.py --root release-files --config .github/title-bar-update.json
