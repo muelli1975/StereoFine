@@ -6,7 +6,7 @@
 
 **Version 1.3:** Mouse and keyboard view zoom, near/far markers, a two-click disparity meter, and 50 LUT looks in six groups with custom .cube/HaldCLUT .png import and adjustable strength.
 
-**Version 1.2:** Optional lossless TIFF SBS export retains 8 or 16 bits per channel automatically. Hold **Z** for a native 100% view; pan with the arrow keys, accelerating when held and release **Z** to return. Preview and output use the same final-crop colour matching. Failed sidecar writes retain your edits and prevent export with old settings.
+**Version 1.2:** Optional lossless TIFF SBS export retains 8 or 16 bits per channel automatically. Hold **Z** for a native 100% view; pan with the arrow keys, accelerating when held and release **Z** to return. Preview and output use the same final-crop colour matching. Failed sidecar writes retain unsaved edits and prevent export with old settings.
 
 **Output and preview:** Grayscale anaglyphs and Save cross-view are saved independently from the preview under Image and output. Cross-view exports the finished full-colour R/L pair in `cross` as JPEG quality 90 with 4:4:4 sampling. **A** cycles Color, Grayscale and Cross-view previews; **M** temporarily uses the last anaglyph preview. Crop, crop zoom and crop movement automatically refresh deviation without changing alignment or stereo-window framing. The status shows “Calculating …” while this measurement is pending. Each launch starts with the Color anaglyph preview.
 
@@ -39,7 +39,7 @@ The Windows package is portable:
 
 Version and architecture appear in the ZIP filename. The application folder is `StereoFine` and the executable is `StereoFine.exe`, without a version or architecture suffix.
 
-The [previous 1.0 release](https://github.com/muelli1975/StereoFine/releases/tag/v1.0) remains available. Extract updates into a separate folder and retain your settings and saved image adjustments.
+The [previous 1.0 release](https://github.com/muelli1975/StereoFine/releases/tag/v1.0) remains available. Extract updates into a separate folder and retain the settings and saved image adjustments.
 
 The portable version does not require a separate Python installation. Global settings are stored as `settings.json` next to `StereoFine.exe`.
 
@@ -186,7 +186,7 @@ By default StereoFine creates an `output` folder inside the input folder. Altern
 
 Existing image outputs with the same name are deliberately replaced.
 
-**Custom SBS suffix** enables an editable list: `_s` (m.objects), `_cs` (COSIMA), `-lr` (Bino), no suffix, or your own text. The field defaults to COSIMA (`_cs`). When the checkbox is off, the standard `_sbs` suffix is used. The choice replaces `_sbs` immediately before `.jpg` or `.tif`; program labels are shown only in the list. Deviation numbers precede the chosen suffix, for example `photo_030_s.jpg`. These preferences apply to single-image and batch exports and are remembered. Existing files are not renamed or deleted when export preferences change.
+**Custom SBS suffix** enables an editable list: `_s` (m.objects), `_cs` (COSIMA), `-lr` (Bino), no suffix, or custom text. The field defaults to COSIMA (`_cs`). When the checkbox is off, the standard `_sbs` suffix is used. The choice replaces `_sbs` immediately before `.jpg` or `.tif`; program labels are shown only in the list. Deviation numbers precede the chosen suffix, for example `photo_030_s.jpg`. These preferences apply to single-image and batch exports and are remembered. Existing files are not renamed or deleted when export preferences change.
 
 **Deviation in filename** optionally adds the measured total deviation in whole
 permille: for example, `photo_057_sbs.jpg` and `photo_057_anaglyph.jpg`. Values are
