@@ -255,7 +255,7 @@ Soweit möglich kopiert StereoFine Metadaten mit dem gebündelten ExifTool. Prev
 
 Unter der symmetrischen Farbangleichung aktiviert **LUT anwenden** den gewählten Look. Der Stärke-Regler reicht von 0 bis 100 %. **Import (.cube, .png)** lädt eine eigene 3D-Cube-Datei oder quadratische HaldCLUT-PNG mit 8/16 Bit. Auswahl, Stärke und eigener Dateipfad werden in der bildbezogenen `.sfin` gespeichert; eigene LUT-Dateien müssen an diesem Pfad verfügbar bleiben. Beide Halbbilder erhalten denselben Look. Die Farbverarbeitung erfolgt vor Scheinfenstermasken und Anaglyphenbildung.
 
-Beim Überfahren eines Looks erscheint die Vorschau. Ein Klick übernimmt den Look, Esc behält die vorherige Auswahl bei. Zum Beurteilen der Farben eignet sich der Kreuzblick. Aktiviere das jeweilige Häkchen, um einen LUT-Look oder eine eigene SBS-Endung zu verwenden.
+Beim Überfahren eines Looks erscheint die Vorschau. Ein Klick übernimmt den Look, Esc behält die vorherige Auswahl bei. Zum Beurteilen der Farben eignet sich der Kreuzblick. Für einen LUT-Look oder eine eigene SBS-Endung das jeweilige Häkchen setzen.
 
 **Für Ordner übernehmen…** zeigt den Eingabeordner und die Anzahl erkannter Stereobilder. Seitenverhältnis, LUT samt Stärke, symmetrische Farbangleichung und Belichtung lassen sich unabhängig auswählen. StereoFine schreibt die gewählten Einstellungen in die Bilddateien mit Endung `.sfin`. Der Dialog zeigt den Fortschritt. Bei Abbruch bleiben bereits gespeicherte Änderungen erhalten. Gespeicherte Bildwerte haben Vorrang vor den Programmvorgaben. Fehlende Einstellungen folgen den aktuellen Vorgaben.
 
