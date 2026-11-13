@@ -1,0 +1,34 @@
+name: Refresh portable release documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/release_docs_1.4.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: refresh-portable-release-documentation
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Update documentation in published archives
+        run: python scripts/refresh_release_docs.py --config scripts/release_docs_1.4.json --output release
+      - name: Publish checked documentation and checksums
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/publish_update.py --root release --config scripts/release_docs_1.4.json

@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import platform
 import plistlib
+import re
 import shutil
 import subprocess
 import sys
@@ -16,6 +17,12 @@ import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def portable_readme(text):
+    """Point the portable README to the files included alongside it or under Source."""
+    text = text.replace('](README.md)', '](README_EN.md)')
+    return re.sub(r'\]\((?=BUILD_WINDOWS\.md\)|(?:assets|docs)/)', '](Source/', text)
 
 
 def archive_spec(candidate, commit, system, machine, version="1.4"):
@@ -120,6 +127,9 @@ def main():
         documents.append(release_notes)
     for name in documents:
         shutil.copy2(ROOT/name, package/name)
+        if name in {'README_DE.md', 'README_EN.md'}:
+            text = (ROOT/name).read_text(encoding='utf-8')
+            (package/name).write_text(portable_readme(text), encoding='utf-8')
     shutil.copytree(ROOT/'licenses', package/'licenses')
     python_license = next((path for path in (
         Path(sys.base_prefix)/'LICENSE.txt',

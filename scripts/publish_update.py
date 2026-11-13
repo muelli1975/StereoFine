@@ -98,10 +98,14 @@ def main():
             tag_moved = True
         # Keep the existing release prose. Only refresh existing hash/source references.
         body = Path(config["notes_file"]).read_text(encoding="utf-8") if config.get("notes_file") else old_body
+        for old, new in config.get('body_replacements', {}).items():
+            assert old in body or new in body, ('Release note text changed', old)
+            body = body.replace(old, new)
         for name, item in files.items():
             body = body.replace(assets[name]['digest'].split(':')[-1], item['digest'].split(':')[-1])
         # Release prose is curated separately from routine asset refreshes.
-        body = re.sub(r'/actions/runs/\d+', '/actions/runs/' + os.environ['GITHUB_RUN_ID'], body)
+        if not config.get('body_replacements'):
+            body = re.sub(r'/actions/runs/\d+', '/actions/runs/' + os.environ['GITHUB_RUN_ID'], body)
         body = body.replace(old_tag, sha)
         body = body.replace(old_tag[:7], sha[:7])
         api('/releases/' + str(release['id']), 'PATCH', {'body': body, 'target_commitish': sha})

@@ -1,0 +1,26 @@
+{
+  "repository": "muelli1975/StereoFine",
+  "tag": "v1.4",
+  "branch": "main",
+  "previous_tag": "ee1923835ca6f7698e2902238bcb59ee6e70cd5b",
+  "release_id": 439596926,
+  "assets": {
+    "SHA256SUMS.txt": "sha256:de482a0b5295f9cc08f8911a6ddaf2ab2f4af804b33b6244a3333f3a6a752aa7",
+    "StereoFine_1.4_Linux_x64.tar.gz": "sha256:48db36242e19f127e1131661a56593de5b63bd4525a4c8b1d9c25980f0ccf6f5",
+    "StereoFine_1.4_macOS_AppleSilicon.zip": "sha256:83dc0aef968f083de5e9c96f24f7fff93d85ca68954f5a22c495fb1d12f88675",
+    "StereoFine_1.4_macOS_Intel.zip": "sha256:3f2db7eb0abed5341efdeba2c8e7a49e73a5a28ecd6211214e0cebdf72d74bc2",
+    "StereoFine_1.4_Windows_x64.zip": "sha256:97baa1015d5145044e99bb8ed1ce850533cc6ab8044484c14879d788e4961207"
+  },
+  "replace": [
+    "SHA256SUMS.txt",
+    "StereoFine_1.4_Linux_x64.tar.gz",
+    "StereoFine_1.4_macOS_AppleSilicon.zip",
+    "StereoFine_1.4_macOS_Intel.zip",
+    "StereoFine_1.4_Windows_x64.zip"
+  ],
+  "body_replacements": {
+    "so you can move through a folder more quickly in either direction.": "for quicker browsing in either direction.",
+    "retains your inspection zoom": "retains the inspection zoom",
+    "your last anaglyph view": "the last anaglyph view"
+  }
+}
